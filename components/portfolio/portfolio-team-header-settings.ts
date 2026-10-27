@@ -7,6 +7,7 @@ import { msg } from '@/lib/i18n/config';
  * layouts). Independent of the section's own `layout` (which layout the members render in).
  */
 export type PortfolioTeamHeaderDesign =
+  | 'none'
   | 'editorial'
   | 'marquee'
   | 'index'
@@ -42,6 +43,7 @@ export type PortfolioTeamHeaderAccentCountAlignment = 'left' | 'center' | 'right
 export type PortfolioTeamHeaderBillboardWordStyle = 'outline' | 'fill' | 'simple';
 
 export const TEAM_HEADER_DESIGNS: PortfolioTeamHeaderDesign[] = [
+  'none',
   'editorial',
   'marquee',
   'index',
@@ -87,6 +89,11 @@ export const PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  {
+    value: 'none',
+    label: msg('None'),
+    description: msg('No header — the team starts right away.'),
+  },
   {
     value: 'editorial',
     label: msg('Editorial'),

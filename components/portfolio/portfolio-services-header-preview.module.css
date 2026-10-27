@@ -1,0 +1,49 @@
+.preview :global(header),
+.preview :global([data-services-header]) {
+  margin-bottom: 0 !important;
+}
+
+.preview[data-services-header-preview='editorial'] h2,
+.preview[data-services-header-preview='index'] h2,
+.preview[data-services-header-preview='split-heading'] h2 {
+  font-size: 112px !important;
+  line-height: 1.08 !important;
+}
+
+.preview[data-services-header-preview='serif-lead'] h2 {
+  font-size: 88px !important;
+  line-height: 1.1 !important;
+}
+
+.preview[data-services-header-preview='masthead'] h2 {
+  font-size: 96px !important;
+  line-height: 1.1 !important;
+}
+
+.preview :global(.pf-services-header-editorial-kicker) {
+  font-size: 32px !important;
+}
+
+.preview :global(.pf-services-header-editorial-sub),
+.preview[data-services-header-preview='index'] p,
+.preview[data-services-header-preview='serif-lead'] p {
+  font-size: 34px !important;
+  line-height: 1.5 !important;
+}
+
+.preview :global([data-services-header-badge]) {
+  font-size: 34px !important;
+}
+
+.preview :global([data-services-header-lead]) {
+  font-size: 80px !important;
+  line-height: 1.15 !important;
+}
+
+.preview[data-services-header-preview='marquee'] :global(.whitespace-nowrap.uppercase.leading-none) {
+  font-size: 128px !important;
+}
+
+.preview[data-services-header-preview='split-heading'] :global(.whitespace-nowrap.uppercase) {
+  font-size: 30px !important;
+}

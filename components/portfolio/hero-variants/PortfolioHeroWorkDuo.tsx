@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -129,8 +130,8 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
 
   const specialty = resolveHeroSpecialtyValue(data.specialite);
   const titleLines = useMemo(
-    () => splitWorkDuoTitle(firstName, specialty),
-    [firstName, specialty]
+    () => data.presentation.heroGreetingOverrides?.[data.presentation.heroBannerDesign]?.trim()?resolveHeroGreeting(data.presentation,'',firstName,specialty).split('\n'):splitWorkDuoTitle(firstName, specialty),
+    [firstName, specialty,data.presentation]
   );
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
@@ -165,6 +166,8 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
     const list = (data.featuredWorks ?? []).filter((w) => w.imageUrl?.trim());
     return list.slice(0, MAX_WORKS);
   }, [data.featuredWorks]);
+  const hasWorks = works.length > 0;
+  const monogram = firstName.slice(0, 1).toLocaleUpperCase() || '—';
 
   const primaryHref = data.contactHref || '#contact';
   const secondaryHref = data.workHref || '#work';
@@ -332,12 +335,22 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
       <div
         className={`pf-work-duo-stage relative z-[1] flex flex-col pb-10 pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:pb-14 sm:pt-[calc(6rem+env(safe-area-inset-top,0px))] lg:min-h-[100dvh] lg:pb-12 lg:pt-[calc(5.75rem+env(safe-area-inset-top,0px))] ${shellX}`}
       >
-        <div className="grid w-full flex-1 grid-cols-1 items-stretch gap-12 lg:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.18fr)] lg:gap-x-10 xl:gap-x-16">
-          <div className="pf-work-duo-west flex min-w-0 flex-col">
-            <div className="pf-work-duo-copy flex items-center gap-3">
+        <div
+          className={`grid w-full flex-1 grid-cols-1 items-stretch gap-12 ${
+            hasWorks
+              ? 'lg:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.18fr)] lg:gap-x-10 xl:gap-x-16'
+              : 'lg:grid-cols-12 lg:gap-x-14 xl:gap-x-20'
+          }`}
+        >
+          <div
+            className={`pf-work-duo-west flex min-w-0 flex-col ${
+              hasWorks ? '' : 'justify-center lg:col-span-7 xl:col-span-8'
+            }`}
+          >
+            <div data-hero-availability className="pf-work-duo-copy flex items-center gap-3">
               <span className="size-2 rounded-full" style={{ backgroundColor: principal }} aria-hidden />
               <p
-                className="m-0 font-sans text-[0.68rem] font-bold uppercase tracking-[0.2em]"
+                className="m-0 font-sans text-[clamp(0.7rem,0.75vw,0.78rem)] font-bold uppercase tracking-[0.18em]"
                 style={{ color: principal }}
               >
                 {availability}
@@ -346,11 +359,15 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
             </div>
 
             <h1
-              className="pf-work-duo-title mb-0 ml-0 mr-0 mt-6 max-w-[12ch] font-sans font-bold tracking-[-0.055em]"
+              className={`pf-work-duo-title mb-0 ml-0 mr-0 mt-6 font-sans font-bold tracking-[-0.055em] ${
+                hasWorks ? 'max-w-[12ch]' : 'max-w-[13ch]'
+              }`}
               style={{
                 color: ink,
-                fontSize: 'clamp(2.65rem, 4.7vw, 4.8rem)',
-                lineHeight: 0.98,
+                fontSize: hasWorks
+                  ? 'clamp(2.8rem, 4.35vw, 4.65rem)'
+                  : 'clamp(3.15rem, 5.6vw, 6.6rem)',
+                lineHeight: hasWorks ? 0.97 : 0.92,
               }}
             >
               {titleLines.map((line) => (
@@ -360,13 +377,13 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
               ))}
             </h1>
 
-            <p
+            <p data-hero-bio
               className="pf-work-duo-copy pf-work-duo-bio mb-0 ml-0 mr-0 mt-7 max-w-[31rem] border-l pl-5 font-sans font-normal tracking-[-0.01em] [text-wrap:pretty]"
               style={{
                 color: muted,
                 borderColor: principal,
-                fontSize: 'clamp(0.98rem, 1.15vw, 1.1rem)',
-                lineHeight: 1.6,
+                fontSize: 'clamp(1rem, 1.08vw, 1.125rem)',
+                lineHeight: 1.58,
               }}
             >
               {bio}
@@ -378,7 +395,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                   <a
                     href={primaryHref}
                     onClick={onNavClick(primaryHref)}
-                    className="inline-flex h-12 items-center justify-center rounded-full px-7 font-sans text-[0.7rem] font-bold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5"
+                    className="inline-flex h-12 items-center justify-center rounded-full px-7 font-sans text-[0.72rem] font-bold uppercase tracking-[0.13em] transition-transform hover:-translate-y-0.5"
                     style={{ backgroundColor: principal, color: fond }}
                   >
                     {t('Let\'s talk')}
@@ -388,7 +405,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                   <a
                     href={secondaryHref}
                     onClick={onNavClick(secondaryHref)}
-                    className="inline-flex h-12 items-center justify-center rounded-full border px-7 font-sans text-[0.7rem] font-bold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5"
+                    className="inline-flex h-12 items-center justify-center rounded-full border px-7 font-sans text-[0.72rem] font-bold uppercase tracking-[0.13em] transition-transform hover:-translate-y-0.5"
                     style={{ borderColor: principal, color: principal, backgroundColor: 'transparent' }}
                   >
                     {t('View projects')}
@@ -397,8 +414,8 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
               </div>
             ) : null}
 
-            <div className="pf-work-duo-years mt-12 flex max-w-[31rem] items-end justify-between border-t pt-5 lg:mt-auto" style={{ borderColor: `color-mix(in srgb, ${ink} 18%, transparent)` }}>
-              <p className="m-0 max-w-[9rem] font-mono text-[0.62rem] font-semibold uppercase leading-[1.45] tracking-[0.16em]" style={{ color: muted }}>
+            {hasWorks ? <div className="pf-work-duo-years mt-12 flex max-w-[31rem] items-end justify-between border-t pt-5 lg:mt-auto" style={{ borderColor: `color-mix(in srgb, ${ink} 18%, transparent)` }}>
+              <p className="m-0 max-w-[10rem] font-mono text-[0.68rem] font-semibold uppercase leading-[1.45] tracking-[0.14em]" style={{ color: muted }}>
                 {experienceLabel}
               </p>
               <div className="text-right">
@@ -406,28 +423,28 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                 className="mb-0 ml-0 mr-0 font-sans font-bold tracking-[-0.04em]"
                 style={{
                   color: principal,
-                  fontSize: 'clamp(2.6rem, 4vw, 3.5rem)',
+                  fontSize: 'clamp(2.75rem, 3.6vw, 3.6rem)',
                   lineHeight: 0.92,
                 }}
               >
                 {yearsLabel}
               </p>
               <p
-                className="mb-0 ml-0 mr-0 mt-2 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.16em]"
+                className="mb-0 ml-0 mr-0 mt-2 font-sans text-[0.72rem] font-semibold uppercase tracking-[0.14em]"
                 style={{ color: muted }}
               >
                 {t('Years of experience')}
               </p>
               </div>
-            </div>
+            </div> : null}
           </div>
 
-          <div className="pf-work-duo-east flex min-h-0 min-w-0 flex-col">
+          {hasWorks ? <div className="pf-work-duo-east flex min-h-0 min-w-0 flex-col">
             <div className="pf-work-duo-seeall mb-5 flex w-full items-center justify-end">
               <a
                 href={workHref}
                 onClick={onSeeAllClick}
-                className="inline-flex items-center font-sans text-[0.72rem] font-semibold uppercase tracking-[0.14em] transition hover:opacity-70"
+                className="inline-flex items-center font-sans text-[0.72rem] font-semibold uppercase tracking-[0.13em] transition hover:opacity-70"
                 style={{ color: muted }}
               >
                 {t('See all —')}
@@ -471,7 +488,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                       </span>
                       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/30 to-transparent" aria-hidden />
                       <span className="absolute inset-x-5 bottom-5 flex items-end justify-between gap-4 text-white">
-                        <span className="line-clamp-2 text-[clamp(1.05rem,1.5vw,1.35rem)] font-semibold leading-tight tracking-[-0.025em]">
+                        <span className="line-clamp-2 text-[clamp(1.02rem,1.2vw,1.25rem)] font-semibold leading-tight tracking-[-0.025em]">
                           {work.title || t('Selected work')}
                         </span>
                         <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-lg text-black transition-transform duration-300 group-hover:-rotate-45" aria-hidden>
@@ -482,7 +499,68 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                 </li>
               ))}
             </ul>
-          </div>
+          </div> : (
+            <aside
+              className="pf-work-duo-empty pf-work-duo-copy relative flex min-h-[22rem] overflow-hidden border lg:col-span-5 lg:min-h-[34rem] xl:col-span-4"
+              style={{
+                borderColor: `color-mix(in srgb, ${ink} 18%, transparent)`,
+                backgroundColor: `color-mix(in srgb, ${principal} 4%, ${fond})`,
+                borderRadius: '1.25rem 5rem 1.25rem 5rem',
+              }}
+            >
+              <span
+                aria-hidden
+                className="absolute -right-[12%] top-[10%] aspect-square w-[72%] rounded-full border"
+                style={{ borderColor: `color-mix(in srgb, ${principal} 34%, transparent)` }}
+              />
+              <span
+                aria-hidden
+                className="absolute bottom-[18%] left-0 h-px w-[72%] -rotate-[12deg] origin-left"
+                style={{ backgroundColor: `color-mix(in srgb, ${principal} 45%, transparent)` }}
+              />
+
+              <div className="relative z-[1] flex w-full flex-col justify-between p-6 sm:p-8 lg:p-9">
+                <div className="flex items-center justify-between gap-5">
+                  <p className="m-0 font-mono text-[0.68rem] font-semibold uppercase tracking-[0.16em]" style={{ color: muted }}>
+                    {t('Profile')}
+                  </p>
+                  <span className="font-mono text-[0.68rem] tracking-[0.16em]" style={{ color: muted }} aria-hidden>
+                    01 — 01
+                  </span>
+                </div>
+
+                <div className="flex flex-1 items-center justify-center py-6" aria-hidden>
+                  <span
+                    className="select-none font-sans font-bold leading-none tracking-[-0.09em]"
+                    style={{
+                      color: principal,
+                      fontSize: 'clamp(9rem, 18vw, 17rem)',
+                      opacity: 0.92,
+                    }}
+                  >
+                    {monogram}
+                  </span>
+                </div>
+
+                <div className="pf-work-duo-years flex items-end justify-between gap-6 border-t pt-5" style={{ borderColor: `color-mix(in srgb, ${ink} 18%, transparent)` }}>
+                  <p className="m-0 max-w-[11rem] font-mono text-[0.68rem] font-semibold uppercase leading-[1.45] tracking-[0.14em]" style={{ color: muted }}>
+                    {experienceLabel}
+                  </p>
+                  <div className="shrink-0 text-right">
+                    <p
+                      className="m-0 font-sans font-bold tracking-[-0.05em]"
+                      style={{ color: principal, fontSize: 'clamp(3rem, 5vw, 4.75rem)', lineHeight: 0.88 }}
+                    >
+                      {yearsLabel}
+                    </p>
+                    <p className="m-0 mt-2 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.13em]" style={{ color: muted }}>
+                      {t('Years of experience')}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </aside>
+          )}
         </div>
       </div>
     </div>

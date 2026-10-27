@@ -1,0 +1,4 @@
+.layout button[aria-pressed] { min-height:68px; gap:8px; padding:10px 6px; }
+.cardControls [data-cards-style-controls] { display:flex; flex-direction:column; gap:18px; }
+.cardControls [data-cards-style-controls] > h4 { display:none; }
+.cardControls [data-cards-style-controls] > div { padding-block:0; }

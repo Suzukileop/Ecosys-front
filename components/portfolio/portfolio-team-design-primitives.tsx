@@ -54,6 +54,7 @@ export function TeamMemberImage({
   zoom = false,
   reveal = false,
   sizes,
+  crisp = true,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
@@ -65,6 +66,8 @@ export function TeamMemberImage({
   reveal?: boolean;
   /** Override the default thumbnail hint for immersive portraits. */
   sizes?: string;
+  /** Resize once from the stored source instead of recompressing a backend thumbnail. */
+  crisp?: boolean;
 }) {
   const t = useT();
   if (!presentation.showImage) return null;
@@ -86,7 +89,8 @@ export function TeamMemberImage({
           src={member.imageUrl}
           alt={t('Portrait de {name}', { name: member.name })}
           className={`h-full w-full ${fit} ${position}`}
-          sizes={sizes ?? '(max-width: 768px) 50vw, 280px'}
+          sizes={sizes ?? '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw'}
+          crisp={crisp}
           objectFit={presentation.imageFit === 'contain' ? 'contain' : 'cover'}
           objectPosition={presentation.imagePosition}
         />

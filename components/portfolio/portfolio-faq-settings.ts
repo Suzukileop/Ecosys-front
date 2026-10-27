@@ -1,3 +1,11 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
+import {
+  DEFAULT_CARDS_STYLE,
+  cardsStyleCss,
+  mergeCardsStyle,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
@@ -112,7 +120,6 @@ export type PortfolioFaqDesign =
   | 'floating-gallery'
   | 'editorial-masonry'
   | 'prism-cards'
-  | 'star-scroll'
   | 'tri-grid'
   | 'split-index'
   | 'centered-focus'
@@ -205,7 +212,15 @@ export type PortfolioFaqPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge
  * creator picks one; the three tokens are FAQ's palette-token set (Principal / Secondary /
  * Strong text), resolved live through `--pf-palette-*` like the Header and Frame colors.
  */
-export type PortfolioFaqTextColorToken = 'auto' | PortfolioFaqHeaderPaletteToken;
+/** Question / answer text colours: Text, Secondary and Faint from the palette. `texteMuted` and `principal` are no
+ *  longer offered but are still understood so an older save keeps its colour. */
+export type PortfolioFaqTextColorToken =
+  | 'auto'
+  | 'texteFort'
+  | 'texteMuted'
+  | 'texteFaint'
+  | 'principal'
+  | 'secondaire';
 
 export type PortfolioFaqExpandIconStyle = 'plus' | 'chevron';
 
@@ -256,6 +271,8 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
   panelShadowIntensity: number;
   cardBorder: PortfolioServicesCardBorder;
   cardBorderColor: string;
+  /** Shared Design → Cards block; `auto` keeps each design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   cardBackgroundEnabled: boolean;
   cardBackgroundColor: string;
   cardBorderRadius: PortfolioServicesCardRadius;
@@ -306,12 +323,33 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
   useHeroPalette: boolean;
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
   /** Type-size scale applied uniformly across every premium FAQ design (General tab). */
   premiumFontSize: PortfolioFaqPremiumFontSize;
   /** General tab → Text colors: question ink for every design (`auto` = the design's own). */
   questionColorToken: PortfolioFaqTextColorToken;
   /** General tab → Text colors: answer ink for every design (`auto` = the design's own). */
   answerColorToken: PortfolioFaqTextColorToken;
+  /** 10-100: how much of the question / answer colour shows. */
+  questionColorOpacity: number;
+  answerColorOpacity: number;
+  questionFontWeight: PortfolioFaqFontWeight;
+  answerFontWeight: PortfolioFaqFontWeight;
+  /** Vertical space between questions (all designs). */
+  verticalGap: PortfolioFaqGap;
+  /** List marker in front of each question (all designs). */
+  questionMarker: PortfolioFaqMarker;
+  /** Where the header sits relative to the questions (all designs, all header designs). */
+  headerPosition: PortfolioFaqHeaderPosition;
+  /** Title / subtitle text of the Signal, Query and Dialogue headers; empty = the section's own title / subtitle. */
+  headerTextTitle: string;
+  headerTextSubtitle: string;
+  headerTitleInk: PortfolioFaqHeaderInk;
+  headerSubtitleInk: PortfolioFaqHeaderInk;
+  headerTitleFontWeight: PortfolioFaqFontWeight;
+  headerSubtitleFontWeight: PortfolioFaqFontWeight;
+  headerSubtitleSizeStep: PortfolioFaqHeaderSubtitleSize;
   /** General tab → Frame: opt-in outer frame around whichever design is active
    *  (see portfolio-faq-frame.ts — the designs themselves draw no stage). */
   designFrame: PortfolioFaqFrameSettings;
@@ -336,6 +374,21 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
   /** Header tab → Layout settings, stored per selectable header design
    *  (see portfolio-faq-header-layout.ts). */
   headerLayouts: Partial<Record<PortfolioFaqHeaderDesignSelectable, DesignLayout>>;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
+  /** Header editorial — kicker / title / subtitle copy; empty = "FAQ" / the section title / subtitle. */
+  headerEditorialLabelText: string;
+  headerEditorialTitleText: string;
+  headerEditorialSubtitleText: string;
+  /** Header editorial — each text bound to a palette token, sized and weighted independently
+   *  (the title's size and weight are the shared `headerTitleSize` / `headerTitleWeight`). */
+  headerEditorialLabelColor: PortfolioFaqHeaderPaletteToken;
+  headerEditorialTitleColor: PortfolioFaqHeaderPaletteToken;
+  headerEditorialSubtitleColor: PortfolioFaqHeaderPaletteToken;
+  headerEditorialLabelSize: PortfolioFaqHeaderTitleSize;
+  headerEditorialSubtitleSize: PortfolioFaqHeaderTitleSize;
+  headerEditorialLabelWeight: PortfolioFaqHeaderTitleWeight;
+  headerEditorialSubtitleWeight: PortfolioFaqHeaderTitleWeight;
 
   headerAccentCountBadgeText: string;
   headerAccentCountLeadText: string;
@@ -442,7 +495,6 @@ const FAQ_DESIGNS = [
   'floating-gallery',
   'editorial-masonry',
   'prism-cards',
-  'star-scroll',
   'tri-grid',
   'split-index',
   'centered-focus',
@@ -496,6 +548,7 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   panelShadowIntensity: 55,
   cardBorder: 'soft',
   cardBorderColor: DEFAULT_FAQ_CARD_BORDER_COLOR,
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   cardBackgroundEnabled: true,
   cardBackgroundColor: DEFAULT_FAQ_CARD_BACKGROUND_COLOR,
   cardBorderRadius: 'xl',
@@ -528,9 +581,24 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   answerFlushWithQuestion: true,
   useHeroPalette: true,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
   premiumFontSize: 'medium',
   questionColorToken: 'auto',
   answerColorToken: 'auto',
+  questionColorOpacity: 100,
+  answerColorOpacity: 100,
+  questionFontWeight: 'auto',
+  answerFontWeight: 'auto',
+  verticalGap: 'normal',
+  questionMarker: 'auto',
+  headerPosition: 'auto',
+  headerTextTitle: '',
+  headerTextSubtitle: '',
+  headerTitleInk: 'auto',
+  headerSubtitleInk: 'auto',
+  headerTitleFontWeight: 'auto',
+  headerSubtitleFontWeight: 'auto',
+  headerSubtitleSizeStep: 'auto',
   designFrame: { ...DEFAULT_FAQ_FRAME },
   faqPalette: { ...DEFAULT_FAQ_PALETTE },
   faqColorBindings: { ...DEFAULT_FAQ_COLOR_BINDINGS },
@@ -543,6 +611,17 @@ export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   headerTitleSize: 'md',
   headerTitleWeight: 'regular',
   headerLayouts: {},
+  headerHiddenElements: [],
+  headerEditorialLabelText: '',
+  headerEditorialTitleText: '',
+  headerEditorialSubtitleText: '',
+  headerEditorialLabelColor: 'texteFort',
+  headerEditorialTitleColor: 'texteFort',
+  headerEditorialSubtitleColor: 'texteFort',
+  headerEditorialLabelSize: 'md',
+  headerEditorialSubtitleSize: 'md',
+  headerEditorialLabelWeight: 'regular',
+  headerEditorialSubtitleWeight: 'regular',
 
   headerAccentCountBadgeText: '',
   headerAccentCountLeadText: '',
@@ -667,7 +746,70 @@ export function faqPremiumFontScale(size: PortfolioFaqPremiumFontSize): number {
   return FAQ_PREMIUM_FONT_SCALE[size] ?? 1;
 }
 
-export const FAQ_TEXT_COLOR_TOKENS: PortfolioFaqTextColorToken[] = ['auto', ...FAQ_HEADER_PALETTE_TOKENS];
+/** Question / answer font weight. `auto` leaves each design's own weight. */
+export type PortfolioFaqFontWeight = 'auto' | 'light' | 'regular' | 'medium' | 'semibold' | 'bold';
+/** What the panel offers: four steps (picking the active one again returns to `auto`). `semibold` stays accepted. */
+export const FAQ_FONT_WEIGHT_CHOICES = ['light', 'regular', 'medium', 'bold'] as const;
+export const FAQ_FONT_WEIGHTS: PortfolioFaqFontWeight[] = ['auto', 'light', 'regular', 'medium', 'semibold', 'bold'];
+export const FAQ_FONT_WEIGHT_NUMBER: Record<Exclude<PortfolioFaqFontWeight, 'auto'>, number> = {
+  light: 300,
+  regular: 400,
+  medium: 500,
+  semibold: 600,
+  bold: 700,
+};
+const FAQ_FONT_WEIGHT_VALUE = FAQ_FONT_WEIGHT_NUMBER;
+
+/** Where the header (title block) sits relative to the questions, in every design. `auto` = each design's own
+ *  native placement: Kinetic split keeps its title on the left, every other design on top. */
+/** Title / subtitle ink of the Signal, Query and Dialogue headers: `auto` keeps the section's own text colours. */
+export type PortfolioFaqHeaderInk = 'auto' | 'principal' | 'secondaire' | 'texteFort';
+export const FAQ_HEADER_INKS: PortfolioFaqHeaderInk[] = ['auto', 'principal', 'secondaire', 'texteFort'];
+/** Subtitle size step; `auto` keeps each header's own responsive size. */
+export type PortfolioFaqHeaderSubtitleSize = 'auto' | 'sm' | 'md' | 'lg' | 'xl';
+export const FAQ_HEADER_SUBTITLE_SIZES: PortfolioFaqHeaderSubtitleSize[] = ['auto', 'sm', 'md', 'lg', 'xl'];
+
+/** (A title on the right was dropped: it reads after the content. An older saved `right` falls back to Auto.) */
+export type PortfolioFaqHeaderPosition = 'auto' | 'top' | 'left';
+export const FAQ_HEADER_POSITIONS: PortfolioFaqHeaderPosition[] = ['auto', 'top', 'left'];
+
+export function resolveFaqHeaderPosition(
+  value: PortfolioFaqHeaderPosition | undefined,
+  design: string | undefined
+): 'top' | 'left' {
+  if (value && value !== 'auto') return value;
+  return design === 'kinetic-split' ? 'left' : 'top';
+}
+
+/** List marker in front of each question, in every design. `auto` keeps what each design draws by default. */
+export type PortfolioFaqMarker = 'auto' | 'dot' | 'dash' | 'number' | 'none';
+export const FAQ_MARKERS: PortfolioFaqMarker[] = ['auto', 'dot', 'dash', 'number', 'none'];
+
+/** Vertical space between two questions, in every design (each design scales its own rhythm by this factor). */
+export type PortfolioFaqGap = 'tight' | 'normal' | 'airy' | 'wide';
+export const FAQ_GAPS: PortfolioFaqGap[] = ['tight', 'normal', 'airy', 'wide'];
+/** Distinct on purpose: each step is clearly bigger than the last. */
+export const FAQ_GAP_FACTOR: Record<PortfolioFaqGap, number> = { tight: 0.4, normal: 1, airy: 1.9, wide: 3 };
+
+export const FAQ_TEXT_COLOR_TOKENS: PortfolioFaqTextColorToken[] = ['auto', 'texteFort', 'secondaire', 'texteFaint'];
+
+const FAQ_TEXT_COLOR_ACCEPTED: PortfolioFaqTextColorToken[] = [...FAQ_TEXT_COLOR_TOKENS, 'texteMuted', 'principal'];
+
+function faqTextOpacity(value: unknown, fallback: number | undefined): number {
+  const n = typeof value === 'number' && Number.isFinite(value) ? value : fallback ?? 100;
+  return Math.min(100, Math.max(10, Math.round(n)));
+}
+
+/** Palette token → CSS colour for the question / answer text, at the chosen opacity. */
+function faqTextColorValue(token: Exclude<PortfolioFaqTextColorToken, 'auto'>, opacity = 100): string {
+  const base =
+    token === 'texteMuted'
+      ? 'var(--pf-palette-texte-muted, #a3a3a3)'
+      : token === 'texteFaint'
+        ? 'var(--pf-palette-texte-faint, #737373)'
+        : faqHeaderPaletteTokenColor(token);
+  return opacity >= 100 ? base : `color-mix(in srgb, ${base} ${opacity}%, transparent)`;
+}
 
 /**
  * CSS custom properties for General → Text colors, set once on the wrapper around whichever
@@ -675,15 +817,31 @@ export const FAQ_TEXT_COLOR_TOKENS: PortfolioFaqTextColorToken[] = ['auto', ...F
  * / `var(--pf-faq-a-color, <its own>)`, so `auto` (nothing set) leaves each design untouched.
  */
 export function faqTextColorVars(
-  presentation: Pick<PortfolioFaqPresentationSettings, 'questionColorToken' | 'answerColorToken'>
+  presentation: Pick<PortfolioFaqPresentationSettings, 'questionColorToken' | 'answerColorToken'> &
+    Partial<
+      Pick<
+        PortfolioFaqPresentationSettings,
+        'questionColorOpacity' | 'answerColorOpacity' | 'questionFontWeight' | 'answerFontWeight' | 'verticalGap'
+      >
+    >
 ): CSSProperties | undefined {
   const question = presentation.questionColorToken ?? 'auto';
   const answer = presentation.answerColorToken ?? 'auto';
-  if (question === 'auto' && answer === 'auto') return undefined;
+  const questionWeight = presentation.questionFontWeight ?? 'auto';
+  const answerWeight = presentation.answerFontWeight ?? 'auto';
+  const gap = presentation.verticalGap ?? 'normal';
+  if (question === 'auto' && answer === 'auto' && questionWeight === 'auto' && answerWeight === 'auto' && gap === 'normal') {
+    return undefined;
+  }
   const vars: Record<string, string> = {};
-  if (question !== 'auto') vars['--pf-faq-q-color'] = faqHeaderPaletteTokenColor(question);
+  // Every design multiplies its own question spacing by this (`calc(<its px> * var(--pf-faq-gap-m, 1))`).
+  if (gap !== 'normal') vars['--pf-faq-gap-m'] = String(FAQ_GAP_FACTOR[gap]);
+  // Read by every design's question / answer rule as `var(--pf-faq-q-weight, <its own weight>)`.
+  if (questionWeight !== 'auto') vars['--pf-faq-q-weight'] = String(FAQ_FONT_WEIGHT_VALUE[questionWeight]);
+  if (answerWeight !== 'auto') vars['--pf-faq-a-weight'] = String(FAQ_FONT_WEIGHT_VALUE[answerWeight]);
+  if (question !== 'auto') vars['--pf-faq-q-color'] = faqTextColorValue(question, presentation.questionColorOpacity ?? 100);
   if (answer !== 'auto') {
-    vars['--pf-faq-a-color'] = faqHeaderPaletteTokenColor(answer);
+    vars['--pf-faq-a-color'] = faqTextColorValue(answer, presentation.answerColorOpacity ?? 100);
     // Bento Dual prints its answers on an inverted face. A palette text color is only
     // guaranteed to read on the palette's own background, so that face follows it.
     vars['--pf-faq-a-surface'] = 'var(--pf-palette-fond, #0a0a0a)';
@@ -715,11 +873,6 @@ export const PORTFOLIO_FAQ_DESIGN_OPTIONS: {
     value: 'prism-cards',
     label: msg('Prism cards'),
     description: msg('Refined accordion cards with subtle prism shading, smooth answers and a discreet accent.'),
-  },
-  {
-    value: 'star-scroll',
-    label: msg('Star scroll'),
-    description: msg('An editorial title and a discreet star that follows section scroll — calm rows with smooth answers.'),
   },
   {
     value: 'tri-grid',
@@ -763,6 +916,10 @@ function clampFaqPanelShadowIntensity(value: unknown, fallback = 55): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
+/** Designs whose Design tab has options of its own. None today: the shared options (text, gap, marker, frame)
+ *  live in General, so the catalogue shows no "Customize" for a design that is not listed here. */
+export const FAQ_DESIGNS_WITH_LAYOUT_SETTINGS: ReadonlySet<PortfolioFaqDesign> = new Set<PortfolioFaqDesign>();
+
 export function defaultsForFaqDesign(design: PortfolioFaqDesign): Partial<PortfolioFaqPresentationSettings> {
   // All nine designs are bespoke, self-contained (see each component's own
   // portfolio-faq-*.tsx file) that render their own canvas and ignore the generic
@@ -775,6 +932,10 @@ export function defaultsForFaqDesign(design: PortfolioFaqDesign): Partial<Portfo
       design === 'floating-gallery' || design === 'prism-cards' || design === 'centered-focus'
         ? 'center'
         : 'left',
+    // A new design starts on its own native header placement.
+    headerPosition: 'auto',
+    // The Centered focus design is built around a centred axis: its header starts centred too.
+    headerDesignAlignment: design === 'centered-focus' ? 'center' : 'left',
     titlePreset: 'frequently-asked',
     titleUppercase: false,
     subtitlePreset: 'default',
@@ -860,12 +1021,14 @@ export function faqHeaderFontClass(font: PortfolioFaqHeaderFont, kind: 'title' |
   }
 }
 
+/** Headers that take a free hex (Dialogue, Query, Signal) read it through `--pf-faq-title-ink` /
+ *  `--pf-faq-subtitle-ink`, so a filled FAQ frame can swap them for a readable tone (portfolio-faq-frame.tsx). */
 export function faqTitleColorStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_FAQ_TITLE_COLOR) };
+  return { color: `var(--pf-faq-title-ink, ${sanitizeHex(color, DEFAULT_FAQ_TITLE_COLOR)})` };
 }
 
 export function faqSubtitleColorStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_FAQ_SUBTITLE_COLOR) };
+  return { color: `var(--pf-faq-subtitle-ink, ${sanitizeHex(color, DEFAULT_FAQ_SUBTITLE_COLOR)})` };
 }
 
 export function faqListMaxWidthClass(width: PortfolioFaqListMaxWidth): string {
@@ -981,12 +1144,13 @@ export function faqFrameStyle(
   design?: PortfolioFaqItemDesign
 ): CSSProperties {
   const style: CSSProperties = {};
+  const shared = cardsStyleCss(p.cardsStyle, p.faqPalette);
   if (p.cardBackgroundFill === 'solid' && p.cardBackgroundEnabled) {
     style.backgroundColor = sanitizeHex(p.cardBackgroundColor, DEFAULT_FAQ_CARD_BACKGROUND_COLOR);
   }
   if (design === 'raised') {
-    // Raised cards own their border via hover/active classes — keep fill only.
-    return style;
+    // Raised cards own their border via hover/active classes — keep fill only (+ shared radius).
+    return { ...style, ...(shared.borderRadius !== undefined ? { borderRadius: shared.borderRadius } : {}) };
   }
   if (p.cardBorder === 'accent') {
     style.borderStyle = 'solid';
@@ -998,7 +1162,10 @@ export function faqFrameStyle(
       cssSideBorderColors(sanitizeHex(p.cardBorderColor, DEFAULT_FAQ_CARD_BORDER_COLOR))
     );
   }
-  return style;
+  if (shared.borderColor !== undefined) Object.assign(style, cssSideBorderColors(String(shared.borderColor)));
+  const { borderColor: _color, ...sharedRest } = shared;
+  void _color;
+  return { ...style, ...sharedRest };
 }
 
 export function faqContentAlignClass(align: PortfolioFaqContentAlign): {
@@ -1322,6 +1489,7 @@ export function mergeFaqPresentation(
     ),
     cardBorder: pick(record.cardBorder, ['none', 'soft', 'solid', 'accent'], base.cardBorder),
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     cardBackgroundEnabled:
       typeof record.cardBackgroundEnabled === 'boolean' ? record.cardBackgroundEnabled : base.cardBackgroundEnabled,
     cardBackgroundColor: sanitizeHex(record.cardBackgroundColor, base.cardBackgroundColor),
@@ -1389,9 +1557,25 @@ export function mergeFaqPresentation(
         : base.answerFlushWithQuestion ?? false,
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
     premiumFontSize: pick(record.premiumFontSize, FAQ_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
-    questionColorToken: pick(record.questionColorToken, FAQ_TEXT_COLOR_TOKENS, base.questionColorToken ?? 'auto'),
-    answerColorToken: pick(record.answerColorToken, FAQ_TEXT_COLOR_TOKENS, base.answerColorToken ?? 'auto'),
+    questionColorToken: pick(record.questionColorToken, FAQ_TEXT_COLOR_ACCEPTED, base.questionColorToken ?? 'auto'),
+    answerColorToken: pick(record.answerColorToken, FAQ_TEXT_COLOR_ACCEPTED, base.answerColorToken ?? 'auto'),
+    questionColorOpacity: faqTextOpacity(record.questionColorOpacity, base.questionColorOpacity),
+    answerColorOpacity: faqTextOpacity(record.answerColorOpacity, base.answerColorOpacity),
+    questionFontWeight: pick(record.questionFontWeight, FAQ_FONT_WEIGHTS, base.questionFontWeight ?? 'auto'),
+    answerFontWeight: pick(record.answerFontWeight, FAQ_FONT_WEIGHTS, base.answerFontWeight ?? 'auto'),
+    verticalGap: pick(record.verticalGap, FAQ_GAPS, base.verticalGap ?? 'normal'),
+    questionMarker: pick(record.questionMarker, FAQ_MARKERS, base.questionMarker ?? 'auto'),
+    headerPosition: pick(record.headerPosition, FAQ_HEADER_POSITIONS, base.headerPosition ?? 'auto'),
+    headerTextTitle: typeof record.headerTextTitle === 'string' ? record.headerTextTitle.slice(0, 160) : base.headerTextTitle ?? '',
+    headerTextSubtitle:
+      typeof record.headerTextSubtitle === 'string' ? record.headerTextSubtitle.slice(0, 400) : base.headerTextSubtitle ?? '',
+    headerTitleInk: pick(record.headerTitleInk, FAQ_HEADER_INKS, base.headerTitleInk ?? 'auto'),
+    headerSubtitleInk: pick(record.headerSubtitleInk, FAQ_HEADER_INKS, base.headerSubtitleInk ?? 'auto'),
+    headerTitleFontWeight: pick(record.headerTitleFontWeight, FAQ_FONT_WEIGHTS, base.headerTitleFontWeight ?? 'auto'),
+    headerSubtitleFontWeight: pick(record.headerSubtitleFontWeight, FAQ_FONT_WEIGHTS, base.headerSubtitleFontWeight ?? 'auto'),
+    headerSubtitleSizeStep: pick(record.headerSubtitleSizeStep, FAQ_HEADER_SUBTITLE_SIZES, base.headerSubtitleSizeStep ?? 'auto'),
     designFrame: normalizeFaqFrame(record.designFrame, normalizeFaqFrame(base.designFrame)),
     faqPalette: mergeFaqPalette(
       mergeFaqPalette(DEFAULT_FAQ_PALETTE, base.faqPalette),
@@ -1421,6 +1605,30 @@ export function mergeFaqPresentation(
       record.headerTitleWeight,
       FAQ_HEADER_EDITORIAL_TITLE_WEIGHTS,
       base.headerTitleWeight ?? 'regular'
+    ),
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
+    headerEditorialLabelText:
+      typeof record.headerEditorialLabelText === 'string' ? record.headerEditorialLabelText : (base.headerEditorialLabelText ?? ''),
+    headerEditorialTitleText:
+      typeof record.headerEditorialTitleText === 'string' ? record.headerEditorialTitleText : (base.headerEditorialTitleText ?? ''),
+    headerEditorialSubtitleText:
+      typeof record.headerEditorialSubtitleText === 'string'
+        ? record.headerEditorialSubtitleText
+        : (base.headerEditorialSubtitleText ?? ''),
+    headerEditorialLabelColor: pick(record.headerEditorialLabelColor, FAQ_HEADER_PALETTE_TOKENS, base.headerEditorialLabelColor ?? 'texteFort'),
+    headerEditorialTitleColor: pick(record.headerEditorialTitleColor, FAQ_HEADER_PALETTE_TOKENS, base.headerEditorialTitleColor ?? 'texteFort'),
+    headerEditorialSubtitleColor: pick(
+      record.headerEditorialSubtitleColor,
+      FAQ_HEADER_PALETTE_TOKENS,
+      base.headerEditorialSubtitleColor ?? 'texteFort'
+    ),
+    headerEditorialLabelSize: pick(record.headerEditorialLabelSize, FAQ_HEADER_TITLE_SIZES, base.headerEditorialLabelSize ?? 'md'),
+    headerEditorialSubtitleSize: pick(record.headerEditorialSubtitleSize, FAQ_HEADER_TITLE_SIZES, base.headerEditorialSubtitleSize ?? 'md'),
+    headerEditorialLabelWeight: pick(record.headerEditorialLabelWeight, FAQ_HEADER_TITLE_WEIGHTS, base.headerEditorialLabelWeight ?? 'regular'),
+    headerEditorialSubtitleWeight: pick(
+      record.headerEditorialSubtitleWeight,
+      FAQ_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialSubtitleWeight ?? 'regular'
     ),
     headerLayouts: normalizeDesignLayouts(
       record.headerLayouts !== undefined ? record.headerLayouts : base.headerLayouts,

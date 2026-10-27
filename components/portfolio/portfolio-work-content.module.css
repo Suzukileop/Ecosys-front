@@ -1,0 +1,16 @@
+.content { width:100%; min-width:0; }
+.content :where(h2,h3) {
+  font-weight:500;
+  letter-spacing:-.02em;
+  overflow-wrap:anywhere;
+}
+.content :where(p) { letter-spacing:0; }
+.content :where(span,p,ul,li,div)[class~='uppercase'] {
+  text-transform:none;
+  letter-spacing:.02em;
+}
+.content :where(span,p,ul,li,div)[class~='font-mono'] {
+  font-family:inherit;
+  letter-spacing:.02em;
+}
+.content :global(.pf-work-ledger-role) { letter-spacing:.02em; text-transform:none; }

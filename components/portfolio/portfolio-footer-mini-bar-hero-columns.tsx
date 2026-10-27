@@ -29,7 +29,7 @@ export function FooterMiniBarHeroColumns({
 }: FooterMiniBarVariantProps) {
   const t = useT();
   const isLight = colorMode === 'light';
-  const muted = isLight ? '#8f8f8f' : '#7d7d7d';
+  const muted = isLight ? '#6b6b6b' : '#9a9a9a';
   const hairline = isLight ? 'rgba(10,10,10,0.08)' : 'rgba(255,255,255,0.1)';
 
   const text = showCopyright ? copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName) : '';

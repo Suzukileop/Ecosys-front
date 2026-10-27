@@ -1,0 +1,23 @@
+'use client';
+import {useThumbnailTheme} from './portfolio-thumbnail-theme';
+import {useEffect,useRef,useState} from 'react';
+import {useT} from '@/lib/i18n/I18nProvider';
+import {GalleryFloatingThumbnailFrame} from './portfolio-gallery-floating-thumbnail-frame';
+
+/** Self-contained illustrative masonry preview: no app boot, scripts, images or media requests. */
+export function GalleryFramedThumbnail({design='framed-grid'}:{design?:'framed-grid'|'floating-canvas'|'caption-carousel'|'hero-mosaic'|'tall-row'|'editorial-split'|'visual-index'|'contact-sheet'}){
+ const theme=useThumbnailTheme('gallery');
+ const t=useT();const root=useRef<HTMLSpanElement>(null);const [width,setWidth]=useState(360);
+ useEffect(()=>{if(!root.current)return;const observer=new ResizeObserver(([entry])=>setWidth(entry.contentRect.width));observer.observe(root.current);return()=>observer.disconnect();},[]);
+ // Medium-height masonry: distinct tall/short tiles, with enough room for the illustrative marks.
+ const heights=[156,116,140,92,132,108];
+ const floating=design==='floating-canvas';
+ const positions=[[32,28,150,142,-2],[244,54,120,110,2],[422,24,146,138,-1],[60,216,112,76,2],[230,202,150,94,-2],[440,206,114,84,1]];
+ const illustration='<div class="illustration"><span class="dot"></span><span class="line"></span><span class="line short"></span></div>';
+ const columns=floating?positions.map(([x,y,width,height,rotation],i)=>`<div class="tile ${i===0?'dark':i===4?'white':''}" style="position:absolute;left:${x}px;top:${y}px;width:${width}px;height:${height}px;transform:rotate(${rotation}deg)">${illustration}<span class="caption"></span></div>`).join(''):[0,1,2].map(column=>`<div class="column">${[column,column+3].map(i=>`<div class="tile ${i===0?'dark':i===4?'white':''}" style="height:${heights[i]}px">${illustration}</div>`).join('')}</div>`).join('');
+ const srcDoc=`<!doctype html><html><head><meta charset="utf-8"><style>*{box-sizing:border-box}html,body{margin:0;overflow:hidden;background:#fff;font-family:Arial,sans-serif}main{padding:28px}.grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}.column{display:flex;flex-direction:column;gap:16px}.tile{position:relative;background:#e8e8e8;border-radius:8px;overflow:hidden}.column:nth-child(3) .tile{background:#d9d9d9}.tile.dark{background:#252525}.tile.white{background:#fafafa;box-shadow:inset 0 0 0 1px #d5d5d5}.illustration{position:absolute;inset:18px;display:flex;flex-direction:column;justify-content:flex-end;gap:9px}.dot{width:22px;height:22px;flex-shrink:0;border-radius:5px;background:#777;margin-bottom:auto}.line{display:block;width:78%;height:7px;flex-shrink:0;border-radius:3px;background:#777}.line.short{width:52%;height:5px;background:#aaa}.dark .dot,.dark .line{background:#f3f3f3}.dark .line.short{background:#999}.white .dot{background:#252525;border-radius:50%}.white .line{background:#555}.white .line.short{background:#aaa}</style></head><body><main><div class="grid">${columns}</div></main></body></html>`;
+ const documentSource=floating?srcDoc.replace('</style>','.grid{display:block;position:static}.tile{box-shadow:0 5px 12px -8px #0005;border-radius:6px}.illustration{inset:16px;gap:7px}.dot{width:16px;height:16px}.caption{position:absolute;bottom:8px;right:10px;width:35px;height:9px;border-radius:5px;background:#444}.dark .caption{background:#bbb}</style>'):srcDoc;
+ const themedDocumentSource=documentSource.replace('</style>',`html,body{background:${theme.background};color:${theme.ink};color-scheme:${theme.mode}}.tile{background:color-mix(in srgb,${theme.ink} 14%,${theme.background});box-shadow:inset 0 0 0 1px ${theme.border}}.column:nth-child(3) .tile{background:color-mix(in srgb,${theme.ink} 22%,${theme.background})}.tile.dark{background:color-mix(in srgb,${theme.ink} 8%,${theme.background})}.tile.white{background:color-mix(in srgb,${theme.ink} 28%,${theme.background});box-shadow:inset 0 0 0 1px ${theme.border}}.dot,.dark .dot,.white .dot{background:${theme.accent};opacity:.7}.line,.dark .line,.white .line{background:${theme.ink};opacity:.5}.line.short,.dark .line.short,.white .line.short{background:${theme.muted};opacity:.6}</style>`);
+ if(design!=='framed-grid')return <GalleryFloatingThumbnailFrame design={design}/>;
+ return <span ref={root} className="relative block w-full overflow-hidden rounded-lg" style={{aspectRatio:'600 / 320'}}><iframe title={t(floating?'Floating canvas':'Framed grid')} aria-hidden="true" tabIndex={-1} sandbox="" srcDoc={themedDocumentSource} className="absolute inset-0 block border-0" style={{width:600,height:320,transform:`scale(${width/600})`,transformOrigin:'top left',pointerEvents:'none'}}/></span>;
+}

@@ -1,4 +1,5 @@
 'use client';
+import contentStyles from './portfolio-stack-content.module.css';
 
 import type { PortfolioSkillRef } from '@/components/portfolio/skill-usage-descriptions';
 import { EditorialToolsGallery } from '@/components/portfolio/portfolio-tools-section';
@@ -13,7 +14,7 @@ type StackGalleryProps = {
 
 export function EditorialStackGallery({ items, presentation }: StackGalleryProps) {
   if (presentation.design === 'stack-tags') {
-    return <EditorialStackTags items={items} presentation={presentation} />;
+    return <div className={contentStyles.content}><EditorialStackTags items={items} presentation={presentation} /></div>;
   }
 
   const aside =
@@ -38,5 +39,5 @@ export function EditorialStackGallery({ items, presentation }: StackGalleryProps
   );
 
   // Stack designs that reuse Tools galleries (workflow-rail, brand-cards, level-progress-rows).
-  return <EditorialToolsGallery tools={items} presentation={toolsPresentation} />;
+  return <div className={contentStyles.content}><EditorialToolsGallery tools={items} presentation={toolsPresentation} /></div>;
 }

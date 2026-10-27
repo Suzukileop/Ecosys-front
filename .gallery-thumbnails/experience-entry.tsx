@@ -1,0 +1,12 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import * as layouts from '../components/portfolio/portfolio-experience-lists';
+import {DEFAULT_EXPERIENCE_PRESENTATION,PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS} from '../components/portfolio/portfolio-experience-settings';
+// Fictional catalogue content, independent of the creator's profile.
+const blocks=[{id:'preview-role',type:'EXPERIENCE',title:'Directeur artistique',period:'2021 — 2024',organization:'Atelier Horizon — studio fictif',description:'Une expérience fictive de création pour des marques imaginaires.',status:null,tasks:['Identités visuelles & sites de marque','Direction créative & expériences interactives'],tools:['Figma','Illustrator','Webflow'],links:[],sortOrder:0}];
+const root=createRoot(document.getElementById('root')!);
+const components={kinetic:layouts.KineticExperienceList,editorial:layouts.EditorialExperienceList,milestone:layouts.MilestoneExperienceList,table:layouts.TableExperienceList,cards:layouts.CardsExperienceList,reel:layouts.ReelExperienceList,duotone:layouts.DuotoneExperienceList,gallery:layouts.GalleryExperienceList,loft:layouts.LoftExperienceList,press:layouts.PressExperienceList,legacy:layouts.LegacyExperienceList};
+const examples=[blocks[0],{...blocks[0],id:'preview-role-2',title:'Designer numérique',period:'2019 — 2021',organization:'Studio Aurore — exemple fictif',tasks:['Conception de sites éditoriaux','Prototypes & interfaces de marque'],sortOrder:1}].map((b,i)=>({...b,mediaType:'IMAGE',mediaUrl:'/portfolio-previews/gallery-study-'+(i+1)+'.svg'}));
+(window as any).designs=PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map(o=>o.value);
+(window as any).renderExperience=(design:keyof typeof components)=>{const Component=components[design];const single=['kinetic','reel','duotone','legacy'].includes(design);root.render(<main key={design} data-design={design} style={{padding:'44px 52px',background:'#faf7ef',color:'#241e14',width:1000,'--pf-palette-fond':'#faf7ef','--pf-palette-texte-fort':'#241e14','--pf-palette-texte-muted':'#766d5d','--pf-palette-principal':'#ca592b'} as React.CSSProperties}><Component blocks={(single?examples.slice(0,1):examples) as any} presentation={{...DEFAULT_EXPERIENCE_PRESENTATION,activeColorMode:'light',titleColor:'#241e14',subtitleColor:'#766d5d',accentColor:'#ca592b',sectionBackgroundColor:'#faf7ef'}}/></main>);};
+(window as any).renderExperience('kinetic');

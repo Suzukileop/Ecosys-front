@@ -1,5 +1,13 @@
 'use client';
 
+import { FaqQuestionMarker } from '@/components/portfolio/portfolio-faq-marker';
+import {
+  DEFAULT_CARDS_STYLE,
+  cardsBorderColor,
+  cardsBorderCss,
+  cardsRadiusPx,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import type { FaqItem } from '@/types/profile';
 import type {
@@ -17,7 +25,7 @@ const CARD_BORDER_WIDTH_PX: Record<PortfolioFaqBentoDualCardBorder, string> = {
 /** Two surfaces, one explicit interaction: the question stays visible above its answer. */
 export function FaqBentoDualDesign({
   items, header, activeColorMode = 'light', cardColor,
-  cardRadius = 'md', cardBorder = 'soft', cardOpacity = 100, fontSizeScale = 1,
+  cardRadius = 'md', cardBorder = 'soft', cardOpacity = 100, fontSizeScale = 1, cardsStyle, palette,
 }: {
   items: FaqItem[];
   header?: ReactNode;
@@ -27,6 +35,9 @@ export function FaqBentoDualDesign({
   cardBorder?: PortfolioFaqBentoDualCardBorder;
   cardOpacity?: number;
   fontSizeScale?: number;
+  /** Shared Design → Cards block; `auto` keeps the radius / border chosen above. */
+  cardsStyle?: PortfolioCardsStyle;
+  palette?: unknown;
 }) {
   const [openId, setOpenId] = useState<FaqItem['id'] | null>(null);
   const idPrefix = useId();
@@ -37,9 +48,13 @@ export function FaqBentoDualDesign({
     opacity, activeColorMode === 'dark' ? 0 : 255,
   );
   const ink = readableInk(surface);
+  const sharedRadius = cardsRadiusPx(cardsStyle);
+  const sharedWidth = cardsStyle && cardsStyle.cardBorderWidth !== 'auto' ? cardsBorderCss(cardsStyle).borderWidth : undefined;
+  const sharedColor = cardsBorderColor(cardsStyle ?? DEFAULT_CARDS_STYLE, palette);
   const style = {
-    '--pfbd-radius': CARD_RADIUS_PX[cardRadius],
-    '--pfbd-border-width': CARD_BORDER_WIDTH_PX[cardBorder],
+    '--pfbd-radius': sharedRadius !== null ? `${sharedRadius}px` : CARD_RADIUS_PX[cardRadius],
+    '--pfbd-border-width': sharedWidth !== undefined ? `${sharedWidth}px` : sharedColor && cardBorder === 'none' ? '1px' : CARD_BORDER_WIDTH_PX[cardBorder],
+    ...(sharedColor ? { '--pfbd-border-color': sharedColor } : {}),
     '--pfbd-border-strength': cardBorder === 'solid' ? '36%' : '16%',
     '--pfbd-surface': surface,
     '--pfbd-card-ink': ink,
@@ -63,7 +78,10 @@ export function FaqBentoDualDesign({
               <button id={questionId} type="button" className="pf-faq-bento-trigger"
                 aria-expanded={open} aria-controls={answerId}
                 onClick={() => setOpenId(current => current === item.id ? null : item.id)}>
-                <span className="pf-faq-bento-q" data-pf-no-color-transition>{item.question}</span>
+                <span className="pf-faq-lead">
+                  <FaqQuestionMarker index={index} />
+                  <span className="pf-faq-bento-q" data-pf-no-color-transition>{item.question}</span>
+                </span>
                 <span className="pf-faq-bento-icon" aria-hidden="true" data-pf-no-color-transition>
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <path d="M9 2v14M2 9h14" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" />

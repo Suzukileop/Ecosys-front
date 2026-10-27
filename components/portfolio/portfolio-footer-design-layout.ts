@@ -43,6 +43,8 @@ export type FooterLayoutTextSpec = FooterLayoutSpecBase & {
   hideable?: boolean;
   defaultVisible?: (p: Presentation) => boolean;
   multiline?: boolean;
+  /** Hard cap on the typed text (the field stops accepting characters, the renderer trims saved ones). */
+  maxLength?: number;
 };
 
 export type FooterLayoutBioSpec = FooterLayoutSpecBase & {
@@ -187,6 +189,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
           p.centeredCustomText && p.centeredCustomText !== 'Logo' ? p.centeredCustomText : '',
         placeholder: msg('Your name'),
         hideable: false,
+        maxLength: 100,
         showWhen: (p) =>
           p.centeredIdentity === 'custom' && resolveFooterLayoutVisible(p, 'centered-minimal', 'identity'),
       },
@@ -462,7 +465,8 @@ function resolveFooterLayoutText(
   const spec = findElementSpec(design, key);
   const defaultText = spec?.kind === 'text' ? spec.defaultText(p) : '';
   const text = footerLayoutOverride(p, design, key)?.text?.trim() || defaultText.trim() || fallback.trim();
-  return text || null;
+  const max = spec?.kind === 'text' ? spec.maxLength : undefined;
+  return (max ? text.slice(0, max).trimEnd() : text) || null;
 }
 
 export function resolveFooterLayoutBioSource(
@@ -476,11 +480,15 @@ export function resolveFooterLayoutBioSource(
   return spec?.kind === 'bio' ? spec.defaultSource(p) : 'bio';
 }
 
+/** Longest custom bio a creator can write for any footer design. */
+export const FOOTER_BIO_CUSTOM_MAX = 300;
+
 export function resolveFooterLayoutBioCustom(p: Presentation, design: PortfolioFooterDesign, key: string): string {
   const spec = findElementSpec(design, key);
   const override = footerLayoutOverride(p, design, key);
-  if (typeof override?.text === 'string') return override.text;
-  return spec?.kind === 'bio' ? spec.defaultCustom(p) : '';
+  const custom = typeof override?.text === 'string' ? override.text : spec?.kind === 'bio' ? spec.defaultCustom(p) : '';
+  // Saved texts written before the cap are trimmed on display too.
+  return custom.slice(0, FOOTER_BIO_CUSTOM_MAX);
 }
 
 function resolveFooterLayoutBio(
@@ -577,6 +585,34 @@ function legacyCustomLinks(p: Presentation, design: PortfolioFooterDesign): Port
   return stored.filter((link) => !sectionAnchorId(link.href));
 }
 
+/** The creator's own links (not portfolio sections) of a design that lets them add some. */
+export function footerCustomLinks(p: Presentation, design: PortfolioFooterDesign): PortfolioFooterLinkItem[] {
+  if (!footerDesignHasSectionLinks(design)) return [];
+  if (design === 'centered-minimal') return legacyCustomLinks(p, design);
+  return p.designLayouts?.[design]?.customLinks ?? [];
+}
+
+/** Whether the Section links panel offers "add your own link" for this design. */
+export function footerDesignAcceptsCustomLinks(design: PortfolioFooterDesign): boolean {
+  return footerDesignHasSectionLinks(design);
+}
+
+/** The patch that stores `links` as the design's own links. */
+export function patchFooterCustomLinks(
+  p: Presentation,
+  design: PortfolioFooterDesign,
+  links: PortfolioFooterLinkItem[]
+): Partial<Presentation> {
+  if (design === 'centered-minimal') {
+    const sections = (p.centeredLinks ?? []).filter((link) => sectionAnchorId(link.href));
+    return { centeredLinks: [...sections, ...links] };
+  }
+  return withDesignLayout(p, design, (layout) => ({
+    ...layout,
+    customLinks: links.length > 0 ? links : undefined,
+  }));
+}
+
 /** Selected sections that are currently visible, in page order, then legacy custom links. */
 export function resolveFooterSectionNavLinks(
   p: Presentation,
@@ -589,7 +625,11 @@ export function resolveFooterSectionNavLinks(
     .filter((option) => selected.has(option.id))
     .map((option) => ({ id: `section-${option.id}`, label: option.label, href: option.href }));
   const taken = new Set(sectionLinks.map((link) => link.href));
-  return [...sectionLinks, ...legacyCustomLinks(p, design).filter((link) => !taken.has(link.href.trim()))];
+  return [
+    ...sectionLinks,
+    ...legacyCustomLinks(p, design).filter((link) => !taken.has(link.href.trim())),
+    ...(design === 'centered-minimal' ? [] : footerCustomLinks(p, design)),
+  ];
 }
 
 function withDesignLayout(

@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -18,6 +19,7 @@ import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/p
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { isPortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { resolveStudioSplitSurface } from '../portfolio-studio-split-surface';
 
 const FALLBACK_BIO =
   'We craft distinctive digital products and brand systems for ambitious teams — clear strategy, sharp design, and experiences that feel inevitable.';
@@ -29,6 +31,13 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
   const principal = resolveHeroPaletteColor(palette, 'principal');
+  const studioSurface = resolveStudioSplitSurface(
+    data.presentation.heroStudioSplitAccentColor?.trim() || principal,
+    data.presentation.heroStudioSplitAccentOpacity,
+    fond
+  );
+  const studioAccent = studioSurface.surface;
+  const studioPanelInk = studioSurface.ink;
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
   const imageBw = data.presentation.heroImageGrayscale === true;
@@ -129,34 +138,34 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
       data-hero-variant="studio-split"
       aria-label={t('Studio split hero')}
     >
-      <div className="relative" style={{ backgroundColor: principal, color: fond }}>
-        <div aria-hidden className="pointer-events-none absolute inset-0 left-1/2 w-screen -translate-x-1/2" style={{ backgroundColor: principal }} />
+      <div className="relative" style={{ backgroundColor: studioAccent, color: studioPanelInk }}>
+        <div aria-hidden className="pointer-events-none absolute inset-0 left-1/2 w-screen -translate-x-1/2" style={{ backgroundColor: studioAccent }} />
         <div className={`relative z-[1] pb-[clamp(7rem,14vw,11rem)] pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:pt-[calc(6rem+env(safe-area-inset-top,0px))] ${shellX}`}>
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-8">
             <div className="min-w-0 lg:col-span-7">
-              <p className="pf-studio-copy m-0 font-mono text-[0.67rem] font-semibold uppercase tracking-[0.22em]" style={{ color: `color-mix(in srgb, ${fond} 72%, transparent)` }}>
+              <p className="pf-studio-copy m-0 font-mono text-[0.67rem] font-semibold uppercase tracking-[0.22em]" style={{ color: `color-mix(in srgb, ${studioPanelInk} 72%, transparent)` }}>
                 {eyebrow}
               </p>
-              <h1 className="pf-studio-copy m-0 mt-5 max-w-[12ch] font-sans text-[clamp(3.25rem,6.2vw,7rem)] font-semibold leading-[0.9] tracking-[-0.065em]" style={{ color: fond }}>
-                {t('Hi, I\'m {displayName}', { displayName })}
+              <h1 className="pf-studio-copy m-0 mt-5 max-w-[12ch] font-sans text-[clamp(3.25rem,6.2vw,7rem)] font-semibold leading-[0.9] tracking-[-0.065em]" style={{ color: studioPanelInk }}>
+                {resolveHeroGreeting(data.presentation,t('Hi, I\'m {displayName}', { displayName }),displayName,data.specialite??'')}
               </h1>
-              <p className="pf-studio-copy m-0 mt-5 text-[clamp(1rem,1.25vw,1.2rem)] font-medium tracking-[-0.02em]" style={{ color: `color-mix(in srgb, ${fond} 76%, transparent)` }}>
+              <p className="pf-studio-copy m-0 mt-5 text-[clamp(1rem,1.25vw,1.2rem)] font-medium tracking-[-0.02em]" style={{ color: `color-mix(in srgb, ${studioPanelInk} 76%, transparent)` }}>
                 {specialty}
               </p>
             </div>
 
             <div className="min-w-0 lg:col-span-5 lg:pt-1">
-              <p className="pf-studio-copy m-0 max-w-[35rem] text-[clamp(.98rem,1.15vw,1.12rem)] leading-[1.65] tracking-[-0.01em]" style={{ color: `color-mix(in srgb, ${fond} 78%, transparent)` }}>
+              <p data-hero-bio className="pf-studio-copy m-0 max-w-[35rem] text-[clamp(.98rem,1.15vw,1.12rem)] leading-[1.65] tracking-[-0.01em]" style={{ color: `color-mix(in srgb, ${studioPanelInk} 78%, transparent)` }}>
                 {bio}
               </p>
               {showPrimaryCta || showSecondaryCta ? (
                 <div className="pf-studio-copy mt-7 flex flex-wrap gap-3">
-                  {showPrimaryCta ? <a href={primaryHref} onClick={onNavClick(primaryHref)} className="inline-flex min-h-12 items-center justify-center rounded-full px-7 text-[0.7rem] font-bold uppercase tracking-[0.15em] transition-transform hover:-translate-y-0.5" style={{ backgroundColor: fond, color: principal }}>{t('Let\'s talk')}</a> : null}
-                  {showSecondaryCta ? <a href={secondaryHref} onClick={onNavClick(secondaryHref)} className="inline-flex min-h-12 items-center justify-center rounded-full border px-7 text-[0.7rem] font-bold uppercase tracking-[0.15em] transition-transform hover:-translate-y-0.5" style={{ borderColor: fond, color: fond }}>{t('View my work')}</a> : null}
+                  {showPrimaryCta ? <a href={primaryHref} onClick={onNavClick(primaryHref)} className="inline-flex min-h-12 items-center justify-center rounded-full px-7 text-[0.7rem] font-bold uppercase tracking-[0.15em] transition-transform hover:-translate-y-0.5" style={{ backgroundColor: studioPanelInk, color: studioAccent }}>{t('Let\'s talk')}</a> : null}
+                  {showSecondaryCta ? <a href={secondaryHref} onClick={onNavClick(secondaryHref)} className="inline-flex min-h-12 items-center justify-center rounded-full border px-7 text-[0.7rem] font-bold uppercase tracking-[0.15em] transition-transform hover:-translate-y-0.5" style={{ borderColor: studioPanelInk, color: studioPanelInk }}>{t('View my work')}</a> : null}
                 </div>
               ) : null}
-              <p className="pf-studio-copy m-0 mt-5 flex items-center gap-2.5 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.18em]" style={{ color: `color-mix(in srgb, ${fond} 74%, transparent)` }}>
-                <span className="size-1.5 rounded-full" style={{ backgroundColor: fond }} aria-hidden />
+              <p data-hero-availability className="pf-studio-copy m-0 mt-5 flex items-center gap-2.5 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.18em]" style={{ color: `color-mix(in srgb, ${studioPanelInk} 74%, transparent)` }}>
+                <span className="size-1.5 rounded-full" style={{ backgroundColor: studioPanelInk }} aria-hidden />
                 {availability}
               </p>
             </div>

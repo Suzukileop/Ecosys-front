@@ -1,0 +1,8 @@
+.cta { transition:opacity .25s ease, color .45s cubic-bezier(.22,1,.36,1), transform .5s cubic-bezier(.22,1,.36,1); }
+@media(hover:hover) and (pointer:fine) {
+ .cta[data-display='hover'] { opacity:0; }
+ :global([data-board-card]):focus-within .cta[data-display='hover'] { opacity:1; }
+ :global([data-board-card][data-hover-cursor='true']) { cursor:none; }
+ :global([data-board-card][data-hover-cursor='true']) a { cursor:none; }
+}
+@media(prefers-reduced-motion:reduce) { .cta { transition:none; } }

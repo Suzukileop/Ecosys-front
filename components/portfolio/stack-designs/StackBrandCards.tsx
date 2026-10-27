@@ -38,10 +38,10 @@ type BrandCardDensity = 'rich' | 'minimal';
 
 /** Grid gutter — a CSS length (not a Tailwind class) so the column formula can subtract it. */
 function brandCardsGap(gap: PortfolioToolsCardGap | undefined): string {
-  if (gap === 'medium') return 'clamp(1.5rem, 2.2vw, 2rem)';
-  if (gap === 'large') return 'clamp(2rem, 3.2vw, 3rem)';
-  if (gap === 'xlarge') return 'clamp(2.5rem, 4.4vw, 4rem)';
-  return 'clamp(1rem, 1.6vw, 1.5rem)';
+  if (gap === 'medium') return '16px';
+  if (gap === 'large') return '32px';
+  if (gap === 'xlarge') return '56px';
+  return '4px';
 }
 
 function prefersReducedMotion(): boolean {

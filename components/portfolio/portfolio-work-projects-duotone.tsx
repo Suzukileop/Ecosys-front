@@ -1,4 +1,5 @@
 'use client';
+import { workButtonColor } from './portfolio-work-button-color';
 
 import Image from 'next/image';
 import { useEffect, useRef, useState } from 'react';
@@ -6,6 +7,8 @@ import { useReducedMotion } from 'framer-motion';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
+  PortfolioWorkProjectsDuotoneLinkStyle,
+  PortfolioWorkProjectsDuotoneMetaColor,
   PortfolioWorkProjectsDuotoneSlideNavStyle,
   PortfolioWorkProjectsDuotoneThumbnailEffect,
   PortfolioWorkProjectsDuotoneThumbnailHeight,
@@ -15,11 +18,38 @@ import {
   DEFAULT_PROJECTS_DUOTONE_SETTINGS,
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsDuotoneSettings,
+  workPaletteTokenColor,
 } from '@/components/portfolio/portfolio-work-settings';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { WorkConsultButtonLink, WorkConsultTextLink } from './portfolio-work-consult-link';
 
 const DUOTONE_SERIF = "'Fraunces', serif";
 const DUOTONE_SANS = "'Inter', sans-serif";
+
+/** Per-design look knobs the three layouts share: title size, consult button, role colour. */
+type DuotoneLook = {
+  titleSize: number | null;
+  metaColor: PortfolioWorkProjectsDuotoneMetaColor;
+  buttonColor?: 'principal'|'secondaire'|'texteFort';
+  buttonColorOpacity?: number;
+  linkStyle: PortfolioWorkProjectsDuotoneLinkStyle;
+  linkLabel: string;
+};
+
+const DEFAULT_DUOTONE_LOOK: DuotoneLook = { titleSize: null, metaColor: 'muted', linkStyle: 'arrow', linkLabel: '' };
+
+function duotoneMetaInk(look: DuotoneLook, muted: string): string {
+  return look.metaColor === 'muted' ? muted : workPaletteTokenColor(look.metaColor);
+}
+
+/** Manual size is the Sticky / Scroll title's max; the shorter Slide title follows at 60%. */
+function duotoneTitleFontSize(look: DuotoneLook, premium: boolean): string {
+  if (look.titleSize == null) {
+    return premium ? 'clamp(3rem, 6vw, 5.5rem)' : 'clamp(2rem, 3vw, 3.1rem)';
+  }
+  const max = premium ? look.titleSize : Math.round(look.titleSize * 0.6);
+  return `clamp(${Math.min(24, max)}px, ${(max / 14.4).toFixed(2)}vw, ${max}px)`;
+}
 
 function workToolLabels(item: MarketplaceContentItem, max = 12): string[] {
   return Array.from(new Set((item.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean))).slice(
@@ -157,17 +187,24 @@ function WorkDuotoneChevronIcon({ direction }: { direction: 'left' | 'right' }) 
   );
 }
 
-function WorkDuotoneLinkButton({ href, ink }: { href: string; ink: string }) {
+function WorkDuotoneLinkButton({ href, ink, look }: { href: string; ink: string; look: DuotoneLook }) {
+  if (look.buttonColor) ink = workPaletteTokenColor(look.buttonColor);
+  ink = workButtonColor(ink, look.buttonColorOpacity);
   const t = useT();
+  const label = look.linkLabel.trim() || t('View project');
+  if (look.linkStyle === 'text') return <WorkConsultTextLink href={href} label={label} ink={ink} />;
+  if (look.linkStyle !== 'arrow') {
+    return <WorkConsultButtonLink href={href} label={label} ink={ink} variant={look.linkStyle} />;
+  }
   return (
     <a
       href={href}
       target="_blank"
       rel="noopener noreferrer"
-      className="inline-flex items-center gap-1.5 text-[0.85rem] font-semibold underline-offset-4 hover:underline"
+      className="inline-flex items-center gap-1.5 text-[0.95rem] font-semibold underline-offset-4 hover:underline"
       style={{ color: ink, fontFamily: DUOTONE_SANS }}
     >
-      {t('View project')}
+      {label}
       <span aria-hidden>→</span>
     </a>
   );
@@ -177,7 +214,7 @@ function WorkDuotoneIntroPanel({ ink, muted, accent }: { ink: string; muted: str
   const t = useT();
   return (
     <div className="flex w-full flex-col pt-[20vh] pb-[5vh] max-[800px]:pt-16 max-[800px]:pb-6">
-      <span className="text-[0.85rem] font-semibold" style={{ color: accent, fontFamily: DUOTONE_SANS }}>
+      <span className="text-[0.95rem] font-semibold" style={{ color: accent, fontFamily: DUOTONE_SANS }}>
         {t('Portfolio')}
       </span>
       <h2
@@ -214,12 +251,20 @@ function WorkDuotoneLeftPanel({
   verticalGap,
   inView = false,
   scrollPart = 'all',
+  look = DEFAULT_DUOTONE_LOOK,
+  showThumbnail = false,
+  hideMeta = false,
 }: {
+  /** Slide mode: the role / category line lives at the top of the info card instead. */
+  hideMeta?: boolean;
   item: MarketplaceContentItem;
   ink: string;
   muted: string;
   border: string;
   registerRef?: (el: HTMLElement | null) => void;
+  look?: DuotoneLook;
+  /** Slide mode: the plain (non-premium) layout also frames the project's thumbnail. */
+  showThumbnail?: boolean;
   showTitle?: boolean;
   /** Size to content instead of forcing min-h-screen — Slide's frame is shorter than a
    *  full viewport and vertically centered within it. */
@@ -240,15 +285,18 @@ function WorkDuotoneLeftPanel({
   const t = useT();
   const title = item.title?.trim() || t('Untitled');
   const metaLine = workDuotoneMetaLine(item);
-  const mediaUrl = premium ? item.mediaUrl?.trim() || '' : '';
+  const withMedia = premium || showThumbnail;
+  const mediaUrl = withMedia ? item.mediaUrl?.trim() || '' : '';
   const showTitleBlock = scrollPart !== 'thumb' && showTitle && Boolean(title);
-  const showThumbBlock = scrollPart !== 'title' && premium && Boolean(mediaUrl);
+  const showThumbBlock = scrollPart !== 'title' && withMedia && Boolean(mediaUrl);
   const premiumGapClass =
     premium && scrollPart === 'all'
       ? verticalGap
         ? workDuotoneStickyLeftGapClass(verticalGap)
         : 'gap-10 sm:gap-14'
-      : '';
+      : showThumbBlock
+        ? 'gap-5'
+        : '';
   const panelMinHeight =
     !naturalHeight && verticalGap && scrollPart === 'all'
       ? `${workDuotoneStickySectionVh(verticalGap)}vh`
@@ -264,7 +312,7 @@ function WorkDuotoneLeftPanel({
         fontWeight: premium ? 400 : 640,
         lineHeight: premium ? 0.95 : 1.08,
         letterSpacing: '-0.02em',
-        fontSize: premium ? 'clamp(3rem, 6vw, 5.5rem)' : 'clamp(2rem, 3vw, 3.1rem)',
+        fontSize: duotoneTitleFontSize(look, premium),
       }}
     >
       {title}
@@ -324,7 +372,7 @@ function WorkDuotoneLeftPanel({
     <div
       ref={registerRef}
       data-pf-no-color-transition=""
-      data-in-view={premium && inView ? 'true' : 'false'}
+      data-in-view={withMedia && inView ? 'true' : 'false'}
       className={`pf-duotone-left-panel relative flex w-full flex-col justify-center overflow-hidden max-[800px]:min-h-0 ${
         naturalHeight || panelMinHeight ? '' : 'min-h-screen'
       } ${premiumGapClass}`}
@@ -333,12 +381,12 @@ function WorkDuotoneLeftPanel({
       {titleNode}
       {thumbNode}
 
-      {!premium ? (
+      {!premium && !hideMeta ? (
         <div className="my-4 h-px w-full shrink-0" style={{ backgroundColor: border }} aria-hidden />
       ) : null}
 
-      {!premium && metaLine ? (
-        <p className="text-[0.95rem]" style={{ color: muted, fontFamily: DUOTONE_SANS }}>
+      {!premium && !hideMeta && metaLine ? (
+        <p className="text-[0.95rem]" style={{ color: duotoneMetaInk(look, muted), fontFamily: DUOTONE_SANS }}>
           {metaLine}
         </p>
       ) : null}
@@ -353,7 +401,7 @@ function WorkDuotoneToolTags({ tools, muted }: { tools: string[]; muted: string 
       {tools.map((tool) => (
         <span
           key={tool}
-          className="rounded-none border px-3 py-1 text-[0.7rem] font-medium uppercase tracking-[0.04em]"
+          className="rounded-none border px-3 py-1 text-[0.8rem] font-medium uppercase tracking-[0.04em]"
           style={{ borderColor: `color-mix(in srgb, ${muted} 45%, transparent)`, color: muted }}
         >
           {tool}
@@ -380,7 +428,12 @@ function WorkDuotoneRightPanel({
   verticalGap,
   lane = 'active',
   flushTop = false,
+  look = DEFAULT_DUOTONE_LOOK,
+  slideCounter,
 }: {
+  look?: DuotoneLook;
+  /** Slide mode: puts the role / category and the "03 / 04" counter at the top of the info card. */
+  slideCounter?: { index: number; total: number };
   item: MarketplaceContentItem;
   ink: string;
   muted: string;
@@ -450,6 +503,22 @@ function WorkDuotoneRightPanel({
               }
         }
       >
+        {slideCounter ? (
+          <div
+            className="mb-6 flex items-baseline justify-between gap-4 border-b pb-4"
+            style={{ borderColor: border, fontFamily: DUOTONE_SANS }}
+          >
+            <span className="min-w-0 truncate text-[0.9rem]" style={{ color: duotoneMetaInk(look, muted) }}>
+              {metaLine}
+            </span>
+            <span className="flex shrink-0 items-baseline gap-1.5 text-[0.85rem] tracking-[0.06em]">
+              <span className="font-semibold" style={{ color: accent }}>
+                {String(slideCounter.index + 1).padStart(2, '0')}
+              </span>
+              <span style={{ color: muted }}>/ {String(slideCounter.total).padStart(2, '0')}</span>
+            </span>
+          </div>
+        ) : null}
         {(() => {
           const animate = active !== undefined;
           const layerProps = (index: 0 | 1, extraClass = '') =>
@@ -465,7 +534,7 @@ function WorkDuotoneRightPanel({
             <>
               {hasMetaRow ? (
                 <div {...layerProps(0, 'mb-8')}>
-                  <span className="text-[0.85rem]" style={{ color: muted, fontFamily: DUOTONE_SANS }}>
+                  <span className="text-[0.9rem]" style={{ color: duotoneMetaInk(look, muted), fontFamily: DUOTONE_SANS }}>
                     {metaLine}
                   </span>
                 </div>
@@ -498,7 +567,12 @@ function WorkDuotoneRightPanel({
               style={{ borderColor: `color-mix(in srgb, ${muted} 12%, transparent)` }}
             >
               <WorkDuotoneToolTags tools={displayTools} muted={muted} />
-              {repoLink ? <WorkDuotoneLinkButton href={repoLink} ink={accent} /> : null}
+              {repoLink ? (
+                // self-start: in this column flex the button would stretch to the full width.
+                <div className="self-start">
+                  <WorkDuotoneLinkButton href={repoLink} ink={accent} look={look} />
+                </div>
+              ) : null}
             </div>
           ) : null
         ) : (
@@ -510,7 +584,7 @@ function WorkDuotoneRightPanel({
             ) : null}
             {repoLink ? (
               <div className="mt-9">
-                <WorkDuotoneLinkButton href={repoLink} ink={accent} />
+                <WorkDuotoneLinkButton href={repoLink} ink={accent} look={look} />
               </div>
             ) : null}
           </>
@@ -534,7 +608,9 @@ function WorkDuotoneScrollRoles({
   alternateSides = false,
   verticalGap = 'md',
   fullWidthTitle = false,
+  look,
 }: {
+  look: DuotoneLook;
   items: MarketplaceContentItem[];
   ink: string;
   muted: string;
@@ -586,6 +662,7 @@ function WorkDuotoneScrollRoles({
                 thumbnailHeight={thumbnailHeight}
                 naturalHeight
                 scrollPart="title"
+                look={look}
               />
             </div>
             <div className="w-full self-start" style={{ gridColumn: mediaCol, gridRow: 2 }}>
@@ -600,6 +677,7 @@ function WorkDuotoneScrollRoles({
                 thumbnailHeight={thumbnailHeight}
                 naturalHeight
                 scrollPart="thumb"
+                look={look}
               />
             </div>
             <div
@@ -616,6 +694,7 @@ function WorkDuotoneScrollRoles({
                 premium
                 flushTop
                 verticalGap={verticalGap}
+                look={look}
               />
             </div>
           </div>
@@ -642,7 +721,7 @@ function WorkDuotoneSlideNav({
 }) {
   const t = useT();
   if (navStyle === 'text') {
-    const linkClass = 'group relative text-[0.85rem] font-semibold disabled:opacity-30 disabled:after:hidden';
+    const linkClass = 'group relative text-[0.95rem] font-semibold disabled:opacity-30 disabled:after:hidden';
     const underline = (
       <span
         aria-hidden
@@ -732,7 +811,13 @@ function WorkDuotoneSlideRoles({
   frameBorderColor,
   frameRadiusPx,
   autoAdvance = false,
+  look,
+  thumbnailEffect,
+  thumbnailHeight,
 }: {
+  look: DuotoneLook;
+  thumbnailEffect: PortfolioWorkProjectsDuotoneThumbnailEffect;
+  thumbnailHeight: PortfolioWorkProjectsDuotoneThumbnailHeight;
   items: MarketplaceContentItem[];
   ink: string;
   muted: string;
@@ -754,7 +839,6 @@ function WorkDuotoneSlideRoles({
         backgroundColor: `color-mix(in srgb, ${ink} 3%, ${background})`,
       }
     : undefined;
-  const frameInset = frameStyle ? '1.75rem' : '0px';
 
   const [frameHovered, setFrameHovered] = useState(false);
   const reduceMotion = useReducedMotion();
@@ -781,29 +865,19 @@ function WorkDuotoneSlideRoles({
 
       <div className="relative w-full">
         <div
-          className="pointer-events-none absolute z-20 flex items-baseline gap-1.5"
-          style={{ left: frameInset, bottom: frameInset }}
-        >
-          <span className="text-[0.78rem] font-semibold tracking-[0.06em]" style={{ color: accent, fontFamily: DUOTONE_SANS }}>
-            {String(activeIndex + 1).padStart(2, '0')}
-          </span>
-          <span className="text-[0.78rem] tracking-[0.06em]" style={{ color: muted, fontFamily: DUOTONE_SANS }}>
-            / {String(items.length).padStart(2, '0')}
-          </span>
-        </div>
-
-        <div
           className="box-border w-full"
           style={frameStyle}
           onMouseEnter={() => setFrameHovered(true)}
           onMouseLeave={() => setFrameHovered(false)}
         >
           <div className="overflow-hidden">
-            <div className="grid w-full grid-cols-1 items-stretch">
+            <div className="grid w-full grid-cols-[minmax(0,1fr)] items-stretch">
               {items.map((item, index) => (
                 <div
                   key={item.id}
                   className="col-start-1 row-start-1 flex min-h-0 w-full items-stretch justify-center"
+                  aria-hidden={index !== activeIndex}
+                  inert={index !== activeIndex}
                   style={{
                     transform: `translateX(${(index - activeIndex) * 100}%)`,
                     opacity: index === activeIndex ? 1 : 0.4,
@@ -815,7 +889,20 @@ function WorkDuotoneSlideRoles({
                   <div className="flex h-full min-h-0 w-full">
                     <div className="flex w-[50%] shrink-0 flex-col pr-6">
                       <div className="flex flex-1 flex-col justify-center">
-                        <WorkDuotoneLeftPanel item={item} ink={ink} muted={muted} border={border} naturalHeight />
+                        <WorkDuotoneLeftPanel
+                          item={item}
+                          ink={ink}
+                          muted={muted}
+                          border={border}
+                          naturalHeight
+                          showThumbnail
+                          inView={index === activeIndex}
+                          accent={accent}
+                          thumbnailEffect={thumbnailEffect}
+                          thumbnailHeight={thumbnailHeight}
+                          look={look}
+                          hideMeta
+                        />
                       </div>
                     </div>
                     <div className="flex w-[50%] flex-1 flex-col justify-center">
@@ -827,6 +914,8 @@ function WorkDuotoneSlideRoles({
                         border={border}
                         background={background}
                         enhanced
+                        look={look}
+                        slideCounter={{ index, total: items.length }}
                       />
                     </div>
                   </div>
@@ -906,6 +995,16 @@ export function ProjectsDuotoneGallery({
   const swapSides = settings.swapSides;
   const verticalGap = settings.verticalGap;
   const stickySectionVh = workDuotoneStickySectionVh(verticalGap);
+  const look: DuotoneLook = {
+    titleSize: settings.titleSize,
+    metaColor: settings.metaColor,
+    buttonColor: settings.buttonColor,
+    buttonColorOpacity: settings.buttonColorOpacity,
+    linkStyle: settings.linkStyle,
+    linkLabel: settings.linkLabel,
+  };
+  // Never point past the list (e.g. after switching from Sticky with fewer projects visible).
+  const slideIndex = Math.min(activeIndex, items.length - 1);
 
   return (
     <div className="relative isolate w-full">
@@ -927,6 +1026,7 @@ export function ProjectsDuotoneGallery({
               alternateSides={settings.alternateSides}
               verticalGap={verticalGap}
               fullWidthTitle={settings.scrollFullWidthTitle}
+              look={look}
             />
           </div>
         ) : scrollMode === 'slide' ? (
@@ -937,8 +1037,11 @@ export function ProjectsDuotoneGallery({
             accent={accent}
             border={border}
             background={background}
-            activeIndex={activeIndex}
+            activeIndex={slideIndex}
             onNavigate={(next) => setActiveIndex(Math.max(0, Math.min(items.length - 1, next)))}
+            look={look}
+            thumbnailEffect={thumbnailEffect}
+            thumbnailHeight={thumbnailHeight}
             navStyle={settings.slideNavStyle}
             frameBorderColor={frameBorderColor}
             frameRadiusPx={frameRadiusPx}
@@ -971,6 +1074,7 @@ export function ProjectsDuotoneGallery({
                         thumbnailHeight={thumbnailHeight}
                         verticalGap={verticalGap}
                         inView={index === activeIndex}
+                        look={look}
                       />
                     ))}
                   </div>
@@ -997,6 +1101,7 @@ export function ProjectsDuotoneGallery({
                           }
                           premium
                           verticalGap={verticalGap}
+                          look={look}
                         />
                       ))}
                     </div>
@@ -1014,7 +1119,18 @@ export function ProjectsDuotoneGallery({
         {settings.showIntro ? <WorkDuotoneIntroPanel ink={ink} muted={muted} accent={accent} /> : null}
         {items.map((item) => (
           <div key={item.id} className="py-10">
-            <WorkDuotoneLeftPanel item={item} ink={ink} muted={muted} border={border} />
+            <WorkDuotoneLeftPanel
+              item={item}
+              ink={ink}
+              muted={muted}
+              border={border}
+              look={look}
+              showThumbnail
+              inView
+              accent={accent}
+              thumbnailEffect={thumbnailEffect}
+              thumbnailHeight={thumbnailHeight}
+            />
             <WorkDuotoneRightPanel
               item={item}
               ink={ink}
@@ -1023,6 +1139,7 @@ export function ProjectsDuotoneGallery({
               border={border}
               background={background}
               className="mt-8"
+              look={look}
             />
           </div>
         ))}

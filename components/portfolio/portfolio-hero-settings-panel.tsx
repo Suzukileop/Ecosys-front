@@ -1,43 +1,51 @@
 'use client';
+import { InfoBioToolbar } from './portfolio-info-bio-toolbar';
+import {DesignCatalogueCard} from './portfolio-design-catalogue-card';
+import { BowlPortraitOptionPreview } from './bowl-portrait-option-preview';
+import { PortfolioHeroAdaptiveBackground } from './PortfolioHeroAdaptiveBackground';
+import { SectionColorModeControl } from './portfolio-section-color-mode-control';
+import { applyActivePortfolioPalette } from './portfolio-color-mode';
+import {SectionPaletteFamilyControl} from './portfolio-section-palette-family';
+import {SectionBackgroundSettingsFields} from './portfolio-section-background-controls';
+import {heroSectionBackgroundFields,patchHeroSectionBackground} from './portfolio-hero-section-background';
+import {ColorSwatchRow} from './portfolio-color-swatch-row';
+import {sectionFamilyPalette} from './portfolio-section-palette-family';
+import {DEFAULT_HERO_COLOR_BINDINGS,DEFAULT_HERO_PALETTE,type HeroColorSlot,type HeroPaletteTokenId} from './portfolio-hero-palette-settings';
+import { usePortfolioBackgroundLibrary } from '@/components/portfolio/portfolio-background-library-context';
 
-import { useState } from 'react';
+import { useState, type CSSProperties } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import {
   PortfolioDesignLivePreviewCard,
   usePortfolioDesignPreviewSource,
 } from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import {
   PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS,
   PORTFOLIO_HERO_BOWL_INTRO_MOTIF_OPTIONS,
-  PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS,
   PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS,
   PORTFOLIO_HERO_IDENTITY_INDEX_PORTRAIT_RADIUS_OPTIONS,
   PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS,
   PORTFOLIO_HERO_STUDIO_SPLIT_FRAME_STYLE_OPTIONS,
   heroBannerDesignSettingsPatch,
+  PORTFOLIO_HERO_PORTRAIT_SHAPE_OPTIONS,
+  type PortfolioHeroStudioSplitFrameStyle,
+  type PortfolioHeroPortraitShape,
+  type PortfolioHeroBowlIntroMotif,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
 import { HeroBannerDesignPreview } from '@/components/portfolio/portfolio-hero-banner-skeletons';
-import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
-import {
-  PORTFOLIO_HERO_BACKGROUND_GRADIENT_TYPE_OPTIONS,
-  PORTFOLIO_HERO_BACKGROUND_SPLIT_AXIS_OPTIONS,
-  PORTFOLIO_HERO_SECTION_BACKGROUND_FILL_OPTIONS,
-  type PortfolioHeroBackgroundSettings,
-} from '@/components/portfolio/portfolio-hero-background-settings';
 import {
   createDefaultPortfolioSettings,
   type PortfolioHeroSectionSettings,
 } from '@/components/portfolio/portfolio-settings-types';
 import { PortfolioBackgroundImageUpload, PortfolioHeroBannerMediaUpload } from '@/components/portfolio/portfolio-background-image-upload';
-import { usePortfolioBackgroundLibrary } from '@/components/portfolio/portfolio-background-library-context';
+import { PortfolioSettingsPhotoField } from '@/components/portfolio/portfolio-settings-photo-field';
 import { useT } from '@/lib/i18n/I18nProvider';
 import {
   NpBackRow,
   NpCollapsibleSection,
-  NpOptionCard,
   NpPanelShell,
-  NpPickerRow,
   NpRangeField,
   NpSegmentedControl,
   NpToggleRow,
@@ -55,7 +63,7 @@ const HERO_SETTINGS_SUB_SECTIONS: {
   {
     id: 'general',
     label: msg('General'),
-    description: msg('Section visibility and shared image settings.'),
+    description: msg('Settings shared by all Hero designs.'),
   },
   {
     id: 'banner',
@@ -71,7 +79,7 @@ const HERO_SETTINGS_SUB_SECTIONS: {
 
 /** Map legacy subsection ids (saved UI state / search) onto remaining Hero menus. */
 export function normalizeHeroSettingsSubSection(value: string | undefined): HeroSettingsSubSection {
-  return value === 'general' || value === 'background' || value === 'banner' ? value : 'general';
+  return value === 'background' ? 'background' : value === 'banner' ? 'banner' : 'general';
 }
 
 function HeroToggleRow({
@@ -86,55 +94,56 @@ function HeroToggleRow({
   return <NpToggleRow title={label} checked={checked} onChange={onChange} />;
 }
 
-function HeroColorField({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <div className="np-field">
-      <span className="np-field-label">{label}</span>
-      <div className="np-swatch w-full">
-        <span className="np-swatch-dot" style={{ backgroundColor: value }}>
-        <input
-          type="color"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="np-color-input"
-          aria-label={`${label} picker`}
-        />
-        </span>
-        <input
-          type="text"
-          value={value}
-          onChange={(event) => {
-            const next = event.target.value.trim();
-            if (isValidProfileHexColor(next)) onChange(next);
-          }}
-          className="np-input !h-9 !w-28 font-mono uppercase"
-          aria-label={`${label} hex`}
-        />
-      </div>
-    </div>
-  );
-}
+
+/** Banner designs that show a portrait and honor the "Portrait shape" option. */
+const HERO_PORTRAIT_SHAPE_DESIGNS: ReadonlySet<string> = new Set([
+  'portrait-identity',
+  'editorial-rail',
+  'circle-portrait',
+  'editorial-overlap',
+  'bowl-intro',
+]);
 
 function HeroOptionGrid<T extends string>({
   label,
   options,
   value,
   onChange,
+  portraitPreview = false,
+  bowlPreview,
 }: {
   label: string;
   options: { value: T; label: string; description?: string }[];
   value: T;
   onChange: (value: T) => void;
+  portraitPreview?: boolean;
+  bowlPreview?: { shape: PortfolioHeroPortraitShape; motif: PortfolioHeroBowlIntroMotif; kind: 'shape' | 'motif' };
 }) {
   const t = useT();
+  if (portraitPreview || bowlPreview) {
+    return (
+      <div className="np-field">
+        <span className="np-field-label">{label}</span>
+        <div className="np-portrait-shapes" role="group" aria-label={label}>
+          {options.map((option) => (
+            <button key={option.value} type="button" className="np-portrait-shape-card" title={option.description ? t(option.description) : undefined} aria-pressed={option.value === value} onClick={() => onChange(option.value)}>
+              {bowlPreview ? <BowlPortraitOptionPreview
+                shape={bowlPreview.kind === 'shape' ? option.value as PortfolioHeroPortraitShape : 'auto'}
+                motif={bowlPreview.kind === 'motif' ? option.value as PortfolioHeroBowlIntroMotif : undefined}
+                defaultMotif={bowlPreview.motif}
+              /> : <span className="np-portrait-shape-stage" aria-hidden="true">
+                <span className="np-portrait-shape" data-shape={option.value}>
+                  <span className="np-portrait-shape-head" />
+                  <span className="np-portrait-shape-body" />
+                </span>
+              </span>}
+              <span>{t(option.label)}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
   if (options.length >= 5) {
     return (
       <div className="np-field">
@@ -165,25 +174,59 @@ function HeroOptionGrid<T extends string>({
   );
 }
 
-const HERO_BACKGROUND_IMAGE_SIZE_OPTIONS: {
-  value: PortfolioHeroBackgroundSettings['heroSectionBackgroundImageSize'];
-  label: string;
-}[] = [
-  { value: 'cover', label: msg('Fill screen') },
-  { value: 'contain', label: msg('Whole image') },
-  { value: 'fill', label: msg('Stretch') },
-];
+function StudioFrameFormatPicker({
+  value,
+  onChange,
+}: {
+  value: PortfolioHeroStudioSplitFrameStyle;
+  onChange: (value: PortfolioHeroStudioSplitFrameStyle) => void;
+}) {
+  const t = useT();
 
-const HERO_BACKGROUND_IMAGE_POSITION_OPTIONS: {
-  value: PortfolioHeroBackgroundSettings['heroSectionBackgroundImagePosition'];
-  label: string;
-}[] = [
-  { value: 'center', label: msg('Center') },
-  { value: 'top', label: msg('Top') },
-  { value: 'bottom', label: msg('Bottom') },
-  { value: 'left', label: msg('Left') },
-  { value: 'right', label: msg('Right') },
-];
+  return (
+    <div className="np-field">
+      <span className="np-field-label">{t('Frame format')}</span>
+      <div className="grid grid-cols-2 gap-3" role="radiogroup" aria-label={t('Frame format')}>
+        {PORTFOLIO_HERO_STUDIO_SPLIT_FRAME_STYLE_OPTIONS.map((option) => {
+          const active = option.value === value;
+          return (
+            <button
+              key={option.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              onClick={() => onChange(option.value)}
+              className={`group flex min-w-0 flex-col gap-2 rounded-xl border p-2.5 text-left transition ${
+                active
+                  ? 'border-[color:var(--np-text)] bg-[color:var(--np-seg-active)] shadow-[var(--np-seg-shadow)]'
+                  : 'border-[color:var(--np-well-border)] bg-[color:var(--np-well)] hover:border-[color:var(--np-muted)]'
+              }`}
+            >
+              <span className="relative flex h-[4.5rem] w-full items-center justify-center overflow-hidden rounded-lg bg-[color:var(--np-card)]" aria-hidden>
+                <span
+                  className={`border-2 border-[color:var(--np-muted)] bg-[color:var(--np-hover)] transition-colors group-hover:border-[color:var(--np-text)] ${
+                    option.value === 'circle-center'
+                      ? 'h-12 w-12 rounded-full'
+                      : option.value === 'panorama'
+                        ? 'h-9 w-[82%] [clip-path:polygon(0_0,88%_0,100%_28%,100%_100%,0_100%)]'
+                        : option.value === 'portrait'
+                          ? 'h-14 w-11 rounded-[0.65rem]'
+                          : 'h-12 w-12 translate-x-2 [clip-path:polygon(0_0,84%_0,100%_16%,100%_100%,0_100%)]'
+                  }`}
+                />
+                {option.value === 'offset-square' ? (
+                  <span className="absolute h-12 w-12 -translate-x-1 translate-y-1 border border-dashed border-[color:var(--np-muted)]" />
+                ) : null}
+              </span>
+              <span className="truncate text-[12px] font-semibold text-[color:var(--np-text)]">{t(option.label)}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 function HeroPxSlider({
   label,
@@ -201,7 +244,9 @@ function HeroPxSlider({
   unit?: string;
 }) {
   return (
+    <div className="np-round-range">
     <NpRangeField label={label} value={value} min={min} max={max} unit={unit} onChange={onChange} />
+    </div>
   );
 }
 
@@ -222,34 +267,42 @@ function HeroToolPicker({
 }) {
   const t = useT();
   if (tools.length === 0) {
-    return <p className="np-note">{t('Add tools to your profile to show them here.')}</p>;
+    return <><span className="np-field-label">{t('Tools shown')}</span><p className="np-note">{t('Add tools to your profile to show them here.')}</p></>;
   }
-  const picked = value.length > 0 ? value : tools.slice(0, limit);
+  const picked = (value.length > 0 ? value : tools).filter((tool) => tools.includes(tool)).slice(0, limit);
   return (
     <>
-      <div className="np-chips">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <span className="np-field-label !mb-0">{t('Tools shown')}</span>
+        <span className="np-value-badge shrink-0">{t('{count} of {limit} shown', { count: picked.length, limit })}</span>
+      </div>
+      <div className="flex flex-col gap-2">
         {tools.map((tool) => {
           const active = picked.includes(tool);
           return (
+            <div key={tool} className="flex min-h-12 items-center justify-between gap-3">
+              <span className="flex min-w-0 items-center gap-3 text-sm text-[var(--np-label)]">
+                <CreatorToolLogo label={tool} size={22} />
+                <span className="truncate">{tool}</span>
+              </span>
             <button
-              key={tool}
               type="button"
               aria-pressed={active}
+              aria-label={`${t('Tools shown')} — ${tool}`}
               disabled={!active && picked.length >= limit}
               onClick={() =>
                 onChange(active ? picked.filter((item) => item !== tool) : [...picked, tool].slice(0, limit))
               }
-              className="np-chip"
+              className="np-visibility-btn shrink-0 disabled:opacity-40"
               data-active={active ? 'true' : 'false'}
             >
-              <CreatorToolLogo label={tool} size={18} />
-              {tool}
+              <FontAwesomeIcon icon={active ? faEye : faEyeSlash} className="h-4 w-4" aria-hidden="true" />
             </button>
+            </div>
           );
         })}
       </div>
       <div className="mt-3 flex items-center justify-between gap-3">
-        <span className="np-value-badge">{t('{count} of {limit} shown', { count: picked.length, limit })}</span>
         {value.length > 0 ? (
           <button
             type="button"
@@ -289,6 +342,8 @@ const HERO_DESIGNS_WITH_OPTIONS = new Set([
   'studio-split',
   'work-duo',
   'bowl-intro',
+  'colophon',
+  'statement-overlap',
 ]);
 
 function HeroHiddenNotice({ onEnable }: { onEnable: () => void }) {
@@ -322,16 +377,33 @@ export function HeroSettingsPanel({
   chrome?: NpPanelChrome;
 }) {
   const t = useT();
+  const availableWorkIds = new Set(availableWorks.map((work) => work.id));
+  const selectedWorksIds = (
+    hero.heroSelectedWorksSelectedWorkIds ?? availableWorks.slice(0, 4).map((work) => work.id)
+  ).filter((id) => availableWorkIds.has(id)).slice(0, 4);
+  const selectedWorkDuoIds = (hero.heroWorkDuoSelectedWorkIds ?? [])
+    .filter((id) => availableWorkIds.has(id))
+    .slice(0, 2);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<HeroSettingsSubSection>('general');
   const subSection = normalizeHeroSettingsSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: HeroSettingsSubSection) => {
+    if(value==='banner')setShowBannerGrid(true);
     onSubSectionChange?.(value);
     if (controlledSubSection === undefined) setUncontrolledSubSection(value);
   };
   // Banner tab: browse designs (grid) vs configure the selected one (detail) — picking a
   // design jumps straight to its settings instead of leaving them buried below the grid.
-  const [showBannerGrid, setShowBannerGrid] = useState(false);
+  const [showBannerGrid, setShowBannerGrid] = useState(true);
+  const [catalogueVisited, setCatalogueVisited] = useState(subSection === 'banner');
+  if (subSection === 'banner' && !catalogueVisited) setCatalogueVisited(true);
+  const [previousSubSection,setPreviousSubSection]=useState(subSection);
+  if(previousSubSection!==subSection){setPreviousSubSection(subSection);if(subSection==='banner')setShowBannerGrid(true);}
   const previewSource = usePortfolioDesignPreviewSource();
+  const backgroundLibrary=usePortfolioBackgroundLibrary();
+  const backgroundMode = hero.colorModeOverride === 'light' || hero.colorModeOverride === 'dark' ? hero.colorModeOverride : previewSource?.settings.global.colorMode ?? 'dark';
+  const backgroundPalette = previewSource
+    ? applyActivePortfolioPalette({ ...previewSource.settings, hero: { ...previewSource.settings.hero, ...hero } }).hero.palette ?? DEFAULT_HERO_PALETTE
+    : sectionFamilyPalette(hero.paletteFamily, backgroundMode) ?? hero.palette ?? DEFAULT_HERO_PALETTE;
   const selectedBannerDesign = hero.heroBannerDesign ?? 'swiss-editorial';
   const selectedBannerLabel =
     PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.find((option) => option.value === selectedBannerDesign)?.label ??
@@ -339,7 +411,6 @@ export function HeroSettingsPanel({
   const normalizedTools = Array.from(
     new Set(availableTools.map((item) => item.trim()).filter(Boolean))
   );
-  const backgroundLibrary = usePortfolioBackgroundLibrary();
 
   return (
     <NpPanelShell
@@ -352,35 +423,87 @@ export function HeroSettingsPanel({
       chrome={chrome}
     >
       {subSection === 'general' ? (
-        <div className="np-stack">
+        <div className="np-stack mb-6">
           <NpToggleRow
             card
             title={t('Show Hero section')}
-            description={hero.enabled ? t('The opening section of the public portfolio.') : t('The page starts with the next section.')}
             checked={hero.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          <div className="np-dimmable" data-disabled={hero.enabled ? 'false' : 'true'} aria-disabled={!hero.enabled} inert={!hero.enabled}>
-            <NpCollapsibleSection title={t('Images')}>
-              <NpToggleRow
-                title={t('Black & white images')}
-                checked={hero.heroImageGrayscale === true}
-                onChange={(heroImageGrayscale) => onChange({ heroImageGrayscale })}
-              />
-            </NpCollapsibleSection>
+          <SectionColorModeControl hideLabel label={t('Color mode')} value={hero.colorModeOverride ?? 'auto'} onChange={colorModeOverride => onChange({ colorModeOverride })} />
+<div className="np-dimmable mt-6" data-disabled={hero.enabled ? 'false' : 'true'} aria-disabled={!hero.enabled} inert={!hero.enabled}>
+              <NpCollapsibleSection title={t('Availability')}>
+                <NpToggleRow title={t('Show availability badge')} checked={hero.showAvailabilityBadge !== false} onChange={(showAvailabilityBadge) => onChange({ showAvailabilityBadge })} />
+                <div className="np-field">
+                  <span className="np-field-label">{t('Badge style')}</span>
+                  <div className="np-availability-style-grid" role="group" aria-label={t('Badge style')}>
+                    {([
+                      { value: 'default', label: 'Design default' },
+                      { value: 'pill-live', label: 'Live pill' },
+                      { value: 'pill-minimal', label: 'Minimal' },
+                      { value: 'bordered', label: 'Bordered' },
+                      { value: 'soft', label: 'Soft' },
+                    ] as const).map((option) => (
+                      <button
+                        key={option.value}
+                        type="button"
+                        className="np-availability-style-card"
+                        aria-pressed={(hero.availabilityStyleOverride ?? 'default') === option.value}
+                        onClick={() => onChange({ availabilityStyleOverride: option.value === 'default' ? undefined : option.value })}
+                      >
+                        <span className="np-availability-style-stage" data-availability-style={option.value === 'default' ? undefined : option.value} aria-hidden="true" style={{
+                          '--hero-status-accent': backgroundPalette.secondaire,
+                          '--hero-status-ink': backgroundPalette.texteFort,
+                          '--hero-status-surface': backgroundPalette.fond,
+                          backgroundColor: backgroundPalette.fond,
+                          borderRadius: 6,
+                        } as CSSProperties}>
+                          <span data-hero-availability className="np-availability-style-sample">{t('Available for work')}</span>
+                        </span>
+                        <span>{t(option.label)}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <label className="np-field block">
+                  <span className="np-field-label">{t('Available label')}</span>
+                  <input className="np-input" type="text" maxLength={100} value={hero.availabilityLabel} onChange={(event) => onChange({ availabilityLabel: event.target.value })} />
+                </label>
+                <label className="np-field block">
+                  <span className="np-field-label">{t('Unavailable label')}</span>
+                  <input className="np-input" type="text" maxLength={100} value={hero.availabilityUnavailableLabel} onChange={(event) => onChange({ availabilityUnavailableLabel: event.target.value })} />
+                </label>
+              </NpCollapsibleSection>
+              <NpCollapsibleSection title={t('Biography')}>
+                <InfoBioToolbar info={hero} onChange={onChange}/>
+                <label className="np-field block">
+                  <span className="np-field-label">{t('Biography')}</span>
+                  <textarea
+                    rows={7}
+                    maxLength={5000}
+                    className="np-input !h-auto min-h-40 resize-y py-3"
+                    value={hero.heroBioCustom ?? ''}
+                    placeholder={t('Leave empty to use your profile biography.')}
+                    onChange={(event) => onChange({ heroBioCustom: event.target.value })}
+                  />
+                </label>
+                {hero.heroBioCustom ? (
+                  <button type="button" className="np-link-btn" onClick={() => onChange({ heroBioCustom: '' })}>
+                    {t('Use profile biography')}
+                  </button>
+                ) : null}
+              </NpCollapsibleSection>
           </div>
         </div>
       ) : null}
 
-      {subSection === 'banner' && !hero.enabled ? <HeroHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {subSection === 'banner' && !hero.enabled && !showBannerGrid ? <HeroHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
 
-      {subSection === 'banner' && hero.enabled ? (
-          showBannerGrid ? (
-            <div className="np-stack">
-              <NpBackRow title={t('Hero design')} onBack={() => setShowBannerGrid(false)} />
+      {catalogueVisited && hero.enabled ? (
+            <div className="np-stack" hidden={subSection !== 'banner' || !showBannerGrid}>
               {previewSource ? (
                 /* In the studio: every banner rendered for real, one per row. */
-                <div className="mt-3 flex flex-col gap-7">
+                <div className="mt-3 flex flex-col gap-7" aria-label={t('Choose a design')}>
                   {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map((option) => (
                     <PortfolioDesignLivePreviewCard
                       key={option.value}
@@ -388,63 +511,147 @@ export function HeroSettingsPanel({
                       labelClassName="pf-stack-card-label"
                       showPreviewRing={false}
                       showCurrentBadge={false}
+                      autoLoad
                       flush
                       active={selectedBannerDesign === option.value}
                       label={t(option.label)}
-                      src={withDesignPreview(previewSource.portfolioPath, { section: 'hero', design: option.value })}
+                      src={`/portfolio/hero-preview?creator=${encodeURIComponent(previewSource.portfolioPath.split('/').filter(Boolean).pop() ?? '')}&design=${encodeURIComponent(option.value)}`}
+                      thumbnail={<HeroBannerDesignPreview design={option.value} />}
                       settings={previewSource.settings}
                       onClick={() => {
                         onChange(heroBannerDesignSettingsPatch(option.value));
-                        setShowBannerGrid(false);
                       }}
+                      onCustomize={()=>{if(selectedBannerDesign!==option.value)onChange(heroBannerDesignSettingsPatch(option.value));setShowBannerGrid(false);}}
                     />
                   ))}
                 </div>
               ) : (
-              <div className="mt-3 grid grid-cols-2 gap-3">
-                {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map((option) => {
-                  const active = selectedBannerDesign === option.value;
-                  return (
-                    <NpOptionCard
-                      key={option.value}
-                      selected={active}
-                      title={t(option.label)}
-                      onClick={() => {
-                        onChange(heroBannerDesignSettingsPatch(option.value));
-                        setShowBannerGrid(false);
-                      }}
-                      illustration={
-                      <div className="h-full w-full overflow-hidden rounded-md">
-                        {/* No `hero` prop here: this grid compares many designs at once, so
-                            it must stay an abstract mini-schema (fixed shape count, uniform
-                            height) — real content (variable-length text, pills, dots) belongs
-                            only in the single-design detail preview above. */}
-                        <HeroBannerDesignPreview design={option.value} />
-                      </div>
-                      }
-                    />
-                  );
-                })}
+              <div className="mt-3 flex flex-col gap-7" aria-label={t('Choose a design')}>
+                {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map(option=><DesignCatalogueCard key={option.value} label={t(option.label)} selected={selectedBannerDesign===option.value} onSelect={()=>onChange(heroBannerDesignSettingsPatch(option.value))} onCustomize={()=>{if(selectedBannerDesign!==option.value)onChange(heroBannerDesignSettingsPatch(option.value));setShowBannerGrid(false);}}><HeroBannerDesignPreview design={option.value}/></DesignCatalogueCard>)}
               </div>
               )}
             </div>
-          ) : (
+      ) : null}
+      {subSection === 'banner' && hero.enabled && !showBannerGrid ? (
             <div className="np-stack">
-              <NpCollapsibleSection title={t('Layout')}>
-                <NpPickerRow
-                  label={t('Hero design')}
-                  value={t(selectedBannerLabel)}
-                  thumbnail={
-                    <div className="h-full w-full overflow-hidden rounded-md">
-                      <HeroBannerDesignPreview design={selectedBannerDesign} hero={hero} />
-                    </div>
-                  }
-                  onClick={() => setShowBannerGrid(true)}
-                />
-              </NpCollapsibleSection>
+              <NpBackRow title={t(selectedBannerLabel)} onBack={()=>setShowBannerGrid(true)}/>
+              {['editorial-rail','statement-cta','portrait-balance','left-portrait','circle-portrait','experience-split','editorial-overlap','studio-split','work-duo'].includes(selectedBannerDesign)?<label className="np-field block"><span className="np-field-label">{t('Greeting')}</span><textarea aria-label={t('Greeting')} className="np-input !h-auto min-h-20 resize-y py-3" rows={3} maxLength={500} value={hero.heroGreetingOverrides?.[selectedBannerDesign]??''} placeholder={t("Hi, I'm {name} — a {specialty}.",{name:'{name}',specialty:'{specialty}'})} onChange={event=>onChange({heroGreetingOverrides:{...hero.heroGreetingOverrides,[selectedBannerDesign]:event.target.value}})}/><span className="np-note">{t('Use {name} and {specialty} for your profile details. Leave empty to keep the original greeting.',{name:'{name}',specialty:'{specialty}'})}</span></label>:null}
+                {selectedBannerDesign !== 'colophon' ? <NpToggleRow title={t('Black & white images')} checked={hero.heroImageGrayscale === true} onChange={heroImageGrayscale => onChange({ heroImageGrayscale })} /> : null}
 
               {HERO_DESIGNS_WITH_OPTIONS.has(selectedBannerDesign) ? (
-              <NpCollapsibleSection title={t('Layout options')}>
+              <div className="flex flex-col gap-[30px]">
+              {selectedBannerDesign === 'statement-overlap' ? (
+                <div className="flex flex-col gap-6">
+                  <p className="np-note">{t('By default the big words are one word each: your specialty and your first name. Type your own words to replace them; a trailing full stop is drawn in the accent colour.')}</p>
+                  {([
+                    ['heroStatementStart', 'First half', 'Your specialty', 40],
+                    ['heroStatementEnd', 'Second half', 'Your first name', 40],
+                    ['heroStatementTagline', 'Tagline', 'Use the start of your bio', 160],
+                    ['heroStatementCtaLabel', 'Button label', 'Let’s talk about your project', 48],
+                  ] as const).map(([key, label, placeholder, max]) => (
+                    <label key={key} className="np-field block">
+                      <div className="flex items-baseline justify-between gap-3">
+                        <span className="np-field-label">{t(label)}</span>
+                        <span className="text-xs tabular-nums text-[color:var(--pf-palette-texte-muted)]">{(hero[key] ?? '').length}/{max}</span>
+                      </div>
+                      <input className="np-input" value={hero[key] ?? ''} maxLength={max} placeholder={t(placeholder)}
+                        onChange={event => onChange({ [key]: event.target.value })} />
+                    </label>
+                  ))}
+                  <HeroOptionGrid
+                    label={t('Statement font')}
+                    options={[{ value: 'serif' as const, label: t('Serif') }, { value: 'body' as const, label: t('Match site font') }]}
+                    value={hero.heroStatementFont ?? 'serif'}
+                    onChange={heroStatementFont => onChange({ heroStatementFont })}
+                  />
+                  <NpToggleRow title={t('Scroll cue')} checked={hero.heroStatementShowScroll !== false}
+                    onChange={heroStatementShowScroll => onChange({ heroStatementShowScroll })} />
+                  <PortfolioSettingsPhotoField label={t('Portrait photo')} photoUrl={hero.heroStatementImageUrl ?? ''}
+                    profileAvatarUrl={previewSource?.profileAvatarUrl ?? null}
+                    onChange={heroStatementImageUrl => onChange({ heroStatementImageUrl })} />
+                </div>
+              ) : null}
+              {selectedBannerDesign === 'colophon' ? (
+                <div className="flex flex-col gap-6">
+                  <label className="np-field block">
+                    <span className="np-field-label">{t('Display name')}</span>
+                    <input className="np-input" value={hero.heroColophonName ?? ''} maxLength={160}
+                      placeholder={t('Use profile name')}
+                      onChange={event => onChange({ heroColophonName: event.target.value })} />
+                  </label>
+                  <NpToggleRow title={t('Uppercase name')} checked={hero.heroColophonUppercase === true}
+                    onChange={heroColophonUppercase => onChange({ heroColophonUppercase })} />
+                  <div className="np-field">
+                    <span className="np-field-label">{t('Selected works shown')}</span>
+                    <p className="np-note mt-2">{t('Choose up to 4 projects.')}</p>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      {availableWorks.map(work => {
+                        const picked = (hero.heroColophonSelectedWorkIds ?? availableWorks.slice(0, 4).map(item => item.id)).filter(id => availableWorkIds.has(id));
+                        const active = picked.includes(work.id);
+                        return <button key={work.id} type="button" aria-pressed={active} disabled={!active && picked.length >= 4}
+                          onClick={() => onChange({ heroColophonSelectedWorkIds: active ? picked.filter(id => id !== work.id) : [...picked, work.id] })}
+                          className={`min-w-0 rounded-xl border p-3 text-left text-xs leading-relaxed transition disabled:opacity-40 ${active ? 'border-[color:var(--np-label)] ring-1 ring-[color:var(--np-label)]' : 'border-[color:var(--np-card-border)]'}`}>
+                          <span className="mb-2 block font-mono text-[color:var(--np-muted)]">{active ? String(picked.indexOf(work.id) + 1).padStart(2, '0') : '+'}</span>
+                          <span className="block break-words">{work.title}</span>
+                        </button>;
+                      })}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-4">
+                      <button type="button" className="np-link-btn" onClick={() => onChange({ heroColophonSelectedWorkIds: [] })}>{t('Show no project')}</button>
+                      <button type="button" className="np-link-btn" onClick={() => onChange({ heroColophonSelectedWorkIds: null })}>{t('Reset — first 4 projects')}</button>
+                    </div>
+                  </div>
+                </div>
+              ) : null}
+              {selectedBannerDesign === 'portrait-identity' ? (
+                <HeroToggleRow
+                  label={t('Swap bio ↔ name + specialty')}
+                  checked={hero.heroBannerSwapBioName === true}
+                  onChange={(heroBannerSwapBioName) => onChange({ heroBannerSwapBioName })}
+                />
+              ) : null}
+              {selectedBannerDesign === 'editorial-rail' ? (
+                <div className="flex flex-col gap-3">
+                  <HeroToggleRow
+                    label={t('Bio under the portrait')}
+                    checked={hero.heroEditorialRailBioUnderPortrait === true}
+                    onChange={(heroEditorialRailBioUnderPortrait) => onChange({ heroEditorialRailBioUnderPortrait })}
+                  />
+                  <HeroToggleRow
+                    label={t('Name + specialty under the portrait')}
+                    checked={hero.heroEditorialRailIdentityUnderPortrait === true}
+                    onChange={(heroEditorialRailIdentityUnderPortrait) => onChange({ heroEditorialRailIdentityUnderPortrait })}
+                  />
+                  <HeroToggleRow
+                    label={t('CTA under the bio')}
+                    checked={hero.heroEditorialRailShowCta === true}
+                    onChange={(heroEditorialRailShowCta) => onChange({ heroEditorialRailShowCta })}
+                  />
+                </div>
+              ) : null}
+              {selectedBannerDesign === 'editorial-rail' ? (
+                <div>
+                  <HeroToolPicker tools={normalizedTools} limit={4} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
+                </div>
+              ) : null}
+              {HERO_PORTRAIT_SHAPE_DESIGNS.has(selectedBannerDesign) ? (
+                <HeroOptionGrid
+                  label={t('Portrait shape')}
+                  portraitPreview
+                  bowlPreview={selectedBannerDesign === 'bowl-intro' ? { shape: hero.heroPortraitShape ?? 'auto', motif: hero.heroBowlIntroMotif ?? 'bowl', kind: 'shape' } : undefined}
+                  options={
+                    (selectedBannerDesign === 'portrait-identity' || selectedBannerDesign === 'editorial-rail')
+                      ? PORTFOLIO_HERO_PORTRAIT_SHAPE_OPTIONS.filter((option) => option.value !== 'auto')
+                      : PORTFOLIO_HERO_PORTRAIT_SHAPE_OPTIONS
+                  }
+                  value={
+                    (selectedBannerDesign === 'portrait-identity' || selectedBannerDesign === 'editorial-rail') && (hero.heroPortraitShape ?? 'auto') === 'auto'
+                      ? 'rectangle'
+                      : hero.heroPortraitShape ?? 'auto'
+                  }
+                  onChange={(heroPortraitShape) => onChange({ heroPortraitShape })}
+                />
+              ) : null}
 
               {(hero.heroBannerDesign ?? 'swiss-editorial') === 'swiss-editorial' ? (
                 <div className="space-y-6">
@@ -453,7 +660,11 @@ export function HeroSettingsPanel({
                     checked={hero.heroBannerSwapBioName === true}
                     onChange={(heroBannerSwapBioName) => onChange({ heroBannerSwapBioName })}
                   />
-                  <div className="space-y-4">
+                </div>
+              ) : null}
+
+              {(hero.heroBannerDesign ?? 'swiss-editorial') === 'swiss-editorial' ? (
+                  <NpCollapsibleSection title={t('Labels')}>
                     <label className="np-field block">
                       <span className="np-field-label">{t('Currently label')}</span>
                       <input
@@ -482,51 +693,12 @@ export function HeroSettingsPanel({
                         className="np-input"
                       />
                     </label>
-                  </div>
-                </div>
+                  </NpCollapsibleSection>
               ) : null}
 
-          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'portrait-identity' ? (
-            <div className="space-y-4">
-              <HeroToggleRow
-                label={t('Swap bio ↔ name + specialty')}
-                checked={hero.heroBannerSwapBioName === true}
-                onChange={(heroBannerSwapBioName) => onChange({ heroBannerSwapBioName })}
-              />
-            </div>
-          ) : null}
 
 
-          {(hero.heroBannerDesign ?? 'swiss-editorial') === 'editorial-rail' ? (
-            <div className="space-y-4">
-              <HeroToggleRow
-                label={t('Bio under the portrait')}
-                checked={hero.heroEditorialRailBioUnderPortrait === true}
-                onChange={(heroEditorialRailBioUnderPortrait) =>
-                  onChange({ heroEditorialRailBioUnderPortrait })
-                }
-              />
-              <HeroToggleRow
-                label={t('Name + specialty under the portrait')}
-                checked={hero.heroEditorialRailIdentityUnderPortrait === true}
-                onChange={(heroEditorialRailIdentityUnderPortrait) =>
-                  onChange({ heroEditorialRailIdentityUnderPortrait })
-                }
-              />
-              <HeroToggleRow
-                label={t('CTA under the bio')}
-                checked={hero.heroEditorialRailShowCta === true}
-                onChange={(heroEditorialRailShowCta) =>
-                  onChange({ heroEditorialRailShowCta })
-                }
-              />
 
-              <div>
-                <span className="np-field-label">{t('Tools shown')}</span>
-                <HeroToolPicker tools={normalizedTools} limit={4} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
-              </div>
-            </div>
-          ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'statement-cta' ? (
             <div className="space-y-4">
@@ -589,7 +761,6 @@ export function HeroSettingsPanel({
                 />
               ) : null}
               <div>
-                <span className="np-field-label">{t('Tools shown')}</span>
                 <HeroToolPicker tools={normalizedTools} limit={5} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
               </div>
             </div>
@@ -598,8 +769,11 @@ export function HeroSettingsPanel({
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'portrait-balance' ? (
             <div className="space-y-4">
               <div>
-                <span className="np-field-label">{t('Tools shown')}</span>
-                <HeroToolPicker tools={normalizedTools} limit={12} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
+                <HeroToolPicker tools={normalizedTools} limit={4} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
+                <label className="np-field mt-6 block">
+                  <span className="np-field-label">{t('Stack label')}</span>
+                  <input className="np-input" type="text" maxLength={80} value={hero.toolsLabelText ?? ''} placeholder={t('Core stack')} onChange={(event) => onChange({ toolsLabelText: event.target.value })} />
+                </label>
               </div>
             </div>
           ) : null}
@@ -625,6 +799,12 @@ export function HeroSettingsPanel({
                   onChange({ heroCirclePortraitSpecialtyMark })
                 }
               />
+              <HeroOptionGrid
+                label={t('Button shape')}
+                options={[{ value: 'pill', label: t('Pill') }, { value: 'rectangle', label: t('Rectangle') }]}
+                value={hero.heroCirclePortraitButtonShape ?? 'pill'}
+                onChange={(heroCirclePortraitButtonShape) => onChange({ heroCirclePortraitButtonShape })}
+              />
               <HeroToggleRow
                 label={t('Title at the top')}
                 checked={hero.heroCirclePortraitTitleBottom === false}
@@ -637,6 +817,12 @@ export function HeroSettingsPanel({
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'experience-split' ? (
             <div className="space-y-3">
+              <HeroOptionGrid
+                label={t('Button shape')}
+                options={[{ value: 'pill', label: t('Pill') }, { value: 'rectangle', label: t('Rectangle') }]}
+                value={hero.heroExperienceSplitButtonShape ?? 'pill'}
+                onChange={(heroExperienceSplitButtonShape) => onChange({ heroExperienceSplitButtonShape })}
+              />
               <HeroToggleRow
                 label={t('Bio on the right')}
                 checked={hero.heroExperienceSplitBioRight !== false}
@@ -656,16 +842,6 @@ export function HeroSettingsPanel({
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'editorial-overlap' ? (
             <div className="space-y-4">
-              <PortfolioBackgroundImageUpload
-                label={t('Scene image')}
-                url={hero.heroEditorialOverlapImageUrl ?? ''}
-                onChange={(heroEditorialOverlapImageUrl) =>
-                  onChange({ heroEditorialOverlapImageUrl })
-                }
-                library={backgroundLibrary?.library}
-                onLibraryChange={backgroundLibrary?.onLibraryChange}
-                helperText={t('Landscape photo behind the panel — independent of the profile avatar.')}
-              />
               <label className="np-field block">
                 <span className="np-field-label">
                   {t('Editorial title (optional)')}
@@ -680,27 +856,11 @@ export function HeroSettingsPanel({
                   className="np-input !h-auto min-h-20 resize-y py-3"
                 />
               </label>
-              <HeroOptionGrid
-                label={t('Frame width')}
-                options={PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS}
-                value={hero.heroEditorialOverlapWidth ?? 'full'}
-                onChange={(heroEditorialOverlapWidth) =>
-                  onChange({ heroEditorialOverlapWidth })
-                }
-              />
-              <HeroOptionGrid
-                label={t('Position')}
-                options={PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS}
-                value={hero.heroEditorialOverlapAlign ?? 'left'}
-                onChange={(heroEditorialOverlapAlign) =>
-                  onChange({ heroEditorialOverlapAlign })
-                }
-              />
             </div>
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'selected-works' ? (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <HeroOptionGrid
                 label={t('Identity layout')}
                 options={PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS}
@@ -709,6 +869,82 @@ export function HeroSettingsPanel({
                   onChange({ heroSelectedWorksIdentityLayout })
                 }
               />
+              <div className="np-field pt-1">
+                <div className="flex items-center justify-between gap-3">
+                  <span className="np-field-label">{t('Selected works shown')}</span>
+                  <span className="text-[0.68rem] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">
+                    {selectedWorksIds.length} / 4
+                  </span>
+                </div>
+                <p className="mt-2 max-w-[34rem] text-xs leading-[1.65] text-[color:var(--np-muted)]">
+                  {t('Choose up to 4 projects. The composition adapts to every selection size, including none.')}
+                </p>
+                {availableWorks.length > 0 ? (
+                  <>
+                    <div className="mt-4 grid grid-cols-2 gap-3">
+                      {availableWorks.map((work) => {
+                        const current = selectedWorksIds;
+                        const active = current.includes(work.id);
+                        const disabled = !active && current.length >= 4;
+                        return (
+                          <button
+                            key={work.id}
+                            type="button"
+                            disabled={disabled}
+                            aria-pressed={active}
+                            onClick={() => {
+                              const next = active
+                                ? current.filter((id) => id !== work.id)
+                                : [...current, work.id];
+                              onChange({ heroSelectedWorksSelectedWorkIds: next });
+                            }}
+                            className={`min-w-0 overflow-hidden rounded-xl border bg-[color:var(--np-card)] text-left transition ${
+                              active
+                                ? 'border-[color:var(--np-label)] ring-2 ring-[color:var(--np-label)]'
+                                : 'border-[color:var(--np-card-border)] hover:border-[color:var(--np-muted)]'
+                            } disabled:cursor-not-allowed disabled:opacity-40`}
+                          >
+                            <span className="relative block aspect-[4/3] w-full bg-[color:var(--np-well)]">
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img src={work.imageUrl} alt="" className="h-full w-full object-cover" />
+                              {active ? (
+                                <span className="absolute right-2 top-2 flex size-6 items-center justify-center rounded-full bg-black text-[0.65rem] font-bold text-white">
+                                  {current.indexOf(work.id) + 1}
+                                </span>
+                              ) : null}
+                            </span>
+                            <span className="block truncate px-3 py-2.5 text-xs font-medium text-[color:var(--np-text)]">
+                              {work.title}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                    <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 border-t border-[color:var(--np-card-border)] pt-3">
+                      {(hero.heroSelectedWorksSelectedWorkIds ?? []).length > 0 || hero.heroSelectedWorksSelectedWorkIds === null ? (
+                        <button
+                          type="button"
+                          onClick={() => onChange({ heroSelectedWorksSelectedWorkIds: [] })}
+                          className="np-link-btn"
+                        >
+                          {t('Show no project')}
+                        </button>
+                      ) : null}
+                      {hero.heroSelectedWorksSelectedWorkIds !== null ? (
+                        <button
+                          type="button"
+                          onClick={() => onChange({ heroSelectedWorksSelectedWorkIds: null })}
+                          className="np-link-btn"
+                        >
+                          {t('Reset — first 4 projects')}
+                        </button>
+                      ) : null}
+                    </div>
+                  </>
+                ) : (
+                  <p className="mt-3 text-xs text-[color:var(--np-muted)]">{t('No project with an image is available yet.')}</p>
+                )}
+              </div>
               <HeroPxSlider
                 label={t('Thumbnail dimming')}
                 value={hero.heroSelectedWorksDimIntensity ?? 40}
@@ -724,6 +960,14 @@ export function HeroSettingsPanel({
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'identity-index' ? (
             <div className="space-y-4">
+              <NpToggleRow title={t('Show availability')} checked={hero.showAvailabilityBadge!==false} onChange={showAvailabilityBadge=>onChange({showAvailabilityBadge})}/>
+              {([
+                ['heroIdentityIndexSpecialtyLabel','Specialty'],
+                ['heroIdentityIndexAvailabilityLabel','Availability'],
+                ['heroIdentityIndexExperienceLabel','Years of experience'],
+                ['availabilityLabel','Available label'],
+                ['availabilityUnavailableLabel','Unavailable label'],
+              ] as const).map(([field,label])=><label key={field} className="np-field block"><span className="np-field-label">{t(label)}</span><input className="np-input" maxLength={120} value={hero[field]??''} placeholder={t(label)} onChange={event=>onChange({[field]:event.target.value})}/></label>)}
               <HeroToggleRow
                 label={t('Swap name ↔ bio')}
                 checked={hero.heroBannerSwapBioName === true}
@@ -776,7 +1020,30 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'studio-split' ? (
-            <div className="space-y-4">
+            <div className="flex flex-col gap-7">
+              <div className="-my-2">
+                <ColorSwatchRow
+                  label={t('Accent')}
+                  options={[
+                    { value: '', label: t('Palette'), color: backgroundPalette.principal, auto: true },
+                    { value: '#E51B23', label: t('Red'), color: '#E51B23' },
+                    { value: '#4338CA', label: t('Indigo'), color: '#4338CA' },
+                    { value: '#087A5B', label: t('Verdant'), color: '#087A5B' },
+                    { value: '#B45309', label: t('Saffron'), color: '#B45309' },
+                    { value: '#334155', label: t('Slate'), color: '#334155' },
+                  ]}
+                  value={hero.heroStudioSplitAccentColor ?? ''}
+                  onChange={(heroStudioSplitAccentColor) => onChange({ heroStudioSplitAccentColor })}
+                />
+                <NpRangeField
+                  label={t('Opacity')}
+                  value={hero.heroStudioSplitAccentOpacity ?? 100}
+                  min={0}
+                  max={100}
+                  unit="%"
+                  onChange={(heroStudioSplitAccentOpacity) => onChange({ heroStudioSplitAccentOpacity })}
+                />
+              </div>
               <label className="np-field block">
                 <span className="np-field-label">
                   {t('Eyebrow (e.g. Portfolio)')}
@@ -795,9 +1062,7 @@ export function HeroSettingsPanel({
                 onChange={(heroStudioSplitMediaUrl) => onChange({ heroStudioSplitMediaUrl })}
                 helperText={t('Optional custom media. Without one, the circle, portrait and square formats use the profile portrait; panorama keeps the abstract scene.')}
               />
-              <HeroOptionGrid
-                label={t('Frame format')}
-                options={PORTFOLIO_HERO_STUDIO_SPLIT_FRAME_STYLE_OPTIONS}
+              <StudioFrameFormatPicker
                 value={hero.heroStudioSplitFrameStyle ?? 'circle-center'}
                 onChange={(heroStudioSplitFrameStyle) => onChange({ heroStudioSplitFrameStyle })}
               />
@@ -823,28 +1088,24 @@ export function HeroSettingsPanel({
                 />
               </label>
               <div className="np-field">
-                <span className="np-field-label">{t('Selected works shown')}</span>
+                <div className="flex items-center justify-between gap-3">
+                  <span className="np-field-label !mb-0">{t('Selected works shown')}</span>
+                  <span className="np-value-badge shrink-0">{selectedWorkDuoIds.length} / 2</span>
+                </div>
                 {availableWorks.length > 0 ? (
                   <>
                     <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
                       {availableWorks.map((work) => {
-                        const picked = hero.heroWorkDuoSelectedWorkIds ?? [];
-                        const active =
-                          picked.length > 0
-                            ? picked.includes(work.id)
-                            : availableWorks.slice(0, 2).some((item) => item.id === work.id);
-                        const disabled =
-                          picked.length > 0 && !active && picked.length >= 2;
+                        const picked = selectedWorkDuoIds;
+                        const active = picked.includes(work.id);
+                        const disabled = !active && picked.length >= 2;
                         return (
                           <button
                             key={work.id}
                             type="button"
                             disabled={disabled}
                             onClick={() => {
-                              const current =
-                                (hero.heroWorkDuoSelectedWorkIds?.length ?? 0) > 0
-                                  ? [...(hero.heroWorkDuoSelectedWorkIds ?? [])]
-                                  : availableWorks.slice(0, 2).map((item) => item.id);
+                              const current = [...selectedWorkDuoIds];
                               const next = current.includes(work.id)
                                 ? current.filter((id) => id !== work.id)
                                 : current.length >= 2
@@ -854,7 +1115,7 @@ export function HeroSettingsPanel({
                             }}
                             className={`overflow-hidden rounded-xl border bg-[color:var(--np-card)] text-left transition ${
                               active
-                                ? 'border-[color:var(--np-accent)] ring-2 ring-[color:var(--np-accent)]'
+                                ? 'border-[color:var(--np-label)] ring-2 ring-[color:var(--np-label)]'
                                 : 'border-[color:var(--np-card-border)] hover:border-[color:var(--np-muted)]'
                             } disabled:cursor-not-allowed disabled:opacity-45`}
                           >
@@ -873,13 +1134,13 @@ export function HeroSettingsPanel({
                         );
                       })}
                     </div>
-                    {(hero.heroWorkDuoSelectedWorkIds?.length ?? 0) > 0 ? (
+                    {selectedWorkDuoIds.length > 0 ? (
                       <button
                         type="button"
                         onClick={() => onChange({ heroWorkDuoSelectedWorkIds: [] })}
                         className="np-link-btn mt-3"
                       >
-                        {t('Reset — first 2 projects')}
+                        {t('Clear selection')}
                       </button>
                     ) : null}
                   </>
@@ -892,142 +1153,57 @@ export function HeroSettingsPanel({
             <div className="space-y-4">
               <HeroOptionGrid
                 label={t('Portrait motif')}
+                bowlPreview={{ shape: hero.heroPortraitShape ?? 'auto', motif: hero.heroBowlIntroMotif ?? 'bowl', kind: 'motif' }}
                 options={PORTFOLIO_HERO_BOWL_INTRO_MOTIF_OPTIONS}
                 value={hero.heroBowlIntroMotif ?? 'bowl'}
                 onChange={(heroBowlIntroMotif) => onChange({ heroBowlIntroMotif })}
               />
+              <HeroOptionGrid
+                label={t('Button shape')}
+                options={[{ value: 'pill', label: t('Pill') }, { value: 'rectangle', label: t('Rectangle') }]}
+                value={hero.heroBowlIntroButtonShape ?? 'rectangle'}
+                onChange={(heroBowlIntroButtonShape) => onChange({ heroBowlIntroButtonShape })}
+              />
             </div>
           ) : null}
 
-              </NpCollapsibleSection>
+              </div>
               ) : null}
             </div>
-          )
       ) : null}
 
       {subSection === 'background' && !hero.enabled ? <HeroHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
 
       {subSection === 'background' && hero.enabled ? (
         <div className="np-stack">
-          <NpCollapsibleSection title={t('Fill')}>
-          <HeroOptionGrid
-            label={t('Fill')}
-            options={PORTFOLIO_HERO_SECTION_BACKGROUND_FILL_OPTIONS}
-            value={hero.heroSectionBackgroundFill}
-            onChange={(heroSectionBackgroundFill) => onChange({ heroSectionBackgroundFill })}
-          />
-
-          {hero.heroSectionBackgroundFill === 'solid' ? (
-            <HeroColorField
-              label={t('Color')}
-              value={hero.heroSectionBackgroundColor}
-              onChange={(heroSectionBackgroundColor) => onChange({ heroSectionBackgroundColor })}
-            />
-          ) : null}
-
-          {hero.heroSectionBackgroundFill === 'gradient' ? (
-            <>
-              <div className="flex flex-col gap-4">
-                <HeroColorField
-                  label={t('Gradient start')}
-                  value={hero.heroSectionBackgroundGradientFrom}
-                  onChange={(heroSectionBackgroundGradientFrom) =>
-                    onChange({ heroSectionBackgroundGradientFrom })
-                  }
-                />
-                <HeroColorField
-                  label={t('Gradient end')}
-                  value={hero.heroSectionBackgroundGradientTo}
-                  onChange={(heroSectionBackgroundGradientTo) =>
-                    onChange({ heroSectionBackgroundGradientTo })
-                  }
-                />
-              </div>
-              <HeroOptionGrid
-                label={t('Type')}
-                options={PORTFOLIO_HERO_BACKGROUND_GRADIENT_TYPE_OPTIONS}
-                value={hero.heroSectionBackgroundGradientType}
-                onChange={(heroSectionBackgroundGradientType) =>
-                  onChange({ heroSectionBackgroundGradientType })
-                }
-              />
-              <HeroPxSlider
-                label={t('Angle')}
-                value={hero.heroSectionBackgroundGradientAngle}
-                min={0}
-                max={360}
-                unit="°"
-                onChange={(heroSectionBackgroundGradientAngle) =>
-                  onChange({ heroSectionBackgroundGradientAngle })
-                }
-              />
-            </>
-          ) : null}
-
-          {hero.heroSectionBackgroundFill === 'split' ? (
-            <>
-              <div className="flex flex-col gap-4">
-                <HeroColorField
-                  label={t('Color A')}
-                  value={hero.heroSectionBackgroundColorA}
-                  onChange={(heroSectionBackgroundColorA) => onChange({ heroSectionBackgroundColorA })}
-                />
-                <HeroColorField
-                  label={t('Color B')}
-                  value={hero.heroSectionBackgroundColorB}
-                  onChange={(heroSectionBackgroundColorB) => onChange({ heroSectionBackgroundColorB })}
-                />
-              </div>
-              <HeroOptionGrid
-                label={t('Direction')}
-                options={PORTFOLIO_HERO_BACKGROUND_SPLIT_AXIS_OPTIONS}
-                value={hero.heroSectionBackgroundSplitAxis}
-                onChange={(heroSectionBackgroundSplitAxis) =>
-                  onChange({ heroSectionBackgroundSplitAxis })
-                }
-              />
-            </>
-          ) : null}
-
-          {hero.heroSectionBackgroundFill === 'image' ? (
-            <>
-              <PortfolioBackgroundImageUpload
-                label={t('Image')}
-                url={hero.heroSectionBackgroundImageUrl}
-                onChange={(heroSectionBackgroundImageUrl) => onChange({ heroSectionBackgroundImageUrl })}
-                library={backgroundLibrary?.library}
-                onLibraryChange={backgroundLibrary?.onLibraryChange}
-              />
-              <HeroOptionGrid
-                label={t('Size')}
-                options={HERO_BACKGROUND_IMAGE_SIZE_OPTIONS}
-                value={hero.heroSectionBackgroundImageSize}
-                onChange={(heroSectionBackgroundImageSize) => onChange({ heroSectionBackgroundImageSize })}
-              />
-              <HeroOptionGrid
-                label={t('Position')}
-                options={HERO_BACKGROUND_IMAGE_POSITION_OPTIONS}
-                value={hero.heroSectionBackgroundImagePosition}
-                onChange={(heroSectionBackgroundImagePosition) =>
-                  onChange({ heroSectionBackgroundImagePosition })
-                }
-              />
-            </>
-          ) : null}
-
-          {hero.heroSectionBackgroundFill !== 'transparent' && hero.heroSectionBackgroundFill !== 'none' ? (
-            <HeroPxSlider
-              label={t('Opacity')}
-              value={hero.heroSectionBackgroundOpacity}
-              min={0}
-              max={100}
-              unit="%"
-              onChange={(heroSectionBackgroundOpacity) => onChange({ heroSectionBackgroundOpacity })}
-            />
-          ) : null}
+          <NpCollapsibleSection title={t('Palette')}>
+            <SectionPaletteFamilyControl value={hero.paletteFamily??'global'} onChange={paletteFamily=>onChange({paletteFamily})} mode={backgroundMode}/>
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Background')}>
+            <div className="grid grid-cols-2 gap-3" aria-label={t('Background styles')}>
+              {(['none', 'mesh', 'particles', 'particle-ribbon', 'layered-waves', 'arc', 'silk-arc', 'eclipse-arc'] as const).map(art => (
+                <button key={art} type="button" aria-pressed={(hero.heroSectionBackgroundArt ?? 'none') === art}
+                  onClick={() => onChange({ heroSectionBackgroundArt: art, ...(art !== 'none' ? { heroSectionBackgroundEnabled: true } : {}) })}
+                  className="overflow-hidden rounded-lg border p-1.5 text-left"
+                  style={{ borderColor: (hero.heroSectionBackgroundArt ?? 'none') === art ? 'var(--np-accent)' : 'var(--np-card-border)' }}>
+                  <span className="relative block aspect-[16/9] overflow-hidden rounded-md" style={{ backgroundColor: backgroundPalette.fond }}>
+                    {art !== 'none' ? <PortfolioHeroAdaptiveBackground art={art} palette={backgroundPalette} thumbnail /> : null}
+                  </span>
+                  <span className="block px-1 py-2 text-xs font-medium">{t(art === 'none' ? 'Custom' : art === 'mesh' ? 'Soft mesh' : art === 'particles' ? 'Particle wave' : art === 'particle-ribbon' ? 'Particle ribbon' : art === 'layered-waves' ? 'Layered waves' : art === 'silk-arc' ? 'Silk arc' : art === 'eclipse-arc' ? 'Eclipse arc' : 'Luminous arc')}</span>
+                </button>
+              ))}
+            </div>
+            {hero.heroSectionBackgroundArt && hero.heroSectionBackgroundArt !== 'none' ? <>
+              <NpToggleRow title={t('Background')} checked={hero.heroSectionBackgroundEnabled !== false} onChange={enabled => onChange({ heroSectionBackgroundEnabled: enabled })} />
+              <NpRangeField label={t('Opacity')} value={hero.heroSectionBackgroundOpacity ?? 100} min={0} max={100} onChange={value => onChange({ heroSectionBackgroundOpacity: value })} />
+            </> : <SectionBackgroundSettingsFields settings={heroSectionBackgroundFields(hero)} onChange={patch=>onChange(patchHeroSectionBackground(hero,patch))} renderColorField={({label})=>{
+              const slot:HeroColorSlot=label===t('Gradient start')?'sectionGradientFrom':label===t('Gradient end')?'sectionGradientTo':label===t('Color A')?'sectionSplitA':label===t('Color B')?'sectionSplitB':'sectionBackground';
+              return <ColorSwatchRow label={label} options={[{value:'fond',label:t('Background')},{value:'neutre',label:t('Surface')},{value:'principal',label:t('Primary')},{value:'secondaire',label:t('Secondary')},{value:'texteFort',label:t('Strong text')}].map(option=>({...option,color:backgroundPalette[option.value as HeroPaletteTokenId]}))} value={hero.colorBindings?.[slot]??DEFAULT_HERO_COLOR_BINDINGS[slot]} onChange={token=>onChange({heroBackgroundPaletteBindings:true,colorBindings:{...DEFAULT_HERO_COLOR_BINDINGS,...hero.colorBindings,[slot]:token as HeroPaletteTokenId}})}/>;
+            }}/>}
           </NpCollapsibleSection>
         </div>
       ) : null}
+
     </NpPanelShell>
   );
 }

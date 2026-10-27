@@ -1,0 +1,2 @@
+.controls button[aria-pressed]:has(> svg) { min-height:68px; gap:8px; padding:10px 6px; }
+.controls button[aria-pressed] > svg { width:64px; height:32px; }

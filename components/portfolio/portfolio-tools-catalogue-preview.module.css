@@ -1,0 +1,4 @@
+/* Catalogue-only spacing: keep every Bento logo and label at its original size. */
+.preview :global(.pf-stack-bento-skill) {
+  padding-block: 12px !important;
+}

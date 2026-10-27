@@ -1,5 +1,10 @@
 'use client';
+import { workButtonColor } from './portfolio-work-button-color';
+import { workPaletteTokenColor } from './portfolio-work-settings';
 
+import { cardsStyleCss } from '@/components/portfolio/portfolio-cards-style';
+import ctaStyles from './portfolio-work-grid-cta.module.css';
+import {GridButtonContent,gridButtonVars} from './portfolio-work-grid-button';
 import {
   useEffect,
   useLayoutEffect,
@@ -45,15 +50,17 @@ function gridRadiusClass(radius: PortfolioWorkProjectsGridRadius): string {
   return 'rounded-2xl';
 }
 
-function gridColumnsClass(columns: 2 | 3, forceSingleColumn: boolean): string {
+function gridColumnsClass(columns: 2 | 3 | 4, forceSingleColumn: boolean): string {
   if (forceSingleColumn) return 'grid-cols-1';
+  if (columns === 4) return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
   return columns === 3
     ? 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-3'
     : 'grid-cols-1 sm:grid-cols-2';
 }
 
-function gridGapClass(columns: 2 | 3, forceSingleColumn: boolean): string {
+function gridGapClass(columns: 2 | 3 | 4, forceSingleColumn: boolean): string {
   if (forceSingleColumn) return 'gap-y-16 sm:gap-y-20 lg:gap-y-24';
+  if (columns === 4) return 'gap-x-6 gap-y-10 sm:gap-x-7 sm:gap-y-12 xl:gap-x-6';
   if (columns === 3) return 'gap-x-8 gap-y-16 sm:gap-x-10 sm:gap-y-20 lg:gap-x-12 lg:gap-y-8';
   return 'gap-x-10 gap-y-16 sm:gap-x-14 sm:gap-y-24 lg:gap-x-16 lg:gap-y-10';
 }
@@ -69,10 +76,11 @@ const GRID_MEDIA_ASPECT_CLASS = 'aspect-[16/10]';
 
 function gridOffsetClass(
   index: number,
-  columns: 2 | 3,
+  columns: 2 | 3 | 4,
   enabled: boolean
 ): string {
   if (!enabled) return '';
+  if (columns === 4) return '';
   if (columns === 3) {
     if (index % 3 === 1) return 'lg:mt-16 xl:mt-20';
     if (index % 3 === 2) return 'lg:mt-32 xl:mt-36';
@@ -82,15 +90,17 @@ function gridOffsetClass(
   return index % 2 === 1 ? 'lg:mt-24 xl:mt-32' : '';
 }
 
-function gridTitleClass(columns: 2 | 3): string {
+function gridTitleClass(columns: 2 | 3 | 4): string {
+  if (columns === 4) return 'text-[1.4rem] font-semibold leading-[1.25] tracking-[-0.025em] sm:text-[1.25rem] xl:text-[1.125rem] [overflow-wrap:anywhere]';
   if (columns === 3) {
     return 'text-[1.28rem] font-semibold leading-[1.22] tracking-[-0.035em] sm:text-[1.42rem] sm:leading-[1.2]';
   }
   return 'text-[1.4rem] font-semibold leading-[1.22] tracking-[-0.038em] sm:text-[1.7rem] sm:leading-[1.18] lg:text-[1.85rem] lg:leading-[1.18]';
 }
 
-function gridImageSizes(columns: 2 | 3, forceSingleColumn: boolean): string {
+function gridImageSizes(columns: 2 | 3 | 4, forceSingleColumn: boolean): string {
   if (forceSingleColumn) return '100vw';
+  if (columns === 4) return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, (max-width: 1280px) 33vw, 25vw';
   if (columns === 3) return '(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw';
   return '(max-width: 640px) 100vw, 50vw';
 }
@@ -150,7 +160,7 @@ function EditorialTitleText({ text }: { text: string }) {
   return (
     <>
       {parts.lead}{' '}
-      <span className="font-medium italic tracking-[-0.03em]">{parts.italic}</span>
+      <span className="font-medium tracking-[-0.03em]">{parts.italic}</span>
     </>
   );
 }
@@ -220,7 +230,7 @@ function useCarouselMetrics(
   return metrics;
 }
 
-function useProjectsGridVisibleCount(configured: 2 | 3, forceSingleColumn: boolean): number {
+function useProjectsGridVisibleCount(configured: 2 | 3 | 4, forceSingleColumn: boolean): number {
   const [pageSize, setPageSize] = useState(() => (forceSingleColumn ? 1 : configured));
 
   useEffect(() => {
@@ -229,17 +239,20 @@ function useProjectsGridVisibleCount(configured: 2 | 3, forceSingleColumn: boole
       return;
     }
     const lg = window.matchMedia('(min-width: 1024px)');
+    const xl = window.matchMedia('(min-width: 1280px)');
     const sm = window.matchMedia('(min-width: 640px)');
     const update = () => {
-      if (lg.matches) setPageSize(configured);
+      if (lg.matches) setPageSize(configured === 4 && !xl.matches ? 3 : configured);
       else if (sm.matches) setPageSize(Math.min(2, configured));
       else setPageSize(1);
     };
     update();
     lg.addEventListener('change', update);
+    xl.addEventListener('change', update);
     sm.addEventListener('change', update);
     return () => {
       lg.removeEventListener('change', update);
+      xl.removeEventListener('change', update);
       sm.removeEventListener('change', update);
     };
   }, [configured, forceSingleColumn]);
@@ -434,7 +447,7 @@ function GridTagsRow({ tools, color }: { tools: string[]; color: string }) {
       {tools.map((tool) => (
         <li
           key={tool}
-          className="whitespace-nowrap text-[11px] font-medium uppercase leading-none tracking-[0.18em]"
+          className="whitespace-nowrap text-[12px] font-medium uppercase leading-none tracking-[0.16em]"
           style={{ color: `color-mix(in srgb, ${color} 85%, transparent)` }}
         >
           {tool}
@@ -447,31 +460,18 @@ function GridTagsRow({ tools, color }: { tools: string[]; color: string }) {
 function GridConsultLink({
   href,
   color,
+  label,
+  variant,
 }: {
   href: string;
   color: string;
+  label: string;
+  variant: 'underline'|'outline'|'solid'|'pill';
 }) {
-  const t = useT();
   const external = /^https?:\/\//i.test(href);
-  const className =
-    'group/grid-cta mt-6 inline-flex items-center gap-2.5 bg-transparent text-[11px] font-medium uppercase tracking-[0.2em] transition-opacity duration-300 hover:opacity-60 focus:outline-hidden focus-visible:opacity-60 sm:mt-7';
-  const body = (
-    <>
-      <span
-        className="border-b pb-[0.12em] transition-[border-color,opacity] duration-300"
-        style={{ borderColor: color }}
-        data-pf-no-color-transition=""
-      >
-        {t('View project')}
-      </span>
-      <span
-        aria-hidden
-        className="inline-block transition-transform duration-300 group-hover/grid-cta:translate-x-1"
-      >
-        ↗
-      </span>
-    </>
-  );
+  const className = ctaStyles.cta;
+  const linkStyle = gridButtonVars(color);
+  const body = <GridButtonContent label={label}/>;
 
   if (external) {
     return (
@@ -480,7 +480,8 @@ function GridConsultLink({
         target="_blank"
         rel="noopener noreferrer"
         className={className}
-        style={{ color, backgroundColor: 'transparent' }}
+        style={linkStyle}
+        data-variant={variant}
         data-pf-no-color-transition=""
       >
         {body}
@@ -492,7 +493,8 @@ function GridConsultLink({
     <Link
       href={href}
       className={className}
-      style={{ color, backgroundColor: 'transparent' }}
+      style={linkStyle}
+      data-variant={variant}
       data-pf-no-color-transition=""
     >
       {body}
@@ -562,7 +564,7 @@ function GridCard({
   showDescription: boolean;
   cardBorder: PortfolioWorkPresentationSettings['cardBorder'];
   cardRadius: PortfolioWorkProjectsGridRadius;
-  columns: 2 | 3;
+  columns: 2 | 3 | 4;
   offsetEnabled: boolean;
   forceSingleColumn: boolean;
 }) {
@@ -576,7 +578,10 @@ function GridCard({
   const href = item.linkUrl?.trim() || null;
   const title = item.title?.trim() || '';
   const tools = gridToolLabels(item);
+  const gridSettings=mergeProjectsGridSettings(DEFAULT_PROJECTS_GRID_SETTINGS,presentation.projectsGrid);
+  const alignFour=columns===4&&!forceSingleColumn;
   const radiusClass = gridRadiusClass(cardRadius);
+  const sharedCardCss = cardsStyleCss(presentation.cardsStyle, presentation.workPalette);
   const aspectClass = GRID_MEDIA_ASPECT_CLASS;
   const offsetClass = gridOffsetClass(index, columns, offsetEnabled);
   const showMediaFrame = cardBorder !== 'none';
@@ -614,7 +619,7 @@ function GridCard({
 
   return (
     <article
-      className={`group/grid-card pf-work-grid-card flex flex-col ${offsetClass}`.trim()}
+      className={`group/grid-card pf-work-grid-card flex flex-col ${alignFour?'xl:h-full xl:w-full':''} ${offsetClass}`.trim()}
       data-grid-card=""
       data-grid-enter=""
       data-grid-index={String(index)}
@@ -627,16 +632,18 @@ function GridCard({
       {/* Glass follows the section: the fixed dark glass turned a light section's cards
           muddy grey (description ~3:1). Light ink → dark glass, dark ink → light glass. */}
       <div
-        className={`flex flex-col overflow-hidden border p-3 backdrop-blur-xs sm:p-4 ${
+        className={`flex flex-col overflow-hidden border p-3 backdrop-blur-xs sm:p-4 ${alignFour?'xl:flex-1':''} ${
           gridInkIsLight(titleColor)
             ? 'border-neutral-900/50 bg-neutral-950/30'
             : 'border-black/[0.06] bg-white/45'
         } ${radiusClass}`}
+        style={sharedCardCss}
       >
         <div
           className={`relative w-full shrink-0 overflow-hidden ${aspectClass} ${radiusClass}`}
           style={{
             backgroundColor: `${borderColor}44`,
+            ...(sharedCardCss.borderRadius !== undefined ? { borderRadius: sharedCardCss.borderRadius } : undefined),
             ...(showMediaFrame
               ? {
                   borderColor: frameBorderColor,
@@ -659,12 +666,12 @@ function GridCard({
           )}
         </div>
 
-        <div data-grid-copy className="flex min-w-0 flex-col pt-6 sm:pt-8">
+        <div data-grid-copy className={`flex min-w-0 flex-col pt-6 sm:pt-8 ${alignFour?'xl:flex-1':''}`}>
           <div className="flex items-center gap-3">
             <p
               aria-hidden
-              className="text-[10px] font-medium tracking-[0.22em] tabular-nums sm:text-[11px]"
-              style={{ color: muted, opacity: 0.7 }}
+              className="text-[11px] font-medium tracking-[0.22em] tabular-nums sm:text-[12px]"
+              style={{ color: muted, opacity: 0.88 }}
             >
               {formatGridIndex(index)}
             </p>
@@ -704,7 +711,10 @@ function GridCard({
 
           <GridTagsRow tools={tools} color={muted} />
 
-          {href ? <GridConsultLink href={href} color={accent} /> : null}
+          {href ? <div data-grid-cta className={`mt-6 sm:mt-7 ${alignFour?'xl:mt-auto xl:pt-6':''}`}>
+            <GridConsultLink href={href} color={workButtonColor(gridSettings.buttonColor ? workPaletteTokenColor(gridSettings.buttonColor) : accent, gridSettings.buttonColorOpacity)} label={gridSettings.consultLabel?.trim()||t('View project')}
+              variant={gridSettings.consultStyle??'underline'}/>
+          </div> : null}
         </div>
       </div>
     </article>
@@ -727,7 +737,7 @@ function ProjectsGridGallery({
     DEFAULT_PROJECTS_GRID_SETTINGS,
     presentation.projectsGrid
   );
-  const columns = board.columnsPerRow === 3 ? 3 : 2;
+  const columns = board.columnsPerRow === 4 ? 4 : board.columnsPerRow === 3 ? 3 : 2;
   const showDescription = board.showDescription !== false;
   const cardBorder = board.cardBorder ?? 'none';
   const cardRadius = board.cardRadius ?? 'none';
@@ -747,7 +757,7 @@ function ProjectsGridGallery({
 
   if (items.length === 0) return null;
 
-  const gridClass = `grid items-start ${gridColumnsClass(columns, forceSingleColumn)} ${gridGapClass(columns, forceSingleColumn)}`;
+  const gridClass = `grid items-start ${columns===4&&!forceSingleColumn?'xl:items-stretch':''} ${gridColumnsClass(columns, forceSingleColumn)} ${gridGapClass(columns, forceSingleColumn)}`;
 
   const renderCard = (item: MarketplaceContentItem, index: number) => (
     <GridCard
@@ -788,7 +798,7 @@ function ProjectsGridGallery({
     <div ref={viewportRef} className="overflow-hidden">
       <div
         data-grid-carousel-track
-        className={`flex items-start ${carouselTrackGapClass(forceSingleColumn)} transform-gpu will-change-transform [transition:transform_520ms_cubic-bezier(0.33,1,0.68,1)]`}
+        className={`flex items-start ${columns===4&&!forceSingleColumn?'xl:items-stretch':''} ${carouselTrackGapClass(forceSingleColumn)} transform-gpu will-change-transform [transition:transform_520ms_cubic-bezier(0.33,1,0.68,1)]`}
         style={{
           transform: `translate3d(-${translateX}px, 0, 0)`,
         }}
@@ -797,7 +807,7 @@ function ProjectsGridGallery({
           <div
             key={item.id}
             data-grid-carousel-item
-            className="shrink-0"
+            className={`shrink-0 ${columns===4&&!forceSingleColumn?'xl:flex':''}`}
             style={cardWidthPx > 0 ? { width: `${cardWidthPx}px` } : undefined}
           >
             {renderCard(item, index)}
@@ -823,7 +833,7 @@ export function ProjectsGridSection({
     DEFAULT_PROJECTS_GRID_SETTINGS,
     presentation.projectsGrid
   );
-  const columns = board.columnsPerRow === 3 ? 3 : 2;
+  const columns = board.columnsPerRow === 4 ? 4 : board.columnsPerRow === 3 ? 3 : 2;
   const visibleCount = useProjectsGridVisibleCount(columns, forceSingleColumn);
   const canCarousel = board.carouselEnabled === true && items.length > visibleCount;
   const maxIndex = Math.max(0, items.length - visibleCount);

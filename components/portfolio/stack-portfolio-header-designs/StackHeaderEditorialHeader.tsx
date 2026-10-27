@@ -86,8 +86,8 @@ const TITLE_WEIGHT_CLASS: Record<PortfolioStackHeaderTitleWeight, string> = {
 };
 
 /**
- * Editorial — kicker + masked line-reveal title + subtitle, with a subtle
- * scroll-scrubbed recede on the whole block. The premium GSAP treatment.
+ * Editorial — kicker + masked line-reveal title + subtitle. The reveal replays every time the header
+ * scrolls into view and exits the way the scroll is going (up and out, or back down).
  */
 export function StackHeaderEditorialHeader({
   title,
@@ -141,61 +141,69 @@ export function StackHeaderEditorialHeader({
     }, 90);
 
     let ctx: gsap.Context | undefined;
-    try {
+    let retryId = 0;
+    const build = () => {
       ctx = gsap.context(() => {
         const pick = (selector: string) =>
           [...header.querySelectorAll<HTMLElement>(selector)].filter(isLaidOut);
         const kicker = pick('.pf-stack-header-editorial-kicker');
         const lines = pick('.pf-stack-header-editorial-title-line');
         const subs = pick('.pf-stack-header-editorial-sub');
-        const stage = header.querySelector<HTMLElement>('.pf-stack-header-editorial-stage');
 
-        // Gated by ScrollTrigger, not fired on mount — a header mounted below
-        // the fold must stay in its hidden "from" state (set immediately, no
-        // flash) until it actually scrolls into view, not play-then-finish
-        // off-screen and show up already static.
-        const tl = gsap.timeline({
-          defaults: { overwrite: 'auto' },
-          scrollTrigger: {
-            trigger: header,
-            scroller: stackHeaderScrollParent(header),
-            start: 'top 85%',
-            once: true,
-          },
+        // Replays on every pass, in both directions, and leaves as deliberately as it arrives:
+        //  - entering from below (scrolling down): the title rises out of its mask, kicker and subtitle follow;
+        //  - leaving through the top: it keeps travelling up and out, faster than it came in;
+        //  - coming back from above (scrolling up): it drops in from the top of the mask instead;
+        //  - leaving through the bottom: it sinks back down.
+        // Every tween uses overwrite so a quick reversal picks up from wherever the motion is, never snaps.
+        // Until the header first reaches the viewport it sits in its hidden state (set now, no flash).
+        if (kicker.length) gsap.set(kicker, { opacity: 0, y: 8 });
+        if (lines.length) gsap.set(lines, { yPercent: 110 });
+        if (subs.length) gsap.set(subs, { opacity: 0, y: 14 });
+
+        const enter = (dir: 1 | -1) => {
+          if (kicker.length) {
+            gsap.fromTo(kicker, { opacity: 0, y: 8 * dir }, { opacity: 1, y: 0, duration: 0.6, ease: 'power2.out', overwrite: true });
+          }
+          if (lines.length) {
+            gsap.fromTo(
+              lines,
+              { yPercent: 110 * dir },
+              { yPercent: 0, duration: 1, ease: 'power3.out', stagger: 0.07, delay: 0.12, overwrite: true }
+            );
+          }
+          if (subs.length) {
+            gsap.fromTo(
+              subs,
+              { opacity: 0, y: 14 * dir },
+              { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out', delay: 0.36, overwrite: true }
+            );
+          }
+        };
+        const leave = (dir: 1 | -1) => {
+          // dir 1: out through the top (content moves up); -1: out through the bottom.
+          if (subs.length) gsap.to(subs, { opacity: 0, y: -16 * dir, duration: 0.5, ease: 'power2.in', overwrite: true });
+          if (lines.length) {
+            gsap.to(lines, { yPercent: -110 * dir, duration: 0.7, ease: 'power3.inOut', stagger: 0.05, delay: 0.06, overwrite: true });
+          }
+          if (kicker.length) gsap.to(kicker, { opacity: 0, y: -10 * dir, duration: 0.5, ease: 'power2.in', delay: 0.12, overwrite: true });
+        };
+
+        ScrollTrigger.create({
+          trigger: header,
+          scroller: stackHeaderScrollParent(header),
+          start: 'top 85%',
+          // Exit as the header nears the top (its bottom crosses 25% of the viewport): late enough not to cut the
+          // reading short, early enough that the motion still plays in view rather than under the nav.
+          end: 'bottom 25%',
+          onEnter: () => enter(1),
+          onLeave: () => leave(1),
+          onEnterBack: () => enter(-1),
+          onLeaveBack: () => leave(-1),
         });
-        if (kicker.length) tl.fromTo(kicker, { opacity: 0 }, { opacity: 1, duration: 0.6, ease: 'power2.out' }, 0);
-        if (lines.length) {
-          tl.set(lines, { yPercent: 110 }, 0);
-          tl.to(lines, { yPercent: 0, duration: 1, ease: 'power3.out', stagger: 0.07 }, 0.14);
-        }
-        if (subs.length) {
-          tl.set(subs, { y: 14, opacity: 0 }, 0);
-          tl.to(subs, { y: 0, opacity: 1, duration: 0.68, ease: 'power3.out' }, 0.4);
-        }
-
-        if (stage) {
-          // No invalidateOnRefresh here — these are static (non-function) from/to values, so
-          // it buys nothing and was correlated with an intermittent GSAP internal crash (see
-          // the try/catch below) on this particular trigger during its own init-time refresh.
-          gsap.fromTo(
-            stage,
-            { opacity: 1, y: 0 },
-            {
-              opacity: 0.55,
-              y: -10,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: header,
-                scroller: stackHeaderScrollParent(header),
-                start: 'top 20%',
-                end: 'top -20%',
-                scrub: 0.5,
-              },
-            }
-          );
-        }
       }, header);
-    } catch (error) {
+    };
+    const failSafe = (error: unknown) => {
       // Observed intermittently on page load/reload: GSAP ScrollTrigger throws
       // "Cannot read properties of undefined (reading 'end')" from inside its own init-time
       // self.refresh() for this header's scroll-scrubbed stage effect. Uncaught, that crash
@@ -213,10 +221,27 @@ export function StackHeaderEditorialHeader({
         ),
         { clearProps: 'all' }
       );
+    };
+    try {
+      build();
+    } catch {
+      // The crash comes from another section's `once` ScrollTrigger killing itself while this one refreshes the
+      // list (GSAP then reads a removed entry). It is a timing race, so a second attempt on the next frame,
+      // once that refresh is over, normally succeeds; only a second failure falls back to the static header.
+      ctx?.revert();
+      ctx = undefined;
+      retryId = window.requestAnimationFrame(() => {
+        try {
+          build();
+        } catch (error) {
+          failSafe(error);
+        }
+      });
     }
 
     return () => {
       window.clearTimeout(refreshId);
+      window.cancelAnimationFrame(retryId);
       ctx?.revert();
     };
   }, [animationEnabled, labelText, titleText, subtitleText, showLabel, showTitle, showSubtitle]);

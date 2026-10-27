@@ -51,11 +51,10 @@ function toolsLogosGrayscaleEnabled(presentation: PortfolioToolsPresentationSett
 }
 
 function toolsBrandIndexRowPadClass(gap: PortfolioToolsCardGap | undefined): string {
-  if (gap === 'tight') return 'py-7 sm:py-8';
-  if (gap === 'large') return 'py-12 sm:py-14 lg:py-16';
-  if (gap === 'xlarge') return 'py-14 sm:py-16 lg:py-20';
-  if (gap === 'medium') return 'py-10 sm:py-11 lg:py-12';
-  return 'py-10 sm:py-12 lg:py-14';
+  if (gap === 'tight') return 'py-2';
+  if (gap === 'large') return 'py-8';
+  if (gap === 'xlarge') return 'py-14';
+  return 'py-4';
 }
 
 function prefersReducedMotion(): boolean {

@@ -184,7 +184,7 @@ function ToolsLevelCircularPercent({
 }
 
 /** Four signal dots — alternative level read (brand directory). */
-function ToolsLevelSignalDots({
+export function ToolsLevelSignalDots({
   level,
   toolName,
   fillColor,

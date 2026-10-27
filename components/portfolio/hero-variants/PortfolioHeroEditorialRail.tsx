@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -27,6 +28,14 @@ import {
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { useT } from '@/lib/i18n/I18nProvider';
+import type { PortfolioHeroPortraitShape } from '@/components/portfolio/portfolio-hero-banner-settings';
+import {
+  hasPortraitShapeOverride,
+  portraitShapeAspect,
+  portraitShapeOverlayStyle,
+  portraitShapeRadius,
+  PortraitOffsetOutline,
+} from '@/components/portfolio/hero-variants/portrait-shape';
 
 /** Compact editorial block — tighter than the previous 1.05 leading. */
 const TITLE_LINE_HEIGHT = 0.95;
@@ -92,7 +101,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
-  const headline = `Hi, I'm ${displayName} — a ${specialty}.`;
+  const headline = resolveHeroGreeting(data.presentation,`Hi, I'm ${displayName} — a ${specialty}.`,displayName,specialty);
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
     data.presentation.availabilityLabel,
@@ -311,7 +320,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
     opts?: { compactCta?: boolean }
   ): ReactNode => (
     <div className={`flex flex-col ${className}`.trim()}>
-      <p className="m-0 font-sans font-normal tracking-[-0.01em]" style={style}>
+      <p data-hero-bio className="m-0 font-sans font-normal tracking-[-0.01em]" style={style}>
         {bio}
       </p>
       {hasCtas ? <div className="mt-6">{ctaRow({ compact: opts?.compactCta })}</div> : null}
@@ -329,6 +338,8 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
       neutre={neutre}
       borderSoft={borderSoft}
       principal={principal}
+      showBorder={data.presentation.heroImageBorder !== false}
+      shape={data.presentation.heroPortraitShape}
     />
   );
 
@@ -737,7 +748,7 @@ function EditorialRailAvailability({
   mobile?: boolean;
 }) {
   return (
-    <div className="flex max-w-full items-center gap-2.5">
+    <div data-hero-availability className="flex max-w-full items-center gap-2.5">
       <span
         className="inline-block size-2 shrink-0 rounded-full"
         style={{
@@ -853,6 +864,8 @@ function EditorialRailPortraitFrame({
   neutre,
   borderSoft,
   principal,
+  showBorder,
+  shape,
 }: {
   className: string;
   avatarUrl: string | null;
@@ -863,13 +876,28 @@ function EditorialRailPortraitFrame({
   neutre: string;
   borderSoft: string;
   principal: string;
+  showBorder: boolean;
+  shape?: PortfolioHeroPortraitShape;
 }) {
+  const override = hasPortraitShapeOverride(shape);
+  const shapeRadius = portraitShapeRadius(shape);
+  const overlayStyle = portraitShapeOverlayStyle(shape, principal, neutre);
+  const hideAccentBar = shape === 'circle' || shape === 'arch' || shape === 'asymmetric';
+  const baseRadius = override
+    ? ''
+    : 'rounded-bl-[0.35rem] rounded-br-[1.5rem] rounded-tl-[1.5rem] rounded-tr-[0.35rem]';
   return (
+    <PortraitOffsetOutline enabled={shape === 'offset'} principal={principal} className={className}>
     <div
-      className={`pf-editorial-rail-photo overflow-hidden rounded-bl-[0.35rem] rounded-br-[1.5rem] rounded-tl-[1.5rem] rounded-tr-[0.35rem] ${className}`.trim()}
+      className={`pf-editorial-rail-photo overflow-hidden ${baseRadius} ${shape === 'offset' ? 'relative h-full w-full' : className}`.trim()}
       style={{
         backgroundColor: neutre,
-        border: `1px solid ${borderSoft}`,
+        border: showBorder ? `1px solid ${borderSoft}` : undefined,
+        borderRadius: shapeRadius,
+        aspectRatio: portraitShapeAspect(shape),
+        // A circle must stay square even when its grid cell would stretch it.
+        alignSelf: shape === 'circle' ? 'center' : undefined,
+        height: shape === 'circle' ? 'auto' : undefined,
       }}
     >
       <div className="pf-editorial-rail-photo-shift absolute inset-0">
@@ -886,13 +914,21 @@ function EditorialRailPortraitFrame({
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 rounded-[inherit]"
-        style={{ boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${borderSoft} 70%, transparent)` }}
+        style={{
+          boxShadow: showBorder ? `inset 0 0 0 1px color-mix(in srgb, ${borderSoft} 70%, transparent)` : undefined,
+          borderRadius: shapeRadius,
+        }}
       />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute left-3 top-[12%] h-[11%] w-[2px]"
-        style={{ backgroundColor: principal }}
-      />
+      {overlayStyle ? (
+        <div aria-hidden className="pointer-events-none absolute inset-0" style={overlayStyle} />
+      ) : null}
+      {hideAccentBar ? null : (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-3 top-[12%] h-[11%] w-[2px]"
+          style={{ backgroundColor: principal }}
+        />
+      )}
       <span
         aria-hidden
         className="pointer-events-none absolute bottom-5 right-5 font-mono text-[0.64rem] tracking-[0.18em] text-white/65"
@@ -900,6 +936,7 @@ function EditorialRailPortraitFrame({
         01 / PORTRAIT
       </span>
     </div>
+    </PortraitOffsetOutline>
   );
 }
 

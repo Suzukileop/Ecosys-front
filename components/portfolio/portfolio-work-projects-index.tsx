@@ -4,10 +4,12 @@ import {
   useEffect,
   useLayoutEffect,
   useRef,
+  useState,
   type CSSProperties,
   type ReactNode,
   type RefObject,
 } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -24,6 +26,7 @@ import {
 } from '@/components/portfolio/portfolio-work-settings';
 import { aboutBannerScrollParent } from '@/components/portfolio/portfolio-about-scroll-utils';
 import { useT } from '@/lib/i18n/I18nProvider';
+import {readableMix} from './stack-designs/readable-ink';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -71,7 +74,7 @@ function RevealTitle({ text }: { text: string }) {
         return (
           <span className="pf-work-index-word-mask" key={`${word}-${index}`}>
             <span
-              className={`pf-work-index-word-inner${isItalic ? ' font-medium italic' : ''}`}
+              className={`pf-work-index-word-inner${isItalic ? ' font-medium' : ''}`}
               style={{ transitionDelay: `${index * 0.06}s` }}
             >
               {word}
@@ -208,6 +211,8 @@ function IndexScene({
   const subtitleColor = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const accent = presentation.ctaColor || presentation.categoryActiveColor || titleColor;
   const surface = presentation.cardBackgroundColor || '#0a0a0a';
+  const mobileInk = readableMix(titleColor, 100, surface);
+  const mobileMuted = readableMix(subtitleColor, 100, surface);
   const media = item.mediaUrl?.trim() || null;
   const heroInk = media ? '#ffffff' : titleColor;
   const heroMuted = media ? 'rgba(255,255,255,0.78)' : subtitleColor;
@@ -221,12 +226,15 @@ function IndexScene({
 
   return (
     <article
-      className="pf-work-index-scene relative flex min-h-[100dvh] w-full flex-col justify-end overflow-hidden lg:absolute lg:inset-0"
+      className="pf-work-index-scene relative flex min-h-[var(--pf-index-height)] w-full flex-col justify-end overflow-hidden lg:absolute lg:inset-0 lg:min-h-0"
       data-scene=""
       data-scene-active={isFirst ? 'true' : 'false'}
-      style={{ zIndex: index + 1, backgroundColor: surface }}
+      style={{ zIndex: index + 1, backgroundColor: surface,
+        '--pf-index-mobile-ink':mobileInk,'--pf-index-mobile-muted':mobileMuted,
+        '--pf-index-mobile-surface':surface,
+      } as CSSProperties}
     >
-      <div className="pf-work-index-scene-bg absolute inset-0 overflow-hidden" aria-hidden>
+      <div className="pf-work-index-scene-bg absolute inset-0 overflow-hidden" data-scene-backdrop="" data-scene-dim="" aria-hidden>
         <div className="pf-work-index-scene-media absolute -inset-[2%]" data-scene-media="">
           {media ? (
             <Image
@@ -246,15 +254,20 @@ function IndexScene({
           aria-hidden
         />
         <div className="pf-work-index-scene-scrim absolute inset-0" aria-hidden />
-        <div className="pf-work-index-scene-dim absolute inset-0" data-scene-dim="" aria-hidden />
       </div>
+      {media && (board.mediaBorderWidth ?? 1) > 0 ? <div
+        className="pf-work-index-media-border pointer-events-none absolute inset-0 z-[2]"
+        style={{boxShadow:`inset 0 0 0 ${board.mediaBorderWidth ?? 1}px rgba(255,255,255,0.24)`}}
+        aria-hidden="true"
+        data-pf-no-color-transition=""
+      /> : null}
 
-      <div className="relative z-[1] flex w-full flex-col gap-7 px-6 pb-12 sm:px-10 sm:pb-16 lg:gap-9 lg:px-16 lg:pb-20 xl:px-24">
+      <div className="pf-work-index-content relative z-[1] flex w-full flex-col gap-7 px-6 pb-12 sm:px-10 sm:pb-16 lg:gap-9 lg:px-16 lg:pb-20 xl:px-24">
         {board.showNumber ? (
           <IndexNumberBadge
             index={index}
             total={total}
-            marker={board.indexMarker ?? 'number'}
+            marker="number"
             accent={accent}
             ink={heroInk}
             muted={heroMuted}
@@ -276,7 +289,7 @@ function IndexScene({
           )}
         </h3>
 
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
+        <div className="pf-work-index-details flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between lg:gap-10">
           {showStack ? <IndexStack tools={tools} ink={heroMuted} /> : <span aria-hidden />}
           {showDescription ? (
             <p
@@ -287,6 +300,11 @@ function IndexScene({
             </p>
           ) : null}
         </div>
+        {href?<Link href={href} target="_blank" rel="noopener noreferrer"
+          className="pf-work-index-mobile-link inline-flex min-h-11 items-center justify-between gap-4 border-t pt-4 text-sm font-medium lg:hidden"
+          style={{color:mobileInk,borderColor:presentation.cardBorderColor}}>
+          <span>{t('View project')}</span><span aria-hidden>↗</span>
+        </Link>:null}
       </div>
     </article>
   );
@@ -297,10 +315,11 @@ function IndexScene({
  * slides up over the current one. Falls back to a plain stacked flow — revealed
  * per-scene via IntersectionObserver — on touch/narrow screens and reduced motion.
  */
-function useIndexCurtainReveal(stageRef: RefObject<HTMLDivElement | null>, sceneCount: number) {
+function useIndexCurtainReveal(stageRef: RefObject<HTMLDivElement | null>, sceneCount: number, direction: 'vertical'|'horizontal') {
   useLayoutEffect(() => {
     const stage = stageRef.current;
     if (!stage) return undefined;
+    stage.scrollLeft = 0;
     const scenes = Array.from(stage.querySelectorAll<HTMLElement>('[data-scene]'));
     if (scenes.length === 0) return undefined;
 
@@ -313,6 +332,7 @@ function useIndexCurtainReveal(stageRef: RefObject<HTMLDivElement | null>, scene
       mm.add(
         {
           isDesktop: '(min-width: 1024px) and (prefers-reduced-motion: no-preference)',
+          isFallback: '(max-width: 1023px), (prefers-reduced-motion: reduce)',
         },
         (context) => {
           const conditions = context.conditions as { isDesktop: boolean } | undefined;
@@ -338,16 +358,30 @@ function useIndexCurtainReveal(stageRef: RefObject<HTMLDivElement | null>, scene
           }
 
           const dims = scenes.map((scene) => scene.querySelector<HTMLElement>('[data-scene-dim]'));
+          const backdrops = scenes.map((scene) => scene.querySelector<HTMLElement>('[data-scene-backdrop]'));
 
-          gsap.set(scenes.slice(1), { yPercent: 100 });
+          const axis = direction === 'horizontal' ? 'xPercent' : 'yPercent';
+          gsap.set(scenes, { xPercent: 0, yPercent: 0, scale: 1 });
+          gsap.set(backdrops.filter(Boolean), { scale: 1 });
+          gsap.set(dims.filter(Boolean), { filter: 'brightness(1)' });
+          gsap.set(scenes.slice(1), { [axis]: 100 });
           scenes.forEach((scene, i) =>
             scene.setAttribute('data-scene-active', i === 0 ? 'true' : 'false')
           );
 
-          const viewportSpan = () => (scroller ? scroller.clientHeight : window.innerHeight) || 800;
-          let lastActive = 0;
-
+          const viewportSpan = () => stage.clientHeight || 800;
           const tl = gsap.timeline({
+            // Reveal each title once, using the *rendered* scrubbed timeline rather
+            // than raw scroll progress. Reversing at a midpoint must not hide and
+            // reanimate the text or toggle the scene's lighting.
+            onUpdate: function () {
+              const position = this.time();
+              scenes.forEach((scene, i) => {
+                if (i === 0 || position >= i - 0.88) {
+                  scene.setAttribute('data-scene-active', 'true');
+                }
+              });
+            },
             scrollTrigger: {
               trigger: stage,
               start: 'top top',
@@ -356,31 +390,26 @@ function useIndexCurtainReveal(stageRef: RefObject<HTMLDivElement | null>, scene
               pin: true,
               anticipatePin: 1,
               invalidateOnRefresh: true,
-              onUpdate: (self) => {
-                const active = Math.min(
-                  scenes.length - 1,
-                  Math.round(self.progress * (scenes.length - 1))
-                );
-                if (active === lastActive) return;
-                lastActive = active;
-                scenes.forEach((scene, i) =>
-                  scene.setAttribute('data-scene-active', i === active ? 'true' : 'false')
-                );
-              },
               ...stBase,
             },
           });
 
           for (let i = 1; i < scenes.length; i += 1) {
-            tl.to(scenes[i], { yPercent: 0, ease: 'none', duration: 1 }, i - 1);
-            tl.to(scenes[i - 1], { scale: 0.94, ease: 'none', duration: 1 }, i - 1);
+            tl.to(scenes[i], { [axis]: 0, ease: 'none', duration: 1 }, i - 1);
+            // Keep the scene edges and typography fixed. Only its clipped
+            // backdrop zooms, so no gaps or text-size pulses appear at the seam.
+            const backdrop = backdrops[i - 1];
+            if (backdrop) tl.fromTo(backdrop, { scale: 1 }, { scale: 1.035, ease: 'none', duration: 1, immediateRender: false }, i - 1);
             const dim = dims[i - 1];
-            if (dim) tl.to(dim, { opacity: 0.45, ease: 'none', duration: 1 }, i - 1);
+            // Darken the actual backdrop pixels, not a separately composited
+            // translucent rectangle whose edge can diverge while sliding.
+            if (dim) tl.fromTo(dim, { filter: 'brightness(1)' }, { filter: 'brightness(0.7)', ease: 'none', duration: 1, immediateRender: false }, i - 1);
           }
 
           return () => {
             gsap.set(scenes, { clearProps: 'all' });
-            gsap.set(dims.filter(Boolean) as HTMLElement[], { clearProps: 'all' });
+            gsap.set(dims.filter(Boolean) as HTMLElement[], { clearProps: 'filter' });
+            gsap.set(backdrops.filter(Boolean) as HTMLElement[], { clearProps: 'transform' });
           };
         }
       );
@@ -393,7 +422,7 @@ function useIndexCurtainReveal(stageRef: RefObject<HTMLDivElement | null>, scene
       cleanupIo?.();
       ctx.revert();
     };
-  }, [stageRef, sceneCount]);
+  }, [stageRef, sceneCount, direction]);
 }
 
 /**
@@ -407,6 +436,8 @@ function useIndexParallax(stageRef: RefObject<HTMLDivElement | null>) {
   useEffect(() => {
     const stage = stageRef.current;
     if (!stage) return undefined;
+    stage.style.setProperty('--mx', '0');
+    stage.style.setProperty('--my', '0');
     if (prefersReducedMotion()) return undefined;
     if (!window.matchMedia('(pointer: fine)').matches) return undefined;
 
@@ -453,44 +484,67 @@ function MagneticCursor({
 }) {
   const t = useT();
   const cursorRef = useRef<HTMLDivElement>(null);
+  const [portalHost, setPortalHost] = useState<HTMLElement | null>(null);
+
+  useEffect(() => {
+    setPortalHost(stageRef.current?.ownerDocument.body ?? null);
+  }, [stageRef]);
 
   useEffect(() => {
     const stage = stageRef.current;
     const cursor = cursorRef.current;
     if (!stage || !cursor) return undefined;
+    const doc = stage.ownerDocument;
+    const view = doc.defaultView;
+    if (!view) return undefined;
     if (prefersReducedMotion()) return undefined;
-    if (!window.matchMedia('(pointer: fine)').matches) return undefined;
+    if (!view.matchMedia('(pointer: fine)').matches) return undefined;
 
     const moveX = gsap.quickTo(cursor, 'x', { duration: 0.3, ease: 'power3.out' });
     const moveY = gsap.quickTo(cursor, 'y', { duration: 0.3, ease: 'power3.out' });
 
     const onMove = (event: PointerEvent) => {
-      moveX(event.clientX);
-      moveY(event.clientY);
+      if (event.pointerType === 'touch') return;
+      if (cursor.getAttribute('data-cursor-active') !== 'true') {
+        // Snap before revealing: never animate in from (0, 0) or an old position.
+        gsap.set(cursor, { x: event.clientX, y: event.clientY });
+      } else {
+        moveX(event.clientX);
+        moveY(event.clientY);
+      }
+      const target = event.target instanceof Element ? event.target.closest('[data-cursor-target]') : null;
+      cursor.setAttribute('data-cursor-state', target && stage.contains(target) ? 'view' : 'idle');
+      cursor.setAttribute('data-cursor-active', 'true');
     };
-    const onEnter = () => cursor.setAttribute('data-cursor-state', 'view');
-    const onLeave = () => cursor.setAttribute('data-cursor-state', 'idle');
+    const hide = () => {
+      cursor.removeAttribute('data-cursor-active');
+      cursor.setAttribute('data-cursor-state', 'idle');
+    };
 
+    stage.addEventListener('pointerenter', onMove);
     stage.addEventListener('pointermove', onMove);
+    stage.addEventListener('pointerleave', hide);
+    stage.addEventListener('pointercancel', hide);
+    view.addEventListener('blur', hide);
+    doc.addEventListener('scroll', hide, true);
     stage.setAttribute('data-cursor-ready', 'true');
-    const targets = Array.from(stage.querySelectorAll<HTMLElement>('[data-cursor-target]'));
-    targets.forEach((el) => {
-      el.addEventListener('pointerenter', onEnter);
-      el.addEventListener('pointerleave', onLeave);
-    });
-    cursor.setAttribute('data-cursor-active', 'true');
 
     return () => {
+      hide();
+      moveX.tween.kill();
+      moveY.tween.kill();
+      stage.removeEventListener('pointerenter', onMove);
       stage.removeEventListener('pointermove', onMove);
+      stage.removeEventListener('pointerleave', hide);
+      stage.removeEventListener('pointercancel', hide);
+      view.removeEventListener('blur', hide);
+      doc.removeEventListener('scroll', hide, true);
       stage.removeAttribute('data-cursor-ready');
-      targets.forEach((el) => {
-        el.removeEventListener('pointerenter', onEnter);
-        el.removeEventListener('pointerleave', onLeave);
-      });
     };
-  }, [stageRef]);
+  }, [stageRef, portalHost]);
 
-  return (
+  // Escape transformed preview wrappers: client coordinates must use the viewport.
+  return portalHost ? createPortal(
     <div
       ref={cursorRef}
       className="pf-work-index-cursor"
@@ -499,8 +553,9 @@ function MagneticCursor({
       style={{ ['--pf-cursor-accent' as string]: accent }}
     >
       <span className="pf-work-index-cursor-label">{t('View project')}</span>
-    </div>
-  );
+    </div>,
+    portalHost
+  ) : null;
 }
 
 /** Full-bleed cinematic scenes — one project dominates the screen at a time. */
@@ -518,14 +573,26 @@ export function ProjectsIndexGallery({
   );
   const accent = presentation.ctaColor || presentation.categoryActiveColor || presentation.titleColor;
 
-  useIndexCurtainReveal(stageRef, items.length);
+  useIndexCurtainReveal(stageRef, items.length, board.scrollDirection ?? 'vertical');
   useIndexParallax(stageRef);
 
   if (items.length === 0) return null;
 
   return (
-    <div className="pf-work-index relative w-full" data-pf-no-color-transition="">
+    <div className="pf-work-index relative w-full" data-pf-no-color-transition=""
+      data-index-direction={board.scrollDirection ?? 'vertical'}
+      style={{'--pf-index-height':'100dvh'} as CSSProperties}>
       <style>{`
+        @media (max-width: 1023px), (prefers-reduced-motion: reduce) {
+          .pf-work-index-stage { height: auto; overflow: visible; }
+          .pf-work-index-scene { position: relative; min-height: 100dvh; }
+          [data-index-direction='horizontal'] .pf-work-index-stage {
+            display: flex; overflow-x: auto; scroll-snap-type: x mandatory;
+          }
+          [data-index-direction='horizontal'] .pf-work-index-scene {
+            flex: 0 0 100%; min-width: 0; scroll-snap-align: start;
+          }
+        }
         /* Darkens from ~45 % down: the number and the first title line sit around 65 % of
            the scene height, where the old ramp (0.18 → 0.8) left a bright photo under white type. */
         .pf-work-index-scene-scrim {
@@ -546,22 +613,18 @@ export function ProjectsIndexGallery({
         .pf-work-index-scene-spot {
           pointer-events: none;
           mix-blend-mode: soft-light;
-          opacity: 0;
+          opacity: 0.18;
           background: radial-gradient(
             460px circle at calc(50% + var(--mx, 0) * 60%) calc(50% + var(--my, 0) * 60%),
             var(--pf-work-index-accent, #fff) 0%,
             transparent 70%
           );
-          transition: opacity 0.6s ease;
         }
-        /* A light, not a tint: at 0.55 the accent recolored the creator's photo. */
-        .pf-work-index-scene[data-scene-active='true'] .pf-work-index-scene-spot {
-          opacity: 0.18;
+        .pf-work-index-scene, .pf-work-index-scene-bg {
+          transition: none !important;
         }
-        .pf-work-index-scene-dim {
-          pointer-events: none;
-          background: #000;
-          opacity: 0;
+        .pf-work-index-scene-bg {
+          will-change: filter;
         }
         /* Padding + matching negative margin: at leading 0.94 the mask clipped descenders,
            and the italic last word's overhang on the right (the "g" of "booking"). */
@@ -652,9 +715,65 @@ export function ProjectsIndexGallery({
             opacity: 1 !important;
           }
         }
+        @media (max-width: 1023px) {
+          .pf-work-index { min-width: 0; max-width: 100%; }
+          .pf-work-index-stage {
+            display: flex; flex-direction: column; gap: 28px;
+          }
+          .pf-work-index-scene {
+            --pf-index-mobile-media-height: clamp(220px, 72vw, 440px);
+            min-height: 0; justify-content: flex-start; min-width: 0;
+          }
+          .pf-work-index-scene-bg {
+            position: relative; inset: auto; width: 100%;
+            height: var(--pf-index-mobile-media-height); flex-shrink: 0;
+            filter: none !important; transform: none !important; will-change: auto;
+          }
+          .pf-work-index-scene-media {
+            inset: 0; transform: none; transition: none; will-change: auto;
+          }
+          .pf-work-index-scene-scrim, .pf-work-index-scene-spot { display: none; }
+          .pf-work-index-media-border {
+            bottom: auto; height: var(--pf-index-mobile-media-height);
+          }
+          .pf-work-index-content {
+            flex: 1; gap: 20px; padding: 24px 20px 28px;
+            background: var(--pf-index-mobile-surface);
+          }
+          .pf-work-index-content > p span:not(:first-child) {
+            color: var(--pf-index-mobile-muted) !important;
+          }
+          .pf-work-index-scene-title {
+            color: var(--pf-index-mobile-ink) !important;
+            font-size: clamp(28px, 7.5vw, 40px); line-height: 1.12;
+            letter-spacing: -0.035em; overflow-wrap: anywhere;
+          }
+          .pf-work-index-details { gap: 20px; }
+          .pf-work-index-details > p {
+            order: 0; max-width: none; font-size: 15px; line-height: 1.7;
+            color: var(--pf-index-mobile-muted) !important;
+          }
+          .pf-work-index-details > ul {
+            order: 1; gap: 8px;
+          }
+          .pf-work-index-details li {
+            max-width: 100%; padding: 6px 9px; border-radius: 4px;
+            background: color-mix(in srgb, var(--pf-index-mobile-ink) 6%, transparent);
+            color: var(--pf-index-mobile-muted) !important;
+            font-size: 10px; letter-spacing: .07em; line-height: 1.5;
+            overflow-wrap: anywhere;
+          }
+          .pf-work-index-word-inner, .pf-work-index-reveal {
+            transform: none !important; opacity: 1 !important; transition: none !important;
+          }
+          [data-index-direction='horizontal'] .pf-work-index-stage {
+            flex-direction: row; gap: 0; align-items: stretch;
+          }
+          .pf-work-index-mobile-link { margin-top: auto; }
+        }
       `}</style>
 
-      <div ref={stageRef} className="pf-work-index-stage relative w-full lg:h-[100dvh] lg:overflow-hidden">
+      <div ref={stageRef} className="pf-work-index-stage relative w-full lg:h-[var(--pf-index-height)] lg:overflow-hidden">
         {items.map((item, index) => (
           <IndexScene
             key={item.id}

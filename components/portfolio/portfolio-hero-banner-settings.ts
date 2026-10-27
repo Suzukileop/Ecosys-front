@@ -1,7 +1,24 @@
 import { msg } from '@/lib/i18n/config';
+/** Portrait identity: shape the portrait is presented in. */
+export type PortfolioHeroPortraitShape = 'auto' | 'rectangle' | 'arch' | 'circle' | 'frame' | 'offset' | 'asymmetric';
+
+export const PORTFOLIO_HERO_PORTRAIT_SHAPE_OPTIONS: {
+  value: PortfolioHeroPortraitShape;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'auto', label: msg('Design default'), description: msg('Keep the shape this design was built with.') },
+  { value: 'rectangle', label: msg('Rectangle'), description: msg('The straight-edged portrait.') },
+  { value: 'arch', label: msg('Arch'), description: msg('Rounded top, straight bottom.') },
+  { value: 'circle', label: msg('Circle'), description: msg('Round portrait with a fine accent ring.') },
+  { value: 'frame', label: msg('Inner frame'), description: msg('Rectangle with a fine accent frame inside.') },
+  { value: 'offset', label: msg('Offset frame'), description: msg('A fine accent outline set back behind the portrait.') },
+  { value: 'asymmetric', label: msg('Asymmetric'), description: msg('Two opposite corners rounded.') },
+];
+
 export type PortfolioHeroEditorialOverlapWidth = 'medium' | 'large' | 'full';
 export type PortfolioHeroEditorialOverlapAlign = 'left' | 'center' | 'right';
-export type PortfolioHeroSelectedWorksIdentityLayout = 'split' | 'centered';
+export type PortfolioHeroSelectedWorksIdentityLayout = 'split' | 'reversed' | 'centered';
 export type PortfolioHeroStudioSplitFrameStyle =
   | 'circle-center'
   | 'panorama'
@@ -103,7 +120,12 @@ export const PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS: {
   {
     value: 'centered',
     label: msg('Centré'),
-    description: msg('Nom / spécialité centrés, trait fin, sans bio.'),
+    description: msg('Nom, spécialité et bio centrés.'),
+  },
+  {
+    value: 'reversed',
+    label: msg('Inversé'),
+    description: msg('Bio à gauche, nom / spécialité à droite.'),
   },
 ];
 
@@ -127,7 +149,8 @@ export type PortfolioHeroBannerDesign =
   | 'studio-split'
   | 'work-duo'
   | 'bowl-intro'
-  | 'colophon';
+  | 'colophon'
+  | 'statement-overlap';
 
 /** Default banner after Classic was removed permanently. */
 export const DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN: PortfolioHeroBannerDesign =
@@ -223,6 +246,13 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
       msg('Portrait sculptural porté par un motif concave ; spécialité monumentale, bio et actions à droite.'),
   },
   {
+    value: 'statement-overlap',
+    label: msg('Statement overlap'),
+    description: msg(
+      'A monumental serif statement split around a tall portrait — each half overlaps the photo — with a credit block, tagline, call to action and scroll cue.'
+    ),
+  },
+  {
     value: 'colophon',
     label: msg('Colophon'),
     description: msg(
@@ -247,7 +277,8 @@ function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioHeroBann
     value === 'studio-split' ||
     value === 'work-duo' ||
     value === 'bowl-intro' ||
-    value === 'colophon'
+    value === 'colophon' ||
+    value === 'statement-overlap'
   );
 }
 
@@ -281,7 +312,9 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
   heroLeftPortraitSpecialtyMark?: boolean;
   heroCirclePortraitSpecialtyMark?: boolean;
   heroCirclePortraitTitleBottom?: boolean;
+  heroCirclePortraitButtonShape?: 'pill' | 'rectangle';
   heroExperienceSplitBioRight?: boolean;
+  heroExperienceSplitButtonShape?: 'pill' | 'rectangle';
   heroExperienceSplitGlobalFrame?: boolean;
   heroEditorialOverlapImageUrl?: string;
   heroEditorialOverlapHeadline?: string;
@@ -289,6 +322,8 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
   heroEditorialOverlapAlign?: 'left' | 'center' | 'right';
   heroSelectedWorksDimIntensity?: number;
   heroSelectedWorksIdentityLayout?: PortfolioHeroSelectedWorksIdentityLayout;
+  /** Undefined/null keeps the automatic first-four selection; [] intentionally shows none. */
+  heroSelectedWorksSelectedWorkIds?: string[] | null;
   heroIdentityIndexShowPortrait?: boolean;
   heroIdentityIndexSwapBioPortrait?: boolean;
   heroIdentityIndexPortraitRadius?: PortfolioHeroIdentityIndexPortraitRadius;
@@ -307,9 +342,14 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
   heroStudioSplitMediaCaption?: string;
   heroStudioSplitMediaWidth?: 'medium' | 'large' | 'full';
   heroStudioSplitFrameStyle?: PortfolioHeroStudioSplitFrameStyle;
+  /** Optional accent override for the Studio split color panel. Empty follows the active palette. */
+  heroStudioSplitAccentColor?: string;
+  heroStudioSplitAccentOpacity?: number;
+  /** Empty intentionally uses the Work duo identity-only composition. */
   heroWorkDuoSelectedWorkIds?: string[];
   heroWorkDuoExperienceLabel?: string;
   heroBowlIntroMotif?: PortfolioHeroBowlIntroMotif;
+  heroBowlIntroButtonShape?: 'pill' | 'rectangle';
   /** Apply grayscale (noir & blanc) to hero banner images / media. */
   heroImageGrayscale?: boolean;
 } {
@@ -387,6 +427,7 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         showContactCta: true,
         heroCirclePortraitSpecialtyMark: false,
         heroCirclePortraitTitleBottom: true,
+        heroCirclePortraitButtonShape: 'pill',
       };
     case 'experience-split':
       return {
@@ -395,6 +436,7 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         showTools: false,
         showContactCta: true,
         heroExperienceSplitBioRight: true,
+        heroExperienceSplitButtonShape: 'pill',
         heroExperienceSplitGlobalFrame: false,
       };
     case 'editorial-overlap':
@@ -440,6 +482,8 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         heroStudioSplitMediaCaption: 'Selected work',
         heroStudioSplitMediaWidth: 'full',
         heroStudioSplitFrameStyle: 'circle-center',
+        heroStudioSplitAccentColor: '',
+        heroStudioSplitAccentOpacity: 100,
       };
     case 'work-duo':
       return {
@@ -457,11 +501,19 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         showTools: false,
         showContactCta: true,
         heroBowlIntroMotif: 'bowl',
+        heroBowlIntroButtonShape: 'rectangle',
       };
     case 'colophon':
       return {
         heroBannerDesign: design,
         showAvailabilityBadge: true,
+        showTools: false,
+        showContactCta: true,
+      };
+    case 'statement-overlap':
+      return {
+        heroBannerDesign: design,
+        showAvailabilityBadge: false,
         showTools: false,
         showContactCta: true,
       };
@@ -595,10 +647,10 @@ export function resolveHeroStatementCtaTools(
   return resolveHeroBannerTools(allTools, selectedTools, 5);
 }
 
-/** Up to twelve tool tags for Portrait balance — wrap chip row above the bio. */
+/** Up to four tool tags for Portrait balance. */
 export function resolveHeroPortraitBalanceTools(
   allTools?: string[] | null,
   selectedTools?: string[] | null
 ): string[] {
-  return resolveHeroBannerTools(allTools, selectedTools, 12);
+  return resolveHeroBannerTools(allTools, selectedTools, 4);
 }

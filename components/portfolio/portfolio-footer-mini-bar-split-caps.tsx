@@ -9,6 +9,7 @@ import {
 import {
   abbreviateFooterMiniBarName,
   prefersReducedMotion,
+  scrollPortfolioPageToTop,
   useFooterMiniBarLiveClock,
   type FooterMiniBarVariantProps,
 } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
@@ -105,7 +106,7 @@ export function FooterMiniBarSplitCaps({
 
   const handleClick = () => {
     try {
-      window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+      scrollPortfolioPageToTop();
     } catch {
       window.scrollTo(0, 0);
     }

@@ -26,6 +26,11 @@ function prefersReducedMotion(): boolean {
  *  app-wide color-mode crossfade so THIS 0.5s rule is the only one driving its `color`/
  *  `background-color` for the light/dark toggle. */
 const SERVICES_REVEAL_CSS = `
+.pf-svcreveal-mode a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 4px;
+}
 .pf-svcreveal-mode {
   transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s cubic-bezier(0.16, 1, 0.3, 1), border-color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -114,7 +119,7 @@ export function FooterDesignServicesReveal({
   // old 0.4-opacity "muted" read as invisible next to a near-black/near-white stage.
   const coordText = isLight ? 'rgba(38,38,46,0.66)' : 'rgba(220,220,228,0.66)';
   // Services nav links — resting brightness reined in from full "ink" to a felted tone.
-  const navRest = isLight ? 'rgba(10,10,10,0.55)' : 'rgba(250,250,247,0.55)';
+  const navRest = isLight ? 'rgba(10,10,10,0.78)' : 'rgba(250,250,247,0.78)';
   // Social icons — refined, slightly brighter than body text since the glyphs are tiny.
   const iconRest = isLight ? 'rgba(10,10,10,0.72)' : 'rgba(250,250,247,0.72)';
 
@@ -128,7 +133,7 @@ export function FooterDesignServicesReveal({
   const navHeading = layout.text('navLabel');
   const addressHeading = layout.text('addressLabel');
   const contactHeading = layout.text('contactLabel');
-  const headingClass = 'pf-svcreveal-color m-0 font-semibold uppercase tracking-[0.15em]';
+  const headingClass = 'pf-svcreveal-color m-0 font-semibold uppercase tracking-[0.12em]';
   const headingStyle: CSSProperties = {
     color: label,
     fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))',
@@ -153,6 +158,7 @@ export function FooterDesignServicesReveal({
         gsap.to(el, { color: ink, x: 5, duration: 0.34, ease: 'power2.out', overwrite: 'auto' });
       };
       el.addEventListener('pointerenter', handler);
+      el.addEventListener('focusin', handler);
       return handler;
     });
     const leaveHandlers = hoverTargets.map((el) => {
@@ -160,13 +166,16 @@ export function FooterDesignServicesReveal({
         gsap.to(el, { color: baseColors.get(el), x: 0, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
       };
       el.addEventListener('pointerleave', handler);
+      el.addEventListener('focusout', handler);
       return handler;
     });
 
     return () => {
       hoverTargets.forEach((el, index) => {
         el.removeEventListener('pointerenter', enterHandlers[index]);
+        el.removeEventListener('focusin', enterHandlers[index]);
         el.removeEventListener('pointerleave', leaveHandlers[index]);
+        el.removeEventListener('focusout', leaveHandlers[index]);
       });
     };
   }, [navLinks.length, links.length, trimmedLocation, trimmedEmail, phoneDisplay, ink]);
@@ -246,7 +255,7 @@ export function FooterDesignServicesReveal({
       <ServicesRevealStyles />
 
       <div
-        className={`grid grid-cols-1 gap-16 pb-20 pt-24 sm:pb-28 sm:pt-32 md:grid-cols-[1fr_1.05fr] md:gap-x-14 lg:gap-x-24 lg:pb-32 lg:pt-40 ${portfolioEditorialGutterX(contentGutter)}`}
+        className={`grid grid-cols-1 gap-12 pb-16 pt-20 sm:pb-28 sm:pt-32 mx-auto max-w-[1600px] md:grid-cols-2 md:gap-x-14 lg:gap-x-24 lg:pb-32 lg:pt-40 ${portfolioEditorialGutterX(contentGutter)}`}
       >
         {/* Left zone — free-floating social icons above the Services nav column. */}
         <div className="flex min-w-0 flex-col gap-12">
@@ -266,8 +275,7 @@ export function FooterDesignServicesReveal({
                     rel="noreferrer"
                     aria-label={link.label}
                     data-svcreveal-icon
-                    data-svcreveal-hover
-                    data-pf-no-color-transition=""
+                        data-pf-no-color-transition=""
                     className="pf-svcreveal-color flex h-11 w-11 shrink-0 items-center justify-center"
                     style={{ color: iconRest }}
                   >
@@ -290,9 +298,10 @@ export function FooterDesignServicesReveal({
                 <a
                   key={link.id}
                   href={link.url}
+                  {...(/^https?:\/\//i.test(link.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   data-svcreveal-hover
                   data-pf-no-color-transition=""
-                  className="pf-svcreveal-color flex min-h-[44px] w-fit items-center font-medium md:min-h-0"
+                  className="pf-svcreveal-color flex min-h-[44px] w-fit items-center font-medium lg:min-h-0"
                   style={{ color: navRest, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {link.label}
@@ -304,7 +313,7 @@ export function FooterDesignServicesReveal({
         </div>
 
         {/* Right zone — editorial address (with a static geo dot) + contact, offset for asymmetry. */}
-        <div className="flex min-w-0 flex-col gap-14 sm:gap-16 md:items-end md:pt-10 md:text-right">
+        <div className="flex min-w-0 flex-col gap-14 sm:gap-14 md:items-end md:pt-0 md:text-right">
           {trimmedLocation ? (
             <div className="flex flex-col gap-3 md:items-end">
               {addressHeading ? (
@@ -341,7 +350,7 @@ export function FooterDesignServicesReveal({
                     href={`mailto:${trimmedEmail}`}
                     data-svcreveal-hover
                     data-pf-no-color-transition=""
-                    className="pf-svcreveal-color flex min-h-[44px] w-fit items-center break-all md:min-h-0"
+                    className="pf-svcreveal-color flex min-h-[44px] w-fit items-center [overflow-wrap:anywhere] lg:min-h-0"
                     style={{ color: coordText, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   >
                     {trimmedEmail}
@@ -352,7 +361,7 @@ export function FooterDesignServicesReveal({
                     href={`tel:${trimmedPhone!.replace(/\s+/g, '')}`}
                     data-svcreveal-hover
                     data-pf-no-color-transition=""
-                    className="pf-svcreveal-color flex min-h-[44px] w-fit items-center md:min-h-0"
+                    className="pf-svcreveal-color flex min-h-[44px] w-fit items-center lg:min-h-0"
                     style={{ color: coordText, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   >
                     {phoneDisplay}

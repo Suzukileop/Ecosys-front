@@ -19,6 +19,8 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { mediaImageSrc, mediaImageSrcSet } from '@/lib/media-image-url';
+import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
+import { servicesColorLuminance } from '@/components/portfolio/portfolio-services-settings';
 import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-settings-types';
 import {
   formatNavLabel,
@@ -487,20 +489,14 @@ export function PortfolioFloatingNav({
   const isXlUp = usePortfolioXlUp();
   const presence = useNavPresence(settings.presence, visible);
   const presenceMode = settings.presence ?? 'full';
-  const contactButtonEnabled = settings.contactButtonEnabled ?? false;
-  const sectionItems = contactButtonEnabled
-    ? items.filter((item) => item.id !== 'contact')
-    : items;
+  // The optional CTA is independent of the menu. Some layouts/placements don't render it,
+  // so enabling it must never remove the only visible Contact destination.
+  const sectionItems = items;
   const menuEntries = useMemo(
     () => resolveNavMenuEntries(sectionItems, settings.navMenuGroups ?? []),
     [sectionItems, settings.navMenuGroups]
   );
-  // The mobile drawer has no contact button, so it keeps the Contact link the bar leaves out —
-  // otherwise Contact is unreachable on phones.
-  const drawerMenuEntries = useMemo(
-    () => (contactButtonEnabled ? resolveNavMenuEntries(items, settings.navMenuGroups ?? []) : menuEntries),
-    [contactButtonEnabled, items, settings.navMenuGroups, menuEntries]
-  );
+  const drawerMenuEntries = menuEntries;
   const splitMenuRails = useMemo(
     () => splitNavMenuEntries(menuEntries, settings.splitNavLeftSectionKeys ?? []),
     [menuEntries, settings.splitNavLeftSectionKeys]
@@ -577,11 +573,24 @@ export function PortfolioFloatingNav({
 
   useEffect(() => {
     if (!drawerOpen) return;
+    const previous = document.activeElement as HTMLElement | null;
+    const frame = window.requestAnimationFrame(() => document.querySelector<HTMLButtonElement>('#portfolio-nav-drawer button')?.focus({ preventScroll: true }));
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key === 'Escape') setDrawerOpen(false);
+      if (event.key === 'Tab') {
+        const focusable = Array.from(document.querySelectorAll<HTMLElement>('#portfolio-nav-drawer button:not([disabled]), #portfolio-nav-drawer a[href], #portfolio-nav-drawer [tabindex="0"]'));
+        const first = focusable[0], last = focusable[focusable.length - 1];
+        if (!first || !last) return;
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first.focus(); }
+      }
     };
     window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('keydown', onKeyDown);
+      if (previous?.isConnected) previous.focus({ preventScroll: true });
+    };
   }, [drawerOpen]);
 
   useEffect(() => {
@@ -656,6 +665,11 @@ export function PortfolioFloatingNav({
   if (useMobileMenu) {
     const mobileBrand = settings.mobileBrand ?? 'none';
     const drawerSide = settings.mobileDrawerSide ?? 'right';
+    const drawerDesign = settings.mobileDrawerDesign ?? 'classic';
+    const drawerSurface = drawerDesign === 'contrast'
+      ? servicesColorLuminance(settings.itemTextColor ?? '#171717') < 0.45 ? settings.itemTextColor ?? '#171717' : '#171717'
+      : drawerPanelBackground;
+    const drawerInk = readableMix(servicesColorLuminance(drawerSurface) < 0.45 ? '#fafafa' : settings.itemTextColor ?? '#171717', 100, drawerSurface);
     const drawerLabelSizeClass = portfolioNavLabelFontSizeClass(settings.labelFontSize ?? 'sm', true);
     const brandWord =
       (settings.mobileBrandWord ?? '').trim() ||
@@ -752,6 +766,7 @@ export function PortfolioFloatingNav({
     return createPortal(
       <>
         <nav
+          data-pf-page-palette="" data-pf-nav-typography=""
           ref={navRootRef}
           className={`pointer-events-none fixed inset-x-0 top-0 z-[100] transition-opacity duration-300 ${
             visible ? 'opacity-100' : 'pointer-events-none opacity-0'
@@ -810,7 +825,8 @@ export function PortfolioFloatingNav({
             />
             <aside
               id="portfolio-nav-drawer"
-              role="dialog"
+              data-pf-drawer-design={drawerDesign}
+              role="dialog" data-pf-nav-typography=""
               aria-modal="true"
               aria-label={t('Navigation')}
               className={`absolute top-0 z-10 flex h-full w-[min(18.5rem,86vw)] flex-col shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
@@ -823,7 +839,10 @@ export function PortfolioFloatingNav({
                     : 'translate-x-full'
               }`}
               style={{
-                backgroundColor: drawerPanelBackground,
+                backgroundColor: drawerSurface,
+                '--pf-drawer-ink': drawerInk,
+                '--pf-drawer-muted': readableMix(drawerInk, 70, drawerSurface),
+                '--pf-drawer-accent': settings.navPalette?.principal ?? settings.activeAccentColor ?? '#f97316',
                 color: settings.itemTextColor ?? '#525252',
                 borderColor: navBarSurfaceTransparent
                   ? `${settings.barBorderColor ?? '#e5e5e5'}55`
@@ -838,9 +857,9 @@ export function PortfolioFloatingNav({
                     : 0,
                 borderStyle: 'solid',
                 paddingTop: 'env(safe-area-inset-top, 0px)',
-              }}
+              } as CSSProperties}
             >
-              <div className="flex items-center justify-between gap-3 px-4 py-3">
+              <div className="pf-drawer-header flex items-center justify-between gap-3 px-4 py-3">
                 <p className="text-xs font-bold uppercase tracking-[0.16em] opacity-60">{t('Menu')}</p>
                 <div className="inline-flex items-center gap-2">
                   <PortfolioNavColorModeToggleProvider
@@ -857,7 +876,7 @@ export function PortfolioFloatingNav({
                     type="button"
                     onClick={() => setDrawerOpen(false)}
                     aria-label={t('Close navigation')}
-                    className={`${handleChromeClass} h-10 w-10 min-h-10`}
+                    className={`${handleChromeClass} h-11 w-11 min-h-11`}
                     data-pf-no-color-transition=""
                     style={handleChromeStyle}
                   >
@@ -865,18 +884,23 @@ export function PortfolioFloatingNav({
                   </button>
                 </div>
               </div>
-              <div className="flex-1 overflow-y-auto px-3 pb-6 pt-1">
-                <ul className="flex flex-col gap-1.5">
-                  {drawerMenuEntries.map((entry) => {
+              <div className="pf-drawer-body min-h-0 flex-1 overflow-y-auto px-3 pb-6 pt-1">
+                <ul className="pf-drawer-list flex flex-col gap-1.5">
+                  {drawerMenuEntries.map((entry, index) => {
                     if (entry.type === 'group') {
                       return (
-                        <li key={entry.id}>
+                        <li key={entry.id} className="pf-drawer-group">
                           <PortfolioNavMenuGroupDropdown
                             groupLabel={t(entry.label)}
                             items={entry.items}
                             activeId={activeId}
                             isControlled={isControlled}
-                            settings={settings}
+                            settings={drawerDesign === 'classic' ? settings : {
+                              ...settings,
+                              barBackgroundColor: drawerSurface,
+                              itemTextColor: drawerInk,
+                              navPalette: { ...navPalette, fond: drawerSurface, neutre: drawerSurface, texteFort: drawerInk },
+                            }}
                             contentMode={effectiveContentMode}
                             vertical
                             triggerClassName="hidden"
@@ -918,6 +942,9 @@ export function PortfolioFloatingNav({
                           <button
                             type="button"
                             onClick={() => handleNavigate(item.id)}
+                            data-pf-drawer-link=""
+                            data-index={String(index + 1).padStart(2, '0')}
+                            aria-label={label}
                             aria-current={active ? 'page' : undefined}
                             className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold transition ${drawerLabelSizeClass} ${drawerHoverClass}`}
                             style={
@@ -945,6 +972,9 @@ export function PortfolioFloatingNav({
                             href={`#${item.id}`}
                             aria-current={active ? 'page' : undefined}
                             onClick={(event) => handleNavigate(item.id, event)}
+                            data-pf-drawer-link=""
+                            data-index={String(index + 1).padStart(2, '0')}
+                            aria-label={label}
                             className={`group flex w-full items-center gap-3 rounded-xl px-3 py-3 text-left font-semibold transition ${drawerLabelSizeClass} ${drawerHoverClass}`}
                             style={
                               active
@@ -972,6 +1002,7 @@ export function PortfolioFloatingNav({
                   })}
                 </ul>
               </div>
+              {drawerDesign !== 'classic' && brandName ? <div className="pf-drawer-signature">{brandName}</div> : null}
             </aside>
           </div>
         ) : null}
@@ -1562,6 +1593,7 @@ export function PortfolioFloatingNav({
     >
     <>
     <nav
+      data-pf-page-palette="" data-pf-nav-typography=""
       ref={navRootRef}
       className={`pointer-events-none fixed z-[100] ${placementClass} ${widthClass}`}
       aria-label={t('Portfolio navigation')}

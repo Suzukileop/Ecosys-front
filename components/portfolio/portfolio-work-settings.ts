@@ -1,3 +1,10 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import {
+  DEFAULT_CARDS_STYLE,
+  cardsStyleCss,
+  mergeCardsStyle,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -45,6 +52,7 @@ export type PortfolioWorkHeaderFont = 'sans' | 'serif' | 'display';
  * projects render in). One shared, GSAP-animated header mounts above every project layout.
  */
 export type PortfolioWorkHeaderDesign =
+  | 'none'
   | 'editorial'
   | 'marquee'
   | 'index'
@@ -182,10 +190,19 @@ type PortfolioWorkProjectsBoardColumns = 1 | 2 | 3 | 4;
 export type PortfolioWorkProjectsBoardThumbnailSize = 'compact' | 'standard' | 'large';
 
 export type PortfolioWorkProjectsBoardSettings = {
+  buttonColor?: PortfolioWorkPaletteToken;
+  buttonColorOpacity?: number;
   /** Thumbnail above each card. */
   showThumbnail: boolean;
   /** Thumbnail aspect ratio (compact/standard/large). */
   thumbnailSize: PortfolioWorkProjectsBoardThumbnailSize;
+  singleColumnImageFit?: 'cover' | 'contain';
+  infoBackground?: 'principal' | 'secondaire' | 'neutre';
+  infoBackgroundOpacity?: number;
+  consultStyle?: 'underline' | 'outline' | 'solid' | 'pill';
+  consultDisplay?: 'always' | 'hover';
+  borderWidth?: number;
+  borderColorToken?: 'bordure' | 'principal' | 'secondaire' | 'texteFort';
   /** Role label in the card footer (accent). */
   showRole: boolean;
   /** Category in the card footer, beside the role. */
@@ -240,6 +257,15 @@ function mergeProjectsBoardSettings(
     showThumbnail:
       typeof record.showThumbnail === 'boolean' ? record.showThumbnail : base.showThumbnail,
     thumbnailSize,
+    singleColumnImageFit: record.singleColumnImageFit === 'cover' || record.singleColumnImageFit === 'contain' ? record.singleColumnImageFit : base.singleColumnImageFit ?? 'cover',
+    infoBackground: record.infoBackground === 'principal' || record.infoBackground === 'secondaire' || record.infoBackground === 'neutre' ? record.infoBackground : base.infoBackground ?? 'neutre',
+    infoBackgroundOpacity: typeof record.infoBackgroundOpacity === 'number' && Number.isFinite(record.infoBackgroundOpacity) ? Math.max(0,Math.min(100,record.infoBackgroundOpacity)) : base.infoBackgroundOpacity ?? 100,
+    buttonColor: record.buttonColor === 'principal' || record.buttonColor === 'secondaire' || record.buttonColor === 'texteFort' ? record.buttonColor : base.buttonColor,
+    buttonColorOpacity: typeof record.buttonColorOpacity === 'number' && Number.isFinite(record.buttonColorOpacity) ? Math.max(30, Math.min(100, record.buttonColorOpacity)) : Math.max(30, Math.min(100, base.buttonColorOpacity ?? 100)),
+    consultStyle: ['underline','outline','solid','pill'].includes(record.consultStyle as string) ? record.consultStyle as PortfolioWorkProjectsBoardSettings['consultStyle'] : base.consultStyle ?? 'underline',
+    consultDisplay: record.consultDisplay==='always'||record.consultDisplay==='hover'?record.consultDisplay:base.consultDisplay??'always',
+    borderWidth: typeof record.borderWidth==='number'&&Number.isFinite(record.borderWidth)?Math.max(0,Math.min(3,Math.round(record.borderWidth))):base.borderWidth??1,
+    borderColorToken: ['bordure','principal','secondaire','texteFort'].includes(record.borderColorToken as string)?record.borderColorToken as PortfolioWorkProjectsBoardSettings['borderColorToken']:base.borderColorToken??'bordure',
     showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
     showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
     showConsultOnHover:
@@ -281,10 +307,15 @@ export const PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS: {
 
 /** Options that apply only when `sectionDesign === 'projects-accordion'`. */
 export type PortfolioWorkProjectsAccordionSettings = {
+  displayStyle?: 'editorial' | 'compact';
   /** Section title / subtitle alignment for this design only. */
   headerAlign: 'left' | 'center' | 'right';
   /** Which column holds the large preview image. */
   previewSide: 'left' | 'right';
+  previewFit?: 'cover' | 'contain';
+  /** Thumbnail width within its column, in percent. */
+  previewSize?: number;
+  previewShape?: 'none' | 'rounded' | 'arch' | 'cut';
   /** Label above stacks under the large preview. */
   toolsLabel: string;
   /** Show the label (and short rule) above stack chips. Off by default. */
@@ -302,8 +333,12 @@ export type PortfolioWorkProjectsAccordionSettings = {
 };
 
 export const DEFAULT_PROJECTS_ACCORDION_SETTINGS: PortfolioWorkProjectsAccordionSettings = {
+  displayStyle: 'editorial',
   headerAlign: 'center',
   previewSide: 'right',
+  previewFit: 'cover',
+  previewSize: 100,
+  previewShape: 'cut',
   toolsLabel: 'Tools I use',
   showToolsLabel: false,
   showTools: true,
@@ -337,6 +372,8 @@ export function mergeProjectsAccordionSettings(
         : record.showRoleInPanel
       : base.showRoleInPanel;
   return {
+    displayStyle: record.displayStyle === 'compact' || record.displayStyle === 'editorial'
+      ? record.displayStyle : base.displayStyle ?? 'editorial',
     headerAlign:
       record.headerAlign === 'left' ||
       record.headerAlign === 'center' ||
@@ -347,6 +384,13 @@ export function mergeProjectsAccordionSettings(
       ? record.previewSide
       : base.previewSide,
     toolsLabel,
+    previewFit: record.previewFit === 'contain' || record.previewFit === 'cover'
+      ? record.previewFit : base.previewFit,
+    previewSize: typeof record.previewSize === 'number' && Number.isFinite(record.previewSize)
+      ? Math.min(100, Math.max(50, Math.round(record.previewSize))) : base.previewSize,
+    previewShape: record.previewShape === 'none' || record.previewShape === 'rounded'
+      || record.previewShape === 'arch' || record.previewShape === 'cut'
+      ? record.previewShape : base.previewShape,
     showToolsLabel:
       typeof record.showToolsLabel === 'boolean' ? record.showToolsLabel : base.showToolsLabel,
     showTools: typeof record.showTools === 'boolean' ? record.showTools : base.showTools,
@@ -366,6 +410,7 @@ export function mergeProjectsAccordionSettings(
 export type PortfolioWorkProjectsFramesThumbnailSize = 'md' | 'lg' | 'xl' | 'xxl' | 'half';
 export type PortfolioWorkProjectsFramesRadius = 'none' | 'md' | 'xl';
 export type PortfolioWorkProjectsFramesCardGap = 'tight' | 'md' | 'xl';
+export type PortfolioWorkProjectsFramesTitleStyle = 'display' | 'simple';
 
 export type PortfolioWorkProjectsFramesSettings = {
   showRole: boolean;
@@ -387,6 +432,10 @@ export type PortfolioWorkProjectsFramesSettings = {
   radius: PortfolioWorkProjectsFramesRadius;
   /** Vertical space between stacked cards. */
   cardGap: PortfolioWorkProjectsFramesCardGap;
+  /** "display": oversized black-weight title; "simple": a medium-weight title at a moderate size. */
+  titleStyle: PortfolioWorkProjectsFramesTitleStyle;
+  /** Desktop title size in pixels; null preserves the style's responsive default. */
+  titleSize?: number | null;
 };
 
 export const DEFAULT_PROJECTS_FRAMES_SETTINGS: PortfolioWorkProjectsFramesSettings = {
@@ -402,6 +451,8 @@ export const DEFAULT_PROJECTS_FRAMES_SETTINGS: PortfolioWorkProjectsFramesSettin
   imagePadding: true,
   radius: 'xl',
   cardGap: 'tight',
+  titleStyle: 'simple',
+  titleSize: null,
 };
 
 export function mergeProjectsFramesSettings(
@@ -430,6 +481,8 @@ export function mergeProjectsFramesSettings(
     record.cardGap === 'tight' || record.cardGap === 'md' || record.cardGap === 'xl'
       ? record.cardGap
       : base.cardGap;
+  const titleStyle =
+    record.titleStyle === 'display' || record.titleStyle === 'simple' ? record.titleStyle : base.titleStyle;
   return {
     showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
     showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
@@ -445,6 +498,10 @@ export function mergeProjectsFramesSettings(
     imagePadding: typeof record.imagePadding === 'boolean' ? record.imagePadding : base.imagePadding,
     radius,
     cardGap,
+    titleStyle,
+    titleSize: record.titleSize === null ? null
+      : typeof record.titleSize === 'number' && Number.isFinite(record.titleSize)
+        ? Math.min(120, Math.max(24, Math.round(record.titleSize))) : base.titleSize,
   };
 }
 
@@ -483,6 +540,15 @@ export const PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS: {
   { value: 'xl', label: msg('Large'), description: msg('Very rounded card and thumbnail (default).') },
 ];
 
+export const PORTFOLIO_WORK_FRAMES_TITLE_STYLE_OPTIONS: {
+  value: PortfolioWorkProjectsFramesTitleStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'simple', label: msg('Simple'), description: msg('A calmer medium-weight title at a moderate size, under the image (default).') },
+  { value: 'display', label: msg('Overlapping title'), description: msg('Oversized, black-weight title, overlapping the image.') },
+];
+
 export const PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS: {
   value: PortfolioWorkProjectsFramesCardGap;
   label: string;
@@ -497,6 +563,9 @@ export const PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS: {
 export type PortfolioWorkProjectsIndexMarker = 'number' | 'bullet';
 
 export type PortfolioWorkProjectsIndexSettings = {
+  scrollDirection?: 'vertical' | 'horizontal';
+  /** Inset media border in pixels; zero disables it. */
+  mediaBorderWidth?: number;
   showNumber: boolean;
   /** Left column marker — padded numbers or list bullet. */
   indexMarker: PortfolioWorkProjectsIndexMarker;
@@ -507,6 +576,8 @@ export type PortfolioWorkProjectsIndexSettings = {
 };
 
 export const DEFAULT_PROJECTS_INDEX_SETTINGS: PortfolioWorkProjectsIndexSettings = {
+  scrollDirection: 'vertical',
+  mediaBorderWidth: 1,
   showNumber: true,
   indexMarker: 'number',
   showStack: true,
@@ -522,10 +593,11 @@ export function mergeProjectsIndexSettings(
   const record = patch as Record<string, unknown>;
   return {
     showNumber: typeof record.showNumber === 'boolean' ? record.showNumber : base.showNumber,
-    indexMarker:
-      record.indexMarker === 'number' || record.indexMarker === 'bullet'
-        ? record.indexMarker
-        : base.indexMarker,
+    indexMarker: 'number',
+    scrollDirection: record.scrollDirection === 'horizontal' || record.scrollDirection === 'vertical'
+      ? record.scrollDirection : base.scrollDirection,
+    mediaBorderWidth: typeof record.mediaBorderWidth === 'number' && Number.isFinite(record.mediaBorderWidth)
+      ? Math.min(3, Math.max(0, Math.round(record.mediaBorderWidth))) : base.mediaBorderWidth,
     showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
@@ -556,12 +628,16 @@ export const PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS: {
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-grid'`. */
-type PortfolioWorkProjectsGridColumns = 2 | 3;
+type PortfolioWorkProjectsGridColumns = 2 | 3 | 4;
 
 export type PortfolioWorkProjectsGridRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 
 export type PortfolioWorkProjectsGridSettings = {
-  /** Cards per row on large screens (2 or 3). */
+  buttonColor?: PortfolioWorkPaletteToken;
+  buttonColorOpacity?: number;
+  consultStyle?: 'underline' | 'outline' | 'solid' | 'pill';
+  consultLabel?: string;
+  /** Cards per row on large screens (2, 3 or 4). */
   columnsPerRow: PortfolioWorkProjectsGridColumns;
   showDescription: boolean;
   /** Card / thumbnail frame border for this design. */
@@ -573,6 +649,8 @@ export type PortfolioWorkProjectsGridSettings = {
 };
 
 export const DEFAULT_PROJECTS_GRID_SETTINGS: PortfolioWorkProjectsGridSettings = {
+  consultStyle: 'underline',
+  consultLabel: '',
   columnsPerRow: 2,
   showDescription: true,
   cardBorder: 'none',
@@ -587,9 +665,9 @@ export function mergeProjectsGridSettings(
   if (!patch || typeof patch !== 'object') return base;
   const record = patch as Record<string, unknown>;
   const columnsPerRow =
-    record.columnsPerRow === 2 || record.columnsPerRow === 3
+    record.columnsPerRow === 2 || record.columnsPerRow === 3 || record.columnsPerRow === 4
       ? record.columnsPerRow
-      : record.columnsPerRow === '2' || record.columnsPerRow === '3'
+      : record.columnsPerRow === '2' || record.columnsPerRow === '3' || record.columnsPerRow === '4'
         ? (Number(record.columnsPerRow) as PortfolioWorkProjectsGridColumns)
         : base.columnsPerRow;
   const cardBorder =
@@ -609,6 +687,11 @@ export function mergeProjectsGridSettings(
       : base.cardRadius;
   return {
     columnsPerRow,
+    buttonColor: record.buttonColor === 'principal' || record.buttonColor === 'secondaire' || record.buttonColor === 'texteFort' ? record.buttonColor : base.buttonColor,
+    buttonColorOpacity: typeof record.buttonColorOpacity === 'number' && Number.isFinite(record.buttonColorOpacity) ? Math.max(30, Math.min(100, record.buttonColorOpacity)) : Math.max(30, Math.min(100, base.buttonColorOpacity ?? 100)),
+    consultStyle: record.consultStyle === 'underline' || record.consultStyle === 'outline' || record.consultStyle === 'solid' || record.consultStyle === 'pill'
+      ? record.consultStyle : base.consultStyle,
+    consultLabel: typeof record.consultLabel === 'string' ? record.consultLabel.slice(0,64) : base.consultLabel,
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
     cardBorder,
@@ -625,6 +708,7 @@ export const PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS: {
 }[] = [
   { value: 2, label: msg('2 columns'), description: msg('Two cards per row on large screens (default).') },
   { value: 3, label: msg('3 columns'), description: msg('Three cards per row on large screens.') },
+  { value: 4, label: msg('4 columns'), description: msg('Four cards per row on wide screens, adapting to smaller screens.') },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-split'`. */
@@ -633,46 +717,25 @@ export type PortfolioWorkProjectsSplitThumbnailSize = 'lg' | 'xl' | 'half';
 export type PortfolioWorkProjectsSplitRadius = 'none' | 'md' | 'xl';
 
 export type PortfolioWorkProjectsSplitSettings = {
+  showNumber?: boolean;
   thumbnailSize: PortfolioWorkProjectsSplitThumbnailSize;
   thumbnailRadius: PortfolioWorkProjectsSplitRadius;
   rowGap: 'tight' | 'md' | 'xl';
   showDescription: boolean;
-  /** Image left, right, or centered in the row. */
-  imageSide: 'left' | 'right' | 'center';
-  /**
-   * When image is centered: title on the left (default) or right.
-   * Ignored for left/right image placement (title takes the other side).
-   */
-  titleSide: 'left' | 'right';
-  /**
-   * When image is centered: title/description at the top or bottom of the side column.
-   * When description is separated, this only applies to the title.
-   */
-  titleVerticalAlign: 'top' | 'bottom';
-  /**
-   * When image is centered: keep description under the title, or place it on the
-   * opposite side of the image.
-   */
-  descriptionPlacement: 'with-title' | 'opposite';
-  /**
-   * When description is on the opposite side: top or bottom of that column.
-   */
-  descriptionVerticalAlign: 'top' | 'bottom';
-  /** Zigzag: odd rows keep imageSide, even rows flip (ignored when center). */
+  /** Image on the left or the right of the row. */
+  imageSide: 'left' | 'right';
+  /** Zigzag: odd rows keep imageSide, even rows flip. */
   alternateSides: boolean;
 };
 
 export const DEFAULT_PROJECTS_SPLIT_SETTINGS: PortfolioWorkProjectsSplitSettings = {
+  showNumber: true,
   thumbnailSize: 'xl',
   thumbnailRadius: 'none',
   rowGap: 'md',
   // On: without it each row was a ~700px image facing a lone 46px title (~92 % empty column).
   showDescription: true,
   imageSide: 'left',
-  titleSide: 'left',
-  titleVerticalAlign: 'top',
-  descriptionPlacement: 'with-title',
-  descriptionVerticalAlign: 'bottom',
   alternateSides: false,
 };
 
@@ -698,25 +761,12 @@ export function mergeProjectsSplitSettings(
     thumbnailSize,
     thumbnailRadius,
     rowGap,
+    showNumber: typeof record.showNumber === 'boolean' ? record.showNumber : base.showNumber,
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    // The centred placement is gone: those rows fall back to the image on the left.
     imageSide:
-      record.imageSide === 'left' || record.imageSide === 'right' || record.imageSide === 'center'
-        ? record.imageSide
-        : base.imageSide,
-    titleSide: record.titleSide === 'left' || record.titleSide === 'right' ? record.titleSide : base.titleSide,
-    titleVerticalAlign:
-      record.titleVerticalAlign === 'top' || record.titleVerticalAlign === 'bottom'
-        ? record.titleVerticalAlign
-        : base.titleVerticalAlign,
-    descriptionPlacement:
-      record.descriptionPlacement === 'with-title' || record.descriptionPlacement === 'opposite'
-        ? record.descriptionPlacement
-        : base.descriptionPlacement,
-    descriptionVerticalAlign:
-      record.descriptionVerticalAlign === 'top' || record.descriptionVerticalAlign === 'bottom'
-        ? record.descriptionVerticalAlign
-        : base.descriptionVerticalAlign,
+      record.imageSide === 'right' ? 'right' : record.imageSide === 'left' || record.imageSide === 'center' ? 'left' : base.imageSide,
     alternateSides:
       typeof record.alternateSides === 'boolean' ? record.alternateSides : base.alternateSides,
   };
@@ -758,80 +808,7 @@ export const PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS: {
   description: string;
 }[] = [
   { value: 'left', label: msg('Image left'), description: msg('Thumbnail on the left, title on the right.') },
-  {
-    value: 'center',
-    label: msg('Image center'),
-    description: msg('Thumbnail centered in the row; title stays left or right.'),
-  },
   { value: 'right', label: msg('Image right'), description: msg('Thumbnail on the right, title on the left.') },
-];
-
-export const PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS: {
-  value: PortfolioWorkProjectsSplitSettings['titleSide'];
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'left',
-    label: msg('Title left'),
-    description: msg('Title + description on the left of the centered image (default).'),
-  },
-  {
-    value: 'right',
-    label: msg('Title right'),
-    description: msg('Title + description on the right of the centered image.'),
-  },
-];
-
-export const PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS: {
-  value: PortfolioWorkProjectsSplitSettings['titleVerticalAlign'];
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'top',
-    label: msg('En haut'),
-    description: msg('Aligné en haut avec le bord supérieur de l’image.'),
-  },
-  {
-    value: 'bottom',
-    label: msg('En bas'),
-    description: msg('Aligné en bas — titre au bas du côté.'),
-  },
-];
-
-export const PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS: {
-  value: PortfolioWorkProjectsSplitSettings['descriptionPlacement'];
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'with-title',
-    label: msg('Sous le titre'),
-    description: msg('La description reste avec le titre.'),
-  },
-  {
-    value: 'opposite',
-    label: msg('Autre côté'),
-    description: msg('La description passe de l’autre côté de l’image (titre inchangé).'),
-  },
-];
-
-export const PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS: {
-  value: PortfolioWorkProjectsSplitSettings['descriptionVerticalAlign'];
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'top',
-    label: msg('En haut'),
-    description: msg('Description en haut, de l’autre côté de l’image.'),
-  },
-  {
-    value: 'bottom',
-    label: msg('En bas'),
-    description: msg('Description en bas, de l’autre côté de l’image.'),
-  },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-carousel'`. */
@@ -842,6 +819,8 @@ export type PortfolioWorkProjectsCarouselRadius = 'none' | 'md' | 'xl';
 export type PortfolioWorkProjectsCarouselAspect = 'square' | 'landscape' | 'portrait';
 
 export type PortfolioWorkProjectsCarouselSettings = {
+  /** Active slide alignment on desktop; mobile keeps its leading-edge layout. */
+  desktopFocus?: 'first' | 'center';
   /** Width of each slide image. */
   imageSize: PortfolioWorkProjectsCarouselImageSize;
   imageRadius: PortfolioWorkProjectsCarouselRadius;
@@ -853,9 +832,16 @@ export type PortfolioWorkProjectsCarouselSettings = {
   focusBlurSiblings: boolean;
   /** On hover: show project stack in a borderless strip under the image. */
   hoverStack: boolean;
+  /** Focus mode: only the focused slide (hovered, else current) stays clear; the others fade back. */
+  focusDim: boolean;
+  /** Focus mode: opacity (%) of the slides that do not hold the focus. */
+  focusOpacity: number;
+  /** Show the index chip on each image and the "01 — 04" counter under the carousel. */
+  showNumbers: boolean;
 };
 
 export const DEFAULT_PROJECTS_CAROUSEL_SETTINGS: PortfolioWorkProjectsCarouselSettings = {
+  desktopFocus: 'center',
   imageSize: 'lg',
   imageRadius: 'none',
   aspectRatio: 'square',
@@ -863,6 +849,9 @@ export const DEFAULT_PROJECTS_CAROUSEL_SETTINGS: PortfolioWorkProjectsCarouselSe
   hoverReveal: true,
   focusBlurSiblings: true,
   hoverStack: true,
+  focusDim: false,
+  focusOpacity: 60,
+  showNumbers: true,
 };
 
 export function mergeProjectsCarouselSettings(
@@ -901,6 +890,14 @@ export function mergeProjectsCarouselSettings(
         ? record.focusBlurSiblings
         : base.focusBlurSiblings,
     hoverStack: typeof record.hoverStack === 'boolean' ? record.hoverStack : base.hoverStack,
+    desktopFocus: record.desktopFocus === 'first' || record.desktopFocus === 'center'
+      ? record.desktopFocus : base.desktopFocus ?? 'center',
+    focusDim: typeof record.focusDim === 'boolean' ? record.focusDim : base.focusDim,
+    focusOpacity:
+      typeof record.focusOpacity === 'number' && Number.isFinite(record.focusOpacity)
+        ? Math.min(95, Math.max(10, Math.round(record.focusOpacity)))
+        : base.focusOpacity,
+    showNumbers: typeof record.showNumbers === 'boolean' ? record.showNumbers : base.showNumbers,
   };
 }
 
@@ -947,24 +944,40 @@ export const PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS: {
 
 /** Options that apply only when `sectionDesign === 'projects-showcase'`. */
 export type PortfolioWorkProjectsShowcaseRadius = 'none' | 'md' | 'xl';
+/** Prev/next hover cue: ring tracking the pointer, fixed circle around each chevron, or none. */
+export type PortfolioWorkProjectsShowcaseNavHover = 'aura' | 'circle' | 'none';
 
 export type PortfolioWorkProjectsShowcaseSettings = {
   /** Primary media on the left (default) or right. */
   mediaSide: 'left' | 'right';
   mediaRadius: PortfolioWorkProjectsShowcaseRadius;
+  /** Thumb strip corners, independent of the featured media. */
+  thumbRadius: PortfolioWorkProjectsShowcaseRadius;
+  navHover: PortfolioWorkProjectsShowcaseNavHover;
+  /** "01 / 04" between the prev/next chevrons. */
+  showCounter: boolean;
   showRole: boolean;
   showDescription: boolean;
   showCategory: boolean;
   categoryLabel: string;
+  /** "01 —— 04" above the title; off pulls the title up into its place. */
+  showIndex: boolean;
+  /** Editorial title (last word in italic); off = the title as typed, one style. */
+  titleItalic: boolean;
 };
 
 export const DEFAULT_PROJECTS_SHOWCASE_SETTINGS: PortfolioWorkProjectsShowcaseSettings = {
   mediaSide: 'left',
   mediaRadius: 'xl',
+  thumbRadius: 'none',
+  navHover: 'aura',
+  showCounter: false,
   showRole: true,
   showDescription: true,
   showCategory: true,
   categoryLabel: 'Category',
+  showIndex: false,
+  titleItalic: false,
 };
 
 export function mergeProjectsShowcaseSettings(
@@ -980,6 +993,15 @@ export function mergeProjectsShowcaseSettings(
       record.mediaRadius === 'none' || record.mediaRadius === 'md' || record.mediaRadius === 'xl'
         ? record.mediaRadius
         : base.mediaRadius,
+    thumbRadius:
+      record.thumbRadius === 'none' || record.thumbRadius === 'md' || record.thumbRadius === 'xl'
+        ? record.thumbRadius
+        : base.thumbRadius,
+    navHover:
+      record.navHover === 'aura' || record.navHover === 'circle' || record.navHover === 'none'
+        ? record.navHover
+        : base.navHover,
+    showCounter: typeof record.showCounter === 'boolean' ? record.showCounter : base.showCounter,
     showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
@@ -988,6 +1010,8 @@ export function mergeProjectsShowcaseSettings(
       typeof record.categoryLabel === 'string' && record.categoryLabel.trim()
         ? record.categoryLabel.trim()
         : base.categoryLabel,
+    showIndex: typeof record.showIndex === 'boolean' ? record.showIndex : base.showIndex,
+    titleItalic: typeof record.titleItalic === 'boolean' ? record.titleItalic : base.titleItalic,
   };
 }
 
@@ -1018,11 +1042,22 @@ export const PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS: {
   { value: 'xl', label: msg('Large'), description: msg('Editorial rounded media (default).') },
 ];
 
+export const PORTFOLIO_WORK_SHOWCASE_NAV_HOVER_OPTIONS: {
+  value: PortfolioWorkProjectsShowcaseNavHover;
+  label: string;
+}[] = [
+  { value: 'aura', label: msg('Follow cursor') },
+  { value: 'circle', label: msg('Circle') },
+  { value: 'none', label: msg('None') },
+];
+
 
 /** Options that apply only when `sectionDesign === 'projects-ledger'`. */
 export type PortfolioWorkProjectsLedgerExpandMode = 'hover' | 'click' | 'always';
 
 export type PortfolioWorkProjectsLedgerSettings = {
+  buttonColor?: PortfolioWorkPaletteToken;
+  buttonColorOpacity?: number;
   /** How project details open under each ledger row. */
   expandMode: PortfolioWorkProjectsLedgerExpandMode;
   showIndex: boolean;
@@ -1032,6 +1067,10 @@ export type PortfolioWorkProjectsLedgerSettings = {
   showConsult: boolean;
   showCount: boolean;
   consultLabel: string;
+  /** Look of the Consult link: the ledger's own animated link, or the shared button looks. */
+  consultStyle: 'link' | 'underline' | 'outline' | 'solid' | 'pill';
+  /** Colour of the role / category on each row: the muted text, or a palette token. */
+  metaColor: PortfolioWorkSpecMetaColor;
   /** Alternating row background tint, ledger-book style. */
   stripedRows: boolean;
 };
@@ -1045,6 +1084,8 @@ export const DEFAULT_PROJECTS_LEDGER_SETTINGS: PortfolioWorkProjectsLedgerSettin
   showConsult: true,
   showCount: true,
   consultLabel: 'Consult this project',
+  consultStyle: 'link',
+  metaColor: 'muted',
   stripedRows: false,
 };
 
@@ -1068,6 +1109,17 @@ export function mergeProjectsLedgerSettings(
     showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
     showConsult: typeof record.showConsult === 'boolean' ? record.showConsult : base.showConsult,
     showCount: typeof record.showCount === 'boolean' ? record.showCount : base.showCount,
+    buttonColor: record.buttonColor === 'principal' || record.buttonColor === 'secondaire' || record.buttonColor === 'texteFort' ? record.buttonColor : base.buttonColor,
+    buttonColorOpacity: typeof record.buttonColorOpacity === 'number' && Number.isFinite(record.buttonColorOpacity) ? Math.max(30, Math.min(100, record.buttonColorOpacity)) : Math.max(30, Math.min(100, base.buttonColorOpacity ?? 100)),
+    consultStyle:
+      record.consultStyle === 'link' ||
+      record.consultStyle === 'underline' ||
+      record.consultStyle === 'outline' ||
+      record.consultStyle === 'solid' ||
+      record.consultStyle === 'pill'
+        ? record.consultStyle
+        : base.consultStyle ?? 'link',
+    metaColor: pickSpecOption(record.metaColor, SPEC_META_COLORS, base.metaColor ?? 'muted'),
     consultLabel:
       typeof record.consultLabel === 'string' && record.consultLabel.trim()
         ? record.consultLabel.trim()
@@ -1078,19 +1130,52 @@ export function mergeProjectsLedgerSettings(
 }
 
 /** Options that apply only when `sectionDesign === 'projects-spec'`. */
-export type PortfolioWorkProjectsSpecConsultDesign =
-  | 'link'
-  | 'underline'
-  | 'bracket'
-  | 'footer'
-  | 'pill'
-  | 'outline'
-  | 'ghost'
-  | 'solid';
+export type PortfolioWorkProjectsSpecConsultDesign = 'underline' | 'outline' | 'solid' | 'pill';
+
+/** Palette colours a Spec sheet can use: the main colours, the strong text, or the muted text. */
+export type PortfolioWorkSpecColor = 'principal' | 'secondaire' | 'texteFort' | 'muted';
+export type PortfolioWorkSpecMetaColor = 'muted' | 'principal' | 'secondaire';
+
+export const PORTFOLIO_WORK_SPEC_COLOR_OPTIONS: { value: PortfolioWorkSpecColor; label: string }[] = [
+  { value: 'principal', label: msg('Primary') },
+  { value: 'secondaire', label: msg('Secondary') },
+  { value: 'texteFort', label: msg('Strong text') },
+  { value: 'muted', label: msg('Muted') },
+];
+
+export const PORTFOLIO_WORK_SPEC_META_COLOR_OPTIONS: { value: PortfolioWorkSpecMetaColor; label: string }[] = [
+  { value: 'muted', label: msg('Muted') },
+  { value: 'principal', label: msg('Primary') },
+  { value: 'secondaire', label: msg('Secondary') },
+];
+
+export const PORTFOLIO_WORK_SPEC_META_DIVIDER_OPTIONS: {
+  value: 'none' | 'short' | 'long';
+  label: string;
+  description: string;
+}[] = [
+  { value: 'none', label: msg('None'), description: msg('No rule between projects.') },
+  { value: 'short', label: msg('Short'), description: msg('A short rule, centred.') },
+  { value: 'long', label: msg('Long'), description: msg('A rule across the full width.') },
+];
+
+export const PORTFOLIO_WORK_SPEC_META_DIVIDER_SIZE_OPTIONS: {
+  value: 'sm' | 'md' | 'lg';
+  label: string;
+  description: string;
+}[] = [
+  { value: 'sm', label: msg('Small'), description: msg('A fine, short rule.') },
+  { value: 'md', label: msg('Medium'), description: msg('Balanced thickness and length.') },
+  { value: 'lg', label: msg('Large'), description: msg('A bolder, longer rule.') },
+];
 
 export type PortfolioWorkProjectsSpecSettings = {
+  buttonColor?: PortfolioWorkPaletteToken;
+  buttonColorOpacity?: number;
   showRole: boolean;
   showCategory: boolean;
+  /** Show each sheet's index ("02") and the short rule beside it. */
+  showIndex: boolean;
   showDescription: boolean;
   showStack: boolean;
   showConsult: boolean;
@@ -1106,6 +1191,24 @@ export type PortfolioWorkProjectsSpecSettings = {
   columnsPerRow: 1 | 2;
   /** Outer frame / border around each spec sheet. */
   sheetFrame: 'none' | 'thin' | 'solid' | 'accent';
+  /** Border colour (palette token); auto keeps the frame colour of the chosen framing. */
+  frameColor: PortfolioWorkSpecColor | 'auto';
+  /** Border opacity, in percent. */
+  frameOpacity: number;
+  /** Fill behind the sheet (palette token); none = transparent. */
+  frameFill: PortfolioWorkSpecColor | 'none';
+  /** Fill opacity, in percent. */
+  frameFillOpacity: number;
+  /** One colour for the category and role lines: the muted text, or a palette token. */
+  categoryColor: PortfolioWorkSpecMetaColor;
+  /** Kept for saved settings; the role line now follows `categoryColor`. */
+  roleColor: PortfolioWorkSpecMetaColor;
+  /** Rule between two project sheets (centered in the spacing between them). */
+  metaDivider: 'none' | 'short' | 'long';
+  /** Colour of that rule. */
+  metaDividerColor: PortfolioWorkSpecColor;
+  /** Thickness and length of that rule. */
+  metaDividerSize: 'sm' | 'md' | 'lg';
   /** Show project media thumbnail on the right of each sheet. */
   showThumbnail: boolean;
   /** Show Summary / Stack / Link labels in the definition grid. */
@@ -1121,20 +1224,40 @@ export type PortfolioWorkProjectsSpecSettings = {
 export const DEFAULT_PROJECTS_SPEC_SETTINGS: PortfolioWorkProjectsSpecSettings = {
   showRole: true,
   showCategory: true,
+  showIndex: true,
   showDescription: true,
   showStack: true,
   showConsult: true,
   consultLabel: 'Consult this project',
-  consultDesign: 'bracket',
+  // Plain underlined link by default (minimal); "[ … → ]" stays available as an option.
+  consultDesign: 'underline',
   sheetGap: 'xl',
   columnsPerRow: 1,
   sheetFrame: 'none',
+  frameColor: 'auto',
+  frameOpacity: 100,
+  frameFill: 'none',
+  frameFillOpacity: 8,
+  categoryColor: 'principal',
+  roleColor: 'principal',
+  metaDivider: 'none',
+  metaDividerColor: 'muted',
+  metaDividerSize: 'md',
   showThumbnail: false,
   showFieldLabels: true,
   descriptionLabel: 'Summary',
   stackLabel: 'Stack',
   linkLabel: 'Link',
 };
+
+const SPEC_COLORS: readonly PortfolioWorkSpecColor[] = ['principal', 'secondaire', 'texteFort', 'muted'];
+const SPEC_META_COLORS: readonly PortfolioWorkSpecMetaColor[] = ['muted', 'principal', 'secondaire'];
+function pickSpecOption<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
+  return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+function clampPercent(value: unknown, fallback: number, min: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? Math.min(100, Math.max(min, Math.round(value))) : fallback;
+}
 
 export function mergeProjectsSpecSettings(
   base: PortfolioWorkProjectsSpecSettings,
@@ -1145,6 +1268,7 @@ export function mergeProjectsSpecSettings(
   return {
     showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
     showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
+    showIndex: typeof record.showIndex === 'boolean' ? record.showIndex : base.showIndex,
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
     showStack: typeof record.showStack === 'boolean' ? record.showStack : base.showStack,
@@ -1153,17 +1277,17 @@ export function mergeProjectsSpecSettings(
       typeof record.consultLabel === 'string' && record.consultLabel.trim()
         ? record.consultLabel.trim()
         : base.consultLabel,
+    // Saved sheets from before the button styles were unified keep their closest look.
+    buttonColor: record.buttonColor === 'principal' || record.buttonColor === 'secondaire' || record.buttonColor === 'texteFort' ? record.buttonColor : base.buttonColor,
+    buttonColorOpacity: typeof record.buttonColorOpacity === 'number' && Number.isFinite(record.buttonColorOpacity) ? Math.max(30, Math.min(100, record.buttonColorOpacity)) : Math.max(30, Math.min(100, base.buttonColorOpacity ?? 100)),
     consultDesign:
-      record.consultDesign === 'link' ||
-      record.consultDesign === 'underline' ||
-      record.consultDesign === 'bracket' ||
-      record.consultDesign === 'footer' ||
-      record.consultDesign === 'pill' ||
-      record.consultDesign === 'outline' ||
-      record.consultDesign === 'ghost' ||
-      record.consultDesign === 'solid'
+      record.consultDesign === 'underline' || record.consultDesign === 'outline' || record.consultDesign === 'solid' || record.consultDesign === 'pill'
         ? record.consultDesign
-        : base.consultDesign,
+        : record.consultDesign === 'ghost'
+          ? 'outline'
+          : record.consultDesign === 'link' || record.consultDesign === 'bracket' || record.consultDesign === 'footer'
+            ? 'underline'
+            : base.consultDesign,
     sheetGap:
       record.sheetGap === 'tight' ||
       record.sheetGap === 'md' ||
@@ -1179,6 +1303,15 @@ export function mergeProjectsSpecSettings(
       record.sheetFrame === 'accent'
         ? record.sheetFrame
         : base.sheetFrame,
+    frameColor: pickSpecOption<PortfolioWorkSpecColor | 'auto'>(record.frameColor, ['auto', ...SPEC_COLORS], base.frameColor ?? 'auto'),
+    frameOpacity: clampPercent(record.frameOpacity, base.frameOpacity ?? 100, 10),
+    frameFill: pickSpecOption<PortfolioWorkSpecColor | 'none'>(record.frameFill, ['none', ...SPEC_COLORS], base.frameFill ?? 'none'),
+    frameFillOpacity: clampPercent(record.frameFillOpacity, base.frameFillOpacity ?? 8, 2),
+    categoryColor: pickSpecOption(record.categoryColor, SPEC_META_COLORS, base.categoryColor ?? 'principal'),
+    roleColor: pickSpecOption(record.roleColor, SPEC_META_COLORS, base.roleColor ?? 'secondaire'),
+    metaDivider: pickSpecOption<'none' | 'short' | 'long'>(record.metaDivider, ['none', 'short', 'long'], base.metaDivider ?? 'none'),
+    metaDividerColor: pickSpecOption(record.metaDividerColor, SPEC_COLORS, base.metaDividerColor ?? 'muted'),
+    metaDividerSize: pickSpecOption<'sm' | 'md' | 'lg'>(record.metaDividerSize, ['sm', 'md', 'lg'], base.metaDividerSize ?? 'md'),
     showThumbnail:
       typeof record.showThumbnail === 'boolean' ? record.showThumbnail : base.showThumbnail,
     showFieldLabels:
@@ -1206,8 +1339,14 @@ export type PortfolioWorkProjectsCaseSettings = {
   showStack: boolean;
   showConsult: boolean;
   consultLabel: string;
-  /** How the Consult CTA is rendered (same union as Spec). */
-  consultDesign: PortfolioWorkProjectsSpecConsultDesign;
+  /** Where the Consult CTA appears: on thumbnail hover (magnetic circle) or always shown under the copy — never both. */
+  consultMode: 'hover' | 'footer';
+  /** Show the large 01 / 02 … row number. */
+  showIndex: boolean;
+  /** Title in one uniform weight instead of the light first word + semibold rest. */
+  plainTitle: boolean;
+  /** Manual title size in px (24–120) on wide screens; null = the responsive default. */
+  titleSize: number | null;
   /** Vertical gap between each case row. */
   sheetGap: 'tight' | 'md' | 'xl' | '2xl';
   /** Outer frame / border around each case content sheet. */
@@ -1222,8 +1361,6 @@ export type PortfolioWorkProjectsCaseSettings = {
   descriptionLabel: string;
   /** Label for the stack row (default: Stack). */
   stackLabel: string;
-  /** Label for the consult row (default: Link). */
-  linkLabel: string;
   /** Alternates image/copy sides per row (zig-zag). Off = every row keeps the same side. */
   zigzagEnabled: boolean;
 };
@@ -1235,7 +1372,10 @@ export const DEFAULT_PROJECTS_CASE_SETTINGS: PortfolioWorkProjectsCaseSettings =
   showStack: true,
   showConsult: true,
   consultLabel: 'Consult this project',
-  consultDesign: 'footer',
+  consultMode: 'footer',
+  showIndex: true,
+  plainTitle: false,
+  titleSize: null,
   sheetGap: 'xl',
   sheetFrame: 'none',
   showThumbnail: true,
@@ -1243,7 +1383,6 @@ export const DEFAULT_PROJECTS_CASE_SETTINGS: PortfolioWorkProjectsCaseSettings =
   showFieldLabels: false,
   descriptionLabel: 'Summary',
   stackLabel: 'Stack',
-  linkLabel: 'Link',
   zigzagEnabled: true,
 };
 
@@ -1264,17 +1403,18 @@ export function mergeProjectsCaseSettings(
       typeof record.consultLabel === 'string' && record.consultLabel.trim()
         ? record.consultLabel.trim()
         : base.consultLabel,
-    consultDesign:
-      record.consultDesign === 'link' ||
-      record.consultDesign === 'underline' ||
-      record.consultDesign === 'bracket' ||
-      record.consultDesign === 'footer' ||
-      record.consultDesign === 'pill' ||
-      record.consultDesign === 'outline' ||
-      record.consultDesign === 'ghost' ||
-      record.consultDesign === 'solid'
-        ? record.consultDesign
-        : base.consultDesign,
+    consultMode:
+      record.consultMode === 'hover' || record.consultMode === 'footer'
+        ? record.consultMode
+        : base.consultMode,
+    showIndex: typeof record.showIndex === 'boolean' ? record.showIndex : base.showIndex,
+    plainTitle: typeof record.plainTitle === 'boolean' ? record.plainTitle : base.plainTitle,
+    titleSize:
+      record.titleSize === null
+        ? null
+        : typeof record.titleSize === 'number' && Number.isFinite(record.titleSize)
+          ? Math.min(120, Math.max(24, Math.round(record.titleSize)))
+          : base.titleSize,
     sheetGap:
       record.sheetGap === 'tight' ||
       record.sheetGap === 'md' ||
@@ -1308,10 +1448,6 @@ export function mergeProjectsCaseSettings(
       typeof record.stackLabel === 'string' && record.stackLabel.trim()
         ? record.stackLabel.trim()
         : base.stackLabel,
-    linkLabel:
-      typeof record.linkLabel === 'string' && record.linkLabel.trim()
-        ? record.linkLabel.trim()
-        : base.linkLabel,
     zigzagEnabled:
       typeof record.zigzagEnabled === 'boolean' ? record.zigzagEnabled : base.zigzagEnabled,
   };
@@ -1355,6 +1491,19 @@ export const DEFAULT_PROJECTS_PRESS_SETTINGS: PortfolioWorkProjectsPressSettings
   thumbnailRadius: 'md',
 };
 
+/** Press intro text: at most this many characters. */
+export const PROJECTS_PRESS_INTRO_MAX_CHARS = 200;
+
+/** Cuts `text` to `max` characters (never in the middle of an emoji / surrogate pair). */
+export function limitChars(text: string, max: number): string {
+  const chars = Array.from(text);
+  return chars.length > max ? chars.slice(0, max).join('') : text;
+}
+
+export function countChars(text: string): number {
+  return Array.from(text).length;
+}
+
 export function mergeProjectsPressSettings(
   base: PortfolioWorkProjectsPressSettings,
   patch: unknown
@@ -1362,7 +1511,10 @@ export function mergeProjectsPressSettings(
   if (!patch || typeof patch !== 'object') return base;
   const record = patch as Record<string, unknown>;
   return {
-    introText: typeof record.introText === 'string' ? record.introText : base.introText,
+    introText:
+      typeof record.introText === 'string'
+        ? limitChars(record.introText, PROJECTS_PRESS_INTRO_MAX_CHARS)
+        : base.introText,
     eyebrowText: typeof record.eyebrowText === 'string' ? record.eyebrowText : base.eyebrowText,
     eyebrowSticky:
       typeof record.eyebrowSticky === 'boolean' ? record.eyebrowSticky : base.eyebrowSticky,
@@ -1389,8 +1541,12 @@ type PortfolioWorkProjectsDuotoneFrameColor = 'none' | 'neutral' | 'muted';
 type PortfolioWorkProjectsDuotoneFrameRadius = 'none' | 'sm' | 'lg';
 export type PortfolioWorkProjectsDuotoneSlideNavStyle = 'chevron' | 'text';
 export type PortfolioWorkProjectsDuotoneVerticalGap = 'sm' | 'md' | 'lg' | 'xl';
+export type PortfolioWorkProjectsDuotoneLinkStyle = 'arrow' | 'text' | 'underline' | 'outline' | 'solid' | 'pill';
+export type PortfolioWorkProjectsDuotoneMetaColor = 'muted' | 'principal' | 'secondaire';
 
 export type PortfolioWorkProjectsDuotoneSettings = {
+  buttonColor?: PortfolioWorkPaletteToken;
+  buttonColorOpacity?: number;
   /** Sticky: story panel pinned, crossfades as the project list scrolls. Scroll: plain, no
    *  pinning. Slide: one project at a time, chevron-navigated. */
   scrollMode: PortfolioWorkProjectsDuotoneScrollMode;
@@ -1413,6 +1569,14 @@ export type PortfolioWorkProjectsDuotoneSettings = {
   scrollFullWidthTitle: boolean;
   /** Sticky / Scroll: vertical air between title / media / details blocks. */
   verticalGap: PortfolioWorkProjectsDuotoneVerticalGap;
+  /** `arrow` = the original "View project →"; the others reuse Grid / Cascade consult buttons. */
+  linkStyle: PortfolioWorkProjectsDuotoneLinkStyle;
+  /** Consult button label; empty = the translated "View project". */
+  linkLabel: string;
+  /** Manual title size in px (max, fluid on small screens); null = automatic responsive size. */
+  titleSize: number | null;
+  /** Colour of the role / category line: the muted text, or a palette token. */
+  metaColor: PortfolioWorkProjectsDuotoneMetaColor;
 };
 
 export const DEFAULT_PROJECTS_DUOTONE_SETTINGS: PortfolioWorkProjectsDuotoneSettings = {
@@ -1428,6 +1592,10 @@ export const DEFAULT_PROJECTS_DUOTONE_SETTINGS: PortfolioWorkProjectsDuotoneSett
   alternateSides: false,
   scrollFullWidthTitle: false,
   verticalGap: 'md',
+  linkStyle: 'arrow',
+  linkLabel: '',
+  titleSize: null,
+  metaColor: 'muted',
 };
 
 export function mergeProjectsDuotoneSettings(
@@ -1479,6 +1647,28 @@ export function mergeProjectsDuotoneSettings(
       record.verticalGap === 'xl'
         ? record.verticalGap
         : base.verticalGap,
+    buttonColor: record.buttonColor === 'principal' || record.buttonColor === 'secondaire' || record.buttonColor === 'texteFort' ? record.buttonColor : base.buttonColor,
+    buttonColorOpacity: typeof record.buttonColorOpacity === 'number' && Number.isFinite(record.buttonColorOpacity) ? Math.max(30, Math.min(100, record.buttonColorOpacity)) : Math.max(30, Math.min(100, base.buttonColorOpacity ?? 100)),
+    linkStyle:
+      record.linkStyle === 'arrow' ||
+      record.linkStyle === 'text' ||
+      record.linkStyle === 'underline' ||
+      record.linkStyle === 'outline' ||
+      record.linkStyle === 'solid' ||
+      record.linkStyle === 'pill'
+        ? record.linkStyle
+        : base.linkStyle,
+    linkLabel: typeof record.linkLabel === 'string' ? record.linkLabel.slice(0, 64) : base.linkLabel,
+    titleSize:
+      record.titleSize === null
+        ? null
+        : typeof record.titleSize === 'number' && Number.isFinite(record.titleSize)
+          ? Math.min(160, Math.max(24, Math.round(record.titleSize)))
+          : base.titleSize,
+    metaColor:
+      record.metaColor === 'muted' || record.metaColor === 'principal' || record.metaColor === 'secondaire'
+        ? record.metaColor
+        : base.metaColor,
   };
 }
 
@@ -1488,8 +1678,11 @@ export type PortfolioWorkProjectsCascadeCardWidth = 'small' | 'medium' | 'full';
 export type PortfolioWorkProjectsCascadeVerticalGap = 'sm' | 'md' | 'lg';
 export type PortfolioWorkProjectsCascadeImageRadius = 'none' | 'md' | 'xl';
 export type PortfolioWorkProjectsCascadeCardHeight = 'compact' | 'standard' | 'tall' | 'xl';
+export type PortfolioWorkProjectsCascadeLinkStyle = 'text' | 'underline' | 'outline' | 'solid' | 'pill';
 
 export type PortfolioWorkProjectsCascadeSettings = {
+  buttonColor?: PortfolioWorkPaletteToken;
+  buttonColorOpacity?: number;
   /** Same stacking-cards scroll effect as Experience → Cards: cascade (sticky, full-cover,
    *  depth recede) vs. static (plain vertical stack, no pinning). */
   stackEffect: PortfolioWorkProjectsCascadeStackEffect;
@@ -1507,6 +1700,14 @@ export type PortfolioWorkProjectsCascadeSettings = {
   showTools: boolean;
   showLink: boolean;
   linkLabel: string;
+  /** `text` = animated label/arrow swap; the others reuse the Grid consult-button looks. */
+  linkStyle: PortfolioWorkProjectsCascadeLinkStyle;
+  /** Manual title size in px (max, fluid on small screens); null = automatic responsive size. */
+  titleSize: number | null;
+  /** Colour of the category: the muted text, or a palette token. */
+  categoryColor: PortfolioWorkSpecMetaColor;
+  /** Colour of the role: the muted text, or a palette token. */
+  roleColor: PortfolioWorkSpecMetaColor;
 };
 
 export const DEFAULT_PROJECTS_CASCADE_SETTINGS: PortfolioWorkProjectsCascadeSettings = {
@@ -1523,6 +1724,10 @@ export const DEFAULT_PROJECTS_CASCADE_SETTINGS: PortfolioWorkProjectsCascadeSett
   showTools: true,
   showLink: true,
   linkLabel: 'View project',
+  linkStyle: 'text',
+  titleSize: null,
+  categoryColor: 'muted',
+  roleColor: 'muted',
 };
 
 export function mergeProjectsCascadeSettings(
@@ -1558,6 +1763,8 @@ export function mergeProjectsCascadeSettings(
         : base.cardHeight,
     showCategory: typeof record.showCategory === 'boolean' ? record.showCategory : base.showCategory,
     showRole: typeof record.showRole === 'boolean' ? record.showRole : base.showRole,
+    categoryColor: pickSpecOption(record.categoryColor, SPEC_META_COLORS, base.categoryColor ?? 'muted'),
+    roleColor: pickSpecOption(record.roleColor, SPEC_META_COLORS, base.roleColor ?? 'muted'),
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
     showTags: typeof record.showTags === 'boolean' ? record.showTags : base.showTags,
@@ -1567,6 +1774,22 @@ export function mergeProjectsCascadeSettings(
       typeof record.linkLabel === 'string' && record.linkLabel.trim()
         ? record.linkLabel.trim()
         : base.linkLabel,
+    buttonColor: record.buttonColor === 'principal' || record.buttonColor === 'secondaire' || record.buttonColor === 'texteFort' ? record.buttonColor : base.buttonColor,
+    buttonColorOpacity: typeof record.buttonColorOpacity === 'number' && Number.isFinite(record.buttonColorOpacity) ? Math.max(30, Math.min(100, record.buttonColorOpacity)) : Math.max(30, Math.min(100, base.buttonColorOpacity ?? 100)),
+    linkStyle:
+      record.linkStyle === 'text' ||
+      record.linkStyle === 'underline' ||
+      record.linkStyle === 'outline' ||
+      record.linkStyle === 'solid' ||
+      record.linkStyle === 'pill'
+        ? record.linkStyle
+        : base.linkStyle,
+    titleSize:
+      record.titleSize === null
+        ? null
+        : typeof record.titleSize === 'number' && Number.isFinite(record.titleSize)
+          ? Math.min(120, Math.max(24, Math.round(record.titleSize)))
+          : base.titleSize,
   };
 }
 
@@ -1747,53 +1970,6 @@ export const PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS: {
   { value: '2xl', label: msg('Très large'), description: msg('Espacement maximal, lecture lente.') },
 ];
 
-export const PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS: {
-  value: PortfolioWorkProjectsSpecConsultDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'bracket',
-    label: msg('Bracket'),
-    description: msg('Mono [ Consult → ] — style Framer (défaut).'),
-  },
-  {
-    value: 'link',
-    label: msg('Link'),
-    description: msg('Lien texte + flèche ↗ dans la grille.'),
-  },
-  {
-    value: 'underline',
-    label: msg('Underline'),
-    description: msg('Texte souligné animé, sans flèche.'),
-  },
-  {
-    value: 'footer',
-    label: msg('Footer'),
-    description: msg('CTA sous la fiche, hors grille label/valeur.'),
-  },
-  {
-    value: 'pill',
-    label: msg('Pill'),
-    description: msg('Bouton pastille rempli (accent).'),
-  },
-  {
-    value: 'outline',
-    label: msg('Outline'),
-    description: msg('Bouton bordure seule.'),
-  },
-  {
-    value: 'ghost',
-    label: msg('Ghost'),
-    description: msg('Fond soft teinté, sans bordure forte.'),
-  },
-  {
-    value: 'solid',
-    label: msg('Solid'),
-    description: msg('Bouton plein token titre / tools (pas CTA).'),
-  },
-];
-
 export const PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS: {
   value: PortfolioWorkProjectsLedgerExpandMode;
   label: string;
@@ -1905,6 +2081,7 @@ export const PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  { value: 'none', label: msg('None'), description: '' },
   {
     value: 'editorial',
     label: msg('Editorial'),
@@ -3098,6 +3275,8 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   cardDesign: PortfolioWorkCardDesign;
   cardBorder: PortfolioWorkCardBorder;
   cardBorderColor: string;
+  /** Shared Design → Cards block; `auto` keeps each design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   /** Optional thin rule below Overlay immersif cards. */
   overlayBottomRuleEnabled: boolean;
   overlayBottomRuleColor: string;
@@ -3224,6 +3403,9 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   elementStyles: PortfolioWorkElementStyles;
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  textSize?: 'small' | 'medium' | 'large' | 'xlarge';
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
 };
 
 export type PortfolioWorkSectionSettings = PortfolioSectionCopy & PortfolioWorkPresentationSettings;
@@ -3349,6 +3531,7 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   cardDesign: 'editorial',
   cardBorder: 'none',
   cardBorderColor: DEFAULT_WORK_CARD_BORDER_COLOR,
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   overlayBottomRuleEnabled: false,
   overlayBottomRuleColor: DEFAULT_WORK_CARD_BORDER_COLOR,
   overlayBottomRuleManual: false,
@@ -3384,7 +3567,7 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   overlayElementBands: { ...DEFAULT_WORK_OVERLAY_ELEMENT_BANDS },
   ctaAlignment: 'left',
   mediaRatio: 53,
-  showMarketplaceLink: true,
+  showMarketplaceLink: false,
   showCardMedia: true,
   noMediaInfoLayout: 'fill',
   showCardTitle: true,
@@ -3427,6 +3610,7 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   workColorBindings: { ...DEFAULT_WORK_COLOR_BINDINGS },
   elementStyles: DEFAULT_WORK_ELEMENT_STYLES,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
 };
 
 // Sync hex fields from the default palette without circular init (palette module owns tokens).
@@ -3442,6 +3626,7 @@ Object.assign(
 
 const WORK_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right'] as const;
 const WORK_HEADER_DESIGNS = [
+  'none',
   'editorial',
   'marquee',
   'index',
@@ -4069,7 +4254,8 @@ export function workCardEdgeClass(
 export function workCardEdgeStyle(
   p: PortfolioWorkPresentationSettings
 ): CSSProperties | undefined {
-  if (p.cardBorder === 'none') return undefined;
+  const shared = cardsStyleCss(p.cardsStyle, p.workPalette);
+  if (p.cardBorder === 'none') return Object.keys(shared).length > 0 ? shared : undefined;
 
   const style: CSSProperties = { borderStyle: 'solid' };
 
@@ -4083,7 +4269,7 @@ export function workCardEdgeStyle(
     style.borderColor = sanitizeHex(p.cardBorderColor, DEFAULT_WORK_CARD_BORDER_COLOR);
   }
 
-  return style;
+  return { ...style, ...shared };
 }
 
 /**
@@ -4549,7 +4735,7 @@ export function workContrastingInk(
   light = '#ffffff',
   dark = '#0a0a0a'
 ): string {
-  return workColorLuminance(backgroundHex) > 0.55 ? dark : light;
+  return workContrastRatio(dark, backgroundHex) > workContrastRatio(light, backgroundHex) ? dark : light;
 }
 
 /** @deprecated Prefer workCtaSurfaceStyle */
@@ -5144,6 +5330,7 @@ export function mergeWorkPresentation(
         ? cardBorder
         : base.cardBorder,
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     overlayBottomRuleEnabled:
       typeof record.overlayBottomRuleEnabled === 'boolean'
         ? record.overlayBottomRuleEnabled
@@ -5277,8 +5464,7 @@ export function mergeWorkPresentation(
     ),
     ctaAlignment: resolvedCtaAlignment,
     mediaRatio: sanitizeMediaRatio(record.mediaRatio, base.mediaRatio),
-    showMarketplaceLink:
-      typeof record.showMarketplaceLink === 'boolean' ? record.showMarketplaceLink : base.showMarketplaceLink,
+    showMarketplaceLink: false,
     showCardMedia: typeof record.showCardMedia === 'boolean' ? record.showCardMedia : base.showCardMedia,
     noMediaInfoLayout:
       record.noMediaInfoLayout === 'fill' ||
@@ -5398,6 +5584,9 @@ export function mergeWorkPresentation(
     ),
     elementStyles: normalizeWorkElementStyles(record.elementStyles ?? base.elementStyles),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    textSize: record.textSize === 'small' || record.textSize === 'large' || record.textSize === 'xlarge' || record.textSize === 'medium'
+      ? record.textSize : base.textSize ?? 'medium',
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
   };
 
   if (!merged.useHeroPalette) {

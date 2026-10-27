@@ -1,0 +1,119 @@
+.content { position: relative; isolation: isolate; overflow: hidden; }
+.signature {
+  margin: 1.5rem 0 0;
+  padding-right: clamp(1rem, 10vw, 12rem);
+  text-align: right;
+  font-size: calc(.9375rem * var(--pf-experience-font-scale, 1));
+  font-weight: 400;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 639px) { .signature { padding-right: 0; } }
+.focusRows > * > article {
+  transition: opacity 450ms cubic-bezier(.22, 1, .36, 1), filter 450ms cubic-bezier(.22, 1, .36, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .focusRows:has(> * > article:hover) > * > article:not(:hover):not(:has(:focus-visible)) { opacity: .6; }
+  .focusRows[data-focus-blur='true']:has(> * > article:hover) > * > article:not(:hover):not(:has(:focus-visible)) { filter: blur(2px); }
+}
+.focusRows:has(:focus-visible) > * > article:not(:focus-within) { opacity: .6; }
+.focusRows[data-focus-blur='true']:has(:focus-visible) > * > article:not(:focus-within) { filter: blur(2px); }
+.vertical {
+  margin: 2rem 0 0;
+  color: inherit;
+  font-size: calc(clamp(2rem, 5vw, 5rem) * var(--pf-experience-font-scale, 1));
+  line-height: 1;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  pointer-events: none;
+}
+@media (min-width: 1024px) {
+  .content[data-status-style='vertical'] { padding-right: calc(6rem * var(--pf-experience-font-scale, 1)); }
+  .vertical { position: absolute; right: 0; bottom: 0; top: 4rem; writing-mode: vertical-rl; text-align: right; margin: 0; max-height: calc(100% - 4rem); }
+}
+@media (max-width: 639px) {
+  .content .watermark { position: static; margin-top: 1.5rem; font-size: calc(clamp(2rem, 10vw, 3rem) * var(--pf-experience-font-scale, 1)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .focusRows > * > article { transition: none; }
+}
+.stackTags { display: flex; flex-wrap: wrap; gap: .5rem; margin: 0; padding: 0; list-style: none; }
+.stackTags li {
+  border: 1px solid var(--stack-edge);
+  border-radius: .2rem;
+  padding: .5rem .85rem;
+  font-size: calc(.8125rem * var(--pf-experience-font-scale, 1));
+  line-height: 1.4;
+  background-color: transparent;
+  transition: background-color 180ms ease, border-color 180ms ease;
+}
+.stackTags[data-shape='pill'] li { border-radius: 999px; }
+@media (hover: hover) and (pointer: fine) {
+  .stackTags li:hover { border-color: currentColor; background-color: color-mix(in srgb, currentColor 5%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) { .stackTags li { transition: none; } }
+.watermark {
+  position: absolute;
+  z-index: -1;
+  right: 0;
+  bottom: 1rem;
+  max-width: 100%;
+  margin: 0;
+  pointer-events: none;
+  user-select: none;
+  font-size: calc(clamp(4rem, 14vw, 16rem) * var(--pf-experience-font-scale, 1));
+  font-weight: 500;
+  line-height: .95;
+  letter-spacing: -.06em;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+.footer {
+  grid-column: 1 / -1;
+  margin: 2rem 0 0;
+  font-size: calc(clamp(1.5rem, 2.2vw, 2rem) * var(--pf-experience-font-scale, 1));
+  font-weight: 400;
+  line-height: 1.2;
+  letter-spacing: -.03em;
+}
+.marker {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: .45rem;
+  min-width: calc(7rem * var(--pf-experience-font-scale, 1));
+  padding: .75rem 1rem;
+  background: linear-gradient(110deg, color-mix(in srgb, var(--status-color) 5%, transparent), transparent);
+}
+.marker::before,.marker::after {
+  content: '';
+  position: absolute;
+  width: .5rem;
+  height: .5rem;
+  pointer-events: none;
+}
+.marker::before { top: 0; left: 0; border-top: 1px solid var(--status-color); border-left: 1px solid var(--status-color); }
+.marker::after { right: 0; bottom: 0; border-right: 1px solid var(--status-edge); border-bottom: 1px solid var(--status-edge); }
+.caption {
+  font-size: calc(.5625rem * var(--pf-experience-font-scale, 1));
+  text-transform: uppercase;
+  letter-spacing: .16em;
+  line-height: 1.3;
+}
+.value {
+  display: inline-flex;
+  align-items: center;
+  gap: .5rem;
+  color: var(--status-color);
+  font-size: calc(.75rem * var(--pf-experience-font-scale, 1));
+  line-height: 1.4;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.value svg { width: 1em; height: 1em; flex-shrink: 0; }
+@media (max-width: 639px) {
+  .marker { min-width: 0; padding: .5rem; }
+  .caption { display: none; }
+}

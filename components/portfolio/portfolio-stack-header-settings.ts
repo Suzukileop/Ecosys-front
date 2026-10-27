@@ -8,6 +8,7 @@ import { msg } from '@/lib/i18n/config';
  * replacement.
  */
 export type PortfolioStackHeaderDesign =
+  | 'none'
   | 'editorial'
   | 'marquee'
   | 'index'
@@ -45,6 +46,7 @@ export type PortfolioStackHeaderAccentCountAlignment = 'left' | 'center' | 'righ
 export type PortfolioStackHeaderBillboardWordStyle = 'outline' | 'fill' | 'simple';
 
 export const STACK_HEADER_DESIGNS: PortfolioStackHeaderDesign[] = [
+  'none',
   'editorial',
   'marquee',
   'index',
@@ -91,6 +93,7 @@ export const PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  { value: 'none', label: msg('None'), description: '' },
   {
     value: 'editorial',
     label: msg('Editorial'),

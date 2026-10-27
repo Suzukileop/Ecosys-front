@@ -1,8 +1,8 @@
 'use client';
 
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { fluidColumns, useFluidTrack } from '@/components/portfolio/portfolio-services-fluid-columns';
 import type { ProfileServiceItem } from '@/types/profile';
 import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
@@ -13,14 +13,13 @@ import {
   buildPricingCards,
   ctaLookOverride,
   featuredFill,
-  getScrollParent,
   readableInk,
   prefersReducedMotion,
   useServicesCardHover,
   useServicesFinePointer,
   withAlpha,
 } from '@/components/portfolio/portfolio-services-pricing-shared';
-import { resolveServicesCardElements, resolveServicesCtaLabel } from '@/components/portfolio/portfolio-services-card-elements';
+import { resolveServicesCardElements, resolveServicesCtaLabel, ServicesHoverAnchor } from '@/components/portfolio/portfolio-services-card-elements';
 import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
 import {
   moveFeatured,
@@ -82,6 +81,10 @@ function basis(columns: number, gapPx: number): string {
   return `calc((100% - ${gapPx * (columns - 1)}px) / ${columns})`;
 }
 
+/** Narrowest an Aurora card may get before its monumental price and features wrap badly. */
+const MIN_CARD_WIDTH = 272;
+const auroraGapFor = (width: number) => (width < 640 ? 12 : width < 1024 ? 24 : 28);
+
 function effectiveColumns(cardsPerRow: number, ceiling: number, count: number): number {
   return Math.max(1, Math.min(cardsPerRow, ceiling, count));
 }
@@ -125,14 +128,14 @@ export function ServicesPricingAuroraSection({
   const featuredTokens = {
     ink: featured.ink,
     muted: withAlpha(featured.ink, 0.74),
-    body: 0.92,
+    body: 1,
     bullet: strongFill ? featured.ink : accent,
     ctaContrast: featured.blended,
   };
   const baseTokens = {
     ink: tokens.ink,
     muted: tokens.muted,
-    body: 0.72,
+    body: 0.92,
     bullet: accent,
     ctaContrast: tokens.isLight ? '#ffffff' : '#0a0a0a',
   };
@@ -141,13 +144,21 @@ export function ServicesPricingAuroraSection({
     listed.map((item) => item.popularFlag)
   );
   const colsDesktop = effectiveColumns(settings.cardsPerRow, 4, listed.length);
-  const items = moveFeatured(listed, listedFeatured, settings.featuredPosition, colsDesktop);
+  const rootRef = useRef<HTMLDivElement | null>(null);
+  // Columns follow the block's real width (see portfolio-services-fluid-columns).
+  const track = useFluidTrack(rootRef, listed.length > 0, auroraGapFor, MIN_CARD_WIDTH);
+  const fluidCols = track ? fluidColumns(listed.length, colsDesktop, track.fit) : null;
+  const items = moveFeatured(listed, listedFeatured, settings.featuredPosition, fluidCols ?? colsDesktop);
   const featuredId = listedFeatured >= 0 ? listed[listedFeatured]?.id : undefined;
   const badge = style.featuredShowLabel && style.featuredLabel.trim() ? style.featuredLabel.trim() : null;
 
   const finePointer = useServicesFinePointer();
-  const rootRef = useRef<HTMLDivElement | null>(null);
-  const itemsKey = items.map((item) => item.id).join('|');
+  // Order-insensitive: measuring the block re-seats the featured card, which reorders `items` once after
+  // mount — that must not tear the entrance animation down and rebuild it mid-flight.
+  const itemsKey = items
+    .map((item) => item.id)
+    .sort()
+    .join('|');
 
   // Entrance — cards rise in once, staggered, when the grid scrolls into view.
   useLayoutEffect(() => {
@@ -161,88 +172,49 @@ export function ServicesPricingAuroraSection({
       return undefined;
     }
 
+    // An IntersectionObserver starts the entrance instead of a ScrollTrigger: creating a ScrollTrigger
+    // refreshes every other one on the page, and when one of those (another section's `once` trigger)
+    // fires and kills itself mid-refresh, GSAP reads a missing entry and throws "reading 'end'".
     let ctx: gsap.Context | undefined;
-    let refreshId = 0;
+    let observer: IntersectionObserver | undefined;
     try {
-      gsap.registerPlugin(ScrollTrigger);
       ctx = gsap.context(() => {
         gsap.set(cards, { opacity: 0, y: 32 });
-        gsap.to(cards, {
+        const entrance = gsap.to(cards, {
           opacity: 1,
           y: 0,
           duration: 0.8,
           ease: 'power3.out',
           stagger: 0.12,
           clearProps: 'opacity',
-          scrollTrigger: { trigger: root, scroller: getScrollParent(root), start: 'top 85%', once: true },
+          paused: true,
         });
+        observer = new IntersectionObserver(
+          (entries) => {
+            if (!entries.some((entry) => entry.isIntersecting)) return;
+            observer?.disconnect();
+            entrance.play();
+          },
+          { rootMargin: '0px 0px -12% 0px' }
+        );
+        observer.observe(root);
       }, root);
-      refreshId = window.setTimeout(() => {
-        try {
-          ScrollTrigger.refresh();
-        } catch (error) {
-          console.error('[ScrollTrigger] deferred refresh() failed', error);
-        }
-      }, 90);
     } catch (error) {
       console.error('[ServicesPricingAurora] entrance setup failed', error);
+      // The cards were hidden for the entrance: never leave them invisible if it could not run.
+      cards.forEach((card) => {
+        card.style.opacity = '';
+        card.style.transform = '';
+      });
     }
     return () => {
-      window.clearTimeout(refreshId);
+      observer?.disconnect();
       ctx?.revert();
     };
   }, [itemsKey]);
 
   useServicesCardHover(rootRef, style.hoverEffect, finePointer, itemsKey);
 
-  // Magnetic bracket button (pulls within 60px) + arrow nudge. Fine pointer only.
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || !finePointer || prefersReducedMotion()) return undefined;
-    const cleanups: Array<() => void> = [];
-    Array.from(root.querySelectorAll<HTMLElement>('[data-svc-card]')).forEach((card) => {
-      const cta = card.querySelector<HTMLElement>('[data-svc-cta]');
-      const arrow = card.querySelector<HTMLElement>('[data-svc-arrow]');
-      if (!cta) return;
-      const moveX = gsap.quickTo(cta, 'x', { duration: 0.45, ease: 'power3' });
-      const moveY = gsap.quickTo(cta, 'y', { duration: 0.45, ease: 'power3' });
-      const radius = 60;
-      const onMove = (event: PointerEvent) => {
-        const rect = cta.getBoundingClientRect();
-        const dx = event.clientX - (rect.left + rect.width / 2);
-        const dy = event.clientY - (rect.top + rect.height / 2);
-        const dist = Math.hypot(dx, dy);
-        if (dist < radius) {
-          const pull = (1 - dist / radius) * 0.5;
-          moveX(dx * pull);
-          moveY(dy * pull);
-        } else {
-          moveX(0);
-          moveY(0);
-        }
-      };
-      const onLeave = () => gsap.to(cta, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
-      const onCtaEnter = () => {
-        if (arrow) gsap.to(arrow, { x: 8, duration: 0.5, ease: 'elastic.out(1, 0.35)', overwrite: 'auto' });
-      };
-      const onCtaLeave = () => {
-        if (arrow) gsap.to(arrow, { x: 0, duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
-      };
-      card.addEventListener('pointermove', onMove);
-      card.addEventListener('pointerleave', onLeave);
-      cta.addEventListener('pointerenter', onCtaEnter);
-      cta.addEventListener('pointerleave', onCtaLeave);
-      cleanups.push(() => {
-        card.removeEventListener('pointermove', onMove);
-        card.removeEventListener('pointerleave', onLeave);
-        cta.removeEventListener('pointerenter', onCtaEnter);
-        cta.removeEventListener('pointerleave', onCtaLeave);
-        gsap.killTweensOf([cta, arrow]);
-        gsap.set([cta, arrow].filter(Boolean), { clearProps: 'transform' });
-      });
-    });
-    return () => cleanups.forEach((off) => off());
-  }, [finePointer, itemsKey]);
 
   if (items.length === 0) return null;
 
@@ -255,7 +227,9 @@ export function ServicesPricingAuroraSection({
   const desktopBasis = colsDesktop === 1 ? '100%' : basis(colsDesktop, GAP_DESKTOP_PX);
   const wide = colsDesktop === 1;
   // Narrow columns (3–4 up) get less inner padding so the text keeps its room.
-  const padClass = colsDesktop >= 3 ? 'p-7 sm:p-8 xl:p-9' : 'p-7 sm:p-10 lg:p-11';
+  const shownCols = fluidCols ?? colsDesktop;
+  const padClass = shownCols >= 3 ? 'p-7 sm:p-8 xl:p-9' : 'p-7 sm:p-10 lg:p-11';
+  const fluidBasis = fluidCols && track ? (fluidCols === 1 ? '100%' : basis(fluidCols, track.gap)) : null;
 
   return (
     <div
@@ -306,7 +280,7 @@ export function ServicesPricingAuroraSection({
             : 'mx-auto w-full max-w-7xl px-4 md:px-0'
         }
       >
-        <div ref={rootRef} className="pf-svc-pricing-aurora-row">
+        <div ref={rootRef} className="pf-svc-pricing-aurora-row" style={track ? { gap: track.gap } : undefined}>
           {items.map((item) => {
             const isFeatured = item.id === featuredId;
             const ink = isFeatured ? featuredTokens : baseTokens;
@@ -333,7 +307,9 @@ export function ServicesPricingAuroraSection({
                   ...(pricingStyle.cardRadiusPx != null
                     ? ({ '--pf-aurora-radius': `${pricingStyle.cardRadiusPx}px` } as CSSProperties)
                     : null),
-                  '--svc-glow': tokens.ink,
+                  ...(fluidBasis ? { flexBasis: fluidBasis, maxWidth: fluidBasis } : null),
+                  '--svc-glow': pricingStyle.glowColor ?? tokens.ink,
+                  '--svc-glow-a': pricingStyle.glowAlpha,
                   '--svc-shadow': tokens.isLight ? 'rgba(10,10,10,0.22)' : 'rgba(0,0,0,0.65)',
                   backgroundColor: isFeatured ? featuredBg : tokens.cardBg,
                   borderStyle: 'solid',
@@ -346,13 +322,13 @@ export function ServicesPricingAuroraSection({
                 data-pf-no-color-transition=""
               >
                 <div
-                  className={`relative flex h-full flex-col gap-7 sm:gap-8 ${padClass}${wide ? ' pf-svc-pricing-aurora-wide' : ''}`}
+                  className={`relative z-[1] flex h-full flex-col gap-7 sm:gap-8 ${padClass}${wide ? ' pf-svc-pricing-aurora-wide' : ''}`}
                 >
                   {/* The badge row is always reserved (hidden, not removed) so every card's title,
                       price and list start at the same height. */}
                   <span
                     aria-hidden={!(isFeatured && badge)}
-                    className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]"
+                    className="inline-flex w-fit items-center gap-2 rounded-full px-3 py-1 text-[length:calc(0.6875rem*var(--pf-services-font-scale,1))] font-bold uppercase tracking-[0.16em]"
                     style={{
                       backgroundColor: featured.ink,
                       color: featured.blended,
@@ -364,8 +340,8 @@ export function ServicesPricingAuroraSection({
                   <div className="flex flex-col gap-3">
                     {show.title ? (
                       <p
-                        className="text-[0.68rem] font-semibold uppercase"
-                        style={{ letterSpacing: '0.2em', color: ink.muted }}
+                        className="text-[length:calc(0.8125rem*var(--pf-services-font-scale,1))] font-semibold uppercase"
+                        style={{ letterSpacing: '0.16em', color: ink.ink }}
                       >
                         {item.title}
                       </p>
@@ -374,7 +350,7 @@ export function ServicesPricingAuroraSection({
                     <div>
                       {price.isFrom && price.kind === 'amount' ? (
                         <span
-                          className="mb-1 block text-[0.68rem] font-semibold uppercase tracking-[0.18em]"
+                          className="mb-1 block text-[length:calc(0.75rem*var(--pf-services-font-scale,1))] font-semibold uppercase tracking-[0.16em]"
                           style={{ color: ink.muted }}
                         >
                           {t('From')}
@@ -410,7 +386,7 @@ export function ServicesPricingAuroraSection({
                     </div>
                     ) : null}
                     {item.delivery ? (
-                      <p className="text-[0.78rem] font-medium" style={{ color: ink.muted }}>
+                      <p className="text-[length:calc(0.8125rem*var(--pf-services-font-scale,1))] font-medium" style={{ color: ink.muted }}>
                         {item.delivery}
                       </p>
                     ) : null}
@@ -418,8 +394,8 @@ export function ServicesPricingAuroraSection({
 
                   {item.description ? (
                     <p
-                      className="max-w-[34ch] text-[0.92rem] font-light"
-                      style={{ color: ink.ink, opacity: isFeatured ? 0.8 : 0.5, lineHeight: 1.6 }}
+                      className="max-w-[34ch] text-[0.95rem] font-normal"
+                      style={{ color: ink.ink, opacity: isFeatured ? 0.85 : 0.68, lineHeight: 1.6 }}
                     >
                       {item.description}
                     </p>
@@ -434,7 +410,7 @@ export function ServicesPricingAuroraSection({
                             bullet={style.listBullet}
                             index={featureIndex}
                             markerColor={pricingStyle.bulletColor ?? ink.bullet}
-                            className="text-[0.86rem]"
+                            className="text-[0.92rem]"
                             textStyle={{ color: ink.ink, opacity: ink.body }}
                           >
                             {feature}
@@ -442,7 +418,7 @@ export function ServicesPricingAuroraSection({
                         ) : (
                         <li
                           key={`${item.id}-${featureIndex}`}
-                          className="flex items-start gap-3 text-[0.86rem]"
+                          className="flex items-start gap-3 text-[0.92rem]"
                           style={{ color: ink.ink, opacity: ink.body }}
                         >
                           <span
@@ -459,15 +435,14 @@ export function ServicesPricingAuroraSection({
 
                   {show.cta ? (
                   <div className="mt-auto pt-2">
-                    <a
-                      {...pricingStyle.anchorProps}
-                      data-svc-cta=""
+                    <ServicesHoverAnchor
+                      pricingStyle={pricingStyle}
+                      label={resolveServicesCtaLabel(presentation)}
                       className="flex min-h-12 w-full items-center justify-center gap-2 text-[0.95rem] font-medium sm:w-auto sm:justify-start"
                       style={{
                         color: ink.ink,
                         ...ctaLookOverride(style.ctaStyle, ink.ink, ink.ctaContrast, pricingStyle.ctaRadius),
                       }}
-                      data-pf-no-color-transition=""
                     >
                       {style.ctaStyle === 'auto' ? (
                         <span aria-hidden style={{ opacity: 0.5 }}>
@@ -475,7 +450,7 @@ export function ServicesPricingAuroraSection({
                         </span>
                       ) : null}
                       <span>{resolveServicesCtaLabel(presentation)}</span>
-                      <span aria-hidden data-svc-arrow="" className="inline-block" data-pf-no-color-transition="">
+                      <span aria-hidden className="inline-block" data-pf-no-color-transition="">
                         →
                       </span>
                       {style.ctaStyle === 'auto' ? (
@@ -483,7 +458,7 @@ export function ServicesPricingAuroraSection({
                           ]
                         </span>
                       ) : null}
-                    </a>
+                    </ServicesHoverAnchor>
                   </div>
                   ) : null}
                 </div>

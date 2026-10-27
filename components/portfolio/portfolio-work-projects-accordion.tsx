@@ -41,6 +41,21 @@ const ENTER_HIDDEN: CSSProperties = {
 // reading globals.css after a "transitions feel brutal" report kept reproducing even
 // after fixing the specific color-transition bug below.
 const ACCORDION_CSS = `
+.portfolio-acc-list .portfolio-acc-item > .h-px { width: 100%; }
+.portfolio-acc-list .portfolio-acc-trigger { padding-block: 24px !important; align-items: flex-start; }
+.portfolio-acc-list .portfolio-acc-title { font-weight: 500; }
+.portfolio-acc-list .portfolio-acc-item[data-open='true'] .portfolio-acc-title { font-size: clamp(1.75rem, 2.5vw, 2.25rem); line-height: 1.18; }
+.portfolio-acc-list .portfolio-acc-item[data-open='false'] .portfolio-acc-title { font-size: 1.125rem; line-height: 1.4; }
+.portfolio-acc-list .portfolio-acc-title span { font-weight: inherit; }
+.portfolio-acc-list .portfolio-acc-trigger::after { content: '+'; color: var(--acc-title-ink); font-size: 24px; line-height: 1; flex-shrink: 0; }
+.portfolio-acc-list .portfolio-acc-trigger[aria-expanded='true']::after { content: '−'; }
+.portfolio-acc-list[data-display-style='compact'] { gap: 12px; }
+.portfolio-acc-list[data-display-style='compact'] .portfolio-acc-item { border: 1px solid var(--acc-border); border-radius: 12px; padding-inline: 18px; }
+.portfolio-acc-list[data-display-style='compact'] .portfolio-acc-item[data-open='true'] { background: color-mix(in srgb, var(--acc-title-ink) 5%, transparent); }
+.portfolio-acc-list[data-display-style='compact'] .portfolio-acc-item > .h-px { display: none; }
+.portfolio-acc-list[data-display-style='compact'] .portfolio-acc-item[data-open='true'] .portfolio-acc-title { font-size: 1.375rem; }
+.portfolio-acc-list .portfolio-acc-stack { display:flex; flex-wrap:wrap; gap: 6px 12px; margin-top:16px; font-size:12px; line-height:1.6; }
+.portfolio-acc-list[data-display-style='compact'] .portfolio-acc-stack li { border:1px solid var(--acc-border); padding:3px 8px; border-radius:5px; }
 .portfolio-acc-enter {
   will-change: opacity, transform;
   transition:
@@ -361,28 +376,29 @@ function useDesktopKineticShift(
  *   gently toward the cursor with a short lag, independent of the settle tween
  *   (GSAP composes `scale`/`yPercent` and `x`/`y` on the same element cleanly
  *   since they're tracked as separate transform components, not raw strings).
- * The edge facing the text column fades out via a CSS mask instead of ending in
- * a hard rectangle — the "organic, bleeding" edge instead of a strict 50/50 split.
+ * The image stays fully opaque to its edges; the corner cut mirrors its placement.
  */
 function AccordionPreview({
   item,
   surface,
   muted,
-  accent,
-  ink,
   href,
   ctaLabel,
   previewFirst,
+  previewFit = 'cover',
+  previewSize = 100,
+  previewShape = 'cut',
   shiftRef,
 }: {
   item: MarketplaceContentItem | null;
   surface: string;
   muted: string;
-  accent: string;
-  ink: string;
   href: string | null;
   ctaLabel: string;
   previewFirst: boolean;
+  previewFit?: 'cover' | 'contain';
+  previewSize?: number;
+  previewShape?: 'none' | 'rounded' | 'arch' | 'cut';
   shiftRef?: RefObject<HTMLDivElement | null>;
 }) {
   const t = useT();
@@ -406,47 +422,12 @@ function AccordionPreview({
     return () => {
       tween.kill();
     };
-  }, [mediaUrl]);
+  }, [mediaUrl, previewFit]);
 
-  useEffect(() => {
-    const frame = frameRef.current;
-    const media = mediaRef.current;
-    if (!frame || !media || typeof window === 'undefined') return;
-    if (motionReduced() || !window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
-
-    const setX = gsap.quickTo(media, 'x', { duration: 0.7, ease: 'power3.out' });
-    const setY = gsap.quickTo(media, 'y', { duration: 0.7, ease: 'power3.out' });
-
-    const onMove = (event: MouseEvent) => {
-      const rect = frame.getBoundingClientRect();
-      // Inverse drift (image leans away from the cursor, not toward it) reads
-      // as a lighter, more "floating" surface than the usual toward-cursor tilt.
-      setX(((event.clientX - rect.left) / rect.width - 0.5) * -14);
-      setY(((event.clientY - rect.top) / rect.height - 0.5) * -10);
-    };
-    const onLeave = () => {
-      setX(0);
-      setY(0);
-    };
-
-    frame.addEventListener('mousemove', onMove);
-    frame.addEventListener('mouseleave', onLeave);
-    return () => {
-      frame.removeEventListener('mousemove', onMove);
-      frame.removeEventListener('mouseleave', onLeave);
-      setX(0);
-      setY(0);
-    };
-  }, [mediaUrl]);
-
-  // No more rigid card: no border-radius, no boxed background surface. The edge
-  // facing the text column dissolves via a mask, and the opposite corner is
+  // No border-radius or boxed background surface. The outer corner is
   // sliced off at an angle (mirrored by previewSide) — an asymmetric silhouette
   // instead of a rectangle, and the frame runs close to full column height so
   // it reads as bleeding to the edge rather than sitting in a contained tile.
-  const fadeMask = previewFirst
-    ? 'linear-gradient(to left, black 80%, transparent)'
-    : 'linear-gradient(to right, black 80%, transparent)';
   const clipShape = previewFirst
     ? 'polygon(0% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 7%, 5% 0%)'
     : 'polygon(0% 0%, 95% 0%, 100% 7%, 100% 100%, 0% 100%)';
@@ -454,21 +435,24 @@ function AccordionPreview({
   const content = (
     <div
       ref={frameRef}
-      className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[5/4] lg:aspect-auto lg:min-h-[34rem] xl:min-h-[42rem]"
+      className={previewFit === 'contain' && mediaUrl ? 'relative w-full' : 'relative aspect-[4/3] w-full overflow-hidden sm:aspect-[5/4] lg:aspect-[4/5] lg:max-h-[min(48rem,80svh)]'}
       style={{
-        WebkitMaskImage: fadeMask,
-        maskImage: fadeMask,
-        clipPath: clipShape,
+        clipPath: previewFit !== 'contain' && previewShape === 'cut' ? clipShape : undefined,
+        borderRadius: previewShape === 'rounded' ? '24px' : previewShape === 'arch' ? '50% 50% 0 0' : undefined,
+        overflow: 'hidden',
+        backgroundColor: previewFit === 'contain' ? 'transparent' : surface,
       }}
     >
       {mediaUrl ? (
-        <div key={mediaUrl} ref={mediaRef} className="absolute inset-0 will-change-transform">
+        <div key={`${mediaUrl}-${previewFit}`} ref={mediaRef} className={previewFit === 'contain' ? 'relative w-full' : 'absolute inset-0 will-change-transform'}>
           <Image
             src={mediaUrl}
             alt={title || t('Project preview')}
-            fill
+            fill={previewFit !== 'contain'}
+            width={previewFit === 'contain' ? 1200 : undefined}
+            height={previewFit === 'contain' ? 800 : undefined}
             sizes="(max-width: 1024px) 100vw, 55vw"
-            className="scale-[1.08] object-cover object-center"
+            className={previewFit === 'contain' ? 'block h-auto w-full object-contain' : 'object-cover object-center'}
             priority
           />
         </div>
@@ -481,37 +465,17 @@ function AccordionPreview({
         </div>
       )}
 
-      {href ? (
-        <>
-          <div
-            className="pointer-events-none absolute inset-0 bg-black/0 opacity-0 transition-opacity duration-500 group-hover/preview:opacity-100"
-            style={{ backgroundColor: 'rgba(0,0,0,0.22)' }}
-            data-pf-no-color-transition=""
-            aria-hidden
-          />
-          <span
-            className="pointer-events-none absolute bottom-6 left-6 inline-flex translate-y-2 items-center gap-2 text-xs font-semibold uppercase tracking-[0.2em] opacity-0 transition-all duration-500 group-hover/preview:translate-y-0 group-hover/preview:opacity-100 sm:bottom-8 sm:left-8"
-            style={{ color: accent || ink }}
-            data-pf-no-color-transition=""
-          >
-            <span className="border-b pb-[0.12em]" style={{ borderColor: accent || ink }}>
-              {ctaLabel}
-            </span>
-            <span aria-hidden>↗</span>
-          </span>
-        </>
-      ) : null}
     </div>
   );
 
   return (
-    <div ref={shiftRef} className="group/preview min-w-0 will-change-transform">
+    <div ref={shiftRef} className="group/preview mx-auto min-w-0 will-change-transform" style={{width:`${previewSize}%`}}>
       {href ? (
         <Link
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="block focus:outline-hidden"
+          className="block rounded-xs focus-visible:outline-2 focus-visible:outline-offset-4"
           aria-label={`${ctaLabel}: ${title || 'project'}`}
         >
           {content}
@@ -542,6 +506,9 @@ function AccordionItem({
   showTools,
   toolsLabel,
   mobileThumbnailSurface,
+  previewFit,
+  previewSize = 100,
+  previewShape = 'cut',
 }: {
   item: MarketplaceContentItem;
   index: number;
@@ -565,6 +532,9 @@ function AccordionItem({
    *  own thumbnail inline, at the bottom of its own open panel (after the tags) —
    *  instead of a shared image ending up stranded after the whole list. */
   mobileThumbnailSurface: string;
+  previewFit?: 'cover' | 'contain';
+  previewSize?: number;
+  previewShape?: 'none' | 'rounded' | 'arch' | 'cut';
 }) {
   const t = useT();
   const description = item.description?.trim() || '';
@@ -582,11 +552,10 @@ function AccordionItem({
   const metaItems: { text: string; isRole: boolean }[] = [
     ...(showRole ? [{ text: role, isRole: true }] : []),
     ...(showCategory ? [{ text: category, isRole: false }] : []),
-    ...tools.map((tool) => ({ text: tool, isRole: false })),
   ];
   const showMetaLine = metaItems.length > 0;
   const showBody =
-    open && ((showDescription && Boolean(description)) || showMetaLine || Boolean(mobileMediaUrl));
+    open && ((showDescription && Boolean(description)) || showMetaLine || tools.length > 0 || Boolean(mobileMediaUrl));
 
   return (
     <div
@@ -626,7 +595,7 @@ function AccordionItem({
         <span
           aria-hidden
           className="w-7 shrink-0 font-medium tabular-nums text-xs tracking-[0.14em] transition-[color,opacity] duration-300 sm:w-8 sm:text-[0.8125rem]"
-          style={{ color: open ? accent || titleInk : muted, opacity: open ? 1 : 0.7 }}
+          style={{ color: open ? accent || titleInk : muted, opacity: open ? 1 : 0.88 }}
           data-pf-no-color-transition=""
         >
           {formatAccordionIndex(index)}
@@ -636,10 +605,10 @@ function AccordionItem({
         <span
           className={`portfolio-acc-title min-w-0 flex-1 tracking-[-0.03em] ${
             open
-              ? 'text-[2.1rem] leading-[1] sm:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem]'
+              ? 'text-[2rem] leading-[1.12] sm:text-[2.5rem] lg:text-[2.75rem] xl:text-[3rem] text-balance'
               : 'text-[1.25rem] leading-[1.2] sm:text-[1.4rem] lg:text-[1.5rem]'
           }`}
-          style={{ color: open ? titleInk : muted, opacity: open ? 1 : 0.6 }}
+          style={{ color: open ? titleInk : muted }}
           data-pf-no-color-transition=""
         >
           <EditorialTitleText title={item.title} open={open} />
@@ -666,6 +635,9 @@ function AccordionItem({
               transitionDelay: showBody ? '70ms' : '0ms',
             }}
           >
+            {showMetaLine ? <div className="mb-4 flex flex-wrap gap-x-3 gap-y-2 text-xs tracking-wide">
+              {metaItems.map((meta,i)=><span key={`${meta.text}-${i}`} style={{color:meta.isRole?roleColor:muted}}>{meta.text}</span>)}
+            </div> : null}
             {showDescription && description ? (
               <p className="max-w-md text-base leading-relaxed" style={{ color: muted }}>
                 {description}
@@ -674,7 +646,7 @@ function AccordionItem({
 
             {toolsLabel && tools.length > 0 ? (
               <p
-                className={`flex items-center gap-3 text-[0.62rem] font-semibold uppercase tracking-[0.24em] ${
+                className={`flex items-center gap-3 text-[0.6875rem] font-semibold uppercase tracking-[0.2em] ${
                   showDescription && description ? 'mt-7' : 'mt-1'
                 }`}
                 style={{ color: muted }}
@@ -684,33 +656,9 @@ function AccordionItem({
               </p>
             ) : null}
 
-            {showMetaLine ? (
-              // Wraps instead of a hidden-scrollbar horizontal scroll (tags were cut mid-line
-              // with no cue, ending on an orphan "/"). Spacing replaces the slashes; tags stay
-              // fully legible (no 50 % rest / 25 % sibling dimming).
-              <ul
-                className={`flex flex-wrap items-baseline gap-x-4 gap-y-2 ${
-                  toolsLabel && tools.length > 0 ? 'mt-3' : showDescription && description ? 'mt-7' : 'mt-1'
-                }`}
-                aria-label={t('Role, category and tools')}
-              >
-                {metaItems.map((meta, metaIndex) => (
-                  <li
-                    key={`${meta.text}-${metaIndex}`}
-                    className={`whitespace-nowrap text-[0.6875rem] uppercase leading-none tracking-[0.18em] ${
-                      meta.isRole ? 'font-semibold' : 'font-medium'
-                    }`}
-                    style={{
-                      color: meta.isRole
-                        ? roleColor
-                        : `color-mix(in srgb, ${muted} 85%, transparent)`,
-                    }}
-                  >
-                    {meta.text}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
+            {tools.length > 0 ? <ul className="portfolio-acc-stack" aria-label={t('Tools')} style={{color:muted}}>
+              {tools.map(tool=><li key={tool}>{tool}</li>)}
+            </ul> : null}
           </div>
 
           {mobileMediaUrl ? (
@@ -724,15 +672,19 @@ function AccordionItem({
               }}
             >
               <div
-                className="relative aspect-[4/3] w-full overflow-hidden"
-                style={{ backgroundColor: mobileThumbnailSurface }}
+                className={previewFit === 'contain' ? 'relative w-full' : 'relative aspect-[4/3] w-full overflow-hidden'}
+                style={{ backgroundColor: previewFit === 'contain' ? 'transparent' : mobileThumbnailSurface, width:`${previewSize}%`, marginInline:'auto', overflow:'hidden',
+                  borderRadius:previewShape==='rounded'?'24px':previewShape==='arch'?'50% 50% 0 0':undefined,
+                  clipPath:previewShape==='cut'&&previewFit!=='contain'?'polygon(0 0, 93% 0, 100% 7%, 100% 100%, 0 100%)':undefined }}
               >
                 <Image
                   src={mobileMediaUrl}
                   alt={item.title?.trim() || t('Project preview')}
-                  fill
+                  fill={previewFit !== 'contain'}
+                  width={previewFit === 'contain' ? 1200 : undefined}
+                  height={previewFit === 'contain' ? 800 : undefined}
                   sizes="100vw"
-                  className="object-cover object-center"
+                  className={previewFit === 'contain' ? 'block h-auto w-full object-contain' : 'object-cover object-center'}
                   data-pf-no-color-transition=""
                 />
               </div>
@@ -824,8 +776,19 @@ export function ProjectsAccordionGallery({
     <div ref={listShiftRef} className="min-w-0 will-change-transform">
       <div
         className="portfolio-acc-list flex min-w-0 flex-col"
+        data-display-style={board.displayStyle ?? 'editorial'}
+        onKeyDown={(event) => {
+          if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)) return;
+          const triggers = Array.from(event.currentTarget.querySelectorAll<HTMLButtonElement>('.portfolio-acc-trigger'));
+          const index = triggers.indexOf(event.target as HTMLButtonElement);
+          if (index < 0) return;
+          event.preventDefault();
+          const next = event.key === 'Home' ? 0 : event.key === 'End' ? triggers.length - 1
+            : (index + (event.key === 'ArrowDown' ? 1 : -1) + triggers.length) % triggers.length;
+          triggers[next]?.focus();
+        }}
         role="list"
-        style={{ '--acc-title-ink': titleInk } as CSSProperties}
+        style={{ '--acc-title-ink': titleInk, '--acc-border': border } as CSSProperties}
       >
         {items.map((item, index) => {
           const open = item.id === effectiveOpenId;
@@ -842,7 +805,7 @@ export function ProjectsAccordionGallery({
                 index={index}
                 open={open}
                 onToggle={() => toggleItem(item.id, open)}
-                onPreviewHover={() => schedulePreview(item.id, 70)}
+                onPreviewHover={() => schedulePreview(undefined, 0)}
                 onPreviewLeave={() => schedulePreview(undefined, 120)}
                 panelId={`${baseId}-panel-${index}`}
                 headerId={`${baseId}-header-${index}`}
@@ -856,6 +819,9 @@ export function ProjectsAccordionGallery({
                 showTools={board.showTools}
                 toolsLabel={board.showToolsLabel ? board.toolsLabel.trim() || t('Tools I use') : null}
                 mobileThumbnailSurface={previewSurface}
+                previewFit={board.previewFit}
+                previewSize={board.previewSize}
+                previewShape={board.previewShape}
               />
             </div>
           );
@@ -875,11 +841,12 @@ export function ProjectsAccordionGallery({
           item={active}
           surface={previewSurface}
           muted={muted}
-          accent={accent}
-          ink={titleInk}
           href={board.showConsult ? active?.linkUrl?.trim() || null : null}
           ctaLabel={board.consultLabel.trim() || t('View project')}
           previewFirst={previewFirst}
+          previewFit={board.previewFit}
+          previewSize={board.previewSize}
+          previewShape={board.previewShape}
           shiftRef={previewShiftRef}
         />
       </div>

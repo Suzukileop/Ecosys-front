@@ -1,5 +1,6 @@
 'use client';
 
+import { cardsBorderCss } from '@/components/portfolio/portfolio-cards-style';
 import { useEffect, useLayoutEffect, useMemo, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -98,7 +99,7 @@ function FramedGridTile({
       className={`pf-gallery-framed-tile group relative flex w-full flex-col transition-[transform,translate,scale,rotate,box-shadow] duration-[620ms] ${FRAME_EASE} hover:z-10 hover:-translate-y-1 ${
         isInteractive ? 'cursor-zoom-in focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500' : ''
       }`}
-      style={{ borderRadius: `${presentation.radius}px` }}
+      style={{ borderRadius: `${presentation.radius}px`, ...cardsBorderCss(presentation.cardsStyle, presentation.galleryPalette) }}
       role={isInteractive ? 'button' : undefined}
       tabIndex={isInteractive ? 0 : undefined}
       aria-label={isInteractive ? t('Open {title}', { title: itemTitle || t('Gallery media') }) : undefined}

@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -168,8 +169,8 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
   );
 
   // Title split for line-by-line animation
-  const titleText = `Hi, I'm ${displayName} — a ${specialty}.`;
-  const titleLines = useMemo(() => splitTitleIntoLines(titleText), [titleText]);
+  const titleText = resolveHeroGreeting(data.presentation,`Hi, I'm ${displayName} — a ${specialty}.`,displayName,specialty);
+  const titleLines = splitTitleIntoLines(titleText);
 
   const primaryHref = data.contactHref || '#contact';
   const secondaryHref = data.workHref || '#work';
@@ -659,14 +660,14 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           style={{ borderColor: principal }}
         />
       </div>
-      <p
+      <p data-hero-bio
         className="m-0 font-sans font-normal tracking-[-0.01em]"
         style={{ color: muted, fontSize, lineHeight: 1.55 }}
       >
         {bioLead}
       </p>
       {bioTrail ? (
-        <p
+        <p data-hero-bio
           className="m-0 font-sans font-normal tracking-[-0.01em]"
           style={{ color: muted, fontSize, lineHeight: 1.55 }}
         >
@@ -905,7 +906,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         </div>
 
         {showAvailability ? (
-          <div
+          <div data-hero-availability
             className="pf-statement-availability flex items-center justify-end gap-2.5 self-start"
             style={{ gridColumn: 2, gridRow: 1, paddingTop: '0.45rem' }}
           >
@@ -1067,7 +1068,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         className={`relative z-[1] flex flex-col pb-12 pt-[calc(7rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
       >
         {showAvailability ? (
-          <div className="pf-statement-availability flex items-center gap-2.5">
+          <div data-hero-availability className="pf-statement-availability flex items-center gap-2.5">
             <span
               className="inline-block size-2 shrink-0 rounded-full"
               style={{
@@ -1176,14 +1177,14 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         <div
           className={`pf-statement-bio-entry flex flex-col gap-4 ${ctaUnderBio ? 'mt-8' : 'mt-7'}`}
         >
-          <p
+          <p data-hero-bio
             className="m-0 font-sans font-normal tracking-[-0.01em]"
             style={{ color: muted, fontSize: '1rem', lineHeight: 1.55 }}
           >
             {bioLead}
           </p>
           {bioTrail ? (
-            <p
+            <p data-hero-bio
               className="m-0 font-sans font-normal tracking-[-0.01em]"
               style={{ color: muted, fontSize: '1rem', lineHeight: 1.55 }}
             >

@@ -10,6 +10,8 @@
  */
 
 import localFont from 'next/font/local';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faCircleHalfStroke, faSun, faMoon, faEye, faEyeSlash } from '@fortawesome/free-solid-svg-icons';
 import {
   createContext,
   useContext,
@@ -330,6 +332,8 @@ export function NpToggle({
   );
 }
 
+const NpContentShownContext = createContext(false);
+
 /** Title + optional subtitle with a switch on the right; `card` frames it as the panel's lead card. */
 export function NpToggleRow({
   title,
@@ -351,6 +355,7 @@ export function NpToggleRow({
   disabled?: boolean;
 }) {
   const id = useId();
+  const visibilityControl = useContext(NpContentShownContext) && !card;
   return (
     <div
       className={`${card ? 'np-toggle-card' : 'np-toggle-row'} np-dimmable`}
@@ -368,12 +373,22 @@ export function NpToggleRow({
           </p>
         ) : null}
       </div>
-      <NpToggle
+      {visibilityControl ? <button
+        type="button"
+        className="np-visibility-btn"
+        aria-pressed={checked}
+        aria-labelledby={`${id}-title`}
+        aria-describedby={description ? `${id}-desc` : undefined}
+        disabled={disabled}
+        onClick={() => onChange(!checked)}
+      >
+        <FontAwesomeIcon icon={checked ? faEye : faEyeSlash} className="h-4 w-4" aria-hidden="true" />
+      </button> : <NpToggle
         checked={checked}
         onChange={onChange}
         labelledBy={`${id}-title`}
         describedBy={description ? `${id}-desc` : undefined}
-      />
+      />}
     </div>
   );
 }
@@ -423,21 +438,27 @@ export function NpGeneralSettings({
 /** One-line segmented control with an optional live help sentence under it. */
 export function NpSegmentedControl<T extends string>({
   label,
+  hideLabel = false,
   options,
   value,
   onChange,
   help,
 }: {
   label: string;
+  hideLabel?: boolean;
   options: { value: T; label: string; title?: string; sizePx?: number }[];
   value: T;
   onChange: (value: T) => void;
   help?: string;
 }) {
   const id = useId();
+  // Shared by global appearance and every section override, regardless of locale.
+  const colorModeOptions = options.some(option => option.value === 'light')
+    && options.some(option => option.value === 'dark')
+    && options.every(option => ['auto', 'light', 'dark'].includes(option.value));
   return (
     <div className="np-field">
-      <p id={`${id}-label`} className="np-field-label">
+      <p id={`${id}-label`} className={hideLabel ? 'sr-only' : 'np-field-label'}>
         {label}
       </p>
       <div
@@ -457,7 +478,10 @@ export function NpSegmentedControl<T extends string>({
             className="np-seg-btn"
             style={option.sizePx ? { fontSize: `${option.sizePx}px` } : undefined}
           >
-            <span className="relative truncate">{option.label}</span>
+            <span className="relative inline-flex max-w-full items-center justify-center gap-2">
+              {colorModeOptions ? <FontAwesomeIcon icon={option.value === 'auto' ? faCircleHalfStroke : option.value === 'light' ? faSun : faMoon} className="h-3 w-3 shrink-0" aria-hidden="true" /> : null}
+              <span className="truncate">{option.label}</span>
+            </span>
           </button>
         ))}
       </div>
@@ -481,6 +505,7 @@ export function NpOptionCard({
   illustration,
   onClick,
   compact = false,
+  largeIllustration = false,
 }: {
   selected: boolean;
   title: string;
@@ -488,6 +513,8 @@ export function NpOptionCard({
   illustration: ReactNode;
   onClick: () => void;
   compact?: boolean;
+  /** Taller artwork area for real previews displayed one card per row. */
+  largeIllustration?: boolean;
 }) {
   return (
     <button
@@ -496,19 +523,13 @@ export function NpOptionCard({
       onClick={onClick}
       className="np-option"
       data-compact={compact ? 'true' : undefined}
+      data-large-illustration={largeIllustration ? 'true' : undefined}
     >
       <span className="np-option-illus" aria-hidden>
         {illustration}
       </span>
       <span className="np-option-title">{title}</span>
       {subtitle ? <span className="np-option-sub">{subtitle}</span> : null}
-      {selected ? (
-        <span className="np-option-badge" aria-hidden>
-          <svg viewBox="0 0 20 20" className="h-2.5 w-2.5" fill="none">
-            <path d="M4 10.5l3.5 3.5L16 6" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      ) : null}
     </button>
   );
 }
@@ -537,7 +558,7 @@ export function NpOptionCardGroup({
         </p>
         {action}
       </div>
-      <div role="group" aria-labelledby={id} className={`grid gap-3 ${NP_GRID_COLUMNS[columns]}`}>
+      <div role="group" aria-labelledby={id} className={`np-option-group grid gap-3 ${NP_GRID_COLUMNS[columns]}`}>
         {children}
       </div>
     </div>
@@ -727,10 +748,12 @@ export function NpCollapsibleSection({
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
+  const t = useT();
+  const contentShown = title === t('Content shown');
   const [open, setOpen] = useState(defaultOpen);
   const id = useId();
   return (
-    <section className="np-section">
+    <section className={`np-section${contentShown ? ' np-section--content-shown' : ''}`}>
       <h3>
         <button
           type="button"
@@ -745,7 +768,7 @@ export function NpCollapsibleSection({
       </h3>
       <div id={id} className="np-section-body" data-open={open ? 'true' : 'false'} inert={!open}>
         <div className="np-section-clip">
-          <div className="np-section-content">{children}</div>
+          <div className="np-section-content"><NpContentShownContext.Provider value={contentShown}>{children}</NpContentShownContext.Provider></div>
         </div>
       </div>
     </section>

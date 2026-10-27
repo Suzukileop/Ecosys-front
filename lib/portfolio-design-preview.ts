@@ -3,6 +3,10 @@ import {
   type PortfolioFooterDesign,
 } from '@/components/portfolio/portfolio-footer-settings';
 import {
+  PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS,
+  type PortfolioFooterHeaderDesign,
+} from '@/components/portfolio/portfolio-footer-header-settings';
+import {
   CONTACT_PREMIUM_DESIGNS,
   type PortfolioContactPremiumDesign,
 } from '@/components/portfolio/portfolio-contact-settings';
@@ -11,9 +15,17 @@ import {
   type PortfolioTeamLayout,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
+  PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS,
+  type PortfolioTeamHeaderDesign,
+} from '@/components/portfolio/portfolio-team-header-settings';
+import {
   PORTFOLIO_GALLERY_DESIGN_OPTIONS,
   type PortfolioGalleryDesign,
 } from '@/components/portfolio/portfolio-gallery-settings';
+import {
+  PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS,
+  type PortfolioGalleryHeaderDesign,
+} from '@/components/portfolio/portfolio-gallery-header-settings';
 import {
   PORTFOLIO_FAQ_DESIGN_OPTIONS,
   type PortfolioFaqDesign,
@@ -23,6 +35,10 @@ import {
   type PortfolioExperienceDesign,
 } from '@/components/portfolio/portfolio-experience-settings';
 import {
+  PORTFOLIO_EXPERIENCE_HEADER_DESIGN_OPTIONS,
+  type PortfolioExperienceHeaderDesign,
+} from '@/components/portfolio/portfolio-experience-header-settings';
+import {
   PORTFOLIO_ABOUT_US_DESIGN_OPTIONS,
   type PortfolioAboutUsDesign,
 } from '@/components/portfolio/portfolio-about-us-settings';
@@ -30,6 +46,7 @@ import {
   PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS,
   type PortfolioServicesSectionDesign,
 } from '@/components/portfolio/portfolio-services-settings';
+import { PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS, type PortfolioServicesHeaderDesign } from '@/components/portfolio/portfolio-services-header-settings';
 import {
   PORTFOLIO_TOOLS_DESIGN_OPTIONS,
   type PortfolioToolsDesign,
@@ -56,6 +73,7 @@ import {
 } from '@/components/portfolio/portfolio-nav-layout-design';
 import { PORTFOLIO_STUDIO_PREVIEW_SOURCE, withPortfolioStudioEmbed } from '@/lib/portfolio-studio-preview';
 import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/types/marketplace';
+import { PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS, type PortfolioFaqHeaderDesignSelectable } from '@/components/portfolio/portfolio-faq-header-settings';
 
 /**
  * Live design previews for the studio's design pickers: each picker card loads the creator's own
@@ -68,7 +86,11 @@ import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/
  * ignores (they are not studio preview messages), so a card's iframe never stands in for it.
  */
 
+import { PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS, type PortfolioStackHeaderDesign } from '@/components/portfolio/portfolio-stack-header-settings';
+import { PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS, type PortfolioToolsHeaderDesign } from '@/components/portfolio/portfolio-tools-header-settings';
 const SECTION_QUERY = 'previewSection';
+import { PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS, type PortfolioInfoHeaderDesign } from '@/components/portfolio/portfolio-info-header-settings';
+import { PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS, type PortfolioWorkHeaderDesign } from '@/components/portfolio/portfolio-work-settings';
 const DESIGN_QUERY = 'previewDesign';
 
 /** Width the preview page is laid out at before being scaled into a card (a common laptop width). */
@@ -77,17 +99,27 @@ export const DESIGN_PREVIEW_VIEWPORT_WIDTH = 1280;
 /** A section's design, as one picker card shows it. */
 export type DesignPreviewTarget =
   | { section: 'footer'; design: PortfolioFooterDesign }
+  | { section: 'footerHeader'; design: Exclude<PortfolioFooterHeaderDesign, 'none'> }
   | { section: 'contact'; design: PortfolioContactPremiumDesign }
   | { section: 'team'; design: PortfolioTeamLayout }
+  | { section: 'teamHeader'; design: Exclude<PortfolioTeamHeaderDesign, 'none'> }
   | { section: 'gallery'; design: PortfolioGalleryDesign }
+  | { section: 'galleryHeader'; design: Exclude<PortfolioGalleryHeaderDesign, 'none'> }
   | { section: 'faq'; design: PortfolioFaqDesign }
+  | { section: 'faqHeader'; design: Exclude<PortfolioFaqHeaderDesignSelectable, 'none'> }
   | { section: 'experience'; design: PortfolioExperienceDesign }
+  | { section: 'experienceHeader'; design: Exclude<PortfolioExperienceHeaderDesign, 'none'> }
   | { section: 'aboutUs'; design: PortfolioAboutUsDesign }
   | { section: 'services'; design: PortfolioServicesSectionDesign }
+  | { section: 'servicesHeader'; design: Exclude<PortfolioServicesHeaderDesign, 'none'> }
   | { section: 'tools'; design: PortfolioToolsDesign }
+  | { section: 'toolsHeader'; design: Exclude<PortfolioToolsHeaderDesign, 'none'> }
   | { section: 'work'; design: PortfolioWorkSectionDesign }
+  | { section: 'workHeader'; design: Exclude<PortfolioWorkHeaderDesign, 'none'> }
   | { section: 'info'; design: PortfolioInfoDesign }
+  | { section: 'infoHeader'; design: Exclude<PortfolioInfoHeaderDesign, 'none'> }
   | { section: 'stack'; design: PortfolioStackDesign }
+  | { section: 'stackHeader'; design: Exclude<PortfolioStackHeaderDesign, 'none'> }
   | { section: 'hero'; design: PortfolioHeroBannerDesign }
   | { section: 'navigation'; design: PortfolioNavLayoutDesign };
 
@@ -136,6 +168,14 @@ export function readDesignPreviewTarget(
     const match = PORTFOLIO_FOOTER_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'footer', design: match.value } : null;
   }
+  if (sectionValue === 'footerHeader') {
+    const match = PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.find(
+      (option) => option.value !== 'none' && option.value === designValue
+    );
+    return match
+      ? { section: 'footerHeader', design: match.value as Exclude<PortfolioFooterHeaderDesign, 'none'> }
+      : null;
+  }
   if (sectionValue === 'contact') {
     const match = CONTACT_PREMIUM_DESIGNS.find((value) => value === designValue);
     return match ? { section: 'contact', design: match } : null;
@@ -144,17 +184,41 @@ export function readDesignPreviewTarget(
     const match = PORTFOLIO_TEAM_LAYOUT_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'team', design: match.value } : null;
   }
+  if (sectionValue === 'teamHeader') {
+    const match = PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS.find(
+      (option) => option.value !== 'none' && option.value === designValue
+    );
+    return match
+      ? { section: 'teamHeader', design: match.value as Exclude<PortfolioTeamHeaderDesign, 'none'> }
+      : null;
+  }
   if (sectionValue === 'gallery') {
     const match = PORTFOLIO_GALLERY_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'gallery', design: match.value } : null;
+  }
+  if (sectionValue === 'galleryHeader') {
+    const match = PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.find(
+      (option) => option.value !== 'none' && option.value === designValue
+    );
+    return match
+      ? { section: 'galleryHeader', design: match.value as Exclude<PortfolioGalleryHeaderDesign, 'none'> }
+      : null;
   }
   if (sectionValue === 'faq') {
     const match = PORTFOLIO_FAQ_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'faq', design: match.value } : null;
   }
+  if (sectionValue === 'faqHeader') {
+    const match = PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS.find((option) => option.value === designValue);
+    return match && match.value !== 'none' ? { section: 'faqHeader', design: match.value } : null;
+  }
   if (sectionValue === 'experience') {
     const match = PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'experience', design: match.value } : null;
+  }
+  if (sectionValue === 'experienceHeader') {
+    const match = PORTFOLIO_EXPERIENCE_HEADER_DESIGN_OPTIONS.find((option) => option.value === designValue);
+    return match && match.value !== 'none' ? { section: 'experienceHeader', design: match.value } : null;
   }
   if (sectionValue === 'aboutUs') {
     const match = PORTFOLIO_ABOUT_US_DESIGN_OPTIONS.find((option) => option.value === designValue);
@@ -164,21 +228,41 @@ export function readDesignPreviewTarget(
     const match = PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'services', design: match.value } : null;
   }
+  if (sectionValue === 'servicesHeader') {
+    const match = PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS.find((option) => option.value === designValue);
+    return match && match.value !== 'none' ? { section: 'servicesHeader', design: match.value } : null;
+  }
   if (sectionValue === 'tools') {
     const match = PORTFOLIO_TOOLS_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'tools', design: match.value } : null;
+  }
+  if (sectionValue === 'toolsHeader') {
+    const match = PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS.find((option) => option.value === designValue);
+    return match && match.value !== 'none' ? { section: 'toolsHeader', design: match.value } : null;
   }
   if (sectionValue === 'work') {
     const match = PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'work', design: match.value } : null;
   }
+  if (sectionValue === 'workHeader') {
+    const match = PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.find((option) => option.value === designValue);
+    return match && match.value !== 'none' ? { section: 'workHeader', design: match.value } : null;
+  }
   if (sectionValue === 'info') {
     const match = PORTFOLIO_INFO_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'info', design: match.value } : null;
   }
+  if (sectionValue === 'infoHeader') {
+    const match = PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS.find((option) => option.value === designValue);
+    return match && match.value !== 'none' ? { section: 'infoHeader', design: match.value } : null;
+  }
   if (sectionValue === 'stack') {
     const match = PORTFOLIO_STACK_DESIGN_OPTIONS.find((option) => option.value === designValue);
     return match ? { section: 'stack', design: match.value } : null;
+  }
+  if (sectionValue === 'stackHeader') {
+    const match = PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.find((option) => option.value === designValue);
+    return match && match.value !== 'none' ? { section: 'stackHeader', design: match.value } : null;
   }
   if (sectionValue === 'hero') {
     const match = PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.find((option) => option.value === designValue);
@@ -345,24 +429,24 @@ export function withDesignPreviewProfile(profile: MarketplaceCreatorPublicProfil
     portfolioPosts: DESIGN_PREVIEW_PORTFOLIO_POSTS,
     portfolioWorks: [],
     profileStack: [
-      { name: 'Next.js', category: 'Frontend', level: 'advanced', experienceYears: 4, currentlyUsed: true, useCases: ['Websites'] },
-      { name: 'React', category: 'Frontend', level: 'advanced', experienceYears: 5, currentlyUsed: true, useCases: ['Web apps'] },
-      { name: 'TypeScript', category: 'Frontend', level: 'advanced', experienceYears: 4, currentlyUsed: true, useCases: ['Type safety'] },
-      { name: 'Tailwind CSS', category: 'Frontend', level: 'expert', experienceYears: 4, currentlyUsed: true, useCases: ['Styling'] },
-      { name: 'Node.js', category: 'Backend', level: 'intermediate', experienceYears: 3, currentlyUsed: true, useCases: ['APIs'] },
-      { name: 'PostgreSQL', category: 'Backend', level: 'intermediate', experienceYears: 3, currentlyUsed: true, useCases: ['Data'] },
-      { name: 'Figma', category: 'Design', level: 'expert', experienceYears: 7, currentlyUsed: true, useCases: ['UI design'] },
-      { name: 'Vercel', category: 'Hosting', level: 'advanced', experienceYears: 3, currentlyUsed: true, useCases: ['Deploys'] },
+      { name: 'Forma', iconUrl: '/images/portfolio/demo-brands/forma.svg', category: 'Creation', level: 'advanced', experienceYears: 4, currentlyUsed: true, useCases: ['Visual identity'] },
+      { name: 'Orbit', iconUrl: '/images/portfolio/demo-brands/orbit.svg', category: 'Strategy', level: 'advanced', experienceYears: 5, currentlyUsed: true, useCases: ['Planning'] },
+      { name: 'Luma', iconUrl: '/images/portfolio/demo-brands/luma.svg', category: 'Creation', level: 'advanced', experienceYears: 4, currentlyUsed: true, useCases: ['Art direction'] },
+      { name: 'Arc', iconUrl: '/images/portfolio/demo-brands/arc.svg', category: 'Design', level: 'expert', experienceYears: 4, currentlyUsed: true, useCases: ['Composition'] },
+      { name: 'Nova', iconUrl: '/images/portfolio/demo-brands/nova.svg', category: 'Production', level: 'intermediate', experienceYears: 3, currentlyUsed: true, useCases: ['Production'] },
+      { name: 'Muse', iconUrl: '/images/portfolio/demo-brands/muse.svg', category: 'Creation', level: 'intermediate', experienceYears: 3, currentlyUsed: true, useCases: ['Research'] },
+      { name: 'Flow', iconUrl: '/images/portfolio/demo-brands/flow.svg', category: 'Organization', level: 'expert', experienceYears: 7, currentlyUsed: true, useCases: ['Workflow'] },
+      { name: 'Aura', iconUrl: '/images/portfolio/demo-brands/aura.svg', category: 'Design', level: 'advanced', experienceYears: 3, currentlyUsed: true, useCases: ['Presentation'] },
     ],
     strengthsToolsMastered: [
-      { name: 'Figma', category: 'Design', level: 'expert', experienceYears: 7, currentlyUsed: true, useCases: ['UI design', 'Prototyping'] },
-      { name: 'Framer', category: 'Design', level: 'advanced', experienceYears: 3, currentlyUsed: true, useCases: ['Websites'] },
-      { name: 'Photoshop', category: 'Design', level: 'advanced', experienceYears: 9, currentlyUsed: true, useCases: ['Retouching'] },
-      { name: 'Illustrator', category: 'Design', level: 'intermediate', experienceYears: 6, currentlyUsed: false, useCases: ['Logos'] },
-      { name: 'Webflow', category: 'Development', level: 'advanced', experienceYears: 4, currentlyUsed: true, useCases: ['Websites'] },
-      { name: 'React', category: 'Development', level: 'intermediate', experienceYears: 3, currentlyUsed: true, useCases: ['Web apps'] },
-      { name: 'Notion', category: 'Productivity', level: 'expert', experienceYears: 5, currentlyUsed: true, useCases: ['Planning'] },
-      { name: 'Blender', category: '3D', level: 'beginner', experienceYears: 1, currentlyUsed: false, useCases: ['Mockups'] },
+      { name: 'Forma', iconUrl: '/images/portfolio/demo-brands/forma.svg', category: 'Creation', level: 'advanced', experienceYears: 4, currentlyUsed: true, useCases: ['Visual identity'] },
+      { name: 'Orbit', iconUrl: '/images/portfolio/demo-brands/orbit.svg', category: 'Strategy', level: 'advanced', experienceYears: 5, currentlyUsed: true, useCases: ['Planning'] },
+      { name: 'Luma', iconUrl: '/images/portfolio/demo-brands/luma.svg', category: 'Creation', level: 'advanced', experienceYears: 4, currentlyUsed: true, useCases: ['Art direction'] },
+      { name: 'Arc', iconUrl: '/images/portfolio/demo-brands/arc.svg', category: 'Design', level: 'expert', experienceYears: 4, currentlyUsed: true, useCases: ['Composition'] },
+      { name: 'Nova', iconUrl: '/images/portfolio/demo-brands/nova.svg', category: 'Production', level: 'intermediate', experienceYears: 3, currentlyUsed: true, useCases: ['Production'] },
+      { name: 'Muse', iconUrl: '/images/portfolio/demo-brands/muse.svg', category: 'Creation', level: 'intermediate', experienceYears: 3, currentlyUsed: true, useCases: ['Research'] },
+      { name: 'Flow', iconUrl: '/images/portfolio/demo-brands/flow.svg', category: 'Organization', level: 'expert', experienceYears: 7, currentlyUsed: true, useCases: ['Workflow'] },
+      { name: 'Aura', iconUrl: '/images/portfolio/demo-brands/aura.svg', category: 'Design', level: 'advanced', experienceYears: 3, currentlyUsed: true, useCases: ['Presentation'] },
     ],
     aboutSkills: [
       { id: 'preview-skill-1', sortOrder: 0, title: 'Interface design', description: 'Clear, accessible screens for web and mobile.' },
@@ -385,15 +469,15 @@ export function withDesignPreviewProfile(profile: MarketplaceCreatorPublicProfil
       {
         id: 'preview-exp-1',
         sortOrder: 0,
-        title: 'Lead designer',
-        organization: 'Northwind Studio',
-        text: 'Led the redesign of a booking platform used by 40,000 travellers a month.',
+        title: 'Brand designer',
+        organization: 'Atelier Forma',
+        text: 'Created a new visual identity and website for an independent design studio.',
         mediaUrl: '/landing/showcase/portfolio.jpg',
         mediaType: 'IMAGE',
-        period: '2022 — present',
+        period: '2024 — present',
         status: 'ONGOING',
-        tasks: ['Design system and component library', 'User research with 30 customers', 'Mentoring two junior designers'],
-        tools: ['Figma', 'Framer', 'Notion'],
+        tasks: ['Visual identity and brand guidelines', 'Website design and launch', 'Creative direction'],
+        tools: ['Forma', 'Orbit', 'Luma'],
         location: 'Paris',
         employmentType: 'FULL_TIME',
       },
@@ -401,14 +485,14 @@ export function withDesignPreviewProfile(profile: MarketplaceCreatorPublicProfil
         id: 'preview-exp-2',
         sortOrder: 1,
         title: 'Freelance web designer',
-        organization: 'Independent',
-        text: 'Brands and websites for restaurants, architects and small studios.',
+        organization: 'Studio Horizon',
+        text: 'Designed websites and visual identities for local businesses and creative teams.',
         mediaUrl: '/landing/hero/hero-freelance.jpg',
         mediaType: 'IMAGE',
-        period: '2019 — 2022',
+        period: '2021 — 2024',
         status: 'FINISHED',
-        tasks: ['Brand identities', 'Webflow and Next.js websites', 'Photo art direction'],
-        tools: ['Figma', 'Webflow', 'Photoshop'],
+        tasks: ['Responsive website design', 'Brand identity systems', 'Photo art direction'],
+        tools: ['Arc', 'Nova', 'Muse'],
         location: 'Remote',
         employmentType: 'FREELANCE',
       },
@@ -416,14 +500,14 @@ export function withDesignPreviewProfile(profile: MarketplaceCreatorPublicProfil
         id: 'preview-exp-3',
         sortOrder: 2,
         title: 'Junior UI designer',
-        organization: 'Lumen Agency',
-        text: 'Interfaces for banking and retail apps, from wireframes to final screens.',
+        organization: 'Luma Collective',
+        text: 'Designed clear, accessible interfaces for everyday digital products.',
         mediaUrl: '/landing/hero/empty-space.jpg',
         mediaType: 'IMAGE',
-        period: '2017 — 2019',
+        period: '2019 — 2021',
         status: 'FINISHED',
         tasks: ['Mobile app screens', 'Prototypes for user tests'],
-        tools: ['Sketch', 'InVision'],
+        tools: ['Flow', 'Aura'],
         location: 'Lyon',
         employmentType: 'FULL_TIME',
       },

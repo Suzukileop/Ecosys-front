@@ -66,7 +66,7 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
       .filter(Boolean)
       .slice(0, 2);
     return parts.length > 0 ? parts.join(' ') : t('Lorem Ipsum');
-  }, [data.fullName, data.nameLead]);
+  }, [data.fullName, data.nameLead,t]);
   const specialty = resolveHeroSpecialtyValue(data.specialite);
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
@@ -117,10 +117,10 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
   const portraitAspectClass = portraitRadius === 'full' ? 'aspect-square' : 'aspect-[4/5]';
 
   const railItems = [
-    { label: t('Specialty'), value: specialty },
-    { label: t('Availability'), value: availability },
-    { label: t('Years of experience'), value: years },
-  ] as const;
+    { key:'specialty',label: data.presentation.heroIdentityIndexSpecialtyLabel?.trim()||t('Specialty'), value: specialty },
+    ...(data.presentation.showAvailabilityBadge===false?[]:[{key:'availability',label:data.presentation.heroIdentityIndexAvailabilityLabel?.trim()||t('Availability'),value:availability}]),
+    { key:'experience',label:data.presentation.heroIdentityIndexExperienceLabel?.trim()||t('Years of experience'), value: years },
+  ];
 
   const bioInk = `color-mix(in srgb, ${ink} 60%, transparent)`;
 
@@ -261,7 +261,7 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [displayName, bio, specialty, availability, years, showPortrait, swapBioName]);
+  }, [displayName, bio, specialty, availability, years, showPortrait, swapBioName,data.presentation.showAvailabilityBadge]);
 
   const nameHeading = (
     <h1
@@ -289,7 +289,7 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
   );
 
   const bioParagraph = (editorial = false) => (
-    <p
+    <p data-hero-bio
       className={`m-0 w-full font-sans tracking-[-0.02em] [text-wrap:pretty] text-[length:clamp(1.12rem,4.4vw,1.35rem)] lg:text-[length:clamp(1.2rem,1.75vw,1.6rem)] ${
         editorial
           ? 'pf-identity-index-bio font-medium leading-[1.6] lg:font-medium'
@@ -303,11 +303,11 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
 
   const metaRail = (
     <div className="pf-identity-index-rail mt-16 w-full">
-      <ul className="m-0 grid w-full list-none grid-cols-1 gap-y-2.5 p-0 text-left lg:grid-cols-[repeat(3,minmax(0,1fr))] lg:gap-x-8 lg:gap-y-0 lg:text-center">
+      <ul className={`m-0 grid w-full list-none grid-cols-1 gap-y-2.5 p-0 text-left ${railItems.length===3?'lg:grid-cols-3':'lg:grid-cols-2'} lg:gap-x-8 lg:gap-y-0 lg:text-center`}>
         {railItems.map((item) => (
-          <li key={item.label} className="pf-identity-index-col min-w-0">
+          <li key={item.key} data-identity-field={item.key} className="pf-identity-index-col min-w-0">
             <p
-              className="m-0 hidden font-sans font-medium uppercase tracking-[0.14em] lg:block lg:whitespace-nowrap"
+              className="m-0 hidden font-sans font-medium uppercase tracking-[0.14em] lg:block [overflow-wrap:anywhere]"
               style={{
                 color: muted,
                 fontSize: 'clamp(0.62rem, 0.72vw, 0.7rem)',
@@ -317,7 +317,8 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
               {item.label}
             </p>
             <p
-              className="m-0 font-sans font-normal tracking-[-0.015em] text-[length:clamp(0.92rem,3.4vw,1.05rem)] leading-[1.35] lg:mt-1 lg:font-medium lg:whitespace-nowrap lg:text-[length:clamp(0.82rem,1.05vw,0.98rem)] lg:leading-[1.25]"
+              className="m-0 font-sans font-normal tracking-[-0.015em] text-[length:clamp(0.92rem,3.4vw,1.05rem)] leading-[1.35] lg:mt-1 lg:font-medium [overflow-wrap:anywhere] lg:text-[length:clamp(0.82rem,1.05vw,0.98rem)] lg:leading-[1.25]"
+              data-hero-availability={item.key === 'availability' ? '' : undefined}
               style={{ color: ink }}
             >
               {item.value}

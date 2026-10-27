@@ -13,7 +13,7 @@ import {
 } from '@/components/portfolio/portfolio-editorial-layout';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const LABEL_OPACITY = 0.4;
+const LABEL_OPACITY = 0.6;
 
 const LANDING_CSS = `
 .pf-flanding-mode {
@@ -160,10 +160,10 @@ export function FooterDesignLanding({
     >
       <LandingStyles />
 
-      <div className={`relative z-[1] w-full pb-10 pt-20 sm:pt-24 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
-        <div className="flex w-full flex-col gap-14 md:flex-row md:items-start md:justify-between md:gap-x-16 lg:gap-x-24">
+      <div className={`relative z-[1] w-full pb-12 pt-20 sm:pb-14 sm:pt-24 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
+        <div className="grid w-full grid-cols-1 gap-14 md:grid-cols-2 md:items-start md:gap-x-12 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,1fr)_minmax(0,1fr)] lg:gap-x-24">
           {/* Left — identity, bio, bare social icons */}
-          <div className="flex min-w-0 max-w-md flex-col gap-6 text-left">
+          <div className="flex min-w-0 max-w-md flex-col gap-6 text-left md:col-span-2 lg:col-span-1">
             {showName || showAvatar ? (
               <div className="flex items-center gap-3">
                 {showAvatar && avatarUrl ? (
@@ -179,7 +179,7 @@ export function FooterDesignLanding({
                   </span>
                 ) : null}
                 {showName ? (
-                  <p className="pf-flanding-mode text-3xl font-semibold tracking-tight sm:text-[2.25rem]" style={{ color: ink }}>
+                  <p className="pf-flanding-mode text-3xl font-semibold tracking-tight sm:text-4xl" style={{ color: ink }}>
                     {creatorName}
                   </p>
                 ) : null}
@@ -188,7 +188,7 @@ export function FooterDesignLanding({
 
             {description ? (
               <p
-                className="max-w-sm leading-relaxed"
+                className="max-w-sm text-pretty leading-relaxed"
                 style={{ color: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {description}
@@ -196,7 +196,7 @@ export function FooterDesignLanding({
             ) : null}
 
             {visibleLinks.length > 0 ? (
-              <nav className="flex flex-wrap items-center gap-6 sm:gap-7" aria-label={t('Social')}>
+              <nav className="-ml-3 flex flex-wrap items-center gap-1" aria-label={t('Social')}>
                 {visibleLinks.map((link) => (
                   <a
                     key={link.id}
@@ -206,10 +206,10 @@ export function FooterDesignLanding({
                     aria-label={link.label}
                     title={link.label}
                     data-pf-no-color-transition=""
-                    className="inline-flex items-center justify-center"
+                    className="inline-flex h-11 w-11 items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current rounded-sm"
                     style={{ color: ink }}
                   >
-                    <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
+                    <FooterSocialLinkIcon link={link} bare iconClassName="h-[calc(1.25rem*var(--pf-footer-font-scale,1))] w-[calc(1.25rem*var(--pf-footer-font-scale,1))]" />
                   </a>
                 ))}
               </nav>
@@ -218,7 +218,7 @@ export function FooterDesignLanding({
 
           {/* Center — Contact coordinates, no glyphs */}
           {contactItems.length > 0 ? (
-            <div className="flex min-w-0 max-w-xs flex-col gap-5 text-left md:pt-1">
+            <div className="flex min-w-0 flex-col gap-5 text-left md:pt-3.5 lg:max-w-xs">
               {contactHeading ? (
                 <p
                   className="pf-flanding-mode font-semibold uppercase"
@@ -232,21 +232,21 @@ export function FooterDesignLanding({
                   {contactHeading}
                 </p>
               ) : null}
-              <ul className="flex flex-col gap-6">
+              <ul className="-mt-3 flex flex-col gap-1">
                 {contactItems.map((item) => (
                   <li key={item.id}>
                     {item.href ? (
                       <a
                         href={item.href}
                         data-pf-no-color-transition=""
-                        className="inline-block w-fit"
+                        className="inline-flex min-h-11 w-fit items-center break-words [overflow-wrap:anywhere] underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current rounded-sm"
                         style={{ color: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                       >
                         {item.label}
                       </a>
                     ) : (
                       <p
-                        className="w-fit max-w-[16rem]"
+                        className="w-fit max-w-full break-words [overflow-wrap:anywhere]"
                         style={{ color: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                       >
                         {item.label}
@@ -260,7 +260,7 @@ export function FooterDesignLanding({
 
           {/* Right — nav links, thin and airy */}
           {navLinks.length > 0 ? (
-            <div className="flex min-w-0 max-w-xs flex-col gap-5 text-left md:pt-1">
+            <div className="flex min-w-0 flex-col gap-5 text-left md:pt-3.5 lg:max-w-xs">
               {linksHeading ? (
                 <p
                   className="pf-flanding-mode font-semibold uppercase"
@@ -274,13 +274,13 @@ export function FooterDesignLanding({
                   {linksHeading}
                 </p>
               ) : null}
-              <ul className="flex flex-col gap-5">
+              <ul className="-mt-3 flex flex-col gap-1">
                 {navLinks.map((link) => {
                   const href = link.url;
                   const external = href.startsWith('http') || href.startsWith('mailto:');
                   const itemProps = {
                     'data-pf-no-color-transition': '',
-                    className: 'inline-block w-fit font-light',
+                    className: 'inline-flex min-h-11 w-fit items-center font-normal underline-offset-4 hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current rounded-sm',
                     style: {
                       color: ink,
                       fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',

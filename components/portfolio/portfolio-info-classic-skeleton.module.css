@@ -1,0 +1,8 @@
+.body { padding-block: 32px; }
+.bone { display:block; height:14px; border-radius:3px; background:var(--stack-skeleton-strong); animation:breathe 1.9s ease-in-out infinite; }
+.paragraph { display:flex; flex-direction:column; gap:20px; }
+.paragraph + .paragraph { margin-top:40px; }
+.meta { margin-top:14px; height:12px; background:var(--stack-skeleton-soft); }
+.body :global(.pf-about-classic-edu-row) { align-items:start; }
+@keyframes breathe { 0%,100% { opacity:.7; } 50% { opacity:1; } }
+@media(prefers-reduced-motion:reduce) { .bone { animation:none; } }

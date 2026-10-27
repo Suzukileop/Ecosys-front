@@ -1,0 +1,8 @@
+/* Hide scroll-only spacers in the still catalogue, without compressing content. */
+.preview :global(.pf-exp-cards-stack-end) {
+  display: none !important;
+}
+.preview :global(.pf-exp-cards-stack-item) {
+  position: static !important;
+  margin-bottom: 0 !important;
+}

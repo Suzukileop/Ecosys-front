@@ -1,0 +1,5 @@
+Generated with the built-in image_gen tool for the Frames catalogue thumbnail. Fictional demonstration imagery, not client work.
+
+Prompt: Use case: product-mockup. Asset type: photorealistic project image for a premium portfolio Frames thumbnail. Subject: refined sustainable skincare packaging identity, a matte sage-green cylindrical bottle beside a matching folded paper carton and one cream textured card on a pale warm ivory stone surface. No text or logos. Commercial editorial product photography with real paper fibers, subtly frosted glass, physically believable soft shadows and natural window daylight. Restrained sage green, deep olive and cream palette, distinct from terracotta and slate blue. Almost square composition with central safe margins so objects remain visible in a square crop; simple bold arrangement readable in a small thumbnail. No UI, no device, no browser, no collage, no lettering, no watermark; genuinely photographic not CGI.
+
+Background and typography follow the active portfolio palette. Only Frames uses this image.

@@ -1,0 +1,11 @@
+.root { container-type: inline-size; min-width: 0; overflow-wrap: anywhere; }
+.layout { display: grid; align-items: start; gap: 36px; }
+.copy { order: 1; min-width: 0; }
+.figure { order: 2; min-width: 0; width: 100%; max-width: 480px; overflow: hidden; border: 1px solid color-mix(in srgb, currentColor 12%, transparent); border-radius: 12px; }
+@media (max-width: 1023px) { .root { width: 100% !important; } }
+@container (min-width: 900px) {
+  .layout[data-split='true'] { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 48px; }
+  .layout[data-media-left='true'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); }
+  .layout[data-media-left='true'] > .copy { order: 2; }
+  .layout[data-media-left='true'] > .figure { order: 1; }
+}

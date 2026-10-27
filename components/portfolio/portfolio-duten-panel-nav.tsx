@@ -850,6 +850,7 @@ export function PortfolioDutenPanelNav({
         }}
       >
         <nav
+          data-pf-page-palette="" data-pf-nav-typography=""
           ref={headerRef}
           data-portfolio-nav-clearance-box
           aria-label={t('Portfolio navigation')}

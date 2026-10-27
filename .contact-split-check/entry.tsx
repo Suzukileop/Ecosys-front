@@ -1,0 +1,16 @@
+import React from 'react';
+import {ContactDesignLiquidDistortion} from '../components/portfolio/portfolio-contact-design-liquid-distortion';
+import {EditorialContactSection} from '../components/portfolio/portfolio-section-contact';
+import {portfolioEditorialGutterX} from '../components/portfolio/portfolio-editorial-layout';
+import {createRoot} from 'react-dom/client';
+import {ContactDesignSplitGrid} from '../components/portfolio/portfolio-contact-design-split-grid';
+import {DEFAULT_CONTACT_PRESENTATION,mergeContactPresentation} from '../components/portfolio/portfolio-contact-settings';
+import {createContactDesignLayoutResolver} from '../components/portfolio/portfolio-contact-design-layout';
+const root=createRoot(document.getElementById('root')!);
+const palettes={light:{'--pf-palette-texte-fort':'#201a10','--pf-palette-texte-muted':'#6b6047','--pf-palette-fond':'#faf6ee','--pf-palette-neutre':'#ffffff'},dark:{'--pf-palette-texte-fort':'#fafafa','--pf-palette-texte-muted':'#a3a3a3','--pf-palette-fond':'#0a0a0a','--pf-palette-neutre':'#171717'}};
+for(const [name,value] of Object.entries(palettes.light))document.body.style.setProperty(name,value);
+(window as any).defaultPortrait=()=>createContactDesignLayoutResolver(DEFAULT_CONTACT_PRESENTATION,'split-grid').isVisible('portrait');
+(window as any).renderSplit=(options:any={portrait:true,mode:'light'})=>{const presentation=mergeContactPresentation(DEFAULT_CONTACT_PRESENTATION,{cardDesign:'split-grid',designLayouts:{'split-grid':{elements:{portrait:{visible:options.portrait}}}}});document.body.style.background=options.mode==='dark'?'#0a0a0a':'#faf6ee';root.render(<div className={portfolioEditorialGutterX(options.gutter ?? 'medium')}><ContactDesignSplitGrid email="creator@noprobleme.com" phone="+261 34 00 000 00" locationLabel="Antananarivo, Madagascar" links={[]} layout={createContactDesignLayoutResolver(presentation,'split-grid')} colorMode={options.mode} heroImageUrl={options.noPhoto?null:'/api/storage/content/public/test/portrait.jpg'} heroImageAlt="Portrait Studio" accent="#c2410c" contentGutter={options.gutter ?? 'medium'}/></div>);};
+(window as any).renderSplit();
+(window as any).renderLiquid=(name:string)=>root.render(<div className={portfolioEditorialGutterX('narrow')}><ContactDesignLiquidDistortion email="creator@example.com" phone={null} locationLabel={null} links={[]} contentGutter="narrow" colorMode="light" layout={createContactDesignLayoutResolver({...DEFAULT_CONTACT_PRESENTATION,liquidDistortionWatermark:name},'liquid-distortion')}/></div>);
+(window as any).renderSectionMode=(mode:'light'|'dark',design='editorial-focus')=>root.render(<div className={portfolioEditorialGutterX('medium')}><EditorialContactSection email="creator@example.com" phone="+261 34 00 000 00" locationLabel="Antananarivo" links={[]} ctaHref="mailto:creator@example.com" globalColorMode={mode} paletteCssVars={palettes[mode] as React.CSSProperties} presentation={{...DEFAULT_CONTACT_PRESENTATION,cardDesign:design as any,activeColorMode:mode}}/></div>);

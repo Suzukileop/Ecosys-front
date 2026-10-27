@@ -75,7 +75,7 @@ function useFitWidthTextSize(
       const measuredWidth = textEl.getBoundingClientRect().width;
       if (measuredWidth <= 0) return;
 
-      const fitted = Math.min(REFERENCE_PX * (targetWidth / measuredWidth), MAX_WORDMARK_FONT_PX);
+      const fitted = Math.max(24, Math.min(REFERENCE_PX * (targetWidth / measuredWidth), MAX_WORDMARK_FONT_PX));
       textEl.style.fontSize = `${fitted}px`;
 
       // The mask is a tight `overflow: hidden` box, and the tight leading below means the glyphs
@@ -129,7 +129,7 @@ const DISPATCH_CSS = `
 }
 .pf-dispatch-field input::placeholder {
   color: currentColor;
-  opacity: 0.45;
+  opacity: 0.6;
 }
 .pf-dispatch-field input:focus {
   outline: none;
@@ -137,10 +137,23 @@ const DISPATCH_CSS = `
 /* Visible keyboard focus on the capsule itself — the input inside it is borderless, so the
    ring has to live on the shell or tabbing through the footer looks like nothing happened. */
 .pf-dispatch-field:focus-within {
-  box-shadow: 0 0 0 2px var(--pf-dispatch-focus, currentColor);
+  box-shadow: 0 0 0 2px currentColor;
 }
 .pf-dispatch-reveal {
   opacity: 0;
+}
+@media (scripting: none) {
+  .pf-dispatch-reveal {
+    opacity: 1;
+  }
+}
+.pf-dispatch-link:focus-visible,
+.pf-dispatch-chip:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.pf-dispatch-link:focus-visible {
+  transform: translateX(4px);
 }
 @media (prefers-reduced-motion: reduce) {
   .pf-dispatch-mode,
@@ -226,6 +239,7 @@ function DispatchSubmitButton({
         ref={btnRef}
         type="submit"
         disabled={pending}
+        aria-busy={pending}
         aria-label={t('Send my email address')}
         onMouseEnter={() => sweep({ x: 3, y: -3 }, 'power3.out')}
         onMouseLeave={() => sweep({ x: 0, y: 0 }, 'elastic.out(1, 0.55)')}
@@ -234,7 +248,7 @@ function DispatchSubmitButton({
         style={{ backgroundColor: accent, color: accentContrast }}
       >
         <span ref={arrowRef} aria-hidden className="inline-block leading-none">
-          {pending ? '·' : '↗'}
+          {pending ? '…' : '↗'}
         </span>
       </button>
     </div>
@@ -384,7 +398,7 @@ export function FooterDesignDispatch({
               play();
             }
           },
-          { threshold: 0.12 }
+          { threshold: 0, rootMargin: '0px 0px -5% 0px' }
         );
         observer.observe(root);
       }, root);
@@ -479,13 +493,13 @@ export function FooterDesignDispatch({
         data-pf-no-color-transition=""
         onMouseEnter={handleLinkEnter}
         onMouseLeave={handleLinkLeave}
-        className="pf-dispatch-link flex w-fit items-center py-1"
+        className="pf-dispatch-link flex min-h-11 w-fit max-w-full items-center py-1 [overflow-wrap:anywhere]"
         style={{ fontSize: bodySize }}
       >
         {item.label}
       </a>
     ) : (
-      <p key={item.id} className="w-fit py-1" style={{ fontSize: bodySize, opacity: 0.75 }}>
+      <p key={item.id} className="w-fit max-w-full py-1 [overflow-wrap:anywhere]" style={{ fontSize: bodySize, opacity: 0.75 }}>
         {item.label}
       </p>
     );
@@ -513,14 +527,14 @@ export function FooterDesignDispatch({
       <div
         className={`relative z-[1] w-full pb-16 pt-20 sm:pb-20 sm:pt-24 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}
       >
-        <div className="grid grid-cols-1 gap-12 lg:grid-cols-[minmax(0,1.15fr)_repeat(3,minmax(0,0.52fr))] lg:gap-0">
+        <div className="grid grid-cols-1 gap-12 md:grid-cols-2 md:gap-x-12 lg:grid-cols-[minmax(0,1.15fr)_repeat(3,minmax(0,0.52fr))] lg:gap-0">
           {/* ── Capture block ─────────────────────────────────────────────── */}
           <div className="pf-dispatch-reveal flex flex-col gap-6 lg:pr-16">
             {heading ? (
               <h2
                 data-pf-no-color-transition=""
                 className="pf-dispatch-mode max-w-[22ch] font-semibold leading-[1.15]"
-                style={{ color: ink, fontSize: `calc(${bodySize} * 1.6)` }}
+                style={{ color: ink, fontSize: `clamp(1.5rem, calc(${bodySize} * 1.6 + 0.6vw), 2.25rem)` }}
               >
                 {heading}
               </h2>
@@ -557,7 +571,7 @@ export function FooterDesignDispatch({
             <p
               role={status?.kind === 'error' ? 'alert' : 'status'}
               className="min-h-[1.25em] leading-[1.5]"
-              style={{ fontSize: labelSize, opacity: status ? 1 : 0.55 }}
+              style={{ fontSize: labelSize, opacity: status ? 1 : 0.7 }}
             >
               {status?.text ?? note ?? ''}
             </p>
@@ -588,7 +602,7 @@ export function FooterDesignDispatch({
                       style={{ borderColor: hairline, color: ink }}
                     >
                       <FooterSocialLinkIcon link={link} bare iconClassName="h-4 w-4" />
-                      <span aria-hidden className="text-[0.7em] leading-none opacity-70">
+                      <span aria-hidden className="text-xs leading-none opacity-70">
                         ↗
                       </span>
                     </a>
@@ -644,7 +658,7 @@ export function FooterDesignDispatch({
           descenders off names with a g, y or p in them. */}
       <div
         ref={wordmarkContainerRef}
-        className={`relative z-[1] w-full pt-10 sm:pt-14 ${portfolioEditorialGutterX(contentGutter)}`}
+        className={`relative z-[1] w-full pb-6 pt-10 sm:pb-8 sm:pt-14 ${portfolioEditorialGutterX(contentGutter)}`}
       >
         {/* The measured span below is `inline-block` on purpose: the fit pass compares its box to
             the container's content width, and a block-level box always reports that same width —
@@ -658,7 +672,7 @@ export function FooterDesignDispatch({
               style={{ color: ink, fontSize: 'clamp(3rem, 16vw, 20rem)' }}
             >
               {wordmark}
-              <sup className="ml-[0.06em] align-super text-[0.16em] font-normal tracking-normal">®</sup>
+              <sup aria-hidden className="ml-[0.06em] align-super text-[0.16em] font-normal tracking-normal">®</sup>
             </span>
           </span>
         </div>

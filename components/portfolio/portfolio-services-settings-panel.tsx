@@ -1,7 +1,19 @@
 'use client';
+import { PortfolioDesignLivePreview, usePortfolioDesignPreviewSource } from './PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
+import {DesignCatalogueCard} from './portfolio-design-catalogue-card';
+import {StackPreviewSkeleton} from './portfolio-stack-preview-skeleton';
+import {StackHeaderSkeleton} from './portfolio-stack-header-skeleton';
+import {useThumbnailTheme} from './portfolio-thumbnail-theme';
 
+import { SectionPaletteFamilyControl } from '@/components/portfolio/portfolio-section-palette-family';
+import { TextSizeSlider } from '@/components/portfolio/portfolio-text-size-slider';
+import { ColorSwatchRow } from '@/components/portfolio/portfolio-color-swatch-row';
+import { resolveThumbnailTheme } from './portfolio-thumbnail-theme';
 import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
-import { createContext, useContext, useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { createContext, useContext, useEffect, useId, useMemo, useState, type CSSProperties, type ReactNode } from 'react';
+import { useContentMediaUpload } from '@/components/creator/creator-content-media';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -27,6 +39,8 @@ import {
   PORTFOLIO_SERVICES_LIST_BULLET_OPTIONS,
   SERVICES_LIST_BULLET_DESIGNS,
   type PortfolioServicesListBullet,
+  PORTFOLIO_SERVICES_GLOW_COLOR_OPTIONS,
+  PORTFOLIO_SERVICES_GLOW_INTENSITY_OPTIONS,
   PORTFOLIO_SERVICES_HOVER_EFFECT_OPTIONS,
   SERVICES_FEATURED_DEFAULT_OPACITY,
   type ServicesFeaturedDesignKey,
@@ -36,6 +50,7 @@ import {
   PORTFOLIO_SERVICES_PRICING_CTA_LINK_MODE_OPTIONS,
   PORTFOLIO_SERVICES_PRICING_CTA_SECTION_OPTIONS,
   PORTFOLIO_SERVICES_PRICING_CTA_SHAPE_OPTIONS,
+  PORTFOLIO_SERVICES_PRICING_CTA_HOVER_OPTIONS,
   PORTFOLIO_SERVICES_PRICING_CTA_STYLE_OPTIONS,
   type PortfolioServicesPricingStyleSettings,
 } from '@/components/portfolio/portfolio-services-pricing-style';
@@ -49,10 +64,15 @@ import {
   PORTFOLIO_SERVICES_CAPABILITIES_FRAME_OPTIONS,
   type PortfolioServicesCapabilitiesSettings,
   DEFAULT_SERVICES_CASCADE_SETTINGS,
+  PORTFOLIO_SERVICES_BAND_INDEX_HOVER_COLOR_OPTIONS,
   PORTFOLIO_SERVICES_BAND_INDEX_HOVER_FILL_OPTIONS,
-  PORTFOLIO_SERVICES_BAND_INDEX_PREVIEW_OPTIONS,
+  PORTFOLIO_SERVICES_BAND_INDEX_OPEN_ON_OPTIONS,
   PORTFOLIO_SERVICES_BAND_INDEX_TASKS_STYLE_OPTIONS,
+  PORTFOLIO_SERVICES_BAND_INDEX_TOGGLE_STYLE_OPTIONS,
+  PORTFOLIO_SERVICES_BAND_INDEX_PREVIEW_OPTIONS,
   PORTFOLIO_SERVICES_BAND_INDEX_TITLE_SIZE_OPTIONS,
+  PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS,
+  PORTFOLIO_SERVICES_INDEX_LIST_CTA_DESIGN_OPTIONS,
   PORTFOLIO_SERVICES_CASCADE_HEIGHT_OPTIONS,
   PORTFOLIO_SERVICES_CASCADE_MEDIA_SIDE_OPTIONS,
   PORTFOLIO_SERVICES_CASCADE_STACK_OPTIONS,
@@ -64,6 +84,7 @@ import {
   PORTFOLIO_SERVICES_ICON_CARDS_ICON_COLOR_OPTIONS,
   PORTFOLIO_SERVICES_ICON_CARDS_ICON_SHAPE_OPTIONS,
   PORTFOLIO_SERVICES_ICON_CARDS_ICON_SIZE_OPTIONS,
+  PORTFOLIO_SERVICES_ICON_CARDS_ICON_STYLE_OPTIONS,
   PORTFOLIO_SERVICES_ICON_CARDS_STYLE_OPTIONS,
   PORTFOLIO_SERVICES_ICON_CARDS_TASKS_STYLE_OPTIONS,
   type PortfolioServicesIconCardsTasksStyle,
@@ -73,6 +94,7 @@ import {
   PORTFOLIO_SERVICES_MEDIA_COLUMNS_COUNT_OPTIONS,
   PORTFOLIO_SERVICES_MEDIA_COLUMNS_GAP_OPTIONS,
   PORTFOLIO_SERVICES_MEDIA_COLUMNS_HOVER_OPTIONS,
+  PORTFOLIO_SERVICES_ICON_CARDS_RADIUS_OPTIONS,
   PORTFOLIO_SERVICES_MEDIA_COLUMNS_RADIUS_OPTIONS,
   PORTFOLIO_SERVICES_MEDIA_COLUMNS_RATIO_OPTIONS,
   PORTFOLIO_SERVICES_MEDIA_COLUMNS_TEXT_ALIGN_OPTIONS,
@@ -81,9 +103,9 @@ import {
   type PortfolioServicesMediaColumnsSettings,
   DEFAULT_SERVICES_PRICING_AURORA_SETTINGS,
   DEFAULT_SERVICES_PRICING_CARDS_SETTINGS,
-  PORTFOLIO_SERVICES_INDEX_LIST_HOVER_OPTIONS,
   PORTFOLIO_SERVICES_PRICING_CARDS_COLUMNS_OPTIONS,
   PORTFOLIO_SERVICES_PRICING_CARDS_LAYOUT_OPTIONS,
+  PORTFOLIO_SERVICES_PRICING_CARDS_WIDTH_OPTIONS,
   type PortfolioServicesPricingCardsColumns,
   type PortfolioServicesPricingCardsLayout,
   PORTFOLIO_SERVICES_INDEX_LIST_LAYOUT_OPTIONS,
@@ -112,6 +134,7 @@ import {
   type PortfolioServicesHeaderTitleSize,
   type PortfolioServicesHeaderTitleWeight,
   type PortfolioServicesPricingAuroraColumns,
+  type PortfolioServicesPricingAuroraFeaturedPosition,
   type PortfolioServicesSectionDesign,
   type PortfolioServicesSectionSettings,
   PORTFOLIO_SERVICES_PREMIUM_FONT_SIZE_OPTIONS,
@@ -119,15 +142,23 @@ import {
 import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
 import {
   SERVICE_ICON_OPTIONS,
+  SERVICE_ICON_UPLOAD_MAX_BYTES,
+  buildImageIcon,
+  buildLibraryIcon,
+  libraryPaint,
+  serviceIconFilled,
+  parseImageIcon,
+  parseLibraryIcon,
   resolveServiceIconKey,
   serviceIconPaths,
   type ServiceIconChoice,
   type ServiceIconKey,
+  type ServiceIconRef,
+  type ServiceIconStyle,
 } from '@/components/portfolio/portfolio-services-icon-cards-icons';
 import {
   SERVICES_OPT_IN_FIELDS,
   servicesDesignAllows,
-  servicesDesignHasOwnFrame,
   servicesIsOptIn,
   servicesOptInBlock,
   type ServicesOptInElement,
@@ -148,10 +179,7 @@ import { msg } from '@/lib/i18n/config';
 import {
   NpBackRow,
   NpCollapsibleSection,
-  NpOptionCard,
-  NpOptionCardGroup,
   NpPanelShell,
-  NpPickerRow,
   NpToggleRow,
   type NpPanelChrome,
 } from '@/components/portfolio/portfolio-nav-panel-ui';
@@ -201,23 +229,8 @@ function asServicesPatch(
 /** Same animated switch as Stack/Contact/Info's settings panels — shared settings-UI chrome. */
 function ServicesSwitchTrack({ checked }: { checked: boolean }) {
   return (
-    <span
-      className="relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-      style={{
-        backgroundColor: checked
-          ? 'var(--pf-palette-texte-fort, #171717)'
-          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 22%, var(--pf-palette-fond, #ffffff))',
-      }}
-    >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{
-          left: checked ? '1.125rem' : '0.125rem',
-          backgroundColor: checked
-            ? 'var(--pf-palette-fond, #ffffff)'
-            : 'var(--pf-palette-texte-fort, #171717)',
-        }}
-      />
+    <span className="np-switch" aria-checked={checked} aria-hidden data-switch-track="">
+      <span className="np-switch-knob" />
     </span>
   );
 }
@@ -225,7 +238,7 @@ function ServicesSwitchTrack({ checked }: { checked: boolean }) {
 /** Small keyboard-accessible "i" tooltip — same mechanism as Stack/Contact/Info. */
 function ServicesInfoTooltip({ text }: { text: string }) {
   const t = useT();
-  const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
     <span className="relative inline-flex shrink-0">
@@ -590,51 +603,18 @@ function ServicesDesignWireframe({ design }: { design: PortfolioServicesSectionD
 }
 
 /** The "Section design" picker — collapses to the selected design; click to expand and change. */
-function ServicesDesignChoiceGrid({
-  value,
-  onChange,
-  showGrid,
-  setShowGrid,
-}: {
-  value: PortfolioServicesSectionDesign;
-  onChange: (value: PortfolioServicesSectionDesign) => void;
-  /** Owned by the panel so the selected design's options hide while the catalogue is open. */
-  showGrid: boolean;
-  setShowGrid: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selected =
-    PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS[0];
-  if (showGrid) {
-    return (
-      <div className="np-stack">
-        <NpBackRow title={t('Services design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
-          {PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.map((option) => {
-            return (
-              <NpOptionCard
-                key={option.value}
-                selected={option.value === value}
-                title={t(option.label)}
-                subtitle={t(option.description)}
-                illustration={<ServicesDesignWireframe design={option.value} />}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            );
-          })}
-        </NpOptionCardGroup>
-      </div>
-    );
-  }
-
-  return (
-    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<ServicesDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
-  );
+function ServicesDesignChoiceGrid({value,onChange,showGrid,setShowGrid}:{value:PortfolioServicesSectionDesign;onChange:(value:PortfolioServicesSectionDesign)=>void;showGrid:boolean;setShowGrid:(open:boolean)=>void}){
+ const t=useT();
+ const previewSource=usePortfolioDesignPreviewSource();
+ const theme=useThumbnailTheme('services');
+ const selected=PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.find(option=>option.value===value)??PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS[0];
+ if(!showGrid)return <NpBackRow title={t(selected.label)} onBack={()=>setShowGrid(true)}/>;
+ return <div className="flex flex-col gap-8" aria-label={t('Choose a design')}>{PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.map(option=>{
+  const skeleton=<StackPreviewSkeleton section="services"><ServicesDesignWireframe design={option.value}/></StackPreviewSkeleton>;
+  return <DesignCatalogueCard key={option.value} label={t(option.label)} selected={value===option.value} previewBackground={theme.background} onSelect={()=>onChange(option.value)} onCustomize={()=>{if(value!==option.value)onChange(option.value);setShowGrid(false);}}><span className="relative block aspect-[3/1] w-full" style={{backgroundColor:theme.background}}>{previewSource?<PortfolioDesignLivePreview src={withDesignPreview(previewSource.portfolioPath,{section:'services',design:option.value})+'&previewRevision=services-design-compact-v1'} settings={previewSource.settings} fill loadMargin="48px 0px" skeleton={skeleton} animateSkeleton={false} backgroundColor={theme.background}/>:skeleton}</span></DesignCatalogueCard>;
+ })}</div>;
 }
+
 
 function ServicesManualColorField({
   label,
@@ -686,8 +666,7 @@ function ServicesColorField({
   label: string;
   value: string;
 }) {
-  const t = useT();
-  if (services.useHeroPalette === false) {
+    if (services.useHeroPalette === false) {
     return (
       <ServicesManualColorField
         label={label}
@@ -700,34 +679,19 @@ function ServicesColorField({
   const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, services.servicesPalette);
   const bindings = mergeServicesColorBindings(DEFAULT_SERVICES_COLOR_BINDINGS, services.servicesColorBindings);
   const token = bindings[slot];
-  const resolved = resolveHeroPaletteColor(palette, token);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <p className="pf-stack-block-label">{label}</p>
-        <span
-          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-[color:var(--pf-palette-bordure)]"
-          style={{ backgroundColor: resolved }}
-          title={resolved}
-          aria-hidden
-        />
-      </div>
-      <select
-        value={token}
-        onChange={(event) =>
-          onChange(asServicesPatch(patchServicesColorBinding(services, slot, event.target.value as HeroPaletteTokenId)))
-        }
-        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-hidden"
-        aria-label={t('{label} palette token', { label })}
-      >
-        {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {t(option.label)}
-          </option>
-        ))}
-      </select>
-    </div>
+    return (
+    <ColorSwatchRow
+      label={label}
+      options={PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+        color: resolveHeroPaletteColor(palette, option.value),
+      }))}
+      value={token}
+      onChange={(next) =>
+        onChange(asServicesPatch(patchServicesColorBinding(services, slot, next as HeroPaletteTokenId)))
+      }
+    />
   );
 }
 
@@ -855,7 +819,7 @@ function ServicesOptionGrid<T extends string | number>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={t(option.description)}
+              title={option.description ? t(option.description) : undefined}
               onClick={() => onChange(option.value)}
               className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
                 active ? SERVICES_STYLE_PILL_ACTIVE : SERVICES_STYLE_PILL_IDLE
@@ -962,7 +926,15 @@ function servicesSplitSideGlyph(side: 'left' | 'right' | 'zigzag'): ReactNode {
 }
 
 /** One service icon's strokes for a settings tile (drawn in a 24×24 box). */
-function servicesIconGlyph(key: ServiceIconKey): ReactNode {
+function servicesIconGlyph(key: ServiceIconKey, style: ServiceIconStyle = 'outline'): ReactNode {
+  const filled = style === 'filled' ? serviceIconFilled(key) : null;
+  if (filled) {
+    return (
+      <svg x="0" y="0" width="24" height="24" viewBox={`0 0 ${filled.width} ${filled.height}`} fill="currentColor">
+        <path d={filled.path} />
+      </svg>
+    );
+  }
   return (
     <g stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" fill="none">
       {serviceIconPaths(key)}
@@ -978,24 +950,10 @@ function servicesIconAutoGlyph(): ReactNode {
   );
 }
 
-/** Icon Cards card style on the 64×34 stage: shadow / hairline / tint / no card. */
+/** Icon Cards card style on the 64×34 stage: hairline / no card. */
 function servicesIconCardsStyleGlyph(style: PortfolioServicesIconCardsStyle): ReactNode {
   return (
     <g>
-      {style === 'elevated' ? (
-        <rect className="pf-stack-mini-mute" x="17" y="8" width="32" height="22" rx="4" opacity={0.6} />
-      ) : null}
-      {style === 'elevated' || style === 'tinted' ? (
-        <rect
-          className={style === 'tinted' ? 'pf-stack-mini-accent' : 'pf-stack-mini-stage'}
-          x="15"
-          y="5"
-          width="34"
-          height="23"
-          rx="4"
-          opacity={style === 'tinted' ? 0.3 : 1}
-        />
-      ) : null}
       {style === 'outlined' ? (
         <rect className="pf-stack-mini-ring" x="15" y="5" width="34" height="23" rx="4" />
       ) : null}
@@ -1033,7 +991,6 @@ function servicesMediaColumnsRadiusGlyph(radius: PortfolioServicesMediaColumnsRa
   return <rect className="pf-stack-mini-ink" x={20} y={5} width={24} height={24} rx={rx[radius]} />;
 }
 
-/** Mini previews for Index List's task presentations (64×34 stage). */
 /** Band Index tasks styles reuse the Index list wireframes; Checklist gets its own. */
 function servicesBandTasksGlyph(style: PortfolioServicesBandIndexTasksStyle): ReactNode {
   if (style === 'checklist') {
@@ -1057,6 +1014,7 @@ function servicesBandTasksGlyph(style: PortfolioServicesBandIndexTasksStyle): Re
   return servicesIndexListTasksGlyph(map[style]);
 }
 
+/** Mini previews for Index List's task presentations (64×34 stage). */
 function servicesIndexListTasksGlyph(style: PortfolioServicesIndexListTasksStyle): ReactNode {
   switch (style) {
     case 'ledger':
@@ -1600,150 +1558,27 @@ function ServicesHeaderBlock({ children }: { children: ReactNode }) {
   return <div className="border-t border-[color:var(--pf-palette-bordure)] pt-9">{children}</div>;
 }
 
-/** Mini wireframes for the 8 Header design picker cards — same ServicesMiniSlide mechanism
- *  as the generic shapes Stack/Contact use for their own Header design picker. */
+/** Large theme-aware anatomy, shared with the other header catalogues. */
 function ServicesHeaderDesignWireframe({ design }: { design: PortfolioServicesHeaderDesign }) {
-  const t = useT();
-  switch (design) {
-    case 'editorial':
-      return (
-        <ServicesMiniSlide>
-          <rect className="pf-stack-mini-accent" x="10" y="16" width="18" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="10" y="26" width="64" height="9" rx="2" />
-          <rect className="pf-stack-mini-mute" x="10" y="42" width="46" height="4" rx="2" />
-        </ServicesMiniSlide>
-      );
-    case 'marquee':
-      return (
-        <ServicesMiniSlide>
-          <text
-            x="60"
-            y="34"
-            fontSize={22}
-            fontWeight={800}
-            textAnchor="middle"
-            opacity={0.14}
-            className="pf-stack-mini-ink"
-          >
-            {t('SERVICES')}
-          </text>
-          <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="10" rx="2" />
-        </ServicesMiniSlide>
-      );
-    case 'index':
-      return (
-        <ServicesMiniSlide>
-          <rect className="pf-stack-mini-mute" x="10" y="12" width="4" height="4" />
-          <rect className="pf-stack-mini-mute" x="20" y="13" width="90" height="1" />
-          <ServicesMiniType x={10} y={40} size={22}>
-            04
-          </ServicesMiniType>
-          <rect className="pf-stack-mini-mute" x="46" y="22" width="1" height="18" />
-          <rect className="pf-stack-mini-ink" x="54" y="24" width="46" height="7" rx="2" />
-        </ServicesMiniSlide>
-      );
-    case 'accent-count':
-      return (
-        <ServicesMiniSlide>
-          <rect className="pf-stack-mini-accent" x="10" y="12" width="26" height="8" rx="4" />
-          <rect className="pf-stack-mini-mute" x="10" y="26" width="40" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="10" y="33" width="60" height="7" rx="2" />
-        </ServicesMiniSlide>
-      );
-    case 'serif-lead':
-      return (
-        <ServicesMiniSlide>
-          <rect className="pf-stack-mini-mute" x="10" y="14" width="20" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="10" y="24" width="76" height="11" rx="2" />
-        </ServicesMiniSlide>
-      );
-    case 'billboard':
-      return (
-        <ServicesMiniSlide>
-          <text
-            x="60"
-            y="30"
-            fontSize={26}
-            fontWeight={900}
-            textAnchor="middle"
-            opacity={0.1}
-            className="pf-stack-mini-ink"
-          >
-            {t('SERVICES')}
-          </text>
-          <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="18" y="42" width="40" height="3" rx="1.5" />
-        </ServicesMiniSlide>
-      );
-    case 'masthead':
-      return (
-        <ServicesMiniSlide>
-          <rect className="pf-stack-mini-mute" x="10" y="12" width="100" height="1" />
-          <rect className="pf-stack-mini-ink" x="10" y="20" width="100" height="12" rx="2" />
-          <rect className="pf-stack-mini-mute" x="10" y="38" width="100" height="1" />
-        </ServicesMiniSlide>
-      );
-    case 'split-heading':
-      return (
-        <ServicesMiniSlide>
-          <rect className="pf-stack-mini-ink" x="10" y="20" width="58" height="10" rx="2" />
-          <rect className="pf-stack-mini-mute" x="86" y="18" width="24" height="3" rx="1.5" />
-        </ServicesMiniSlide>
-      );
-    default: {
-      const _exhaustive: never = design;
-      return _exhaustive;
-    }
-  }
+ return <StackPreviewSkeleton section="services"><StackHeaderSkeleton design={design} compact word="SERVICES" title="Nos services" lead="Nos" count="04"/></StackPreviewSkeleton>;
 }
 
 /** Same collapsed-preview / expand-to-grid mechanism as Stack/Contact's own Header design picker. */
-function ServicesHeaderChoiceGrid({
-  value,
-  onChange,
-  open: showGrid,
-  onOpenChange: setShowGrid,
-}: {
-  value: PortfolioServicesHeaderDesign;
-  onChange: (value: PortfolioServicesHeaderDesign) => void;
-  /** Whether the catalog of designs is open (owned by the panel so it can hide the settings below). */
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selected =
-    PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS[0];
-
-  if (showGrid) {
-    return (
-      <div className="np-stack">
-        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
-          {PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS.map((option) => {
-            return (
-              <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-                <NpOptionCard
-                  selected={option.value === value}
-                  title={t(option.label)}
-                  illustration={<ServicesHeaderDesignWireframe design={option.value} />}
-                  onClick={() => {
-                    onChange(option.value);
-                    setShowGrid(false);
-                  }}
-                />
-              </PortfolioHeaderDesignOption>
-            );
-          })}
-        </NpOptionCardGroup>
-      </div>
-    );
-  }
-
-  return (
-    <NpPickerRow label={t('Header design')} value={t(selected.label)} thumbnail={<ServicesHeaderDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
-  );
+function ServicesHeaderChoiceGrid({value,onChange,open:showGrid,onOpenChange:setShowGrid}:{value:PortfolioServicesHeaderDesign;onChange:(value:PortfolioServicesHeaderDesign)=>void;open:boolean;onOpenChange:(open:boolean)=>void}){
+ const t=useT();
+ const previewSource=usePortfolioDesignPreviewSource();
+ const theme=useThumbnailTheme('services');
+ const selected=PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS.find(option=>option.value===value)??PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS[0];
+ if(!showGrid)return <NpBackRow title={t(selected.label)} onBack={()=>setShowGrid(true)}/>;
+ return <div className="flex flex-col gap-8" aria-label={t('Choose a header')}>
+  {PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS.map(option=>{
+   if(option.value==='none')return <button key={option.value} type="button" aria-pressed={value===option.value} onClick={()=>onChange(option.value)} className="flex min-h-12 w-full items-center rounded-xl border px-4 text-left text-sm font-medium transition-colors hover:bg-neutral-500/5 focus-visible:outline-2 focus-visible:outline-offset-2" style={{borderColor:value===option.value?'var(--pf-palette-principal,#f97316)':'color-mix(in srgb,currentColor 18%,transparent)'}}>{t(option.label)}</button>;
+   const skeleton=<ServicesHeaderDesignWireframe design={option.value}/>;
+   return <PortfolioHeaderDesignOption key={option.value} design={option.value}><DesignCatalogueCard label={t(option.label)} selected={value===option.value} previewBackground={theme.background} onSelect={()=>onChange(option.value)} onCustomize={()=>{if(value!==option.value)onChange(option.value);setShowGrid(false);}}><span className="relative block aspect-[3/1] w-full" style={{backgroundColor:theme.background}}>{previewSource?<PortfolioDesignLivePreview src={withDesignPreview(previewSource.portfolioPath,{section:'servicesHeader',design:option.value})+'&previewRevision=services-header-compact-v4'} settings={previewSource.settings} fill loadMargin="48px 0px" skeleton={skeleton} animateSkeleton={false} backgroundColor={theme.background}/>:skeleton}</span></DesignCatalogueCard></PortfolioHeaderDesignOption>;
+  })}
+ </div>;
 }
+
 
 const SERVICES_HEADER_MARGIN_BOTTOM_OPTIONS = [
   { value: 'sm' as const, label: msg('Small') },
@@ -1817,8 +1652,8 @@ function ServicesHeaderSharedAdvancedControls({
   );
 }
 
-const SERVICES_RADIUS_GLYPH_PX: Record<string, number> = { auto: 6, square: 0, soft: 3, rounded: 7, xl: 11 };
-const SERVICES_BORDER_GLYPH_STROKE: Record<string, number> = { auto: 1.6, none: 0, thin: 1, medium: 2.2, thick: 3.6 };
+const SERVICES_RADIUS_GLYPH_PX: Record<string, number> = { auto: 6, square: 0, soft: 3, rounded: 6.5, xl: 9 };
+const SERVICES_BORDER_GLYPH_STROKE: Record<string, number> = { auto: 1.6, none: 0, thin: 1, medium: 2.6, thick: 4.6 };
 
 function servicesRadiusGlyph(value: string): ReactNode {
   return (
@@ -1876,7 +1711,7 @@ function ServicesLayoutSettingsBand({
       aria-labelledby={id}
     >
       {title ? (
-        <h3 id={id} className="pf-exp-layout-settings-title">
+        <h3 id={id} className="sr-only">
           {title}
         </h3>
       ) : (
@@ -2027,6 +1862,13 @@ function ServicesOrderButtonFields({
         options={PORTFOLIO_SERVICES_PRICING_CTA_STYLE_OPTIONS}
         value={style.ctaStyle}
         onChange={(ctaStyle) => setStyle({ ctaStyle })}
+        columns={4}
+      />
+      <ServicesOptionGrid
+        label={t('Button hover')}
+        options={PORTFOLIO_SERVICES_PRICING_CTA_HOVER_OPTIONS}
+        value={style.ctaHover ?? 'auto'}
+        onChange={(ctaHover) => setStyle({ ctaHover })}
         columns={4}
       />
       <ServicesOptionGrid
@@ -2565,7 +2407,7 @@ function servicesFeaturedGroup(
     {
       id: 'featured-source',
       label: 'Featured card',
-      info: 'Highlights one card. Pick it here, or let the services you marked Popular in the Services editor decide.',
+      info: 'Highlights one card — pick which one below, or None.',
       value: servicesLabelOf(PORTFOLIO_SERVICES_FEATURED_SOURCE_OPTIONS, style.featuredSource),
       render: (density) => (
         <SvChoiceTiles
@@ -2601,18 +2443,6 @@ function servicesFeaturedGroup(
         ) : (
           <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">Add a service to choose which card is featured.</p>
         ),
-    });
-  }
-  if (style.featuredSource === 'service') {
-    items.push({
-      id: 'featured-from-flag',
-      label: 'Marked popular',
-      wide: true,
-      render: () => (
-        <p className="text-xs leading-relaxed text-[color:var(--pf-palette-texte-muted)]">
-          The first service you ticked <strong>Popular</strong> in the Services editor is featured.
-        </p>
-      ),
     });
   }
   if (style.featuredSource !== 'none') {
@@ -2684,8 +2514,8 @@ function servicesFeaturedGroup(
   return { id: 'featured', title: 'Featured card', items };
 }
 
-/** "Price" group: the price's period suffix ("/ month") — from each service's own billing period,
- *  one label for all, or hidden. Whether the price shows at all is General → Price. */
+/** General → "Price" group: the price's period suffix ("/ month") — from each service's own billing
+ *  period, one label for all, or hidden. Whether the price shows at all is General → Content shown. */
 function servicesPriceGroup(
   services: PortfolioServicesSectionSettings,
   onChange: ServicesSettingsChange
@@ -2746,7 +2576,7 @@ function servicesCardHoverGroup(
       {
         id: 'hover-effect',
         label: 'Hover effect',
-        info: 'Lift raises the card, Glow follows the cursor with a soft light, Tilt leans it toward the cursor. Desktop mouse only.',
+        info: 'Lift raises the card, Glow follows the cursor with a soft light, Tilt leans it toward the cursor, Tilt + Glow does both. Desktop mouse only.',
         value: servicesLabelOf(PORTFOLIO_SERVICES_HOVER_EFFECT_OPTIONS, style.hoverEffect),
         render: (density) => (
           <SvChoiceTiles
@@ -2758,6 +2588,40 @@ function servicesCardHoverGroup(
           />
         ),
       },
+      ...(style.hoverEffect === 'glow' || style.hoverEffect === 'both'
+        ? [
+            {
+              id: 'hover-glow-color',
+              label: 'Glow color',
+              info: 'Default follows the card text. The others use your color palette.',
+              value: servicesLabelOf(PORTFOLIO_SERVICES_GLOW_COLOR_OPTIONS, style.glowColor),
+              render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                <SvChoiceTiles
+                  label="Glow color"
+                  density={density}
+                  options={PORTFOLIO_SERVICES_GLOW_COLOR_OPTIONS}
+                  value={style.glowColor}
+                  onChange={(glowColor) => onChange({ pricingStyle: { ...style, glowColor } })}
+                />
+              ),
+            },
+            {
+              id: 'hover-glow-intensity',
+              label: 'Glow intensity',
+              info: 'How opaque the light is.',
+              value: servicesLabelOf(PORTFOLIO_SERVICES_GLOW_INTENSITY_OPTIONS, style.glowIntensity),
+              render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                <SvChoiceTiles
+                  label="Glow intensity"
+                  density={density}
+                  options={PORTFOLIO_SERVICES_GLOW_INTENSITY_OPTIONS}
+                  value={style.glowIntensity}
+                  onChange={(glowIntensity) => onChange({ pricingStyle: { ...style, glowIntensity } })}
+                />
+              ),
+            },
+          ]
+        : []),
     ],
   };
 }
@@ -2879,60 +2743,85 @@ function servicesCardBorderItems(
   return items;
 }
 
-/** Design → Background → "Background frame" (shared `pricingStyle.showFrame`). */
-function servicesBackgroundFrameGroup(
+/**
+ * General → "Tasks layout": how the task list is drawn. Only Icon Cards, Index List and Band Index
+ * have alternative layouts, so the control adapts to the active design and is hidden for the others.
+ */
+function servicesTasksLayoutControl(
   services: PortfolioServicesSectionSettings,
-  onChange: ServicesSettingsChange
-): SettingGroup {
-  const style = services.pricingStyle ?? DEFAULT_SERVICES_PRICING_STYLE_SETTINGS;
-  return {
-    id: 'background',
-    title: 'Background',
-    items: [
-      {
-        id: 'frame',
-        label: 'Background frame',
-        info: 'Paints a full-width backdrop behind the services. Off by default so your page background shows through.',
-        toggle: {
-          checked: style.showFrame,
-          onChange: (showFrame) => onChange({ pricingStyle: { ...style, showFrame } }),
-        },
-      },
-    ],
-  };
+  onChange: ServicesSettingsChange,
+  label: string
+): ReactNode {
+  const tiles = (node: ReactNode) => <div className="pb-3 pt-1">{node}</div>;
+  switch (services.sectionDesign) {
+    case 'services-icon-cards': {
+      const cards = services.iconCards ?? DEFAULT_SERVICES_ICON_CARDS_SETTINGS;
+      return tiles(
+        <SvChoiceTiles
+          label={label}
+          density="regular"
+          glyphViewBox="0 0 64 34"
+          stage
+          options={PORTFOLIO_SERVICES_ICON_CARDS_TASKS_STYLE_OPTIONS.map((option) => ({
+            ...option,
+            glyph: servicesIconCardsTasksGlyph(option.value),
+          }))}
+          value={cards.tasksStyle}
+          onChange={(tasksStyle) => onChange({ iconCards: { ...cards, tasksStyle } })}
+        />
+      );
+    }
+    case 'services-index-list': {
+      const list = services.indexList ?? DEFAULT_SERVICES_INDEX_LIST_SETTINGS;
+      return tiles(
+        <SvChoiceTiles
+          label={label}
+          density="regular"
+          glyphViewBox="0 0 64 34"
+          stage
+          options={PORTFOLIO_SERVICES_INDEX_LIST_TASKS_STYLE_OPTIONS.map((option) => ({
+            ...option,
+            glyph: servicesIndexListTasksGlyph(option.value),
+          }))}
+          value={list.tasksStyle}
+          onChange={(tasksStyle) => onChange({ indexList: { ...list, tasksStyle } })}
+        />
+      );
+    }
+    case 'services-band-index': {
+      const band = services.bandIndex ?? DEFAULT_SERVICES_BAND_INDEX_SETTINGS;
+      return tiles(
+        <SvChoiceTiles
+          label={label}
+          density="regular"
+          glyphViewBox="0 0 64 34"
+          stage
+          columns={3}
+          options={PORTFOLIO_SERVICES_BAND_INDEX_TASKS_STYLE_OPTIONS.map((option) => ({
+            ...option,
+            glyph: servicesBandTasksGlyph(option.value),
+          }))}
+          value={band.tasksStyle ?? 'rows'}
+          onChange={(tasksStyle) => onChange({ bandIndex: { ...band, tasksStyle } })}
+        />
+      );
+    }
+    default:
+      return null;
+  }
 }
 
-/** Cards / Order button / Background groups shared by the five pricing designs. */
+/** Cards group shared by the pricing designs. */
 function servicesPricingStyleGroups(
   services: PortfolioServicesSectionSettings,
   onChange: ServicesSettingsChange
 ): SettingGroup[] {
-  const style = services.pricingStyle ?? DEFAULT_SERVICES_PRICING_STYLE_SETTINGS;
-  const setStyle = (patch: Partial<PortfolioServicesPricingStyleSettings>) =>
-    onChange({ pricingStyle: { ...style, ...patch } });
   const cards: SettingItem[] = [
     servicesCardRadiusItem(services, onChange),
     ...servicesCardBorderItems(services, onChange),
   ];
 
-  const groups: SettingGroup[] = [
-    { id: 'cards', title: 'Cards', items: cards },
-  ];
-  {
-    groups.push({
-      id: 'background',
-      title: 'Background',
-      items: [
-        {
-          id: 'frame',
-          label: 'Background frame',
-          info: 'Paints a full-width backdrop behind the cards. Off by default so your page background shows through.',
-          toggle: { checked: style.showFrame, onChange: (showFrame) => setStyle({ showFrame }) },
-        },
-      ],
-    });
-  }
-  return groups;
+  return [{ id: 'cards', title: 'Cards', items: cards }];
 }
 
 /** Tiny wireframes of the four Icon Cards task layouts (64×34 stage). */
@@ -2981,17 +2870,207 @@ function servicesIconCardsTasksGlyph(style: PortfolioServicesIconCardsTasksStyle
   );
 }
 
+/** Human label of any icon (hand-drawn, catalogue or uploaded). */
+function servicesIconLabel(icon: ServiceIconChoice | ServiceIconRef): string {
+  if (parseImageIcon(icon)) return 'Your icon';
+  const library = parseLibraryIcon(icon);
+  if (library) return library.name.charAt(0).toUpperCase() + library.name.slice(1).replace(/-/g, ' ');
+  return servicesLabelOf(SERVICE_ICON_OPTIONS, icon);
+}
+
+/** A 20 px preview of any icon, in the settings rows. */
+function ServicesIconPreview({ icon, style }: { icon: ServiceIconRef; style: ServiceIconStyle }) {
+  const image = parseImageIcon(icon);
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={image} alt="" className="h-5 w-5 object-contain" />;
+  }
+  const library = parseLibraryIcon(icon);
+  if (library) {
+    return (
+      <svg viewBox={`0 0 ${library.width} ${library.height}`} className="h-5 w-5" {...libraryPaint(library.width, style)} aria-hidden>
+        <path d={library.path} />
+      </svg>
+    );
+  }
+  return (
+    <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
+      {servicesIconGlyph(icon as ServiceIconKey, style)}
+    </svg>
+  );
+}
+
+const SERVICE_ICON_UPLOAD_ACCEPT = 'image/png,image/jpeg,image/webp,.png,.jpg,.jpeg,.webp';
+
+type ServiceIconLibrary = typeof import('@/components/portfolio/portfolio-services-icon-library').SERVICE_ICON_LIBRARY;
+
+/**
+ * Under a service's icon tiles: upload the creator's own picture (small files only) and browse the
+ * larger catalogue. The catalogue is a big data module, so it is loaded the first time it opens.
+ */
+function ServicesIconExtras({
+  title,
+  choice,
+  style,
+  onChange,
+}: {
+  title: string;
+  choice: ServiceIconChoice;
+  style: ServiceIconStyle;
+  onChange: (next: ServiceIconChoice) => void;
+}) {
+  const t = useT();
+  const [browsing, setBrowsing] = useState(false);
+  const [query, setQuery] = useState('');
+  const [catalogue, setCatalogue] = useState<ServiceIconLibrary | null>(null);
+  const [fileError, setFileError] = useState<string | null>(null);
+  const { inputRef, uploading, uploadError, pickFile, uploadFile } = useContentMediaUpload({
+    locale: 'en',
+    onUrlChange: (url) => {
+      if (url.trim()) onChange(buildImageIcon(url.trim()));
+    },
+  });
+
+  useEffect(() => {
+    if (!browsing || catalogue) return;
+    let cancelled = false;
+    void import('@/components/portfolio/portfolio-services-icon-library').then((mod) => {
+      if (!cancelled) setCatalogue(mod.SERVICE_ICON_LIBRARY);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [browsing, catalogue]);
+
+  const results = useMemo(() => {
+    if (!catalogue) return [];
+    const needle = query.trim().toLowerCase();
+    const found = needle
+      ? catalogue.filter(([name, label]) => name.includes(needle) || label.toLowerCase().includes(needle))
+      : catalogue;
+    return found.slice(0, 150);
+  }, [catalogue, query]);
+
+  const onFile = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setFileError(null);
+    if (!/^image\/(png|jpeg|webp)$/.test(file.type)) {
+      setFileError(t('Use a PNG, JPG or WebP picture.'));
+      return;
+    }
+    const maxKb = Math.round(SERVICE_ICON_UPLOAD_MAX_BYTES / 1024);
+    if (file.size > SERVICE_ICON_UPLOAD_MAX_BYTES) {
+      setFileError(t('That file is too large: icons are limited to {size} KB.', { size: maxKb }));
+      return;
+    }
+    await uploadFile(file);
+  };
+
+  const hasCustom = choice !== 'auto' && !SERVICE_ICON_OPTIONS.some((option) => option.value === choice);
+  const selectedLibrary = parseLibraryIcon(choice);
+  const buttonClass =
+    'inline-flex items-center gap-2 rounded-full border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-1.5 text-[13px] font-semibold text-[color:var(--pf-palette-texte-fort)] transition hover:bg-[color:var(--pf-surface)] disabled:opacity-60';
+
+  return (
+    <div className="mt-3 space-y-3">
+      <div className="flex flex-wrap items-center gap-2">
+        <input
+          ref={inputRef}
+          type="file"
+          accept={SERVICE_ICON_UPLOAD_ACCEPT}
+          className="sr-only"
+          aria-label={t('Icon for {title}', { title })}
+          onChange={(event) => {
+            void onFile(event);
+          }}
+        />
+        <button type="button" onClick={pickFile} disabled={uploading} className={buttonClass}>
+          {uploading ? <LoadingSpinner size="sm" /> : null}
+          {uploading ? t('Uploading…') : parseImageIcon(choice) ? t('Replace your icon') : t('Upload your own')}
+        </button>
+        <button type="button" onClick={() => setBrowsing((open) => !open)} aria-expanded={browsing} className={buttonClass}>
+          {browsing ? t('Hide icon library') : t('Browse 300+ more icons')}
+        </button>
+        {hasCustom ? (
+          <button
+            type="button"
+            onClick={() => onChange('auto')}
+            className="rounded-full px-2 py-1.5 text-[13px] font-semibold text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)]"
+          >
+            {t('Back to Auto')}
+          </button>
+        ) : null}
+      </div>
+      <p className="text-xs leading-relaxed text-[color:var(--pf-palette-texte-muted)]">
+        {t('Your own icon: PNG, JPG or WebP, up to {size} KB. A square picture on a transparent background works best.', {
+          size: Math.round(SERVICE_ICON_UPLOAD_MAX_BYTES / 1024),
+        })}
+      </p>
+      {fileError || uploadError ? <p className="text-xs text-red-600">{fileError ?? uploadError}</p> : null}
+      {browsing ? (
+        <div>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder={t('Search icons…')}
+            aria-label={t('Search icons…')}
+            className="mb-2 w-full rounded-lg border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-[13px] text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+          />
+          {!catalogue ? (
+            <div className="flex justify-center py-6">
+              <LoadingSpinner size="sm" />
+            </div>
+          ) : results.length === 0 ? (
+            <p className="py-4 text-center text-xs text-[color:var(--pf-palette-texte-muted)]">{t('No icon matches your search.')}</p>
+          ) : (
+            <div className="grid max-h-64 grid-cols-6 gap-1.5 overflow-y-auto pr-1">
+              {results.map(([name, label, width, height, path]) => {
+                const value = buildLibraryIcon(name, width, height, path);
+                const selected = selectedLibrary?.name === name;
+                return (
+                  <button
+                    key={name}
+                    type="button"
+                    title={label}
+                    aria-label={label}
+                    aria-pressed={selected}
+                    onClick={() => onChange(value)}
+                    className={`flex h-10 items-center justify-center rounded-lg transition ${
+                      selected
+                        ? 'bg-black/[0.16] dark:bg-white/[0.22]'
+                        : 'bg-black/[0.05] hover:bg-black/[0.1] dark:bg-white/[0.08] dark:hover:bg-white/[0.16]'
+                    }`}
+                  >
+                    <svg viewBox={`0 0 ${width} ${height}`} className="h-5 w-5" {...libraryPaint(width, style)} aria-hidden>
+                      <path d={path} />
+                    </svg>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /** Icon Cards → one row per service (current icon, title, choice); the icon catalog opens under
  *  the row being edited only, instead of repeating the whole catalog for every service. */
-function ServicesIconPicker({
+export function ServicesIconPicker({
   services,
   icons,
+  style,
   options,
   density,
   onChange,
 }: {
   services: { id: string; title: string }[];
   icons: Record<string, ServiceIconChoice>;
+  style: ServiceIconStyle;
   options: { value: ServiceIconChoice; label: string; glyph: ReactNode }[];
   density: SettingDensity;
   onChange: (id: string, next: ServiceIconChoice) => void;
@@ -3014,15 +3093,13 @@ function ServicesIconPicker({
               className="flex w-full items-center gap-3 rounded-lg py-2 text-left"
             >
               <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-black/[0.05] dark:bg-white/[0.08]">
-                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" aria-hidden>
-                  {servicesIconGlyph(resolved)}
-                </svg>
+                <ServicesIconPreview icon={resolved} style={style} />
               </span>
               <span className="min-w-0 flex-1 truncate text-[14px] font-semibold">{title}</span>
               <span className="shrink-0 text-[12px] text-[color:var(--pf-palette-texte-muted)]">
                 {choice === 'auto'
-                  ? `Auto · ${servicesLabelOf(SERVICE_ICON_OPTIONS, resolved)}`
-                  : servicesLabelOf(SERVICE_ICON_OPTIONS, choice)}
+                  ? `Auto · ${servicesIconLabel(resolved)}`
+                  : servicesIconLabel(choice)}
               </span>
               <svg
                 viewBox="0 0 16 16"
@@ -3044,6 +3121,7 @@ function ServicesIconPicker({
                   value={choice}
                   onChange={(next) => onChange(service.id, next)}
                 />
+                <ServicesIconExtras title={title} choice={choice} style={style} onChange={(next) => onChange(service.id, next)} />
               </div>
             ) : null}
           </div>
@@ -3066,8 +3144,6 @@ function servicesDesignSettingGroups(
     case 'services-pricing': {
       const cards = services.pricingCards ?? DEFAULT_SERVICES_PRICING_CARDS_SETTINGS;
       const setCards = (patch: Partial<typeof cards>) => onChange({ pricingCards: { ...cards, ...patch } });
-      const opacityDesign: ServicesFeaturedDesignKey =
-        cards.layout === 'grid' ? 'cardsGrid' : cards.layout === 'monolith' ? 'cardsMonolith' : 'cardsBento';
       const layoutItems: SettingItem[] = [
         {
           id: 'card-layout',
@@ -3096,7 +3172,22 @@ function servicesDesignSettingGroups(
             PORTFOLIO_SERVICES_PRICING_CARDS_COLUMNS_OPTIONS,
             cards.cardsPerRow ?? 3,
             (cardsPerRow) => setCards({ cardsPerRow: cardsPerRow as PortfolioServicesPricingCardsColumns })
-          )
+          ),
+          {
+            id: 'card-width',
+            label: 'Card width',
+            info: 'Comfortable keeps the cards a readable width and centres them instead of stretching across the whole section. With one card per row, each plan becomes a horizontal composition.',
+            value: servicesLabelOf(PORTFOLIO_SERVICES_PRICING_CARDS_WIDTH_OPTIONS, cards.cardWidth ?? 'comfortable'),
+            render: (density) => (
+              <SvChoiceTiles
+                label="Card width"
+                density={density}
+                options={PORTFOLIO_SERVICES_PRICING_CARDS_WIDTH_OPTIONS}
+                value={cards.cardWidth ?? 'comfortable'}
+                onChange={(cardWidth) => setCards({ cardWidth })}
+              />
+            ),
+          }
         );
         // Monolith always centers its last row; Grid makes it a choice.
         if (cards.layout === 'grid') {
@@ -3113,8 +3204,8 @@ function servicesDesignSettingGroups(
       } else {
         layoutItems.push({
           id: 'pattern',
-          label: 'Header pattern',
-          info: "The pattern drawn in the featured card's header. Pick None to remove it.",
+          label: 'Card pattern',
+          info: "A pattern drawn behind the featured card's content, in its corner. Pick None to remove it.",
           value: servicesLabelOf(PORTFOLIO_SERVICES_PRICING_BENTO_MOTIF_OPTIONS, cards.graphicMotif),
           render: (density) => (
             <SvChoiceTiles
@@ -3127,59 +3218,14 @@ function servicesDesignSettingGroups(
             />
           ),
         });
-        layoutItems.push({
-          id: 'included-label',
-          label: 'Included label',
-          info: 'The small heading above the list on the wide featured card. Leave empty to hide it.',
-          value: cards.includedLabel || 'Hidden',
-          wide: true,
-          render: (density) => (
-            <SvTextInput
-              label="Included label"
-              density={density}
-              allowEmpty
-              maxLength={40}
-              value={cards.includedLabel ?? "What's included"}
-              placeholder="What's included"
-              onCommit={(includedLabel) => setCards({ includedLabel })}
-            />
-          ),
-        });
       }
       return [
         { id: 'layout', title: 'Layout', items: layoutItems },
-        servicesFeaturedGroup(services, onChange, availableServices, opacityDesign),
-        servicesPriceGroup(services, onChange),
-        servicesCardHoverGroup(services, onChange),
         ...servicesPricingStyleGroups(services, onChange),
       ];
     }
     case 'services-pricing-aurora': {
       const aurora = { ...DEFAULT_SERVICES_PRICING_AURORA_SETTINGS, ...(services.servicesPricingAurora ?? {}) };
-      const setAurora = (patch: Partial<typeof aurora>) =>
-        onChange({ servicesPricingAurora: { ...aurora, ...patch } });
-      const featuredStyle = services.pricingStyle ?? DEFAULT_SERVICES_PRICING_STYLE_SETTINGS;
-      const featured = servicesFeaturedGroup(services, onChange, availableServices, 'aurora');
-      if (featuredStyle.featuredSource !== 'none') {
-        // Right after "Which card" (or the source picker when the popular flag decides).
-        const pickAt = featured.items.findIndex((item) => item.id === 'featured-pick' || item.id === 'featured-from-flag');
-        featured.items.splice(pickAt >= 0 ? pickAt + 1 : 1, 0, {
-          id: 'featured-position',
-          label: 'Position',
-          info: 'Where the featured card sits in the row. "Its place" keeps the order of your services.',
-          value: servicesLabelOf(PORTFOLIO_SERVICES_PRICING_AURORA_FEATURED_POSITION_OPTIONS, aurora.featuredPosition),
-          render: (density) => (
-            <SvChoiceTiles
-              label="Featured card position"
-              density={density}
-              options={PORTFOLIO_SERVICES_PRICING_AURORA_FEATURED_POSITION_OPTIONS}
-              value={aurora.featuredPosition}
-              onChange={(featuredPosition) => setAurora({ featuredPosition })}
-            />
-          ),
-        });
-      }
-      const price = servicesPriceGroup(services, onChange);
       return [
         {
           id: 'layout',
@@ -3195,69 +3241,11 @@ function servicesDesignSettingGroups(
             ),
           ],
         },
-        featured,
-        price,
-        servicesCardHoverGroup(services, onChange),
         ...servicesPricingStyleGroups(services, onChange),
       ];
     }
     case 'services-pricing-toggle': {
-      const toggle = { ...DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS, ...(services.pricingToggle ?? {}) };
-      const setToggle = (patch: Partial<typeof toggle>) => onChange({ pricingToggle: { ...toggle, ...patch } });
-      const featuredStyle = services.pricingStyle ?? DEFAULT_SERVICES_PRICING_STYLE_SETTINGS;
-      const featured = servicesFeaturedGroup(services, onChange, availableServices, 'toggle');
-      if (featuredStyle.featuredSource !== 'none') {
-        const pickAt = featured.items.findIndex((item) => item.id === 'featured-pick' || item.id === 'featured-from-flag');
-        featured.items.splice(pickAt >= 0 ? pickAt + 1 : 1, 0, {
-          id: 'featured-position',
-          label: 'Position',
-          info: 'Where the featured row sits in the list. "Its place" keeps the order of your services.',
-          value: servicesLabelOf(PORTFOLIO_SERVICES_PRICING_AURORA_FEATURED_POSITION_OPTIONS, toggle.featuredPosition),
-          render: (density) => (
-            <SvChoiceTiles
-              label="Featured row position"
-              density={density}
-              options={PORTFOLIO_SERVICES_PRICING_AURORA_FEATURED_POSITION_OPTIONS}
-              value={toggle.featuredPosition}
-              onChange={(featuredPosition) => setToggle({ featuredPosition })}
-            />
-          ),
-        });
-      }
-      const listItems: SettingItem[] = [
-        {
-          id: 'included-heading',
-          label: 'Included heading',
-          info: 'A small heading above each task list.',
-          toggle: { checked: toggle.showIncludedLabel, onChange: (showIncludedLabel) => setToggle({ showIncludedLabel }) },
-        },
-      ];
-      if (toggle.showIncludedLabel) {
-        listItems.push({
-          id: 'included-label',
-          label: 'Heading text',
-          value: toggle.includedLabel || "What's included",
-          wide: true,
-          render: (density) => (
-            <SvTextInput
-              label="Heading text"
-              density={density}
-              allowEmpty
-              maxLength={40}
-              value={toggle.includedLabel}
-              placeholder="What's included"
-              onCommit={(includedLabel) => setToggle({ includedLabel })}
-            />
-          ),
-        });
-      }
-      return [
-        featured,
-        { id: 'list', title: 'Task list', items: listItems },
-        servicesPriceGroup(services, onChange),
-        servicesCardHoverGroup(services, onChange),
-        ...servicesPricingStyleGroups(services, onChange),
-      ];
+      return servicesPricingStyleGroups(services, onChange);
     }
     case 'services-media-columns': {
       const media = services.mediaColumns ?? DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS;
@@ -3377,7 +3365,6 @@ function servicesDesignSettingGroups(
             },
           ],
         },
-        servicesPriceGroup(services, onChange),
       ];
     }
     case 'services-icon-cards': {
@@ -3389,7 +3376,7 @@ function servicesDesignSettingGroups(
         ...SERVICE_ICON_OPTIONS.map((option) => ({
           value: option.value as ServiceIconChoice,
           label: option.label,
-          glyph: servicesIconGlyph(option.value),
+          glyph: servicesIconGlyph(option.value, cards.iconStyle ?? 'outline'),
         })),
       ];
       const iconItems: SettingItem[] =
@@ -3404,6 +3391,7 @@ function servicesDesignSettingGroups(
                   <ServicesIconPicker
                     services={availableServices}
                     icons={cards.icons}
+                    style={cards.iconStyle ?? 'outline'}
                     options={iconTileOptions}
                     density={density}
                     onChange={(id, next) => setCards({ icons: { ...cards.icons, [id]: next } })}
@@ -3449,7 +3437,7 @@ function servicesDesignSettingGroups(
             {
               id: 'card-style',
               label: 'Card style',
-              info: 'Shadow lifts white cards off the page, Outline draws a hairline, Tinted washes them with the accent colour, Plain removes the card.',
+              info: 'Outline draws a hairline around each card, Plain removes the card.',
               value: servicesLabelOf(PORTFOLIO_SERVICES_ICON_CARDS_STYLE_OPTIONS, cards.cardStyle),
               render: (density) => (
                 <SvChoiceTiles
@@ -3509,14 +3497,14 @@ function servicesDesignSettingGroups(
             {
               id: 'radius',
               label: 'Corner radius',
-              value: servicesLabelOf(PORTFOLIO_SERVICES_MEDIA_COLUMNS_RADIUS_OPTIONS, cards.cardRadius),
+              value: servicesLabelOf(PORTFOLIO_SERVICES_ICON_CARDS_RADIUS_OPTIONS, cards.cardRadius),
               render: (density) => (
                 <SvChoiceTiles
                   label="Corner radius"
                   density={density}
                   glyphViewBox="0 0 64 34"
                   stage
-                  options={PORTFOLIO_SERVICES_MEDIA_COLUMNS_RADIUS_OPTIONS.map((option) => ({
+                  options={PORTFOLIO_SERVICES_ICON_CARDS_RADIUS_OPTIONS.map((option) => ({
                     ...option,
                     glyph: servicesMediaColumnsRadiusGlyph(option.value),
                   }))}
@@ -3528,7 +3516,7 @@ function servicesDesignSettingGroups(
             {
               id: 'hover',
               label: 'Hover effect',
-              info: 'Lift raises the card, Glow rings it with the accent colour, Icon pop tilts and grows the icon. Desktop mouse only.',
+              info: 'Lift raises the card, Icon pop tilts and grows the icon. Desktop mouse only.',
               value: servicesLabelOf(PORTFOLIO_SERVICES_ICON_CARDS_HOVER_OPTIONS, cards.hoverEffect),
               render: (density) => (
                 <SvChoiceTiles
@@ -3562,6 +3550,21 @@ function servicesDesignSettingGroups(
                   }))}
                   value={cards.iconShape}
                   onChange={(iconShape) => setCards({ iconShape })}
+                />
+              ),
+            },
+            {
+              id: 'icon-style',
+              label: 'Icon style',
+              info: 'Outline draws every icon with thin lines, Filled with solid shapes. Applies to all icons, including the catalogue ones.',
+              value: servicesLabelOf(PORTFOLIO_SERVICES_ICON_CARDS_ICON_STYLE_OPTIONS, cards.iconStyle ?? 'outline'),
+              render: (density) => (
+                <SvChoiceTiles
+                  label="Icon style"
+                  density={density}
+                  options={PORTFOLIO_SERVICES_ICON_CARDS_ICON_STYLE_OPTIONS}
+                  value={cards.iconStyle ?? 'outline'}
+                  onChange={(iconStyle) => setCards({ iconStyle })}
                 />
               ),
             },
@@ -3614,31 +3617,10 @@ function servicesDesignSettingGroups(
                 />
               ),
             },
-            {
-              id: 'tasks-style',
-              label: 'Tasks layout',
-              info: 'How the task list looks once General → Card elements → Tasks checklist is on.',
-              value: servicesLabelOf(PORTFOLIO_SERVICES_ICON_CARDS_TASKS_STYLE_OPTIONS, cards.tasksStyle),
-              render: (density) => (
-                <SvChoiceTiles
-                  label="Tasks layout"
-                  density={density}
-                  glyphViewBox="0 0 64 34"
-                  stage
-                  options={PORTFOLIO_SERVICES_ICON_CARDS_TASKS_STYLE_OPTIONS.map((option) => ({
-                    ...option,
-                    glyph: servicesIconCardsTasksGlyph(option.value),
-                  }))}
-                  value={cards.tasksStyle}
-                  onChange={(tasksStyle) => setCards({ tasksStyle })}
-                />
-              ),
-            },
           ],
         },
       ];
       if (iconItems.length > 0) groups.push({ id: 'icons', title: 'Icon per service', items: iconItems });
-      groups.push(servicesPriceGroup(services, onChange));
       return groups;
     }
     case 'services-capabilities': {
@@ -3691,6 +3673,52 @@ function servicesDesignSettingGroups(
               : [
                   servicesCardRadiusItem(services, onChange),
                   ...(caps.itemFrame === 'outline' ? servicesCardBorderItems(services, onChange) : []),
+                  ...(caps.itemFrame === 'filled'
+                    ? [
+                        {
+                          id: 'frame-fill',
+                          label: 'Frame color',
+                          info: 'Colors the filled frames from your palette. Default keeps the soft tint. The text switches to light or dark, whichever reads best on it.',
+                          value: servicesLabelOf(PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS, caps.frameFill),
+                          preview: servicesSettingDot(
+                            caps.frameFill === 'auto' ? 'transparent' : servicesPaletteColor(services, caps.frameFill),
+                            caps.frameFill === 'auto'
+                          ),
+                          render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                            <SvSwatches
+                              label="Frame color"
+                              density={density}
+                              options={PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS.map((option) => ({
+                                value: option.value,
+                                label: option.label,
+                                auto: option.value === 'auto',
+                                color: option.value === 'auto' ? 'transparent' : servicesPaletteColor(services, option.value),
+                              }))}
+                              value={caps.frameFill}
+                              onChange={(frameFill) => setCaps({ frameFill: frameFill as typeof caps.frameFill })}
+                            />
+                          ),
+                        },
+                        ...(caps.frameFill !== 'auto'
+                          ? [
+                              {
+                                id: 'frame-fill-opacity',
+                                label: 'Frame color opacity',
+                                info: 'How much of the colour shows. Lower it for a softer tint; the text keeps its contrast.',
+                                value: `${caps.frameFillOpacity}%`,
+                                render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                                  <SvSlider
+                                    label="Frame color opacity"
+                                    density={density}
+                                    value={caps.frameFillOpacity}
+                                    onChange={(frameFillOpacity) => setCaps({ frameFillOpacity })}
+                                  />
+                                ),
+                              },
+                            ]
+                          : []),
+                      ]
+                    : []),
                 ]),
             {
               id: 'number',
@@ -3709,23 +3737,6 @@ function servicesDesignSettingGroups(
             },
           ],
         },
-        (() => {
-          // Off by default here; the shared Featured options only show once it is on.
-          const featured = servicesFeaturedGroup(services, onChange, availableServices, null);
-          return {
-            ...featured,
-            items: [
-              {
-                id: 'show-featured',
-                label: 'Highlight a featured service',
-                info: 'Colors one service’s rule or frame and shows its badge. Off by default.',
-                toggle: { checked: caps.showFeatured, onChange: (showFeatured: boolean) => setCaps({ showFeatured }) },
-              },
-              ...(caps.showFeatured ? featured.items : []),
-            ],
-          };
-        })(),
-        servicesPriceGroup(services, onChange),
       ];
     }
     case 'services-band-index': {
@@ -3762,42 +3773,47 @@ function servicesDesignSettingGroups(
               toggle: { checked: band.showIndex, onChange: (showIndex) => setBand({ showIndex }) },
             },
             {
-              id: 'show-meta',
-              label: 'Show price and delivery',
-              info: 'Delivery time and price at the right end of each band (hidden on phones until the band is opened).',
-              toggle: { checked: band.showMeta, onChange: (showMeta) => setBand({ showMeta }) },
+              id: 'show-price',
+              label: 'Show price',
+              info: 'The price at the right end of each band (hidden on phones until the band is opened).',
+              toggle: { checked: band.showPrice, onChange: (showPrice) => setBand({ showPrice }) },
             },
             {
-              id: 'expandable',
-              label: 'Open details on click',
-              info: 'Clicking a band unfolds its description and tasks (and its media on touch screens).',
-              toggle: { checked: band.expandable, onChange: (expandable) => setBand({ expandable }) },
+              id: 'show-delivery',
+              label: 'Show delivery',
+              info: 'The delivery time at the right end of each band (hidden on phones until the band is opened).',
+              toggle: { checked: band.showDelivery, onChange: (showDelivery) => setBand({ showDelivery }) },
             },
-            ...(band.expandable
-              ? [
-                  {
-                    id: 'tasks-style',
-                    label: 'Tasks style',
-                    info: 'How the tasks read once a band is opened.',
-                    value: servicesLabelOf(PORTFOLIO_SERVICES_BAND_INDEX_TASKS_STYLE_OPTIONS, band.tasksStyle ?? 'rows'),
-                    render: (density: SettingDensity) => (
-                      <SvChoiceTiles
-                        label="Tasks style"
-                        density={density}
-                        glyphViewBox="0 0 64 34"
-                        stage
-                        columns={3}
-                        options={PORTFOLIO_SERVICES_BAND_INDEX_TASKS_STYLE_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: servicesBandTasksGlyph(option.value),
-                        }))}
-                        value={band.tasksStyle ?? 'rows'}
-                        onChange={(tasksStyle) => setBand({ tasksStyle })}
-                      />
-                    ),
-                  },
-                ]
-              : []),
+            {
+              id: 'open-on',
+              label: 'Open details',
+              info: 'A band unfolds its description and tasks (and its media on touch screens). Click opens it when it is clicked; Hover opens it while the pointer rests on it. Touch screens always tap.',
+              value: servicesLabelOf(PORTFOLIO_SERVICES_BAND_INDEX_OPEN_ON_OPTIONS, band.openOn),
+              render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                <SvChoiceTiles
+                  label="Open details"
+                  density={density}
+                  options={PORTFOLIO_SERVICES_BAND_INDEX_OPEN_ON_OPTIONS}
+                  value={band.openOn}
+                  onChange={(openOn) => setBand({ openOn })}
+                />
+              ),
+            },
+            {
+              id: 'toggle-style',
+              label: 'Unfold button',
+              info: 'The button at the right end of each band that shows its details can be opened.',
+              value: servicesLabelOf(PORTFOLIO_SERVICES_BAND_INDEX_TOGGLE_STYLE_OPTIONS, band.toggleStyle),
+              render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                <SvChoiceTiles
+                  label="Unfold button"
+                  density={density}
+                  options={PORTFOLIO_SERVICES_BAND_INDEX_TOGGLE_STYLE_OPTIONS}
+                  value={band.toggleStyle}
+                  onChange={(toggleStyle) => setBand({ toggleStyle })}
+                />
+              ),
+            },
           ],
         },
         {
@@ -3822,7 +3838,7 @@ function servicesDesignSettingGroups(
             {
               id: 'hover-fill',
               label: 'Band fill',
-              info: 'Invert floods the band with the text colour, Accent with the accent colour.',
+              info: 'Invert floods the band with the text colour, Color with a colour from your palette.',
               value: servicesLabelOf(PORTFOLIO_SERVICES_BAND_INDEX_HOVER_FILL_OPTIONS, band.hoverFill),
               render: (density) => (
                 <SvChoiceTiles
@@ -3834,10 +3850,52 @@ function servicesDesignSettingGroups(
                 />
               ),
             },
+            ...(band.hoverFill === 'color'
+              ? [
+                  {
+                    id: 'hover-color',
+                    label: 'Fill color',
+                    info: 'A colour from your palette. The text switches to whichever of light or dark reads best on it.',
+                    value: servicesLabelOf(PORTFOLIO_SERVICES_BAND_INDEX_HOVER_COLOR_OPTIONS, band.hoverColor),
+                    preview: servicesSettingDot(servicesPaletteColor(services, band.hoverColor), false),
+                    render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                      <SvSwatches
+                        label="Band fill color"
+                        density={density}
+                        options={PORTFOLIO_SERVICES_BAND_INDEX_HOVER_COLOR_OPTIONS.map((option) => ({
+                          value: option.value,
+                          label: option.label,
+                          color: servicesPaletteColor(services, option.value),
+                        }))}
+                        value={band.hoverColor}
+                        onChange={(hoverColor) =>
+                          setBand({ hoverColor: hoverColor as PortfolioServicesBandIndexSettings['hoverColor'] })
+                        }
+                      />
+                    ),
+                  },
+                ]
+              : []),
+            ...(band.hoverFill !== 'none'
+              ? [
+                  {
+                    id: 'hover-opacity',
+                    label: 'Fill opacity',
+                    info: 'How solid the fill is. Lower it for a softer wash; the text keeps its contrast.',
+                    value: `${band.hoverOpacity}%`,
+                    render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                      <SvSlider
+                        label="Band fill opacity"
+                        density={density}
+                        value={band.hoverOpacity}
+                        onChange={(hoverOpacity) => setBand({ hoverOpacity })}
+                      />
+                    ),
+                  },
+                ]
+              : []),
           ],
         },
-        servicesFeaturedGroup(services, onChange, availableServices, null),
-        servicesPriceGroup(services, onChange),
       ];
     }
     case 'services-cascade': {
@@ -3928,6 +3986,48 @@ function servicesDesignSettingGroups(
               info: 'Rounds the card and its media together — the media follows the card’s corners.',
             },
             ...servicesCardBorderItems(services, onChange),
+            {
+              id: 'card-fill',
+              label: 'Card color',
+              info: "Colors the card's background from your palette. Default keeps the white (or raised dark) card. The text switches to light or dark, whichever reads best on it.",
+              value: servicesLabelOf(PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS, cascade.cardFill),
+              preview: servicesSettingDot(
+                cascade.cardFill === 'auto' ? 'transparent' : servicesPaletteColor(services, cascade.cardFill),
+                cascade.cardFill === 'auto'
+              ),
+              render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                <SvSwatches
+                  label="Card color"
+                  density={density}
+                  options={PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                    auto: option.value === 'auto',
+                    color: option.value === 'auto' ? 'transparent' : servicesPaletteColor(services, option.value),
+                  }))}
+                  value={cascade.cardFill}
+                  onChange={(cardFill) => setCascade({ cardFill: cardFill as typeof cascade.cardFill })}
+                />
+              ),
+            },
+            ...(cascade.cardFill !== 'auto'
+              ? [
+                  {
+                    id: 'card-fill-opacity',
+                    label: 'Card color opacity',
+                    info: 'How much of the colour shows. Lower it for a softer tint; the card stays solid so the stack never shows through.',
+                    value: `${cascade.cardFillOpacity}%`,
+                    render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                      <SvSlider
+                        label="Card color opacity"
+                        density={density}
+                        value={cascade.cardFillOpacity}
+                        onChange={(cardFillOpacity) => setCascade({ cardFillOpacity })}
+                      />
+                    ),
+                  },
+                ]
+              : []),
           ],
         },
         {
@@ -3942,7 +4042,6 @@ function servicesDesignSettingGroups(
             },
           ],
         },
-        servicesPriceGroup(services, onChange),
       ];
     }
     case 'services-index-list': {
@@ -4005,55 +4104,237 @@ function servicesDesignSettingGroups(
           ],
         },
         {
-          id: 'content',
-          title: 'Content',
+          id: 'button',
+          title: 'Order button',
           items: [
             {
-              id: 'tasks',
-              label: 'Tasks style',
-              value: servicesLabelOf(PORTFOLIO_SERVICES_INDEX_LIST_TASKS_STYLE_OPTIONS, list.tasksStyle),
-              render: (density) => (
+              id: 'cta-design',
+              label: 'Button design',
+              info: 'Orb: a solid pill whose arrow disc floods it on hover. Roll: the label rolls up as a colour rises. Line: a text link whose rule leaves and redraws. Magnet: the button leans toward the cursor and a colour opens from where it entered. Applies while General → Order button is on Auto.',
+              value: servicesLabelOf(PORTFOLIO_SERVICES_INDEX_LIST_CTA_DESIGN_OPTIONS, list.ctaDesign),
+              render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
                 <SvChoiceTiles
-                  label="Tasks style"
+                  label="Button design"
                   density={density}
-                  glyphViewBox="0 0 64 34"
-                  stage
-                  options={PORTFOLIO_SERVICES_INDEX_LIST_TASKS_STYLE_OPTIONS.map((option) => ({
-                    ...option,
-                    glyph: servicesIndexListTasksGlyph(option.value),
-                  }))}
-                  value={list.tasksStyle}
-                  onChange={(tasksStyle) => setList({ tasksStyle })}
+                  columns={3}
+                  options={PORTFOLIO_SERVICES_INDEX_LIST_CTA_DESIGN_OPTIONS}
+                  value={list.ctaDesign}
+                  onChange={(ctaDesign) => setList({ ctaDesign })}
                 />
               ),
             },
             {
-              id: 'show-index',
-              label: 'Show index numbers',
-              toggle: { checked: list.showIndex, onChange: (showIndex) => setList({ showIndex }) },
-            },
-            {
-              id: 'hover-effect',
-              label: 'Hover effect',
-              info: 'Zoom enlarges the media, Slide nudges the title, Tint washes the row with the accent colour. Desktop mouse only.',
-              value: servicesLabelOf(PORTFOLIO_SERVICES_INDEX_LIST_HOVER_OPTIONS, list.hoverEffect),
-              render: (density) => (
-                <SvChoiceTiles
-                  label="Hover effect"
+              id: 'cta-color',
+              label: 'Button color',
+              info: 'Default follows the text colour. The others use your palette; the label switches to light or dark, whichever reads best on it.',
+              value: servicesLabelOf(PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS, list.ctaColor),
+              preview: servicesSettingDot(
+                list.ctaColor === 'auto' ? 'transparent' : servicesPaletteColor(services, list.ctaColor),
+                list.ctaColor === 'auto'
+              ),
+              render: (density: Parameters<typeof SvChoiceTiles>[0]['density']) => (
+                <SvSwatches
+                  label="Button color"
                   density={density}
-                  options={PORTFOLIO_SERVICES_INDEX_LIST_HOVER_OPTIONS}
-                  value={list.hoverEffect}
-                  onChange={(hoverEffect) => setList({ hoverEffect })}
+                  options={PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: option.label,
+                    auto: option.value === 'auto',
+                    color: option.value === 'auto' ? 'transparent' : servicesPaletteColor(services, option.value),
+                  }))}
+                  value={list.ctaColor}
+                  onChange={(ctaColor) => setList({ ctaColor: ctaColor as typeof list.ctaColor })}
                 />
               ),
             },
           ],
         },
-        servicesPriceGroup(services, onChange),
+        {
+          id: 'content',
+          title: 'Content',
+          items: [
+            {
+              id: 'show-index',
+              label: 'Show index numbers',
+              toggle: { checked: list.showIndex, onChange: (showIndex) => setList({ showIndex }) },
+            },
+          ],
+        },
       ];
     }
     default:
       return null;
+  }
+}
+
+/**
+ * General → the options several designs share (featured card, hover effect, price period), listed
+ * once there instead of in each design's Design options. Only the groups the current design reads
+ * are returned.
+ */
+function servicesSharedCardGroups(
+  services: PortfolioServicesSectionSettings,
+  onChange: ServicesSettingsChange,
+  availableServices: { id: string; title: string }[]
+): SettingGroup[] {
+  const groups = servicesSharedFeaturedGroups(services, onChange, availableServices);
+  const included = servicesIncludedLabelGroup(services, onChange);
+  if (included) groups.push(included);
+  // Every design with options shows a price (pricing tables always, the others once General turns it on).
+  return SERVICES_DESIGNS_WITH_OPTIONS.has(services.sectionDesign)
+    ? [...groups, servicesPriceGroup(services, onChange)]
+    : groups;
+}
+
+/** General → "Task list": the "What's included" heading (shared `pricingStyle`) on the designs that
+ *  draw one — the Bento wide card of Pricing Cards and Pricing Toggle. */
+function servicesIncludedLabelGroup(
+  services: PortfolioServicesSectionSettings,
+  onChange: ServicesSettingsChange
+): SettingGroup | null {
+  const style = services.pricingStyle ?? DEFAULT_SERVICES_PRICING_STYLE_SETTINGS;
+  const setStyle = (patch: Partial<PortfolioServicesPricingStyleSettings>) =>
+    onChange({ pricingStyle: { ...style, ...patch } });
+  let own: { show: boolean; label: string };
+  if (services.sectionDesign === 'services-pricing') {
+    const cards = { ...DEFAULT_SERVICES_PRICING_CARDS_SETTINGS, ...(services.pricingCards ?? {}) };
+    if (cards.layout !== 'bento') return null;
+    own = { show: cards.showIncludedLabel !== false, label: cards.includedLabel ?? '' };
+  } else if (services.sectionDesign === 'services-pricing-toggle') {
+    const toggle = { ...DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS, ...(services.pricingToggle ?? {}) };
+    own = { show: toggle.showIncludedLabel, label: toggle.includedLabel };
+  } else {
+    return null;
+  }
+  const shown = style.showIncludedLabel ?? own.show;
+  const label = style.includedLabel || own.label || "What's included";
+  const items: SettingItem[] = [
+    {
+      id: 'included-heading',
+      label: 'Included heading',
+      info: 'A small heading above the task list.',
+      toggle: { checked: shown, onChange: (showIncludedLabel) => setStyle({ showIncludedLabel }) },
+    },
+  ];
+  if (shown) {
+    items.push({
+      id: 'included-label',
+      label: 'Heading text',
+      value: label,
+      wide: true,
+      render: (density) => (
+        <SvTextInput
+          label="Heading text"
+          density={density}
+          allowEmpty
+          maxLength={40}
+          value={label}
+          placeholder="What's included"
+          onCommit={(includedLabel) => setStyle({ includedLabel })}
+        />
+      ),
+    });
+  }
+  return { id: 'task-list', title: 'Task list', items };
+}
+
+/** Featured card + hover groups of `servicesSharedCardGroups`, per design. */
+function servicesSharedFeaturedGroups(
+  services: PortfolioServicesSectionSettings,
+  onChange: ServicesSettingsChange,
+  availableServices: { id: string; title: string }[]
+): SettingGroup[] {
+  const featuredStyle = services.pricingStyle ?? DEFAULT_SERVICES_PRICING_STYLE_SETTINGS;
+  const withPosition = (
+    featured: SettingGroup,
+    position: PortfolioServicesPricingAuroraFeaturedPosition,
+    label: string,
+    info: string,
+    onPosition: (featuredPosition: PortfolioServicesPricingAuroraFeaturedPosition) => void
+  ): SettingGroup => {
+    if (featuredStyle.featuredSource === 'none') return featured;
+    // Right after "Which card".
+    const pickAt = featured.items.findIndex((item) => item.id === 'featured-pick');
+    const items = [...featured.items];
+    items.splice(pickAt >= 0 ? pickAt + 1 : 1, 0, {
+      id: 'featured-position',
+      label: 'Position',
+      info,
+      value: servicesLabelOf(PORTFOLIO_SERVICES_PRICING_AURORA_FEATURED_POSITION_OPTIONS, position),
+      render: (density) => (
+        <SvChoiceTiles
+          label={label}
+          density={density}
+          options={PORTFOLIO_SERVICES_PRICING_AURORA_FEATURED_POSITION_OPTIONS}
+          value={position}
+          onChange={onPosition}
+        />
+      ),
+    });
+    return { ...featured, items };
+  };
+  switch (services.sectionDesign) {
+    case 'services-pricing': {
+      const cards = services.pricingCards ?? DEFAULT_SERVICES_PRICING_CARDS_SETTINGS;
+      const opacityDesign: ServicesFeaturedDesignKey =
+        cards.layout === 'grid' ? 'cardsGrid' : cards.layout === 'monolith' ? 'cardsMonolith' : 'cardsBento';
+      return [
+        servicesFeaturedGroup(services, onChange, availableServices, opacityDesign),
+        servicesCardHoverGroup(services, onChange),
+      ];
+    }
+    case 'services-pricing-aurora': {
+      const aurora = { ...DEFAULT_SERVICES_PRICING_AURORA_SETTINGS, ...(services.servicesPricingAurora ?? {}) };
+      return [
+        withPosition(
+          servicesFeaturedGroup(services, onChange, availableServices, 'aurora'),
+          aurora.featuredPosition,
+          'Featured card position',
+          'Where the featured card sits in the row. "Its place" keeps the order of your services.',
+          (featuredPosition) => onChange({ servicesPricingAurora: { ...aurora, featuredPosition } })
+        ),
+        servicesCardHoverGroup(services, onChange),
+      ];
+    }
+    case 'services-pricing-toggle': {
+      const toggle = { ...DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS, ...(services.pricingToggle ?? {}) };
+      return [
+        withPosition(
+          servicesFeaturedGroup(services, onChange, availableServices, 'toggle'),
+          toggle.featuredPosition,
+          'Featured row position',
+          'Where the featured row sits in the list. "Its place" keeps the order of your services.',
+          (featuredPosition) => onChange({ pricingToggle: { ...toggle, featuredPosition } })
+        ),
+        servicesCardHoverGroup(services, onChange),
+      ];
+    }
+    case 'services-capabilities': {
+      const caps = { ...DEFAULT_SERVICES_CAPABILITIES_SETTINGS, ...(services.capabilities ?? {}) };
+      // Off by default here; the shared Featured options only show once it is on.
+      const featured = servicesFeaturedGroup(services, onChange, availableServices, null);
+      return [
+        {
+          ...featured,
+          items: [
+            {
+              id: 'show-featured',
+              label: 'Highlight a featured service',
+              info: 'Colors one service’s rule or frame and shows its badge. Off by default.',
+              toggle: {
+                checked: caps.showFeatured,
+                onChange: (showFeatured: boolean) => onChange({ capabilities: { ...caps, showFeatured } }),
+              },
+            },
+            ...(caps.showFeatured ? featured.items : []),
+          ],
+        },
+      ];
+    }
+    case 'services-band-index':
+      return [servicesFeaturedGroup(services, onChange, availableServices, null)];
+    default:
+      return [];
   }
 }
 
@@ -4089,12 +4370,21 @@ export function ServicesSettingsPanel({
   chrome?: NpPanelChrome;
 }) {
   const t = useT();
-  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
-  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
+  const previewSource = usePortfolioDesignPreviewSource();
+  const backgroundTheme = resolveThumbnailTheme(previewSource?.settings.global, services);
+  // Swatches must show the colours the page really paints. With the Background options on, the section
+  // runs on the live (mode-aware) palette, not the stored one, so a stored-palette swatch came out inverted.
+  const paletteServices = { ...services, servicesPalette: backgroundTheme.palette };
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(true);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(true);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ServicesSubSection>('general');
   const subSection = normalizeServicesSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const [previousSubSection,setPreviousSubSection]=useState(subSection);
+  if(previousSubSection!==subSection){setPreviousSubSection(subSection);if(subSection==='design')setDesignCatalogOpen(true);if(subSection==='header')setHeaderCatalogOpen(true);}
   const setSubSection = (value: ServicesSubSection) => {
     const next = normalizeServicesSubSection(value);
+    if(next==='design')setDesignCatalogOpen(true);
+    if(next==='header')setHeaderCatalogOpen(true);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
@@ -4159,11 +4449,19 @@ export function ServicesSettingsPanel({
                 layoutMode: 'separated',
               })
             } />
+          <div className="pb-6"><SectionColorModeControl hideLabel
+            label={t('Color mode')}
+            value={services.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          /></div>
           <div className="np-dimmable" data-disabled={servicesShown ? 'false' : 'true'} inert={!servicesShown}>
           {/* No "Section heading" toggles here: `showServicesSubheading` / `showResponseTime` are
               combined-mode leftovers that mergeServicesPresentation forces off, so a switch for them
               could never stay on. The heading's own elements live in Header → visible elements. */}
-          <NpCollapsibleSection title={t('Card elements')}>
+          <NpCollapsibleSection title={t('Style')}>
+            <TextSizeSlider label={t('Text size')} options={PORTFOLIO_SERVICES_PREMIUM_FONT_SIZE_OPTIONS} value={services.premiumFontSize ?? 'medium'} onChange={(premiumFontSize) => onChange({ premiumFontSize })} />
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Content shown')}>
               <NpToggleRow
                 title={t('Title')}
                 checked={services.showServiceTitle !== false}
@@ -4222,80 +4520,33 @@ export function ServicesSettingsPanel({
                 checked={optInShown('tasks', services.showServiceTasks)}
                 onChange={(next) => onChange(optInPatch('tasks', 'showServiceTasks', next))}
               />
+              {optInShown('tasks', services.showServiceTasks)
+                ? servicesTasksLayoutControl(services, onChange, t('Tasks layout'))
+                : null}
               <NpToggleRow
                 title={t('Order / contact button')}
                 checked={optInShown('cta', services.showServiceCta)}
                 onChange={(next) => onChange(optInPatch('cta', 'showServiceCta', next))}
               />
           </NpCollapsibleSection>
-          </div>
-        </div>
-      ) : null}
-
-      {subSection !== 'general' && !servicesShown ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ showServices: true, enabled: true, sectionOrganization: 'distinct', layoutMode: 'separated' })} /></div> : null}
-
-      {subSection === 'design' && servicesShown ? (
-        <div className="np-stack">
-          <ServicesDesignChoiceGrid
-            showGrid={designCatalogOpen}
-            setShowGrid={setDesignCatalogOpen}
-            value={services.sectionDesign ?? 'services-index-list'}
-            onChange={(sectionDesign) => onChange({ sectionDesign })}
-          />
-
-          {designCatalogOpen
-            ? null
-            : (() => {
-                const designGroups = servicesDesignSettingGroups(services, onChange, availableServices);
-                if (!designGroups) return null;
-                // Pricing designs already list it in their Background group.
-                const groups = servicesDesignHasOwnFrame(services.sectionDesign)
-                  ? designGroups
-                  : [...designGroups, servicesBackgroundFrameGroup(services, onChange)];
-                const title = SERVICES_DESIGN_OPTIONS_TITLE[services.sectionDesign] ?? t('Options');
-                return (
-                  <ServicesLayoutSettingsBand
-                    motionKey={services.sectionDesign}
-                    id="services-design-options-title"
-                    title=""
-                    ariaTitle={title}
-                    flush
-                  >
-                    {/* Expanded view only: the Compact (focus rows) view was dropped for Services. */}
-                    <SettingsVariantView variant="flat" groups={groups} />
-                  </ServicesLayoutSettingsBand>
-                );
-              })()}
-
-          {designCatalogOpen || SERVICES_DESIGNS_WITH_OPTIONS.has(services.sectionDesign) ? null : (
-            <p className="text-[13px] text-[color:var(--pf-palette-texte-muted)]">
-              {t('This design has no options of its own — what shows on a card is set in General → Card elements.')}
-            </p>
-          )}
-
-          {designCatalogOpen ? null : (
-            <>
-          <NpCollapsibleSection title={t('Style')}>
-          <SectionColorModeControl
-            label={t('Color mode')}
-            value={services.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-
-          <ServicesOptionGrid
-            label={t('Text size')}
-            options={PORTFOLIO_SERVICES_PREMIUM_FONT_SIZE_OPTIONS}
-            value={services.premiumFontSize ?? 'medium'}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
-          </NpCollapsibleSection>
+          {(() => {
+            const sharedGroups = servicesSharedCardGroups(paletteServices, onChange, availableServices);
+            return sharedGroups.length ? (
+              <ServicesLayoutSettingsBand
+                motionKey={`shared-${services.sectionDesign}`}
+                id="services-shared-card-options-title"
+                title=""
+                ariaTitle={t('Card options')}
+                flush
+              >
+                <SettingsVariantView variant="flat" groups={sharedGroups} />
+              </ServicesLayoutSettingsBand>
+            ) : null;
+          })()}
+          {SERVICES_LIST_BULLET_DESIGNS[services.sectionDesign ?? ''] ? (
           <NpCollapsibleSection title={t('List bullet')}>
             <p className="-mt-2 text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
               {t('The mark in front of each task. Applies to')} {Object.values(SERVICES_LIST_BULLET_DESIGNS).join(', ')}.
-              {SERVICES_LIST_BULLET_DESIGNS[services.sectionDesign ?? '']
-                ? ''
-                : t(' Your current design lays its tasks out its own way, so it keeps them as they are.')}
             </p>
             <div className="mt-4">
               <SvChoiceTiles
@@ -4325,7 +4576,7 @@ export function ServicesSettingsPanel({
                       value: option.value,
                       label: option.label,
                       auto: option.value === 'auto',
-                      color: option.value === 'auto' ? 'transparent' : servicesPaletteColor(services, option.value),
+                      color: option.value === 'auto' ? 'transparent' : servicesPaletteColor(paletteServices, option.value),
                     }))}
                     value={(services.pricingStyle ?? DEFAULT_SERVICES_PRICING_STYLE_SETTINGS).listBulletColor ?? 'auto'}
                     onChange={(next) =>
@@ -4341,6 +4592,7 @@ export function ServicesSettingsPanel({
               </div>
             ) : null}
           </NpCollapsibleSection>
+          ) : null}
           <NpCollapsibleSection title={t('Price text')}>
             <p className="-mt-2 text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
               {t('What every design shows instead of a figure. Leave empty to keep each design\'s own wording.')}
@@ -4357,6 +4609,50 @@ export function ServicesSettingsPanel({
               <ServicesOrderButtonFields services={services} onChange={onChange} />
             </div>
           </NpCollapsibleSection>
+          </div>
+        </div>
+      ) : null}
+
+      {subSection !== 'general' && !servicesShown ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ showServices: true, enabled: true, sectionOrganization: 'distinct', layoutMode: 'separated' })} /></div> : null}
+
+      {subSection === 'design' && servicesShown ? (
+        <div className="np-stack">
+          <ServicesDesignChoiceGrid
+            showGrid={designCatalogOpen}
+            setShowGrid={setDesignCatalogOpen}
+            value={services.sectionDesign ?? 'services-index-list'}
+            onChange={(sectionDesign) => onChange({ sectionDesign })}
+          />
+
+          {designCatalogOpen
+            ? null
+            : (() => {
+                const designGroups = servicesDesignSettingGroups(paletteServices, onChange, availableServices);
+                if (!designGroups) return null;
+                const groups = designGroups;
+                const title = SERVICES_DESIGN_OPTIONS_TITLE[services.sectionDesign] ?? t('Options');
+                return (
+                  <ServicesLayoutSettingsBand
+                    motionKey={services.sectionDesign}
+                    id="services-design-options-title"
+                    title=""
+                    ariaTitle={title}
+                    flush
+                  >
+                    {/* Expanded view only: the Compact (focus rows) view was dropped for Services. */}
+                    <SettingsVariantView variant="flat" groups={groups} collapsibleGroups />
+                  </ServicesLayoutSettingsBand>
+                );
+              })()}
+
+          {designCatalogOpen || SERVICES_DESIGNS_WITH_OPTIONS.has(services.sectionDesign) ? null : (
+            <p className="text-[13px] text-[color:var(--pf-palette-texte-muted)]">
+              {t('This design has no options of its own — what shows on a card is set in General → Card elements.')}
+            </p>
+          )}
+
+          {designCatalogOpen ? null : (
+            <>
             </>
           )}
         </div>
@@ -4364,18 +4660,25 @@ export function ServicesSettingsPanel({
 
       {subSection === 'background' && servicesShown ? (
         <div className="np-stack">
+          <NpCollapsibleSection title={t('Palette')}>
+            <SectionPaletteFamilyControl
+              value={services.paletteFamily ?? 'global'}
+              onChange={(paletteFamily) => onChange({ paletteFamily })}
+              mode={backgroundTheme.mode}
+            />
+          </NpCollapsibleSection>
           <NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={services}
             onChange={onChange}
             renderColorField={({ label, value, onChange: onColorChange }) => {
-              const slot = SERVICES_BACKGROUND_LABEL_SLOTS[label];
-              if (!slot) {
-                return <ServicesManualColorField label={label} value={value} onChange={onColorChange} />;
-              }
-              return (
-                <ServicesColorField services={services} onChange={onChange} slot={slot} label={label} value={value} />
-              );
+              const slot = Object.entries(SERVICES_BACKGROUND_LABEL_SLOTS).find(([key]) => t(key) === label)?.[1];
+              const options = PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map(option => ({ value: option.value, label: t(option.label), color: resolveHeroPaletteColor(backgroundTheme.palette, option.value) }));
+              const bindings = mergeServicesColorBindings(DEFAULT_SERVICES_COLOR_BINDINGS, services.servicesColorBindings);
+              return <ColorSwatchRow label={label} options={options} value={slot ? bindings[slot] : options.find(option => option.color.toLowerCase() === value.toLowerCase())?.value ?? ''} onChange={token => {
+                if (slot) onChange({ useHeroPalette: true, servicesPalette: backgroundTheme.palette, ...asServicesPatch(patchServicesColorBinding({ ...services, servicesPalette: backgroundTheme.palette }, slot, token as HeroPaletteTokenId)) });
+                else { const option = options.find(option => option.value === token); if (option) onColorChange(option.color); }
+              }} />;
             }}
           />
           </NpCollapsibleSection>
@@ -4394,7 +4697,7 @@ export function ServicesSettingsPanel({
           </NpCollapsibleSection>
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
-          {headerCatalogOpen ? null : (
+          {headerCatalogOpen || services.headerDesign === 'none' ? null : (
             <NpCollapsibleSection title={t('Header settings')}>
               <ServicesHeaderDesignFields services={services} onChange={onChange} />
             </NpCollapsibleSection>

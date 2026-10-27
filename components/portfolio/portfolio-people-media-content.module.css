@@ -1,0 +1,22 @@
+.content { min-width:0; width:100%; }
+.content :where(h3,figcaption),
+.content :global(.pf-gallery-framed-title),
+.content :global(.pf-gallery-media-title),
+.content :global(.pf-gallery-tall-title),
+.content :global(.pf-gallery-index-caption),
+.content :global(.pf-gallery-index-choice-title),
+.content :global(.pf-canvas-caption) {
+  font-weight:500;
+  letter-spacing:-.01em;
+  overflow-wrap:anywhere;
+}
+.content :where(span,p,div,figcaption)[class~='uppercase'] {
+  text-transform:none;
+  letter-spacing:.02em;
+}
+.content :where(span,p,div,figcaption)[class~='font-mono'] {
+  font-family:inherit;
+  letter-spacing:.02em;
+}
+.content :where(p) { letter-spacing:0; }
+.content :where(p)[class~='font-semibold'] { font-weight:400; }

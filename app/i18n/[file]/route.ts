@@ -5,8 +5,8 @@ import { dictionaryVersion } from '@/lib/i18n/dictionary-version';
 
 /*
  * GET /i18n/<locale>.js?v=<hash> — the interface dictionary as a script that fills
- * globalThis.__SKRAFT_I18N__ (see lib/i18n/dictionary-store.ts). Loaded by the root layout before
- * hydration; the URL changes with the content, so browsers keep it for a year.
+ * globalThis.__SKRAFT_I18N__ (see lib/i18n/dictionary-store.ts). Preloaded by the root layout and
+ * executed by the provider's Suspense gate; the content hash allows a year of browser caching.
  *
  * Route handler responses are not compressed by `next start`, and the French dictionary is ~350 KB
  * of text (~60 KB gzipped): the body is gzipped here, once per locale per server process.

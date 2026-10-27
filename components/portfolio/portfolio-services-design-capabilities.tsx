@@ -3,9 +3,11 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { fluidColumns, useFluidTrack } from '@/components/portfolio/portfolio-services-fluid-columns';
 import type { ProfileServiceItem } from '@/types/profile';
 import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
 import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { contrastRatio, mixHex, readableInk, softInk } from '@/components/portfolio/portfolio-services-pricing-shared';
 import {
   DEFAULT_SERVICES_COLOR_BINDINGS,
   DEFAULT_SERVICES_PALETTE,
@@ -101,6 +103,16 @@ export function ServicesCapabilitiesSection({
   const ctaLabel = resolveServicesCtaLabel(presentation);
 
   const gridRef = useRef<HTMLDivElement>(null);
+  // Columns follow the block's real width (see portfolio-services-fluid-columns).
+  const framedItems = settings.itemFrame !== 'none';
+  const track = useFluidTrack(
+    gridRef,
+    count > 0,
+    (width) => (framedItems ? (width < 1024 ? 16 : 24) : width < 1024 ? 40 : 56),
+    framedItems ? 264 : 232,
+    `${framedItems}`
+  );
+  const fluidCols = track ? fluidColumns(count, settings.columns, track.fit) : null;
   const entranceKey = `${count}|${settings.columns}|${settings.numberStyle}|${settings.itemFrame}|${settings.centerLastRow}|${show.title}|${show.description}|${show.price}|${show.delivery}|${show.tasks}|${show.cta}`;
 
   useLayoutEffect(() => {
@@ -149,9 +161,30 @@ export function ServicesCapabilitiesSection({
   if (count === 0) return null;
 
   const framed = settings.itemFrame !== 'none';
+  // A coloured Filled frame: the colour is mixed over the page so its real tone is known, and every ink
+  // inside the frame is picked from that tone (a dark palette colour flips the text light, a pale one dark).
+  const paletteForFrame = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, presentation.servicesPalette);
+  const pageSurface = /^#[0-9a-f]{6}$/i.test(presentation.sectionBackgroundColor?.trim() ?? '')
+    ? (presentation.sectionBackgroundColor as string).trim()
+    : isLight
+      ? '#fafafa'
+      : '#0a0a0a';
+  const frameBlend =
+    settings.itemFrame === 'filled' && settings.frameFill !== 'auto'
+      ? mixHex(
+          resolveHeroPaletteColor(paletteForFrame, settings.frameFill),
+          pageSurface,
+          Math.min(100, Math.max(10, settings.frameFillOpacity ?? 100)) / 100
+        )
+      : null;
+  const frameInk = frameBlend ? readableInk(frameBlend) : null;
+  const frameMuted = frameBlend && frameInk ? softInk(frameInk, frameBlend, 0.72) : null;
+  const frameAccent = frameBlend && frameInk && contrastRatio(accent, frameBlend) < 3 ? frameInk : accent;
+  const frameInverse = frameInk ? readableInk(frameInk) : null;
   const frameRadius = pricingStyle.cardRadiusPx ?? 20;
   const vars = {
-    '--cap-c': settings.columns,
+    '--cap-c': fluidCols ?? settings.columns,
+    ...(track ? { '--cap-gx': `${track.gap}px`, columnGap: track.gap } : null),
     '--cap-line': isLight ? 'rgba(10,10,10,0.2)' : 'rgba(250,250,250,0.22)',
     '--cap-accent': accent,
     color: ink,
@@ -181,7 +214,11 @@ export function ServicesCapabilitiesSection({
           <article
             key={item.id || index}
             data-cap-col=""
-            className={`group/cap flex w-full min-w-0 flex-col sm:w-[calc((100%-var(--cap-gx))/2)] lg:w-[calc((100%-(var(--cap-c)-1)*var(--cap-gx))/var(--cap-c))] ${
+            className={`group/cap flex min-w-0 flex-col ${
+              fluidCols
+                ? 'w-[calc((100%-(var(--cap-c)-1)*var(--cap-gx))/var(--cap-c))]'
+                : 'w-full sm:w-[calc((100%-var(--cap-gx))/2)] lg:w-[calc((100%-(var(--cap-c)-1)*var(--cap-gx))/var(--cap-c))]'
+            } ${
               framed ? 'p-7 lg:p-8' : ''
             }`}
             style={
@@ -195,8 +232,11 @@ export function ServicesCapabilitiesSection({
                 : settings.itemFrame === 'filled'
                   ? {
                       borderRadius: frameRadius,
-                      backgroundColor: `color-mix(in srgb, ${ink} ${isLight ? 4 : 6}%, transparent)`,
+                      backgroundColor: frameBlend ?? `color-mix(in srgb, ${ink} ${isLight ? 4 : 6}%, transparent)`,
                       boxShadow: featured ? `inset 0 0 0 1px ${featuredColor}` : undefined,
+                      ...(frameInk
+                        ? ({ color: frameInk, '--cap-accent': frameAccent, '--cap-line': `${frameInk}33` } as CSSProperties)
+                        : null),
                     }
                   : undefined
             }
@@ -217,7 +257,7 @@ export function ServicesCapabilitiesSection({
                 className={`font-sans font-light leading-none tracking-[-0.05em] text-transparent ${framed ? '' : 'mt-6'}`}
                 style={{
                   fontSize: FONT(4.5),
-                  WebkitTextStroke: `1px ${isLight ? 'rgba(10,10,10,0.45)' : 'rgba(250,250,250,0.5)'}`,
+                  WebkitTextStroke: `1px ${frameInk ? `${frameInk}88` : isLight ? 'rgba(10,10,10,0.45)' : 'rgba(250,250,250,0.5)'}`,
                 }}
               >
                 {number}
@@ -226,11 +266,11 @@ export function ServicesCapabilitiesSection({
 
             <div data-cap-rise="" className={`flex items-baseline gap-3 ${settings.numberStyle === 'large' ? 'mt-6' : framed ? '' : 'mt-5'}`}>
               {settings.numberStyle === 'small' ? (
-                <span className="font-mono text-[0.72rem] tabular-nums opacity-50">({number})</span>
+                <span className="font-mono text-[0.8rem] tabular-nums opacity-70">({number})</span>
               ) : null}
               {featured && featuredBadge ? (
                 <span
-                  className="text-[0.66rem] font-semibold uppercase tracking-[0.16em]"
+                  className="text-[0.8rem] font-semibold uppercase tracking-[0.14em]"
                   style={{ color: featuredColor }}
                 >
                   {featuredBadge}
@@ -256,7 +296,7 @@ export function ServicesCapabilitiesSection({
                 {priceParts.isFrom && priceParts.kind === 'amount' ? `${t('From')} ` : ''}
                 {priceParts.text}
                 {priceSuffix ? (
-                  <span className="ml-1 font-normal opacity-55" style={{ fontSize: FONT(0.78) }}>
+                  <span className="ml-1 font-normal opacity-75" style={{ fontSize: FONT(0.85) }}>
                     {priceSuffix}
                   </span>
                 ) : null}
@@ -264,7 +304,7 @@ export function ServicesCapabilitiesSection({
             ) : null}
 
             {delivery ? (
-              <p data-cap-rise="" className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.16em] opacity-55">
+              <p data-cap-rise="" className="mt-2 text-[0.8rem] font-medium uppercase tracking-[0.14em] opacity-75">
                 {delivery}
               </p>
             ) : null}
@@ -273,7 +313,7 @@ export function ServicesCapabilitiesSection({
               <p
                 data-cap-rise=""
                 className="mt-5 max-w-[30rem] leading-[1.65]"
-                style={{ fontSize: FONT(0.95), color: descriptionColor }}
+                style={{ fontSize: FONT(0.95), color: frameMuted ?? descriptionColor }}
               >
                 {description}
               </p>
@@ -300,11 +340,11 @@ export function ServicesCapabilitiesSection({
                     style={{ fontSize: FONT(0.95) }}
                     data-pf-no-color-transition=""
                   >
-                    <span
+                    <span data-pf-no-color-transition=""
                       aria-hidden
                       className="inline-block h-px w-0 bg-[color:var(--cap-accent)] transition-[width,margin] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/task:mr-2 group-hover/task:w-4"
                     />
-                    <span className="transition-colors duration-300 group-hover/task:text-[color:var(--cap-accent)]">
+                    <span data-pf-no-color-transition="" className="transition-colors duration-300 group-hover/task:text-[color:var(--cap-accent)]">
                       {task}
                     </span>
                   </li>
@@ -319,13 +359,13 @@ export function ServicesCapabilitiesSection({
                 data-cap-rise=""
                 pricingStyle={pricingStyle}
                 label={ctaLabel}
-                ink={ink}
-                surface={isLight ? '#fafafa' : '#0a0a0a'}
-                className="group/cta inline-flex w-fit items-center gap-2 border-b border-current pb-1 text-[0.88rem] font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
+                ink={frameInk ?? ink}
+                surface={frameInverse ?? (isLight ? '#fafafa' : '#0a0a0a')}
+                className="group/cta inline-flex w-fit items-center gap-2 border-b border-current pb-1 text-[0.95rem] font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                 autoContent={
                   <>
                     {ctaLabel}
-                    <span aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-1">
+                    <span data-pf-no-color-transition="" aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-1">
                       &rarr;
                     </span>
                   </>

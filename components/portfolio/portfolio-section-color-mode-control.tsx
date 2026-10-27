@@ -15,15 +15,18 @@ export function SectionColorModeControl({
   value,
   onChange,
   label = 'Appearance',
+  hideLabel = false,
 }: {
   value: PortfolioSectionColorMode;
   onChange: (value: PortfolioSectionColorMode) => void;
   label?: string;
+  hideLabel?: boolean;
 }) {
   const t = useT();
   return (
     <NpSegmentedControl
       label={label}
+      hideLabel={hideLabel}
       options={PORTFOLIO_SECTION_COLOR_MODE_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
       value={value}
       onChange={onChange}

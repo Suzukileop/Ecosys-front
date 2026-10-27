@@ -1,0 +1,31 @@
+const path = require('path');
+const { chromium } = require(path.join(__dirname, '..', '..', 'node_modules', 'playwright-core'));
+const w = Number(process.argv[2] || 1440);
+(async () => {
+  const b = await chromium.launch();
+  const p = await b.newPage({ viewport: { width: w, height: 900 } });
+  await p.route('**/zz-harness', (r) => r.fulfill({ contentType: 'text/html', body: `<body style="margin:0"><iframe id="f" src="/portfolio/tester1?embed=1" style="width:${w}px;height:880px;border:0"></iframe></body>` }));
+  await p.goto('http://localhost:3000/zz-harness', { waitUntil: 'domcontentloaded' });
+  await p.waitForTimeout(9000);
+  const frame = p.frames().find((f) => f.url().includes('/portfolio/tester1'));
+  await p.evaluate(() => document.getElementById('f').contentWindow.postMessage({ source: 'skraft-portfolio-studio', type: 'apply-settings', settings: { experience: { experienceDesign: 'gallery', enabled: true } } }, location.origin));
+  await p.waitForTimeout(9000);
+  const res = await frame.evaluate(async () => {
+    const s = document.getElementById('experience'); const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    const info = {};
+    const nums = [...s.querySelectorAll('*')].filter((e) => e.children.length === 0 && /^0?\d$|^0\d$/.test(e.textContent.trim()));
+    info.nums = nums.map((e) => e.textContent.trim() + ' ' + e.className.slice(0, 80) + ' ' + e.parentElement.className.slice(0, 80));
+    const card = s.querySelector('button.flex.h-full'); card.scrollIntoView({ block: 'center' }); await sleep(500); card.click(); await sleep(1200);
+    const d = document.querySelector('[role=dialog]'); const r = d.getBoundingClientRect();
+    info.dlg = [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height), innerWidth, innerHeight];
+    info.btns = [...document.querySelectorAll('[role=dialog] button, [role=dialog] a, body > div button')].map((b) => { const q = b.getBoundingClientRect(); return (b.getAttribute('aria-label') || b.textContent.trim().slice(0, 20)) + ' ' + Math.round(q.width) + 'x' + Math.round(q.height); });
+    const sc = d.querySelector('.overflow-y-auto'); info.scroll = [sc.scrollHeight, sc.clientHeight];
+    info.small = [...d.querySelectorAll('*')].filter((e) => [...e.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim()) && parseFloat(getComputedStyle(e).fontSize) < 12).map((e) => e.textContent.trim().slice(0, 20));
+    info.sw = document.documentElement.scrollWidth;
+    document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' })); await sleep(300);
+    info.closed = !document.querySelector('[role=dialog]');
+    return info;
+  });
+  console.log(w, JSON.stringify(res, null, 1));
+  await b.close();
+})();

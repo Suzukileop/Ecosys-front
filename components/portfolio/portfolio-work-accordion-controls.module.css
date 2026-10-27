@@ -1,0 +1,6 @@
+.controls { gap:22px; }
+.controls > section { gap:18px; }
+.controls > section + section { padding-top:20px; }
+.controls button[aria-pressed] { min-height:68px; gap:8px; padding:10px 6px; }
+.controls button[aria-pressed] > svg { width:64px; height:32px; }
+.value { color:var(--np-muted); font-size:12px; font-weight:400; font-variant-numeric:tabular-nums; }

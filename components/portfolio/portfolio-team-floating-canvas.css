@@ -1,0 +1,5 @@
+.team-floating-canvas .team-canvas-caption a { min-width: 44px; min-height: 44px; }
+@media (prefers-reduced-motion: reduce) {
+  .team-floating-canvas [data-pf-canvas-parallax] { transform: none !important; }
+  .team-floating-canvas [data-pf-no-color-transition] { transition: none !important; }
+}

@@ -1,30 +1,6 @@
 'use client';
 
-/**
- * Floating cards — the Team design where the portrait floats over the card's top edge.
- *
- * The rework turns the flat "black card that turns red" into a piece of interactive depth:
- *
- *  1. **3D tilt + parallax.** The card body and the portrait live on one `preserve-3d` stage that
- *     the pointer rotates. The portrait is pushed forward on its own Z plane (and drifts a few
- *     pixels against the pointer), so the rotation alone separates it from the card — real
- *     parallax, not a second animation to keep in sync. On hover the stage also lifts and a
- *     blurred slab of the accent colour blooms behind it as a wide, diffuse, tinted shadow.
- *  2. **The accent arrives as a wave.** Instead of swapping `background-color`, a gradient layer
- *     is clipped to `circle(0%)` at the exact point the pointer entered and expands past the
- *     card's far corner. Leaving collapses it back toward the exit point — at full radius the
- *     origin swap is invisible, so the wipe always reads as coming from the cursor. Copy and
- *     icons re-ink to a tone picked from the accent's luminance, so contrast holds either way.
- *  3. **Two navigations, one design.** `Opening view` picks the one the section loads with and
- *     the visitor switches freely: a grid that breaks its own baseline with a staggered rhythm,
- *     or a rail that scrolls natively (trackpad and touch keep their momentum), drags with the
- *     mouse and steps one card at a time from two minimal chevrons.
- *  4. **One curve.** Every transition here runs on `cubic-bezier(0.25, 1, 0.5, 1)`.
- *
- * Site-wide trap respected throughout: any node that animates transform/opacity/clip-path through
- * CSS carries `data-pf-no-color-transition`, otherwise the global color-mode transition rule in
- * globals.css replaces its `transition-property` and the motion silently disappears.
- */
+/** Floating portraits with restrained depth and stable readable surfaces. */
 
 import {
   useCallback,
@@ -33,14 +9,14 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
+  type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import {
-  META_CLS,
   TeamMemberImage,
   TeamSocialLinks,
 } from '@/components/portfolio/portfolio-team-design-primitives';
-import { servicesColorLuminance } from '@/components/portfolio/portfolio-services-settings';
+import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
 import {
   PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS,
   teamFloatDefaultColumnGap,
@@ -64,19 +40,18 @@ import { useT } from '@/lib/i18n/I18nProvider';
 
 /** The one curve for this design — nothing here eases on anything else. */
 const FLOAT_EASE = 'cubic-bezier(0.25, 1, 0.5, 1)';
-const FLOAT_EASE_CLS = 'ease-[cubic-bezier(0.25,1,0.5,1)]';
 
 /** Rotation at the very corner of a card. Past ~8deg the portrait's border starts to read as bent. */
-const TILT_MAX_DEG = 7;
+const TILT_MAX_DEG = 2;
 /** How far the portrait drifts against the pointer, in px — the parallax you actually notice. */
-const AVATAR_DRIFT_PX = 12;
+const AVATAR_DRIFT_PX = 4;
 /** Depth of the portrait's own Z plane. The card body stays at Z 0, the glow sits behind it. */
-const AVATAR_DEPTH_PX = 72;
+const AVATAR_DEPTH_PX = 24;
 /** Following lag while the pointer is down on the card, then the long settle when it leaves. */
 const TILT_TRACK_MS = 260;
-const TILT_RELEASE_MS = 900;
+const TILT_RELEASE_MS = 450;
 /** No pointer tracking in play (the hover lift on its own, or tilt turned off). */
-const TILT_IDLE_MS = 620;
+const TILT_IDLE_MS = 350;
 
 /* ---------------------------------------------------------------------- */
 /* Environment                                                             */
@@ -183,7 +158,7 @@ const FLOAT_CARDS_SCALE = {
 } as const;
 
 /** Small caps for the role — a step larger and more widely tracked than the family's `META_CLS`. */
-const FLOAT_ROLE_CLS = 'text-[calc(0.7rem*var(--pf-team-font-scale,1))] font-semibold uppercase leading-none tracking-[0.3em]';
+const FLOAT_ROLE_CLS = 'text-[calc(0.875rem*var(--pf-team-font-scale,1))] font-normal leading-relaxed tracking-normal [overflow-wrap:anywhere]';
 
 const avatarStep = (settings: PortfolioTeamPresentationSettings): PortfolioTeamAvatarSize =>
   settings.avatarSize ?? 'md';
@@ -264,35 +239,6 @@ function floatCascadeClass(index: number, columns: PortfolioTeamRailColumns, gap
 /* Colour                                                                  */
 /* ---------------------------------------------------------------------- */
 
-type FloatAccent = {
-  /** Where the wave starts from — the raw accent. */
-  from: string;
-  /** Where it lands — the same accent, pushed a step deeper, so the fill has a direction. */
-  to: string;
-  /** Copy colour over the accent, picked from its luminance (WCAG-safe either way). */
-  ink: string;
-  /** Icon chip fill over the accent — a tint of the ink, never a second hardcoded colour. */
-  iconBg: string;
-  /** The tinted bloom behind the card. */
-  glow: string;
-};
-
-function floatAccent(presentation: PortfolioTeamPresentationSettings): FloatAccent {
-  const base = presentation.teamPalette?.principal?.trim() || presentation.socialIconColor;
-  const light = servicesColorLuminance(base) > 0.55;
-  return {
-    from: base,
-    // A light accent deepens toward black, a dark one lifts toward white: either way the gradient
-    // reads as one colour with a light source, never as two colours fighting.
-    to: light ? `color-mix(in srgb, ${base} 82%, #000000)` : `color-mix(in srgb, ${base} 86%, #ffffff)`,
-    ink: light ? '#111827' : '#ffffff',
-    iconBg: light
-      ? 'color-mix(in srgb, #111827 12%, transparent)'
-      : 'color-mix(in srgb, #ffffff 22%, transparent)',
-    glow: `color-mix(in srgb, ${base} 55%, transparent)`,
-  };
-}
-
 /* ---------------------------------------------------------------------- */
 /* The card                                                                */
 /* ---------------------------------------------------------------------- */
@@ -307,6 +253,7 @@ function TeamFloatCard({
   presentation,
   tilt,
   cascade = '',
+  portrait,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
@@ -314,14 +261,18 @@ function TeamFloatCard({
   tilt: boolean;
   /** Grid view only: this card's drop in the cascade, as breakpoint-scoped margin classes. */
   cascade?: string;
+  portrait?: ReactNode;
 }) {
   const stageRef = useRef<HTMLDivElement | null>(null);
-  const waveRef = useRef<HTMLSpanElement | null>(null);
   const frame = useRef(0);
   const pending = useRef<{ rx: number; ry: number; ax: number; ay: number } | null>(null);
 
-  const readable = teamReadableCardText(presentation);
-  const accent = floatAccent(presentation);
+  const surface = presentation.cardBackgroundEnabled !== false ? presentation.cardBackgroundColor
+    : presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#ffffff');
+  const readable = { strong: readableMix(presentation.nameColor, 100, surface), muted: readableMix(presentation.responsibilityColor, 100, surface) };
+  const socialSurface = ['minimal', 'outline'].includes(presentation.socialIconStyle) ? surface : presentation.socialBackgroundColor;
+  const socialPresentation = { ...presentation, socialIconColor: readableMix(presentation.socialIconColor, 100, socialSurface) };
+  const accent = presentation.teamPalette?.principal ?? presentation.socialIconColor;
   const align = presentation.listAlign ?? 'center';
   const avatar = avatarSizeExpr(presentation);
   const [padX, padBottom, padCopy] = FLOAT_CARDS_SCALE.padding[presentation.cardPadding ?? 'md'];
@@ -350,14 +301,14 @@ function TeamFloatCard({
   }, []);
 
   const track = (event: ReactPointerEvent<HTMLElement>) => {
-    if (!tilt) return;
+    if (!tilt || event.pointerType === 'touch') return;
     const stage = stageRef.current;
     if (!stage) return;
     const rect = stage.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return;
     // Normalised to [-0.5, 0.5] from the card's centre.
-    const x = (event.clientX - rect.left) / rect.width - 0.5;
-    const y = (event.clientY - rect.top) / rect.height - 0.5;
+    const x = Math.max(-0.5, Math.min(0.5, (event.clientX - rect.left) / rect.width - 0.5));
+    const y = Math.max(-0.5, Math.min(0.5, (event.clientY - rect.top) / rect.height - 0.5));
     pending.current = {
       // rotateX follows the vertical axis inverted: pushing the pointer up tips the top away.
       rx: -y * TILT_MAX_DEG * 2,
@@ -368,18 +319,7 @@ function TeamFloatCard({
     if (!frame.current) frame.current = requestAnimationFrame(flush);
   };
 
-  /** The wave's origin, in % of the card — where the pointer crossed the edge. */
-  const setWaveOrigin = (event: ReactPointerEvent<HTMLElement>) => {
-    const wave = waveRef.current;
-    if (!wave) return;
-    const rect = wave.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
-    wave.style.setProperty('--pf-float-ox', `${((event.clientX - rect.left) / rect.width) * 100}%`);
-    wave.style.setProperty('--pf-float-oy', `${((event.clientY - rect.top) / rect.height) * 100}%`);
-  };
-
   const onEnter = (event: ReactPointerEvent<HTMLElement>) => {
-    setWaveOrigin(event);
     const stage = stageRef.current;
     if (!stage || !tilt) return;
     stage.style.setProperty('--pf-float-ms', `${TILT_TRACK_MS}ms`);
@@ -387,10 +327,7 @@ function TeamFloatCard({
     track(event);
   };
 
-  const onLeave = (event: ReactPointerEvent<HTMLElement>) => {
-    // Re-anchoring on the way out is free: at full radius the circle covers the card from any
-    // inner point, so the origin swap is invisible and the wave retreats toward the exit.
-    setWaveOrigin(event);
+  const onLeave = () => {
     const stage = stageRef.current;
     if (!stage) return;
     if (frame.current) {
@@ -411,7 +348,7 @@ function TeamFloatCard({
       // No `h-full` here: `height: 100%` on a grid item resolves against the whole row, so the
       // card the stagger pushed down would stretch every one of its neighbours and open a dead
       // band under their copy. In the rail its wrapper is a flex box, which stretches it anyway.
-      className={`group relative flex w-full flex-col overflow-visible [perspective:1200px] ${cascade}`}
+      className={`team-float-card group relative flex w-full flex-col overflow-visible [perspective:1200px] ${cascade}`}
       data-team-reveal=""
       style={
         {
@@ -432,7 +369,7 @@ function TeamFloatCard({
         ref={stageRef}
         // The lift is a custom property set by `group-hover`, so it rides the same transform
         // and the same transition as the tilt instead of needing a second animation.
-        className="relative flex h-full w-full flex-col [transform-style:preserve-3d] group-hover:[--pf-float-lift:-10px]"
+        className="relative flex h-full w-full flex-col [transform-style:preserve-3d] motion-safe:group-hover:[--pf-float-lift:-3px]"
         data-pf-no-color-transition=""
         style={
           {
@@ -464,34 +401,24 @@ function TeamFloatCard({
                   transform here and clears it by name when the tween ends, which would take the
                   parallax transform with it if the two shared an element. */}
               <div
-                className="aspect-square w-full overflow-hidden rounded-full border-[6px]"
+                className="aspect-square w-full overflow-hidden rounded-full border-4"
                 data-pf-no-color-transition=""
                 data-team-reveal-media=""
                 style={{
                   borderColor: presentation.cardBackgroundColor,
-                  boxShadow: `0 0 0 1px ${presentation.cardBorderColor}, 0 24px 44px -26px rgba(0,0,0,0.55)`,
+                  boxShadow: `0 0 0 1px ${presentation.cardBorderColor}, 0 6px 16px -8px rgba(0,0,0,0.2)`,
                 }}
               >
-                <TeamMemberImage member={member} presentation={{ ...presentation, imageAspect: 'square' }} fill />
+                {portrait ?? <TeamMemberImage member={member} presentation={{ ...presentation, imageAspect: 'square' }} fill />}
               </div>
             </div>
           </div>
         ) : null}
 
-        {/* The tinted bloom: a blurred slab of the accent set behind the card, which is what a
-            wide diffuse coloured shadow actually is. Kept off the card's own `box-shadow` so the
-            owner's `Shadow` setting still applies at rest and the two never fight. */}
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute inset-x-3 bottom-1 top-6 block rounded-[2rem] opacity-0 blur-2xl ${FLOAT_EASE_CLS} transition-opacity duration-[760ms] group-hover:opacity-70`}
-          data-pf-no-color-transition=""
-          style={{ backgroundColor: accent.glow, transform: 'translateZ(-40px)' }}
-        />
-
         <div
           className={`relative flex h-full w-full flex-col overflow-hidden ${teamCardFrameClass(presentation)} ${teamFlexAlignClass(
             align
-          )} ${teamContentAlignClass(align)} group-hover:border-transparent`}
+          )} ${teamContentAlignClass(align)}`}
           data-pf-no-color-transition=""
           style={
             {
@@ -504,63 +431,40 @@ function TeamFloatCard({
               paddingTop: presentation.showImage
                 ? `calc(var(--pf-float-avatar) / 2 + ${padCopy}rem)`
                 : `${padCopy}rem`,
-              '--team-float-hover': accent.from,
-              '--team-float-hover-ink': accent.ink,
-              '--team-float-hover-icon-bg': accent.iconBg,
               transition: `border-color 560ms ${FLOAT_EASE}`,
             } as CSSProperties
           }
         >
-          {/* The wave. A directional gradient clipped to a circle that grows from wherever the
-              pointer crossed the edge — 150% of the box diagonal always clears the far corner. */}
-          <span
-            ref={waveRef}
-            aria-hidden
-            className="pointer-events-none absolute inset-0 z-0 block [clip-path:circle(0%_at_var(--pf-float-ox,50%)_var(--pf-float-oy,100%))] group-hover:[clip-path:circle(150%_at_var(--pf-float-ox,50%)_var(--pf-float-oy,100%))] group-focus-within:[clip-path:circle(150%_at_var(--pf-float-ox,50%)_var(--pf-float-oy,100%))]"
-            data-pf-no-color-transition=""
-            style={{
-              backgroundImage: `linear-gradient(135deg, ${accent.from} 0%, ${accent.to} 100%)`,
-              transition: `clip-path 860ms ${FLOAT_EASE}`,
-            }}
-          />
           <div className={`relative z-[1] flex w-full flex-1 flex-col ${teamFlexAlignClass(align)}`}>
+            <span aria-hidden className="mb-4 block h-0.5 w-6 shrink-0" style={{ backgroundColor: accent }} />
             {presentation.showName ? (
               <h3
-                // Two lines' worth of room whether the name needs them or not, with the text
-                // centred in it: without the floor a one-line name and a two-line one give their
-                // cards different heights, and a row whose bottoms disagree reads as a bug rather
-                // than as rhythm. The inner span carries the text so `text-align` still applies —
-                // a bare text node in a flex box becomes an anonymous item and stops obeying it.
-                //
-                // The re-ink trails the wave by a beat, so the copy never turns light while the
-                // fill is still on its way across it, and never lags once it has arrived.
-                className={`${FLOAT_CARDS_SCALE.name[avatarStep(presentation)]} flex min-h-[2.16em] w-full items-center font-semibold leading-[1.08] tracking-[-0.03em] ${
+                className={`${FLOAT_CARDS_SCALE.name[avatarStep(presentation)]} flex w-full items-center font-medium leading-[1.25] [overflow-wrap:anywhere] tracking-[-0.03em] ${
                   align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center'
-                } group-hover:![color:var(--team-float-hover-ink)] group-focus-within:![color:var(--team-float-hover-ink)]`}
+                }`}
                 data-pf-no-color-transition=""
                 style={{ color: readable.strong, transition: `color 440ms ${FLOAT_EASE} 80ms` }}
               >
                 <span className="block w-full">{member.name}</span>
               </h3>
             ) : null}
-            {presentation.showResponsibility ? (
+            {presentation.showResponsibility && member.responsibility.trim() ? (
               <p
-                className={`${FLOAT_ROLE_CLS} min-h-[0.7rem] group-hover:![color:color-mix(in_srgb,var(--team-float-hover-ink)_82%,transparent)] group-focus-within:![color:color-mix(in_srgb,var(--team-float-hover-ink)_82%,transparent)] ${
+                className={`${FLOAT_ROLE_CLS} ${
                   presentation.showName ? 'mt-3.5' : ''
                 }`}
                 data-pf-no-color-transition=""
                 style={{ color: readable.muted, transition: `color 440ms ${FLOAT_EASE} 110ms` }}
               >
-                {member.responsibility.trim() || ' '}
+                {member.responsibility}
               </p>
             ) : null}
             {hasSocials ? (
               <div className={`mt-auto w-full ${presentation.showName || presentation.showResponsibility ? 'pt-6' : ''}`}>
                 <TeamSocialLinks
                   member={member}
-                  presentation={presentation}
+                  presentation={socialPresentation}
                   align={teamSocialAlignClass(align)}
-                  hoverLight
                 />
               </div>
             ) : null}
@@ -637,9 +541,11 @@ function TeamFloatChevron({
 export function TeamFloatCardsGallery({
   members,
   presentation,
+  renderPortrait,
 }: {
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
+  renderPortrait?: (member: ProfileTeamMember, index: number) => ReactNode;
 }) {
   const t = useT();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -696,7 +602,7 @@ export function TeamFloatCardsGallery({
         : [...cards].reverse().find((card) => leftOf(card) < current - 4);
     const travel = scroller.scrollWidth - scroller.clientWidth;
     const target = next ? leftOf(next) : direction === 1 ? travel : 0;
-    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: 'smooth' });
+    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: reducedMotion ? 'auto' : 'smooth' });
   };
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -756,10 +662,22 @@ export function TeamFloatCardsGallery({
   return (
     // `min-w-0`: a horizontally scrollable flex row otherwise reports its full content width to an
     // auto-sized parent and stretches the whole page instead of scrolling inside it.
-    <div className="w-full min-w-0">
+    <div className="team-float-gallery w-full min-w-0">
       {view === 'rail' ? (
         <div
           ref={scrollerRef}
+          role="region"
+          aria-label={t('Team members')}
+          tabIndex={0}
+          onKeyDown={(event) => {
+            if (event.target !== event.currentTarget) return;
+            if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+              event.preventDefault(); step(event.key === 'ArrowRight' ? 1 : -1);
+            } else if (event.key === 'Home' || event.key === 'End') {
+              event.preventDefault();
+              event.currentTarget.scrollTo({ left: event.key === 'Home' ? 0 : event.currentTarget.scrollWidth, behavior: reducedMotion ? 'auto' : 'smooth' });
+            }
+          }}
           onScroll={syncBounds}
           onPointerDown={onPointerDown}
           onPointerMove={onPointerMove}
@@ -781,7 +699,7 @@ export function TeamFloatCardsGallery({
           // does not need.
           style={{ gap: `${Math.max(columnGap, 16)}px` }}
         >
-          {members.map((member) => (
+          {members.map((member, index) => (
             <div
               key={member.id}
               // `snap-start`, not `snap-center`: the chevrons align the next card to the rail's
@@ -791,7 +709,7 @@ export function TeamFloatCardsGallery({
               // and never more than a narrow viewport allows.
               style={{ width: `min(84vw, ${cardWidth}rem)` }}
             >
-              <TeamFloatCard member={member} presentation={presentation} tilt={tilt} />
+              <TeamFloatCard member={member} presentation={presentation} tilt={tilt} portrait={renderPortrait?.(member, index)} />
             </div>
           ))}
         </div>
@@ -812,6 +730,7 @@ export function TeamFloatCardsGallery({
               presentation={presentation}
               tilt={tilt}
               cascade={stagger ? floatCascadeClass(index, columns, presentation.gap ?? 'lg') : ''}
+              portrait={renderPortrait?.(member, index)}
             />
           ))}
         </div>
@@ -829,15 +748,15 @@ export function TeamFloatCardsGallery({
                   role="tab"
                   aria-selected={active}
                   onClick={() => setView(option.value)}
-                  className={`${META_CLS} relative pb-2.5 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current`}
+                  className={`relative min-h-11 text-sm font-medium pb-2.5 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current`}
                   data-pf-no-color-transition=""
                   style={{
                     color: active ? readable.strong : readable.muted,
-                    opacity: active ? 1 : 0.65,
+                    opacity: 1,
                     transition: `color 420ms ${FLOAT_EASE}, opacity 420ms ${FLOAT_EASE}`,
                   }}
                 >
-                  {option.label}
+                  {t(option.label)}
                   <span
                     aria-hidden
                     className="absolute inset-x-0 bottom-0 block h-px"

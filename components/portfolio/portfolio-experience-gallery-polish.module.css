@@ -1,0 +1,30 @@
+.grid { align-items: start; }
+.entry { min-width: 0; }
+@media (min-width: 1100px) and (max-width: 1279px) {
+  .grid[data-staggered='true'] > .entry:nth-child(2n) { margin-top: 3rem; }
+}
+@media (min-width: 1280px) {
+  .grid[data-staggered='true'][data-columns='2'] > .entry:nth-child(2n),
+  .grid[data-staggered='true'][data-columns='3'] > .entry:nth-child(3n + 2) { margin-top: 3rem; }
+}
+.card { border: 0; box-shadow: none !important; background: transparent !important; }
+.cardCopy { display: flex; flex-direction: column; gap: .75rem; padding: 1.5rem .125rem .5rem; }
+.stack { min-width: 0; }
+.stack li, :global(#experience) .stack li { font-size: calc(.8125rem * var(--pf-experience-font-scale, 1)); font-weight: 400; line-height: 1.6; }
+.detail { min-width: 0; }
+.detailMeta { display: flex; align-items: baseline; flex-wrap: wrap; gap: .75rem 1.5rem; margin-bottom: 1.25rem; font-size: calc(.8125rem * var(--pf-experience-font-scale, 1)); }
+.description { margin-top: 2rem; max-width: 62ch; font-size: calc(1rem * var(--pf-experience-font-scale, 1)); font-weight: 400; line-height: 1.75; }
+.tasks { margin-top: 2.5rem; }
+.tasks [data-exp-task] > span:last-child { font-size: calc(.9375rem * var(--pf-experience-font-scale, 1)); line-height: 1.65; font-weight: 400; }
+.detailStack { margin-top: 2rem; padding-top: 1.5rem; border-top: 1px solid; }
+.modal { height: min(850px, 88svh); }
+.modalCopy { overscroll-behavior: contain; }
+@media (max-width: 639px) {
+  .modal { height: auto; max-height: 90svh; overflow-y: auto; overscroll-behavior: contain; }
+  .modalCopy { flex: none; overflow-y: visible; padding: 2rem 1.25rem; }
+  .description { margin-top: 1.5rem; }
+  .tasks { margin-top: 2rem; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .modal { transition: none; }
+}

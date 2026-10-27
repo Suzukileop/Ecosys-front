@@ -133,14 +133,22 @@ function useIndexGsapReveal(rootRef: RefObject<HTMLDivElement | null>, motionOff
   }, [rootRef, motionOff]);
 }
 
+const ABOUT_INDEX_TEXT_SCALE: Record<PortfolioInfoPremiumFontSize, number> = {
+  small: 0.88,
+  medium: 1,
+  large: 1.14,
+  xlarge: 1.28,
+  xxlarge: 1.45,
+};
+
 function IndexTag({ index, label, bodyColor }: { index: number; label: string; bodyColor: string }) {
   return (
     <span
-      className="pf-about-index-tag block font-mono text-xs font-medium uppercase tracking-[0.28em] sm:text-sm"
+      className="pf-about-index-tag pf-ai-sm flex items-baseline gap-3 font-medium tracking-normal"
       style={{ color: bodyColor }}
     >
-      [ <span className="pf-about-index-tag-num" data-target={index}>{String(index).padStart(2, '0')}</span>{' '}
-      / {label} ]
+      <span className="pf-about-index-tag-num pf-ai-xs tabular-nums opacity-50" data-target={index}>{String(index).padStart(2, '0')}</span>
+      <span>{label}</span>
     </span>
   );
 }
@@ -148,7 +156,7 @@ function IndexTag({ index, label, bodyColor }: { index: number; label: string; b
 function IndexDivider({ cardBorder }: { cardBorder: string }) {
   return (
     <div
-      className="pf-about-index-divider my-14 border-t sm:my-16"
+      className="pf-about-index-divider my-9 border-t opacity-60 sm:my-11"
       style={{ borderColor: cardBorder }}
       aria-hidden
     />
@@ -189,7 +197,7 @@ function KeywordRow({
   if (items.length === 0) return null;
   return (
     <p
-      className="pf-about-index-keywords text-xl font-normal leading-relaxed sm:text-2xl"
+      className="pf-about-index-keywords pf-ai-lg font-normal leading-relaxed"
       style={
         {
           '--pf-about-index-muted': bodyColor,
@@ -218,7 +226,7 @@ function KeywordRow({
 function LanguageBlock({
   name,
   level,
-  acronymClass,
+  acronymClass: _acronymClass,
   subtitleColor,
   bodyColor,
 }: {
@@ -231,16 +239,16 @@ function LanguageBlock({
   const code = terminalLanguageCode(name);
   const levelLabel = level ? resolveSpokenLanguageLevelLabel(level) : null;
   return (
-    <div className="pf-about-index-lang flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
-      <span className={`font-semibold tracking-tight ${acronymClass}`} style={{ color: subtitleColor }}>
+    <div className="pf-about-index-lang flex min-w-0 items-start gap-x-3">
+      <span className="pf-ai-xs pt-1 font-medium tracking-normal opacity-60" style={{ color: subtitleColor }}>
         {code}
       </span>
       <span
-        className="text-xs uppercase tracking-[0.16em] sm:text-sm"
+        className="pf-ai-base flex min-w-0 flex-col gap-1 leading-relaxed"
         style={{ color: bodyColor }}
       >
         {name}
-        {levelLabel ? ` / ${levelLabel}` : ''}
+        {levelLabel ? <span className="pf-ai-sm opacity-75">{levelLabel}</span> : null}
       </span>
     </div>
   );
@@ -266,12 +274,12 @@ function CatalogRow({
       style={{ borderColor: `color-mix(in srgb, ${cardBorder} 60%, transparent)` }}
     >
       <span
-        className="col-span-12 text-base sm:col-span-4 sm:text-lg"
+        className="pf-ai-lg col-span-12 sm:col-span-4"
         style={{ color: bodyColor }}
       >
         {left}
       </span>
-      <span className="col-span-12 text-base sm:col-span-8 sm:text-lg" style={{ color: subtitleColor }}>
+      <span className="pf-ai-lg col-span-12 sm:col-span-8" style={{ color: subtitleColor }}>
         {right}
       </span>
     </div>
@@ -361,7 +369,12 @@ export function AboutIndexEditorialLayout({
   let sectionIndex = 1;
 
   return (
-    <div ref={rootRef} className={`pf-about-index relative w-full${className ? ` ${className}` : ''}`}>
+    <div
+      ref={rootRef}
+      className={`pf-about-index relative w-full${className ? ` ${className}` : ''}`}
+      // Text size scales every line of the section (skills, languages, education, labels), not just the name and bio.
+      style={{ '--pf-about-index-scale': ABOUT_INDEX_TEXT_SCALE[contentSize] ?? 1 } as CSSProperties}
+    >
       <IndexRow indexNumber={sectionIndex++} label={t('Profile')} bodyColor={labelColor}>
         <div className="space-y-6">
           <div>
@@ -372,7 +385,7 @@ export function AboutIndexEditorialLayout({
             </h2>
             {roleLabel ? (
               <p
-                className="pf-about-index-reveal mt-3 text-sm uppercase tracking-[0.2em]"
+                className="pf-about-index-reveal pf-ai-sm mt-3 uppercase tracking-[0.2em]"
                 style={{ color: accent }}
               >
                 {roleLabel}
@@ -382,6 +395,7 @@ export function AboutIndexEditorialLayout({
           {bioText ? (
             <p
               className={`pf-about-index-reveal font-normal ${bodyClass}`}
+                data-info-bio
               style={{ color: bodyColor }}
             >
               {bioText}
@@ -398,7 +412,7 @@ export function AboutIndexEditorialLayout({
               {showSkillsBlock ? (
                 <div className="space-y-3">
                   <p
-                    className="text-sm font-semibold uppercase tracking-[0.18em]"
+                    className="pf-ai-sm font-semibold uppercase tracking-[0.18em]"
                     style={{ color: labelColor }}
                   >
                     {t('Core skills')}
@@ -413,7 +427,7 @@ export function AboutIndexEditorialLayout({
               {showStrengthsBlock ? (
                 <div className="space-y-3">
                   <p
-                    className="text-sm font-semibold uppercase tracking-[0.18em]"
+                    className="pf-ai-sm font-semibold uppercase tracking-[0.18em]"
                     style={{ color: labelColor }}
                   >
                     {t('Strengths')}
@@ -488,7 +502,7 @@ export function AboutIndexEditorialLayout({
           <IndexDivider cardBorder={cardBorder} />
           <IndexRow indexNumber={sectionIndex++} label={t('Interests')} bodyColor={labelColor}>
             <p
-              className="pf-about-index-reveal max-w-2xl font-serif text-xl italic leading-relaxed sm:text-2xl"
+              className="pf-about-index-reveal pf-ai-lg max-w-2xl leading-relaxed"
               style={{ color: bodyColor }}
             >
               {t('Also into {joinWithAnd}.', { joinWithAnd: joinWithAnd(visibleInterests) })}

@@ -1,3 +1,4 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import {
   DEFAULT_SERVICES_PRICING_STYLE_SETTINGS,
@@ -212,6 +213,9 @@ export const PORTFOLIO_SERVICES_INDEX_LIST_HOVER_OPTIONS: {
 ];
 
 /** Options that apply only when `sectionDesign === 'services-index-list'`. */
+/** Look (and hover) of the order button. */
+export type PortfolioServicesIndexListCtaDesign = 'classic' | 'orb' | 'roll' | 'line' | 'magnet';
+
 export type PortfolioServicesIndexListSettings = {
   layout: PortfolioServicesIndexListLayout;
   tasksStyle: PortfolioServicesIndexListTasksStyle;
@@ -221,6 +225,9 @@ export type PortfolioServicesIndexListSettings = {
   hoverEffect: PortfolioServicesIndexListHover;
   /** Vertical space between two service rows. */
   rowGap: PortfolioServicesIndexListRowGap;
+  ctaDesign: PortfolioServicesIndexListCtaDesign;
+  /** Button colour: `auto` is the page ink, the others are palette tokens. */
+  ctaColor: PortfolioServicesCascadeCardFill;
 };
 
 export type PortfolioServicesIndexListRowGap = 'tight' | 'normal' | 'airy' | 'spacious';
@@ -242,7 +249,20 @@ export const DEFAULT_SERVICES_INDEX_LIST_SETTINGS: PortfolioServicesIndexListSet
   showIndex: true,
   hoverEffect: 'zoom',
   rowGap: 'normal',
+  ctaDesign: 'classic',
+  ctaColor: 'auto',
 };
+
+export const PORTFOLIO_SERVICES_INDEX_LIST_CTA_DESIGN_OPTIONS: {
+  value: PortfolioServicesIndexListCtaDesign;
+  label: string;
+}[] = [
+  { value: 'classic', label: msg('Classic') },
+  { value: 'orb', label: msg('Orb') },
+  { value: 'roll', label: msg('Roll') },
+  { value: 'line', label: msg('Line') },
+  { value: 'magnet', label: msg('Magnet') },
+];
 
 export const PORTFOLIO_SERVICES_INDEX_LIST_LAYOUT_OPTIONS: {
   value: PortfolioServicesIndexListLayout;
@@ -293,6 +313,8 @@ function mergeServicesIndexListSettings(
     showIndex: typeof record.showIndex === 'boolean' ? record.showIndex : base.showIndex,
     hoverEffect: pickOption(record.hoverEffect, PORTFOLIO_SERVICES_INDEX_LIST_HOVER_OPTIONS, base.hoverEffect),
     rowGap: pickOption(record.rowGap, PORTFOLIO_SERVICES_INDEX_LIST_ROW_GAP_OPTIONS, base.rowGap),
+    ctaDesign: pickOption(record.ctaDesign, PORTFOLIO_SERVICES_INDEX_LIST_CTA_DESIGN_OPTIONS, base.ctaDesign),
+    ctaColor: pickOption(record.ctaColor, PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS, base.ctaColor),
   };
 }
 
@@ -303,7 +325,7 @@ export type PortfolioServicesMediaColumnsRatio = 'portrait' | 'square' | 'landsc
 export type PortfolioServicesMediaColumnsRadius = 'none' | 'small' | 'medium' | 'large' | 'round';
 export type PortfolioServicesMediaColumnsGap = 'tight' | 'normal' | 'wide' | 'roomy';
 export type PortfolioServicesMediaColumnsTextAlign = 'left' | 'center';
-export type PortfolioServicesMediaColumnsHover = 'zoom' | 'lift' | 'glow' | 'none';
+export type PortfolioServicesMediaColumnsHover = 'zoom' | 'lift' | 'none';
 
 export type PortfolioServicesMediaColumnsSettings = {
   /** Cards per row on desktop (tablet always shows 2). */
@@ -404,7 +426,6 @@ export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_HOVER_OPTIONS: {
 }[] = [
   { value: 'zoom', label: msg('Zoom') },
   { value: 'lift', label: msg('Lift') },
-  { value: 'glow', label: msg('Glow') },
   { value: 'none', label: msg('None') },
 ];
 
@@ -440,11 +461,12 @@ function mergeServicesMediaColumnsSettings(
 }
 
 /** Options that apply only when `sectionDesign === 'services-icon-cards'`. */
-export type PortfolioServicesIconCardsStyle = 'elevated' | 'outlined' | 'tinted' | 'plain';
+export type PortfolioServicesIconCardsStyle = 'outlined' | 'plain';
 export type PortfolioServicesIconCardsIconShape = 'circle' | 'rounded' | 'bare';
 export type PortfolioServicesIconCardsIconSize = 'small' | 'medium' | 'large';
 export type PortfolioServicesIconCardsIconColor = 'multicolor' | 'accent' | 'mono';
-export type PortfolioServicesIconCardsHover = 'lift' | 'glow' | 'icon' | 'none';
+export type PortfolioServicesIconCardsIconStyle = 'outline' | 'filled';
+export type PortfolioServicesIconCardsHover = 'lift' | 'icon' | 'none';
 
 export type PortfolioServicesIconCardsSettings = {
   /** Cards per row on desktop (tablet always shows 2). */
@@ -456,6 +478,8 @@ export type PortfolioServicesIconCardsSettings = {
   cardStyle: PortfolioServicesIconCardsStyle;
   iconShape: PortfolioServicesIconCardsIconShape;
   iconSize: PortfolioServicesIconCardsIconSize;
+  /** Outline (strokes) or Filled (solid shapes) for every icon. */
+  iconStyle: PortfolioServicesIconCardsIconStyle;
   /** Multicolor gives every card its own colour, Accent uses the section accent, Mono the text colour. */
   iconColor: PortfolioServicesIconCardsIconColor;
   textAlign: PortfolioServicesMediaColumnsTextAlign;
@@ -483,9 +507,10 @@ export const DEFAULT_SERVICES_ICON_CARDS_SETTINGS: PortfolioServicesIconCardsSet
   mobileColumns: 1,
   gap: 'normal',
   cardRadius: 'large',
-  cardStyle: 'elevated',
+  cardStyle: 'outlined',
   iconShape: 'circle',
   iconSize: 'medium',
+  iconStyle: 'outline',
   iconColor: 'multicolor',
   textAlign: 'center',
   centerLastRow: true,
@@ -512,13 +537,22 @@ export const PORTFOLIO_SERVICES_ICON_CARDS_TASKS_STYLE_OPTIONS: {
   { value: 'inline', label: msg('Inline') },
 ];
 
+/** Icon Cards offers four clearly different corner radii (the shared five-step scale is too tight). */
+export const PORTFOLIO_SERVICES_ICON_CARDS_RADIUS_OPTIONS: {
+  value: PortfolioServicesMediaColumnsRadius;
+  label: string;
+}[] = [
+  { value: 'none', label: msg('Square') },
+  { value: 'small', label: msg('Soft') },
+  { value: 'large', label: msg('Rounded') },
+  { value: 'round', label: msg('Pill') },
+];
+
 export const PORTFOLIO_SERVICES_ICON_CARDS_STYLE_OPTIONS: {
   value: PortfolioServicesIconCardsStyle;
   label: string;
 }[] = [
-  { value: 'elevated', label: msg('Shadow') },
   { value: 'outlined', label: msg('Outline') },
-  { value: 'tinted', label: msg('Tinted') },
   { value: 'plain', label: msg('Plain') },
 ];
 
@@ -540,6 +574,14 @@ export const PORTFOLIO_SERVICES_ICON_CARDS_ICON_SIZE_OPTIONS: {
   { value: 'large', label: msg('Large') },
 ];
 
+export const PORTFOLIO_SERVICES_ICON_CARDS_ICON_STYLE_OPTIONS: {
+  value: PortfolioServicesIconCardsIconStyle;
+  label: string;
+}[] = [
+  { value: 'outline', label: msg('Outline') },
+  { value: 'filled', label: msg('Filled') },
+];
+
 export const PORTFOLIO_SERVICES_ICON_CARDS_ICON_COLOR_OPTIONS: {
   value: PortfolioServicesIconCardsIconColor;
   label: string;
@@ -554,7 +596,6 @@ export const PORTFOLIO_SERVICES_ICON_CARDS_HOVER_OPTIONS: {
   label: string;
 }[] = [
   { value: 'lift', label: msg('Lift') },
-  { value: 'glow', label: msg('Glow') },
   { value: 'icon', label: msg('Icon pop') },
   { value: 'none', label: msg('None') },
 ];
@@ -577,10 +618,11 @@ function mergeServicesIconCardsSettings(
     columns: pickOption(record.columns, PORTFOLIO_SERVICES_MEDIA_COLUMNS_COUNT_OPTIONS, base.columns),
     mobileColumns: pickOption(record.mobileColumns, PORTFOLIO_SERVICES_MEDIA_COLUMNS_MOBILE_OPTIONS, base.mobileColumns),
     gap: pickOption(record.gap, PORTFOLIO_SERVICES_MEDIA_COLUMNS_GAP_OPTIONS, base.gap),
-    cardRadius: pickOption(record.cardRadius, PORTFOLIO_SERVICES_MEDIA_COLUMNS_RADIUS_OPTIONS, base.cardRadius),
+    cardRadius: pickOption(record.cardRadius, PORTFOLIO_SERVICES_ICON_CARDS_RADIUS_OPTIONS, base.cardRadius),
     cardStyle: pickOption(record.cardStyle, PORTFOLIO_SERVICES_ICON_CARDS_STYLE_OPTIONS, base.cardStyle),
     iconShape: pickOption(record.iconShape, PORTFOLIO_SERVICES_ICON_CARDS_ICON_SHAPE_OPTIONS, base.iconShape),
     iconSize: pickOption(record.iconSize, PORTFOLIO_SERVICES_ICON_CARDS_ICON_SIZE_OPTIONS, base.iconSize),
+    iconStyle: pickOption(record.iconStyle, PORTFOLIO_SERVICES_ICON_CARDS_ICON_STYLE_OPTIONS, base.iconStyle),
     iconColor: pickOption(record.iconColor, PORTFOLIO_SERVICES_ICON_CARDS_ICON_COLOR_OPTIONS, base.iconColor),
     textAlign: pickOption(record.textAlign, PORTFOLIO_SERVICES_MEDIA_COLUMNS_TEXT_ALIGN_OPTIONS, base.textAlign),
     centerLastRow: bool('centerLastRow', base.centerLastRow),
@@ -607,19 +649,34 @@ function pickBool(record: Record<string, unknown>, key: string, fallback: boolea
 export type PortfolioServicesBandIndexTitleSize = 'medium' | 'large' | 'huge';
 /** Follow = a media card trails the cursor; Inline = the media slides open inside the band. */
 export type PortfolioServicesBandIndexPreview = 'follow' | 'inline' | 'none';
-export type PortfolioServicesBandIndexHoverFill = 'invert' | 'accent' | 'none';
+/** Invert floods the band with the text colour, Color with a palette colour (`hoverColor`). */
+export type PortfolioServicesBandIndexHoverFill = 'invert' | 'color' | 'none';
+export type PortfolioServicesBandIndexHoverColor = 'principal' | 'secondaire' | 'texteFort' | 'neutre';
+/** What unfolds a band's details: a click, or the pointer resting on it (touch screens always tap). */
+export type PortfolioServicesBandIndexOpenOn = 'click' | 'hover';
+/** The button at the right end of a band that shows it can be unfolded. */
+export type PortfolioServicesBandIndexToggleStyle = 'circle' | 'soft' | 'plain' | 'chevron';
 /** How the tasks read inside an opened band. */
 export type PortfolioServicesBandIndexTasksStyle = 'rows' | 'checklist' | 'pills' | 'columns' | 'inline';
+
 
 export type PortfolioServicesBandIndexSettings = {
   titleSize: PortfolioServicesBandIndexTitleSize;
   preview: PortfolioServicesBandIndexPreview;
   hoverFill: PortfolioServicesBandIndexHoverFill;
+  /** Palette colour of the hover fill when `hoverFill === 'color'`. */
+  hoverColor: PortfolioServicesBandIndexHoverColor;
+  /** 20-100: how solid the hover fill is. */
+  hoverOpacity: number;
   showIndex: boolean;
-  /** Delivery time + price on the right end of each band. */
-  showMeta: boolean;
-  /** Clicking a band opens its description and tasks underneath. */
-  expandable: boolean;
+  /** Price on the right end of each band. */
+  showPrice: boolean;
+  /** Delivery time on the right end of each band. */
+  showDelivery: boolean;
+  /** Click (or hover) on a band opens its description and tasks underneath. */
+  openOn: PortfolioServicesBandIndexOpenOn;
+  /** Look of the unfold button. */
+  toggleStyle: PortfolioServicesBandIndexToggleStyle;
   uppercase: boolean;
   tasksStyle: PortfolioServicesBandIndexTasksStyle;
 };
@@ -628,9 +685,13 @@ export const DEFAULT_SERVICES_BAND_INDEX_SETTINGS: PortfolioServicesBandIndexSet
   titleSize: 'large',
   preview: 'follow',
   hoverFill: 'invert',
+  hoverColor: 'principal',
+  hoverOpacity: 100,
   showIndex: true,
-  showMeta: true,
-  expandable: true,
+  showPrice: true,
+  showDelivery: true,
+  openOn: 'click',
+  toggleStyle: 'circle',
   uppercase: false,
   tasksStyle: 'rows',
 };
@@ -644,6 +705,24 @@ export const PORTFOLIO_SERVICES_BAND_INDEX_TASKS_STYLE_OPTIONS: {
   { value: 'pills', label: msg('Pills') },
   { value: 'columns', label: msg('Two columns') },
   { value: 'inline', label: msg('Inline') },
+];
+
+export const PORTFOLIO_SERVICES_BAND_INDEX_TOGGLE_STYLE_OPTIONS: {
+  value: PortfolioServicesBandIndexToggleStyle;
+  label: string;
+}[] = [
+  { value: 'circle', label: msg('Outline') },
+  { value: 'soft', label: msg('Soft') },
+  { value: 'plain', label: msg('Plain') },
+  { value: 'chevron', label: msg('Chevron') },
+];
+
+export const PORTFOLIO_SERVICES_BAND_INDEX_OPEN_ON_OPTIONS: {
+  value: PortfolioServicesBandIndexOpenOn;
+  label: string;
+}[] = [
+  { value: 'click', label: msg('Click') },
+  { value: 'hover', label: msg('Hover') },
 ];
 
 export const PORTFOLIO_SERVICES_BAND_INDEX_TITLE_SIZE_OPTIONS: {
@@ -669,8 +748,18 @@ export const PORTFOLIO_SERVICES_BAND_INDEX_HOVER_FILL_OPTIONS: {
   label: string;
 }[] = [
   { value: 'invert', label: msg('Invert') },
-  { value: 'accent', label: msg('Accent') },
+  { value: 'color', label: msg('Color') },
   { value: 'none', label: msg('None') },
+];
+
+export const PORTFOLIO_SERVICES_BAND_INDEX_HOVER_COLOR_OPTIONS: {
+  value: PortfolioServicesBandIndexHoverColor;
+  label: string;
+}[] = [
+  { value: 'principal', label: msg('Principal') },
+  { value: 'secondaire', label: msg('Secondary') },
+  { value: 'texteFort', label: msg('Contrast') },
+  { value: 'neutre', label: msg('Neutral') },
 ];
 
 function mergeServicesBandIndexSettings(
@@ -682,10 +771,23 @@ function mergeServicesBandIndexSettings(
   return {
     titleSize: pickOption(record.titleSize, PORTFOLIO_SERVICES_BAND_INDEX_TITLE_SIZE_OPTIONS, base.titleSize),
     preview: pickOption(record.preview, PORTFOLIO_SERVICES_BAND_INDEX_PREVIEW_OPTIONS, base.preview),
-    hoverFill: pickOption(record.hoverFill, PORTFOLIO_SERVICES_BAND_INDEX_HOVER_FILL_OPTIONS, base.hoverFill),
+    // 'accent' is the old name of the palette-colour fill.
+    hoverFill: pickOption(
+      record.hoverFill === 'accent' ? 'color' : record.hoverFill,
+      PORTFOLIO_SERVICES_BAND_INDEX_HOVER_FILL_OPTIONS,
+      base.hoverFill
+    ),
+    hoverColor: pickOption(record.hoverColor, PORTFOLIO_SERVICES_BAND_INDEX_HOVER_COLOR_OPTIONS, base.hoverColor),
+    hoverOpacity:
+      typeof record.hoverOpacity === 'number' && Number.isFinite(record.hoverOpacity)
+        ? Math.min(100, Math.max(20, Math.round(record.hoverOpacity)))
+        : base.hoverOpacity,
     showIndex: pickBool(record, 'showIndex', base.showIndex),
-    showMeta: pickBool(record, 'showMeta', base.showMeta),
-    expandable: pickBool(record, 'expandable', base.expandable),
+    // `showMeta` was one switch for both: it still seeds them when they were never set apart.
+    showPrice: pickBool(record, 'showPrice', pickBool(record, 'showMeta', base.showPrice)),
+    showDelivery: pickBool(record, 'showDelivery', pickBool(record, 'showMeta', base.showDelivery)),
+    openOn: pickOption(record.openOn, PORTFOLIO_SERVICES_BAND_INDEX_OPEN_ON_OPTIONS, base.openOn),
+    toggleStyle: pickOption(record.toggleStyle, PORTFOLIO_SERVICES_BAND_INDEX_TOGGLE_STYLE_OPTIONS, base.toggleStyle),
     uppercase: pickBool(record, 'uppercase', base.uppercase),
     tasksStyle: pickOption(record.tasksStyle, PORTFOLIO_SERVICES_BAND_INDEX_TASKS_STYLE_OPTIONS, base.tasksStyle),
   };
@@ -697,6 +799,8 @@ export type PortfolioServicesCascadeCardWidth = 'small' | 'medium' | 'large';
 export type PortfolioServicesCascadeCardHeight = 'compact' | 'standard' | 'tall';
 /** `zigzag` alternates: media right on the 1st card, left on the 2nd, and so on. */
 export type PortfolioServicesCascadeMediaSide = 'right' | 'left' | 'zigzag';
+/** `auto` keeps the design's own white / raised-dark card; the others are palette tokens. */
+export type PortfolioServicesCascadeCardFill = 'auto' | 'principal' | 'secondaire' | 'texteFort' | 'neutre';
 
 export type PortfolioServicesCascadeSettings = {
   /** Stack = sticky cards that recede as the next one covers them (desktop); Static = plain list. */
@@ -708,6 +812,10 @@ export type PortfolioServicesCascadeSettings = {
   showNumbering: boolean;
   /** Every card takes the tallest card's height, so none peeks out from under the next. */
   equalHeight: boolean;
+  /** Colour of the card's background frame. */
+  cardFill: PortfolioServicesCascadeCardFill;
+  /** 10-100: how much of `cardFill` shows (the rest stays the design's own card colour, so the card is never see-through). */
+  cardFillOpacity: number;
 };
 
 export const DEFAULT_SERVICES_CASCADE_SETTINGS: PortfolioServicesCascadeSettings = {
@@ -717,6 +825,8 @@ export const DEFAULT_SERVICES_CASCADE_SETTINGS: PortfolioServicesCascadeSettings
   mediaSide: 'right',
   showNumbering: true,
   equalHeight: true,
+  cardFill: 'auto',
+  cardFillOpacity: 100,
 };
 
 export const PORTFOLIO_SERVICES_CASCADE_STACK_OPTIONS: {
@@ -754,6 +864,17 @@ export const PORTFOLIO_SERVICES_CASCADE_MEDIA_SIDE_OPTIONS: {
   { value: 'zigzag', label: msg('Zig-zag') },
 ];
 
+export const PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS: {
+  value: PortfolioServicesCascadeCardFill;
+  label: string;
+}[] = [
+  { value: 'auto', label: msg('Default') },
+  { value: 'principal', label: msg('Principal') },
+  { value: 'secondaire', label: msg('Secondary') },
+  { value: 'texteFort', label: msg('Contrast') },
+  { value: 'neutre', label: msg('Neutral') },
+];
+
 function mergeServicesCascadeSettings(
   base: PortfolioServicesCascadeSettings,
   patch: unknown
@@ -767,6 +888,11 @@ function mergeServicesCascadeSettings(
     mediaSide: pickOption(record.mediaSide, PORTFOLIO_SERVICES_CASCADE_MEDIA_SIDE_OPTIONS, base.mediaSide),
     showNumbering: pickBool(record, 'showNumbering', base.showNumbering),
     equalHeight: pickBool(record, 'equalHeight', base.equalHeight),
+    cardFill: pickOption(record.cardFill, PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS, base.cardFill),
+    cardFillOpacity:
+      typeof record.cardFillOpacity === 'number' && Number.isFinite(record.cardFillOpacity)
+        ? Math.min(100, Math.max(10, Math.round(record.cardFillOpacity)))
+        : base.cardFillOpacity,
   };
 }
 
@@ -791,6 +917,10 @@ export type PortfolioServicesCapabilitiesSettings = {
   /** Centers an incomplete last row instead of leaving it flush left. */
   centerLastRow: boolean;
   itemFrame: PortfolioServicesCapabilitiesItemFrame;
+  /** Colour of a Filled frame: `auto` keeps the soft ink tint, the others are palette tokens. */
+  frameFill: PortfolioServicesCascadeCardFill;
+  /** 10-100: how much of `frameFill` shows over the page. */
+  frameFillOpacity: number;
   /** Highlights the featured service (shared Featured settings). Off by default on this quiet grid. */
   showFeatured: boolean;
 };
@@ -805,6 +935,8 @@ export const DEFAULT_SERVICES_CAPABILITIES_SETTINGS: PortfolioServicesCapabiliti
   showRule: true,
   centerLastRow: false,
   itemFrame: 'none',
+  frameFill: 'auto',
+  frameFillOpacity: 100,
   showFeatured: false,
 };
 
@@ -842,6 +974,11 @@ function mergeServicesCapabilitiesSettings(
     showRule: pickBool(record, 'showRule', base.showRule),
     centerLastRow: pickBool(record, 'centerLastRow', base.centerLastRow),
     itemFrame: pickOption(record.itemFrame, PORTFOLIO_SERVICES_CAPABILITIES_FRAME_OPTIONS, base.itemFrame),
+    frameFill: pickOption(record.frameFill, PORTFOLIO_SERVICES_CASCADE_CARD_FILL_OPTIONS, base.frameFill),
+    frameFillOpacity:
+      typeof record.frameFillOpacity === 'number' && Number.isFinite(record.frameFillOpacity)
+        ? Math.min(100, Math.max(10, Math.round(record.frameFillOpacity)))
+        : base.frameFillOpacity,
     showFeatured: pickBool(record, 'showFeatured', base.showFeatured),
   };
 }
@@ -863,6 +1000,17 @@ export const PORTFOLIO_SERVICES_PRICING_BENTO_MOTIF_OPTIONS: {
 /** The three card layouts of the "Pricing Cards" design. */
 export type PortfolioServicesPricingCardsLayout = 'grid' | 'monolith' | 'bento';
 export type PortfolioServicesPricingCardsColumns = 1 | 2 | 3 | 4;
+/** How wide the cards may get. Comfortable keeps them readable and centred (the Grid used to stretch two
+ *  cards across the whole section); Full is the old edge-to-edge behaviour. */
+export type PortfolioServicesPricingCardsWidth = 'full' | 'comfortable';
+
+export const PORTFOLIO_SERVICES_PRICING_CARDS_WIDTH_OPTIONS: {
+  value: PortfolioServicesPricingCardsWidth;
+  label: string;
+}[] = [
+  { value: 'full', label: msg('Full width') },
+  { value: 'comfortable', label: msg('Comfortable') },
+];
 
 export const PORTFOLIO_SERVICES_PRICING_CARDS_LAYOUT_OPTIONS: {
   value: PortfolioServicesPricingCardsLayout;
@@ -879,10 +1027,15 @@ export type PortfolioServicesPricingCardsSettings = {
   layout: PortfolioServicesPricingCardsLayout;
   /** Cards per row on desktop (Grid and Monolith; Bento is always a two-column composition). */
   cardsPerRow: PortfolioServicesPricingCardsColumns;
+  /** Maximum width of the cards (Grid and Monolith); the group is centred. */
+  cardWidth: PortfolioServicesPricingCardsWidth;
   /** Pattern in the featured card's header (Bento); `none` removes the header. */
   graphicMotif: PortfolioServicesPricingBentoMotif;
   /** Heading above the checklist of the wide featured Bento card; empty hides it. */
   includedLabel: string;
+  /** Shows `includedLabel` above that checklist. Fallback only: General's shared
+   *  `pricingStyle.showIncludedLabel` / `includedLabel` win once set. */
+  showIncludedLabel: boolean;
   /** Grid layout: centers an incomplete last row instead of leaving it flush left. */
   centerLastRow: boolean;
 };
@@ -890,8 +1043,10 @@ export type PortfolioServicesPricingCardsSettings = {
 export const DEFAULT_SERVICES_PRICING_CARDS_SETTINGS: PortfolioServicesPricingCardsSettings = {
   layout: 'grid',
   cardsPerRow: 3,
+  cardWidth: 'comfortable',
   graphicMotif: 'shapes',
   includedLabel: "What's included",
+  showIncludedLabel: true,
   centerLastRow: false,
 };
 
@@ -915,9 +1070,11 @@ export function mergeServicesPricingCardsSettings(
   return {
     layout: pickOption(record.layout, PORTFOLIO_SERVICES_PRICING_CARDS_LAYOUT_OPTIONS, base.layout),
     cardsPerRow: pickOption(record.cardsPerRow, PORTFOLIO_SERVICES_PRICING_CARDS_COLUMNS_OPTIONS, base.cardsPerRow),
+    cardWidth: pickOption(record.cardWidth, PORTFOLIO_SERVICES_PRICING_CARDS_WIDTH_OPTIONS, base.cardWidth),
     graphicMotif: pickOption(record.graphicMotif, PORTFOLIO_SERVICES_PRICING_BENTO_MOTIF_OPTIONS, base.graphicMotif),
     includedLabel:
       typeof record.includedLabel === 'string' ? record.includedLabel.trim().slice(0, 40) : base.includedLabel,
+    showIncludedLabel: pickBool(record, 'showIncludedLabel', base.showIncludedLabel),
     centerLastRow: pickBool(record, 'centerLastRow', base.centerLastRow),
   };
 }
@@ -1092,7 +1249,8 @@ export type PortfolioServicesPricingToggleSettings = {
   defaultBilling: PortfolioServicesPricingToggleBillingCycle;
   /** Where the featured row sits in the list: its own place, first, middle or last. */
   featuredPosition: PortfolioServicesPricingAuroraFeaturedPosition;
-  /** Small heading above each row's task list. */
+  /** Small heading above each row's task list. Fallback only: General's shared
+   *  `pricingStyle.showIncludedLabel` / `includedLabel` win once set. */
   showIncludedLabel: boolean;
   /** Text of that heading; empty falls back to "What's included". */
   includedLabel: string;
@@ -1960,6 +2118,8 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
   /** Global type-size control — see `PortfolioServicesPremiumFontSize` doc comment. */
   premiumFontSize: PortfolioServicesPremiumFontSize;
   /** Services-owned palette copy (same 8 tokens as Hero). */
@@ -2595,6 +2755,7 @@ export const DEFAULT_SERVICES_PRESENTATION: PortfolioServicesPresentationSetting
   servicesHeader: createDefaultDistinctHeaderSettings('services'),
   useHeroPalette: true,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
   premiumFontSize: 'medium',
   servicesPalette: { ...DEFAULT_SERVICES_PALETTE },
   servicesColorBindings: { ...DEFAULT_SERVICES_COLOR_BINDINGS },
@@ -4189,6 +4350,7 @@ export function mergeServicesPresentation(
     skillsIconSize: pick(record.skillsIconSize, ['sm', 'md', 'lg', 'xl'], base.skillsIconSize),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
     premiumFontSize: pick(record.premiumFontSize, SERVICES_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     servicesPalette: mergeServicesPalette(
       mergeServicesPalette(DEFAULT_SERVICES_PALETTE, base.servicesPalette),

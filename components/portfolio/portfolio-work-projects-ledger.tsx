@@ -1,6 +1,7 @@
 'use client';
+import { workButtonColor } from './portfolio-work-button-color';
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
@@ -13,41 +14,34 @@ import {
   DEFAULT_PROJECTS_LEDGER_SETTINGS,
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsLedgerSettings,
+  workPaletteTokenColor,
 } from '@/components/portfolio/portfolio-work-settings';
+import { WorkConsultButtonLink } from '@/components/portfolio/portfolio-work-consult-link';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const LEDGER_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 /** Back-out easing — the "spring/magnetic" overshoot used for active-state and FLIP motion. */
-const LEDGER_SPRING_EASE = 'cubic-bezier(0.34, 1.56, 0.64, 1)';
 const LEDGER_HIDDEN: CSSProperties = {
   opacity: 0,
   transform: 'translate3d(0, 28px, 0)',
 };
 
-/** Cascade timing for the detail panel's split-line reveal (title -> description -> stack -> link). */
-const LEDGER_DESC_BASE_MS = 60;
-const LEDGER_DESC_STAGGER_MS = 50;
-const LEDGER_STACK_BASE_MS = 260;
-const LEDGER_STACK_STAGGER_MS = 45;
-const LEDGER_CONSULT_DELAY_MS = 340;
-
 const LEDGER_CSS = `
+/* Full-width hairline (a ledger is read across the row). The border color alone was ~1.2:1
+   on black at 0.22, so it is lifted toward the ink. */
 .pf-work-ledger-rule {
-  width: min(38%, 11rem);
-  opacity: 0.22;
-  transform-origin: left center;
-  transition:
-    width 0.55s ${LEDGER_EASE},
-    opacity 0.55s ${LEDGER_EASE};
+  width: 100%;
+  background-color: color-mix(in srgb, var(--pf-ledger-rule), var(--pf-ledger-line-ink) 16%);
+  transition: background-color 0.5s ${LEDGER_EASE};
 }
 .pf-work-ledger-row:hover .pf-work-ledger-rule,
 .pf-work-ledger-row:focus-within .pf-work-ledger-rule {
-  width: min(100%, 34rem);
-  opacity: 0.48;
+  background-color: color-mix(in srgb, var(--pf-ledger-rule), var(--pf-ledger-line-ink) 34%);
 }
 .pf-work-ledger-mark {
+  opacity: 0;
   transform-origin: right center;
-  transition: transform 0.6s ${LEDGER_SPRING_EASE}, opacity 0.5s ${LEDGER_EASE};
+  transition: transform 0.6s ${LEDGER_EASE}, opacity 0.5s ${LEDGER_EASE};
 }
 .pf-work-ledger-row:hover .pf-work-ledger-mark,
 .pf-work-ledger-row:focus-within .pf-work-ledger-mark,
@@ -60,13 +54,13 @@ const LEDGER_CSS = `
   transform-origin: left center;
   transition:
     color 0.5s ${LEDGER_EASE},
-    transform 0.6s ${LEDGER_SPRING_EASE};
+    transform 0.6s ${LEDGER_EASE};
 }
 .pf-work-ledger-row:hover .pf-work-ledger-title,
 .pf-work-ledger-row:focus-within .pf-work-ledger-title,
 .pf-work-ledger-row[data-ledger-active='1'] .pf-work-ledger-title {
   color: var(--pf-ledger-ink-active);
-  transform: translate3d(0.4rem, 0, 0) scale(1.035);
+  transform: translate3d(0.25rem, 0, 0);
 }
 .pf-work-ledger-role-text {
   color: var(--pf-ledger-muted);
@@ -74,7 +68,7 @@ const LEDGER_CSS = `
   transition:
     color 0.5s ${LEDGER_EASE},
     opacity 0.5s ${LEDGER_EASE},
-    transform 0.55s ${LEDGER_SPRING_EASE};
+    transform 0.55s ${LEDGER_EASE};
 }
 .pf-work-ledger-row:hover .pf-work-ledger-role-text,
 .pf-work-ledger-row:focus-within .pf-work-ledger-role-text,
@@ -89,20 +83,25 @@ const LEDGER_CSS = `
 .pf-work-ledger-inner[data-dim='1'] {
   opacity: 0.15;
 }
-.pf-ledger-line-mask {
-  display: block;
-  overflow: hidden;
+.pf-work-ledger-panel {
+  transition: grid-template-rows 0.45s ${LEDGER_EASE};
 }
-.pf-ledger-line-inner {
-  display: block;
+.pf-work-ledger-panel-body {
+  opacity: 0;
+  transform: translate3d(0, 6px, 0);
   transition:
-    transform 0.75s ${LEDGER_SPRING_EASE},
-    opacity 0.5s ${LEDGER_EASE};
-  will-change: transform, opacity;
+    opacity 0.3s ${LEDGER_EASE},
+    transform 0.4s ${LEDGER_EASE};
 }
+.pf-work-ledger-panel-body[data-open='1'] {
+  opacity: 1;
+  transform: translate3d(0, 0, 0);
+  transition-delay: 0.08s;
+}
+/* Siblings step back but stay readable (was 0.15). */
 @media (hover: hover) and (prefers-reduced-motion: no-preference) {
   .pf-work-ledger[data-expand='hover'] .pf-work-ledger-list:hover .pf-work-ledger-row:not(:hover):not(:focus-within) .pf-work-ledger-inner {
-    opacity: 0.15;
+    opacity: 0.6;
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -126,9 +125,9 @@ const LEDGER_CSS = `
   .pf-work-ledger-inner {
     transition-duration: 0.01ms !important;
   }
-  .pf-ledger-line-inner {
+  .pf-work-ledger-panel,
+  .pf-work-ledger-panel-body {
     transition-duration: 0.01ms !important;
-    opacity: 1 !important;
     transform: none !important;
   }
 }
@@ -155,9 +154,6 @@ function formatLedgerIndex(index: number): string {
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
-
-/** useLayoutEffect on the client (avoids a one-frame flash while lines re-measure), useEffect on the server. */
-const useIsomorphicLayoutEffect = typeof window !== 'undefined' ? useLayoutEffect : useEffect;
 
 function ledgerScrollRoot(el: HTMLElement | null): HTMLElement | null {
   let node = el?.parentElement ?? null;
@@ -198,7 +194,7 @@ function LedgerTitleText({ text, allowItalic }: { text: string; allowItalic: boo
   return (
     <>
       <span className="font-medium">{parts.lead}</span>{' '}
-      <span className="font-semibold italic tracking-[-0.03em]">{parts.italic}</span>
+      <span className="font-semibold tracking-[-0.03em]">{parts.italic}</span>
     </>
   );
 }
@@ -215,109 +211,6 @@ function showElementNow(el: HTMLElement): void {
   el.style.opacity = '1';
   el.style.transform = 'none';
   el.dataset.revealed = 'true';
-}
-
-/**
- * Splits `text` into its true rendered visual lines (measured live, re-measured on resize)
- * and reveals each one independently from a bottom mask — the split-text cascade in the brief.
- * A hidden clone (`aria-hidden`, absolutely positioned, same className) does the measuring so the
- * visible lines never shift the layout while recomputing.
- */
-function LedgerLineReveal({
-  text,
-  active,
-  className = '',
-  style,
-  baseDelayMs = 0,
-  staggerMs = 50,
-  ariaLabel,
-}: {
-  text: string;
-  active: boolean;
-  className?: string;
-  style?: CSSProperties;
-  baseDelayMs?: number;
-  staggerMs?: number;
-  ariaLabel?: string;
-}) {
-  const measureRef = useRef<HTMLParagraphElement>(null);
-  const [lines, setLines] = useState<string[]>(() => (text.trim() ? [text.trim()] : []));
-
-  useIsomorphicLayoutEffect(() => {
-    const measureEl = measureRef.current;
-    const words = text.trim().split(/\s+/).filter(Boolean);
-    if (!measureEl || words.length === 0) {
-      setLines(words.length ? [words.join(' ')] : []);
-      return;
-    }
-
-    const compute = () => {
-      measureEl.textContent = '';
-      const spans = words.map((word) => {
-        const span = document.createElement('span');
-        span.textContent = word;
-        span.style.display = 'inline-block';
-        span.style.marginRight = '0.28em';
-        measureEl.appendChild(span);
-        return span;
-      });
-      const groups: string[][] = [];
-      let lastTop = Number.NaN;
-      spans.forEach((span, i) => {
-        const top = span.offsetTop;
-        if (Number.isNaN(lastTop) || Math.abs(top - lastTop) > 1) {
-          groups.push([]);
-          lastTop = top;
-        }
-        groups[groups.length - 1].push(words[i]);
-      });
-      setLines(groups.map((group) => group.join(' ')));
-    };
-
-    compute();
-    if (typeof ResizeObserver === 'undefined') return undefined;
-    const observer = new ResizeObserver(compute);
-    observer.observe(measureEl);
-    return () => observer.disconnect();
-  }, [text]);
-
-  if (lines.length === 0) return null;
-
-  return (
-    <div className={className} style={{ position: 'relative', ...style }} aria-label={ariaLabel}>
-      <p
-        ref={measureRef}
-        aria-hidden
-        className={className}
-        style={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: '100%',
-          height: 0,
-          overflow: 'hidden',
-          visibility: 'hidden',
-          margin: 0,
-          pointerEvents: 'none',
-        }}
-      />
-      {lines.map((line, index) => (
-        <span key={index} className="pf-ledger-line-mask" data-pf-no-color-transition="">
-          <span
-            className="pf-ledger-line-inner"
-            data-pf-no-color-transition=""
-            style={{
-              transitionDelay: active ? `${baseDelayMs + index * staggerMs}ms` : '0ms',
-              transform: active ? 'translate3d(0, 0, 0)' : 'translate3d(0, 105%, 0)',
-              opacity: active ? 1 : 0,
-            }}
-          >
-            {line}
-          </span>
-        </span>
-      ))}
-    </div>
-  );
 }
 
 function LedgerConsultLink({
@@ -388,22 +281,13 @@ function LedgerConsultLink({
   );
 }
 
-function LedgerHairline({
-  color,
-  indent = true,
-}: {
-  color: string;
-  indent?: boolean;
-}) {
+/** Color comes from --pf-ledger-rule / --pf-ledger-line-ink on the ledger root. */
+function LedgerHairline({ indent = true }: { indent?: boolean }) {
   return (
     <div className="flex" aria-hidden>
-      {indent ? <span className="hidden w-[3.5rem] shrink-0 lg:block xl:w-16" /> : null}
-      {indent ? <span className="hidden w-8 shrink-0 lg:block xl:w-10" /> : null}
-      <span
-        className="pf-work-ledger-rule block h-px"
-        style={{ backgroundColor: color }}
-        data-pf-no-color-transition=""
-      />
+      {indent ? <span className="hidden w-12 shrink-0 md:block lg:w-[3.5rem] xl:w-16" /> : null}
+      {indent ? <span className="hidden w-6 shrink-0 md:block lg:w-8 xl:w-10" /> : null}
+      <span className="pf-work-ledger-rule block h-px" data-pf-no-color-transition="" />
     </div>
   );
 }
@@ -417,7 +301,6 @@ function LedgerRow({
   dimmed,
   onOpen,
   onClose,
-  rule,
 }: {
   item: MarketplaceContentItem;
   index: number;
@@ -427,7 +310,6 @@ function LedgerRow({
   dimmed: boolean;
   onOpen: () => void;
   onClose: () => void;
-  rule: string;
 }) {
   const t = useT();
   const accent = presentation.ctaColor || presentation.categoryActiveColor || '#2563eb';
@@ -448,6 +330,8 @@ function LedgerRow({
   const showStack = settings.showStack !== false && tools.length > 0;
   const showConsult = settings.showConsult !== false && Boolean(href);
   const consultLabel = settings.consultLabel?.trim() || t('Consult this project');
+  const consultStyle = settings.consultStyle ?? 'link';
+  const metaInk = !settings.metaColor || settings.metaColor === 'muted' ? undefined : workPaletteTokenColor(settings.metaColor);
   const hasDetails = showDescription || showStack || showConsult;
   const expandMode = settings.expandMode ?? 'hover';
   const interactive = expandMode !== 'always' && hasDetails;
@@ -478,8 +362,9 @@ function LedgerRow({
       data-ledger-active={detailsOpen ? '1' : '0'}
       style={{
         ...LEDGER_HIDDEN,
-        ['--pf-ledger-ink' as string]: ink,
-        ['--pf-ledger-ink-active' as string]: `color-mix(in srgb, white 85%, ${ink} 15%)`,
+        // Rest slightly softened, hover = the full ink (works on light and dark sections).
+        ['--pf-ledger-ink' as string]: `color-mix(in srgb, ${ink} 88%, transparent)`,
+        ['--pf-ledger-ink-active' as string]: ink,
         ['--pf-ledger-muted' as string]: muted,
       }}
       onMouseEnter={handleEnter}
@@ -513,7 +398,12 @@ function LedgerRow({
                 }
               : undefined
           }
-          className={`grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2 py-8 sm:gap-x-6 sm:py-10 lg:grid-cols-[3.5rem_minmax(0,1fr)_minmax(7.5rem,13rem)_1.75rem] lg:gap-x-8 lg:py-12 xl:grid-cols-[4rem_minmax(0,1fr)_minmax(8rem,14rem)_1.75rem] xl:gap-x-10 ${
+          className={`grid items-start gap-x-4 gap-y-2 py-6 sm:gap-x-6 sm:py-7 md:gap-x-6 lg:gap-x-8 lg:py-9 xl:gap-x-10 ${
+            // Without the numbering the first column goes away, so the title sits flush left.
+            showIndex
+              ? 'grid-cols-[auto_minmax(0,1fr)] md:grid-cols-[3rem_minmax(0,1fr)_minmax(7rem,12rem)_1.5rem] lg:grid-cols-[3.5rem_minmax(0,1fr)_minmax(7.5rem,13rem)_1.75rem] xl:grid-cols-[4rem_minmax(0,1fr)_minmax(8rem,14rem)_1.75rem]'
+              : 'grid-cols-[minmax(0,1fr)] md:grid-cols-[minmax(0,1fr)_minmax(7rem,12rem)_1.5rem] lg:grid-cols-[minmax(0,1fr)_minmax(7.5rem,13rem)_1.75rem] xl:grid-cols-[minmax(0,1fr)_minmax(8rem,14rem)_1.75rem]'
+          } ${
             clickable
               ? 'cursor-pointer rounded-xs focus:outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4'
               : ''
@@ -521,113 +411,106 @@ function LedgerRow({
         >
           {showIndex ? (
             <div
-              className="pt-[0.55rem] lg:pt-[0.85rem] lg:text-center"
+              className="pt-[0.55rem] md:pt-[0.8rem] md:text-center lg:pt-[0.85rem]"
               data-ledger-index=""
               data-pf-no-color-transition=""
             >
               <span
-                className="font-mono text-[10px] tabular-nums tracking-[0.22em] sm:text-[11px]"
-                style={{ color: muted, opacity: 0.42 }}
+                className="font-mono text-[11px] tabular-nums tracking-[0.18em] sm:text-[12px]"
+                style={{ color: muted, opacity: 0.88 }}
               >
                 {formatLedgerIndex(index)}
               </span>
             </div>
-          ) : (
-            <span className="hidden lg:block" aria-hidden />
-          )}
+          ) : null}
 
           <div className="min-w-0" data-ledger-title="" data-pf-no-color-transition="">
             <h3
               className="pf-work-ledger-title text-[1.55rem] font-medium leading-[1.08] tracking-[-0.042em] sm:text-[1.9rem] lg:text-[2.35rem] xl:text-[2.55rem]"
               data-pf-no-color-transition=""
             >
-              <LedgerTitleText text={title} allowItalic />
+              <LedgerTitleText text={title} allowItalic={false} />
             </h3>
           </div>
 
           {showRole ? (
             <div
-              className="col-span-2 col-start-2 pt-1 lg:col-span-1 lg:col-start-auto lg:justify-self-end lg:pt-[0.95rem] lg:text-right"
+              className={`${showIndex ? 'col-span-2 col-start-2' : 'col-span-1 col-start-1'} pt-1 md:col-span-1 md:col-start-auto md:justify-self-end md:pt-[0.85rem] md:text-right lg:pt-[0.95rem]`}
               data-ledger-role=""
               data-pf-no-color-transition=""
             >
               <p
-                className="pf-work-ledger-role-text text-[10px] font-medium uppercase tracking-[0.2em] sm:text-[11px]"
-                style={{ opacity: 0.58 }}
+                className="pf-work-ledger-role-text text-[11px] font-medium uppercase tracking-[0.16em] sm:text-[12px]"
+                style={
+                  metaInk
+                    ? ({ opacity: 0.95, '--pf-ledger-muted': metaInk, '--pf-ledger-ink-active': metaInk } as CSSProperties)
+                    : { opacity: 0.9 }
+                }
                 data-pf-no-color-transition=""
               >
                 {role}
               </p>
             </div>
           ) : (
-            <span className="hidden lg:block" aria-hidden />
+            <span className="hidden md:block" aria-hidden />
           )}
 
           <div
-            className="mt-[1.15rem] hidden justify-self-end lg:block"
+            className="mt-[1.05rem] hidden justify-self-end md:block lg:mt-[1.15rem]"
             aria-hidden
             data-ledger-mark=""
             data-pf-no-color-transition=""
           >
             <span
               className="pf-work-ledger-mark block h-px w-5"
-              style={{ backgroundColor: accent, opacity: 0.55 }}
+              style={{ backgroundColor: accent }}
               data-pf-no-color-transition=""
             />
           </div>
         </div>
 
         {hasDetails ? (
+          // One fluid gesture: the panel height eases open/closed (grid rows 0fr ↔ 1fr) while the
+          // content fades in with a small lift. Replaces a snapped height + spring push of the
+          // rows below + a line-by-line cascade, which stacked three motions on every hover.
           <div
-            className="grid"
+            className="pf-work-ledger-panel grid"
             style={{ gridTemplateRows: detailsOpen ? '1fr' : '0fr' }}
             data-pf-no-color-transition=""
           >
             <div className="min-h-0 overflow-hidden">
-              <div className="pb-8 pl-0 sm:pb-10 lg:pl-[3.5rem] lg:pr-12 xl:pl-16">
-                <div className="max-w-xl space-y-6">
+              <div
+                className={`pf-work-ledger-panel-body pb-8 pl-0 sm:pb-10 lg:pr-12 ${showIndex ? 'md:pl-[4.5rem] lg:pl-[5.5rem] xl:pl-[6.5rem]' : ''}`}
+                data-open={detailsOpen ? '1' : '0'}
+                data-pf-no-color-transition=""
+              >
+                <div className="max-w-xl space-y-5">
                   {showDescription ? (
-                    <LedgerLineReveal
-                      text={description}
-                      active={detailsOpen}
-                      baseDelayMs={LEDGER_DESC_BASE_MS}
-                      staggerMs={LEDGER_DESC_STAGGER_MS}
-                      className="text-[15px] leading-[1.8] sm:text-base sm:leading-[1.85]"
-                      style={{ color: muted }}
-                    />
+                    <p className="text-[15px] leading-[1.7] sm:text-base" style={{ color: muted }}>
+                      {description}
+                    </p>
                   ) : null}
 
                   {showStack ? (
-                    <LedgerLineReveal
-                      text={tools.join(' · ')}
-                      active={detailsOpen}
-                      baseDelayMs={LEDGER_STACK_BASE_MS}
-                      staggerMs={LEDGER_STACK_STAGGER_MS}
-                      className="text-[10px] font-medium uppercase tracking-[0.16em] sm:text-[11px]"
-                      style={{ color: muted, opacity: 0.62 }}
-                      ariaLabel={t('Stack')}
-                    />
+                    <ul
+                      className="flex flex-wrap gap-x-4 gap-y-2 text-[12px] font-medium uppercase tracking-[0.14em]"
+                      style={{ color: `color-mix(in srgb, ${muted} 85%, transparent)` }}
+                      aria-label={t('Stack')}
+                    >
+                      {tools.map((tool) => (
+                        <li key={tool}>{tool}</li>
+                      ))}
+                    </ul>
                   ) : null}
 
                   {showConsult && href ? (
-                    <span className="pf-ledger-line-mask block pt-1" data-pf-no-color-transition="">
-                      <span
-                        className="pf-ledger-line-inner"
-                        data-pf-no-color-transition=""
-                        style={{
-                          transitionDelay: detailsOpen ? `${LEDGER_CONSULT_DELAY_MS}ms` : '0ms',
-                          transform: detailsOpen ? 'translate3d(0, 0, 0)' : 'translate3d(0, 105%, 0)',
-                          opacity: detailsOpen ? 1 : 0,
-                        }}
-                      >
-                        <LedgerConsultLink
-                          href={href}
-                          label={consultLabel}
-                          accent={accent}
-                          ink={ink}
-                        />
-                      </span>
-                    </span>
+                    <div className="pt-1">
+                      {consultStyle === 'link' ? (
+                        <LedgerConsultLink href={href} label={consultLabel} accent={workButtonColor(settings.buttonColor ? workPaletteTokenColor(settings.buttonColor) : accent, settings.buttonColorOpacity)} ink={workButtonColor(settings.buttonColor ? workPaletteTokenColor(settings.buttonColor) : ink, settings.buttonColorOpacity)} />
+                      ) : (
+                        <WorkConsultButtonLink href={href} label={consultLabel} ink={workButtonColor(settings.buttonColor ? workPaletteTokenColor(settings.buttonColor) : ink, settings.buttonColorOpacity)} variant={consultStyle} />
+                      )}
+                    </div>
                   ) : null}
                 </div>
               </div>
@@ -635,7 +518,7 @@ function LedgerRow({
           </div>
         ) : null}
 
-        <LedgerHairline color={rule} indent={showIndex} />
+        <LedgerHairline indent={showIndex} />
       </div>
     </article>
   );
@@ -667,34 +550,14 @@ export function ProjectsLedgerGallery({
     else setOpenIndex(null);
   }, [expandMode]);
 
-  // FLIP "before" snapshot for the spring-push effect below — captured synchronously at the exact
-  // moment open/close is triggered (not from a cache updated only on prior opens), so it can never
-  // go stale from scrolling, the entrance reveal, or anything else that moves rows in between.
-  const ledgerFlipBeforeRef = useRef<Map<string, number> | null>(null);
-  const captureLedgerRowTops = useCallback(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    const scroller = ledgerScrollRoot(root);
-    const scrollOffset = scroller ? scroller.scrollTop : window.scrollY;
-    const tops = new Map<string, number>();
-    root.querySelectorAll<HTMLElement>('[data-ledger-row]').forEach((row) => {
-      tops.set(row.dataset.index ?? '', row.getBoundingClientRect().top + scrollOffset);
-    });
-    ledgerFlipBeforeRef.current = tops;
+  // Rows below simply follow the panel's eased height (no FLIP spring push any more).
+  const openRow = useCallback((index: number) => {
+    setOpenIndex(index);
   }, []);
-
-  const openRow = useCallback(
-    (index: number) => {
-      captureLedgerRowTops();
-      setOpenIndex(index);
-    },
-    [captureLedgerRowTops]
-  );
   const closeRow = useCallback(() => {
     if (expandMode === 'always') return;
-    captureLedgerRowTops();
     setOpenIndex(null);
-  }, [expandMode, captureLedgerRowTops]);
+  }, [expandMode]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -733,42 +596,6 @@ export function ProjectsLedgerGallery({
       observer.disconnect();
     };
   }, [items.length]);
-
-  /**
-   * FLIP: the open/close panel height itself changes with no CSS transition (see the `grid`
-   * wrapper in LedgerRow) so this reads the *true* pre/post layout synchronously. Rows whose
-   * position shifted are held at their old spot with an inverse transform, then eased back to 0
-   * with a back-out (spring) curve — the "pushed by a magnetic force" motion from the brief,
-   * decoupled from the row's own content reveal.
-   */
-  useIsomorphicLayoutEffect(() => {
-    const root = rootRef.current;
-    const before = ledgerFlipBeforeRef.current;
-    ledgerFlipBeforeRef.current = null;
-    if (!root || !before || prefersReducedMotion()) return;
-    const scroller = ledgerScrollRoot(root);
-    const scrollOffset = scroller ? scroller.scrollTop : window.scrollY;
-
-    root.querySelectorAll<HTMLElement>('[data-ledger-row]').forEach((row) => {
-      const prev = before.get(row.dataset.index ?? '');
-      if (prev === undefined) return;
-      const docTop = row.getBoundingClientRect().top + scrollOffset;
-      const dy = prev - docTop;
-      if (Math.abs(dy) < 0.5) return;
-      // While held at its old spot, the row visually overlaps whatever grew above it — mute
-      // pointer events for the animation's duration so it can't steal hover from that row.
-      row.style.pointerEvents = 'none';
-      const anim = row.animate(
-        [{ transform: `translate3d(0, ${dy}px, 0)` }, { transform: 'translate3d(0, 0, 0)' }],
-        { duration: 620, easing: LEDGER_SPRING_EASE, fill: 'both' }
-      );
-      anim.finished
-        .catch(() => {})
-        .finally(() => {
-          row.style.pointerEvents = '';
-        });
-    });
-  }, [openIndex]);
 
   useEffect(() => {
     const root = rootRef.current;
@@ -874,16 +701,20 @@ export function ProjectsLedgerGallery({
       className="pf-work-ledger w-full"
       data-expand={expandMode}
       data-pf-no-color-transition=""
+      style={
+        {
+          '--pf-ledger-rule': rule,
+          '--pf-ledger-line-ink':
+            presentation.elementStyles?.cardTitle?.color || presentation.titleColor,
+        } as CSSProperties
+      }
     >
       <style>{LEDGER_CSS}</style>
       <div className="pf-work-ledger-list">
         <div className="flex" aria-hidden>
-          <span className="hidden w-[3.5rem] shrink-0 lg:block xl:w-16" />
-          <span className="hidden w-8 shrink-0 lg:block xl:w-10" />
-          <span
-            className="mb-1 block h-px w-[min(34%,10rem)]"
-            style={{ backgroundColor: rule, opacity: 0.2 }}
-          />
+          <span className="hidden w-12 shrink-0 md:block lg:w-[3.5rem] xl:w-16" />
+          <span className="hidden w-6 shrink-0 md:block lg:w-8 xl:w-10" />
+          <span className="pf-work-ledger-rule mb-1 block h-px" />
         </div>
         {items.map((item, index) => (
           <LedgerRow
@@ -896,7 +727,6 @@ export function ProjectsLedgerGallery({
             dimmed={expandMode === 'click' && openIndex != null && openIndex !== index}
             onOpen={() => openRow(index)}
             onClose={closeRow}
-            rule={rule}
           />
         ))}
       </div>

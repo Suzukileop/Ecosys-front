@@ -45,65 +45,7 @@ function formatYearInline(schoolYear: string): string {
   return `${parsed.start} — ${parsed.end}`;
 }
 
-function traitEducationYearStackedClass(contentSize: PortfolioInfoPremiumFontSize): string {
-  switch (contentSize) {
-    case 'small':
-      return 'text-2xl font-semibold tracking-tight sm:text-3xl lg:leading-none';
-    case 'large':
-      return 'text-4xl font-semibold tracking-tight sm:text-5xl lg:text-[3.25rem] lg:leading-none';
-    case 'xlarge':
-      return 'text-5xl font-semibold tracking-tight sm:text-6xl lg:text-[3.75rem] lg:leading-none';
-    case 'xxlarge':
-      return 'text-6xl font-semibold tracking-tight sm:text-7xl lg:text-[4.25rem] lg:leading-none';
-    case 'medium':
-    default:
-      return 'text-3xl font-semibold tracking-tight sm:text-4xl lg:text-[2.75rem] lg:leading-none';
-  }
-}
 
-function TraitEducationYearStacked({
-  schoolYear,
-  titleColor,
-  bodyColor,
-  contentSize,
-}: {
-  schoolYear: string;
-  titleColor: string;
-  bodyColor: string;
-  contentSize: PortfolioInfoPremiumFontSize;
-}) {
-  const parsed = parseSchoolYearRange(schoolYear);
-  const metaClass = infoContentEducationMetaSizeClass(contentSize);
-  if (!parsed) {
-    return (
-      <p className={`font-medium uppercase tracking-[0.16em] ${metaClass}`} style={{ color: bodyColor }}>
-        —
-      </p>
-    );
-  }
-
-  const yearClass = traitEducationYearStackedClass(contentSize);
-
-  if (!parsed.end) {
-    return (
-      <p className={yearClass} style={{ color: titleColor }}>
-        {parsed.start}
-      </p>
-    );
-  }
-
-  return (
-    <div className={`${yearClass} leading-[1.05]`} style={{ color: titleColor }}>
-      <p className="whitespace-nowrap">
-        {parsed.start}
-        <span aria-hidden className="ml-2 inline-block opacity-70">
-          —
-        </span>
-      </p>
-      <p className="whitespace-nowrap">{parsed.end}</p>
-    </div>
-  );
-}
 
 function EducationSectionHeader({
   labelColor,
@@ -147,7 +89,6 @@ function EducationTimeline({
   contentSize: PortfolioInfoPremiumFontSize;
   sectionClassName?: string;
 } & Omit<TraitEducationColors, 'cardBg'>) {
-  const entryTitleClass = infoContentEducationTitleSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
 
@@ -169,26 +110,23 @@ function EducationTimeline({
           return (
             <li
               key={key}
-              className="relative grid gap-4 border-b py-8 last:border-b-0 sm:grid-cols-[minmax(7rem,11rem)_minmax(0,1fr)] sm:items-start sm:gap-8 sm:py-10"
+              className="relative grid gap-2 border-b py-6 last:border-b-0 sm:grid-cols-[minmax(9rem,11rem)_minmax(0,1fr)] sm:items-baseline sm:gap-6 sm:py-7"
               style={{ borderColor: cardBorder }}
             >
               <span
                 aria-hidden
-                className="absolute left-0 top-[2.15rem] h-2 w-2 -translate-x-[0.15rem] rounded-full sm:top-[2.6rem]"
+                className="absolute left-[0.16rem] top-[2.05rem] h-1.5 w-1.5 rounded-full sm:top-[2.3rem]"
                 style={{
                   backgroundColor: accent,
-                  boxShadow: `0 0 0 4px color-mix(in srgb, ${accent} 22%, transparent)`,
+                  boxShadow: `0 0 0 3px color-mix(in srgb, ${accent} 12%, transparent)`,
                 }}
               />
 
               <div className="pl-6 sm:pl-8">
                 {year ? (
-                  <TraitEducationYearStacked
-                    schoolYear={year}
-                    titleColor={titleColor}
-                    bodyColor={bodyColor}
-                    contentSize={contentSize}
-                  />
+                  <p className={`font-normal tabular-nums leading-relaxed ${bodyClass}`} style={{color:bodyColor}}>
+                    {formatYearInline(year)}
+                  </p>
                 ) : (
                   <p
                     className={`font-medium uppercase tracking-[0.16em] ${metaClass}`}
@@ -202,7 +140,7 @@ function EducationTimeline({
               <div className="min-w-0 pl-6 sm:pl-0">
                 {title ? (
                   <p
-                    className={`font-semibold leading-snug tracking-tight ${entryTitleClass}`}
+                    className={`font-medium leading-relaxed tracking-[-0.01em] ${bodyClass}`}
                     style={{ color: titleColor }}
                   >
                     {title}

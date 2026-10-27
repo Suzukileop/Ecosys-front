@@ -5,10 +5,10 @@
  * Split out of portfolio-section-primitives so the public portfolio only downloads the sections it
  * renders (each is loaded with next/dynamic by PublicCreatorPortfolioPage).
  */
+import { cardsBorderCss } from '@/components/portfolio/portfolio-cards-style';
 import dynamic from 'next/dynamic';
 import {
   useEffect,
-  useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -28,6 +28,7 @@ import {
   galleryMaxWidthClass,
   galleryPlacementClass,
   type PortfolioGalleryPresentationSettings,
+  galleryWithCardsRadius,
 } from '@/components/portfolio/portfolio-gallery-settings';
 import { galleryIndexLabel, useGalleryMosaicParallax, useGalleryReveal } from '@/components/portfolio/portfolio-gallery-design-motion';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -113,26 +114,26 @@ function heroMosaicPlan(count: number): {
   };
 }
 
-const CINEMA_SLIDE_MS = 540;
-
 export function EditorialGallerySection({
   items,
-  presentation,
+  presentation: basePresentation,
   embeddedHeader,
+  renderPreviewMedia,
 }: {
   items: ProfileGalleryItem[];
   presentation: PortfolioGalleryPresentationSettings;
   embeddedHeader?: ReactNode;
+  /** Optional lightweight media substitution; catalogue previews retain the real geometry. */
+  renderPreviewMedia?: (item: ProfileGalleryItem, index: number) => ReactNode;
 }) {
   const t = useT();
+  const presentation = useMemo(() => galleryWithCardsRadius(basePresentation), [basePresentation]);
+  const cardsBorder = useMemo(
+    () => cardsBorderCss(presentation.cardsStyle, presentation.galleryPalette),
+    [presentation.cardsStyle, presentation.galleryPalette]
+  );
   const [activeItem, setActiveItem] = useState<ProfileGalleryItem | null>(null);
   const [carouselPage, setCarouselPage] = useState(0);
-  const [cinemaX, setCinemaX] = useState(0);
-  const [cinemaStep, setCinemaStep] = useState(0);
-  const [cinemaSliding, setCinemaSliding] = useState(false);
-  const cinemaViewRef = useRef<HTMLDivElement>(null);
-  const cinemaLockRef = useRef(false);
-  const cinemaUnlockTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const reduceMotion = useReducedMotion();
   // Shared scroll entrance for every design's tiles (portfolio-gallery-design-motion).
   const revealRef = useGalleryReveal<HTMLDivElement>(`${presentation.design}:${items.length}`);
@@ -183,18 +184,10 @@ export function EditorialGallerySection({
 
   useEffect(() => {
     setCarouselPage(0);
-    cinemaLockRef.current = false;
-    if (cinemaUnlockTimer.current) {
-      clearTimeout(cinemaUnlockTimer.current);
-      cinemaUnlockTimer.current = null;
-    }
-    setCinemaX(0);
-    setCinemaSliding(false);
   }, [presentation.design, presentation.columns, sortedItems.length]);
 
   useEffect(() => {
     return () => {
-      if (cinemaUnlockTimer.current) clearTimeout(cinemaUnlockTimer.current);
       scrollCarouselRestore.current?.();
     };
   }, []);
@@ -236,26 +229,6 @@ export function EditorialGallerySection({
     ? 'transition-[opacity,filter] duration-[560ms] ease-[cubic-bezier(0.16,1,0.3,1)] [@media(hover:hover)]:group-hover/mosaic:opacity-[0.8] hover:!opacity-100 focus-within:!opacity-100'
     : '';
   const isClipCoverDesign = presentation.design === 'tall-row';
-
-  useLayoutEffect(() => {
-    if (presentation.design !== 'cinema-strip') return;
-    const view = cinemaViewRef.current;
-    if (!view) return;
-    const update = () => {
-      const card = view.querySelector<HTMLElement>('[data-gallery-carousel-item]');
-      if (!card) return;
-      const step = card.getBoundingClientRect().width + presentation.gap;
-      if (step <= 0) return;
-      setCinemaStep((current) => (Math.abs(current - step) > 0.25 ? step : current));
-      const trackWidth = step * sortedItems.length - presentation.gap;
-      const maxX = Math.max(0, trackWidth - view.clientWidth);
-      setCinemaX((current) => Math.max(0, Math.min(maxX, current)));
-    };
-    update();
-    const observer = new ResizeObserver(update);
-    observer.observe(view);
-    return () => observer.disconnect();
-  }, [presentation.design, presentation.gap, presentation.captionCardWidthPx, sortedItems.length]);
 
   useEffect(() => {
     if (presentation.design !== 'tall-row' || sortedItems.length < 2) return;
@@ -314,30 +287,6 @@ export function EditorialGallerySection({
     window.setTimeout(restore, reduceMotion ? 32 : 720);
   };
 
-  const cycleCinema = (direction: -1 | 1) => {
-    const view = cinemaViewRef.current;
-    if (!view || cinemaLockRef.current || sortedItems.length < 2) return;
-    const card = view.querySelector<HTMLElement>('[data-gallery-carousel-item]');
-    const step = card ? card.getBoundingClientRect().width + presentation.gap : cinemaStep;
-    if (step <= 0) return;
-    const trackWidth = step * sortedItems.length - presentation.gap;
-    const maxX = Math.max(0, trackWidth - view.clientWidth);
-    const next = Math.max(0, Math.min(maxX, cinemaX + direction * step));
-    if (Math.abs(next - cinemaX) < 0.5) return;
-    if (Math.abs(step - cinemaStep) > 0.25) setCinemaStep(step);
-    if (!reduceMotion) {
-      cinemaLockRef.current = true;
-      setCinemaSliding(true);
-      if (cinemaUnlockTimer.current) clearTimeout(cinemaUnlockTimer.current);
-      cinemaUnlockTimer.current = setTimeout(() => {
-        cinemaLockRef.current = false;
-        setCinemaSliding(false);
-        cinemaUnlockTimer.current = null;
-      }, CINEMA_SLIDE_MS + 40);
-    }
-    setCinemaX(next);
-  };
-
   const scrollToCarouselPage = (page: number) => {
     const node = scrollRef.current;
     if (!node) return;
@@ -353,8 +302,9 @@ export function EditorialGallerySection({
   }, [presentation.design, presentation.columns, sortedItems.length]);
 
   const media = (item: ProfileGalleryItem, lightbox = false, eager = false, highPriority = false) => {
+    if(renderPreviewMedia&&!lightbox)return renderPreviewMedia(item,sortedItems.indexOf(item));
     const zoomHover =
-      presentation.hoverZoom && !lightbox && !isClipCoverDesign && presentation.design !== 'cinema-strip';
+      presentation.hoverZoom && !lightbox && !isClipCoverDesign;
     // Long expo push-in rather than the old snappy 500ms/scale-105: at this size a fast zoom
     // reads as a UI reaction, a slow one reads as the image breathing.
     const zoomClass = zoomHover
@@ -362,7 +312,7 @@ export function EditorialGallerySection({
       : 'h-full w-full';
     const objectFit = lightbox
       ? 'contain'
-      : isClipCoverDesign || presentation.design === 'cinema-strip'
+      : isClipCoverDesign
         ? 'cover'
         : presentation.objectFit;
     const columnShare = Math.max(2, presentation.columns || 2);
@@ -370,8 +320,6 @@ export function EditorialGallerySection({
       ? '100vw'
       : highPriority
         ? '(max-width: 768px) 100vw, min(1200px, 72vw)'
-        : presentation.design === 'cinema-strip'
-          ? '(max-width: 768px) 86vw, 680px'
           : presentation.design === 'caption-carousel'
             ? '(max-width: 768px) 88vw, 420px'
             : `(max-width: 640px) 100vw, (max-width: 1024px) 50vw, ${Math.round(100 / columnShare)}vw`;
@@ -455,11 +403,7 @@ export function EditorialGallerySection({
       parallaxDepth?: number;
     }
   ) => {
-    const isCinemaStrip = presentation.design === 'cinema-strip';
-    const cinemaStart = cinemaStep > 0 ? Math.max(0, Math.round(cinemaX / cinemaStep)) : 0;
-    const loadMediaEager =
-      Boolean(options?.eager) ||
-      (isCinemaStrip && index >= cinemaStart - 1 && index <= cinemaStart + 4);
+    const loadMediaEager = Boolean(options?.eager);
     const itemTitle = galleryItemDisplayTitle(item.title);
     const isEditorial = presentation.design === 'editorial-split';
     const editorialClass = isEditorial
@@ -474,7 +418,6 @@ export function EditorialGallerySection({
             : galleryAspectStyle(presentation.imageAspect));
     const overlayOnHover = Boolean(options?.overlayOnHover);
     const overlayActive =
-      !isCinemaStrip &&
       Boolean(itemTitle) &&
       (Boolean(options?.forceOverlay) ||
         overlayOnHover ||
@@ -486,7 +429,7 @@ export function EditorialGallerySection({
       options?.overlayVariant !== 'mosaic' &&
       showItemTitle &&
       Boolean(itemTitle) &&
-      (isCinemaStrip || presentation.titlePlacement === 'under');
+      presentation.titlePlacement === 'under';
     const activate = () => {
       if (options?.onActivate) {
         options.onActivate();
@@ -496,13 +439,13 @@ export function EditorialGallerySection({
     };
     const isInteractive = Boolean(options?.onActivate || presentation.lightboxEnabled);
     const deferLayoutPaint =
-      presentation.design !== 'cinema-strip' && presentation.design !== 'tall-row';
+      presentation.design !== 'tall-row';
     return (
       <article
         key={item.id}
         data-gallery-reveal=""
         className={`group relative break-inside-avoid ${
-          isCinemaStrip ? 'flex flex-col overflow-visible' : 'flex flex-col overflow-hidden'
+          'flex flex-col overflow-hidden'
         } ${editorialClass} ${
           options?.fill ? 'flex h-full w-full flex-col' : ''
         } ${deferLayoutPaint ? 'pf-gallery-tile' : ''} ${
@@ -512,7 +455,8 @@ export function EditorialGallerySection({
         }`}
         style={{
           borderRadius: isClipCoverDesign ? 'var(--gallery-frame-radius, 16px)' : `${presentation.radius}px`,
-          overflow: isCinemaStrip ? 'visible' : 'hidden',
+          overflow: 'hidden',
+          ...cardsBorder,
         }}
         role={isInteractive ? 'button' : undefined}
         tabIndex={isInteractive ? 0 : undefined}
@@ -535,9 +479,7 @@ export function EditorialGallerySection({
           className={`relative w-full overflow-hidden ${
             options?.fill
               ? 'flex-1 min-h-[12rem] bg-neutral-100 dark:bg-neutral-900'
-              : isCinemaStrip
-                ? 'z-10 w-full bg-transparent'
-                : // The tile is a flex column and the media grows inside it. `h-full` used to make
+              : // The tile is a flex column and the media grows inside it. `h-full` used to make
                   // the media fill the tile outright, which pushed an under-caption past the
                   // tile's own `overflow:hidden` edge — the caption was in the DOM, styled
                   // correctly, and clipped out of existence. Growing instead keeps the caption
@@ -554,7 +496,6 @@ export function EditorialGallerySection({
                 }
               : {
                   ...aspect,
-                  borderRadius: isCinemaStrip ? `${presentation.radius}px` : undefined,
                 }
           }
         >
@@ -583,11 +524,7 @@ export function EditorialGallerySection({
         </div>
         {showUnderTitle ? (
           <h3
-            className={
-              isCinemaStrip
-                ? 'pf-gallery-media-title pf-gallery-media-title--cinema pf-gallery-media-title--plain pointer-events-none m-0 px-1 pt-4 pb-1 text-left break-words'
-                : 'pf-gallery-media-title px-1 pb-1 pt-3 text-center'
-            }
+            className="pf-gallery-media-title px-1 pb-1 pt-3 text-center"
             data-pf-no-color-transition=""
             style={{ color: presentation.itemTitleColor }}
           >
@@ -651,7 +588,7 @@ export function EditorialGallerySection({
         data-gallery-carousel-item
         data-gallery-reveal=""
         data-pf-no-color-transition=""
-        /* Cinema-strip mechanism: the card box stays put and only the plate rises, uncovering a
+        /* Plate reveal mechanism: the card box stays put and only the plate rises, uncovering a
            caption that was parked behind it at the foot. So no card-level lift here — two stacked
            translations would just double the travel — and `overflow-visible` so the plate can
            leave the box. */
@@ -685,7 +622,7 @@ export function EditorialGallerySection({
             borderRadius: `${presentation.radius}px`,
           }}
         >
-          <PortfolioDeferredMedia
+          {renderPreviewMedia ? renderPreviewMedia(item,index) : <PortfolioDeferredMedia
             src={item.mediaUrl}
             alt={galleryItemDisplayTitle(item.title) || t('Gallery media')}
             className={`h-full w-full ${
@@ -702,7 +639,7 @@ export function EditorialGallerySection({
             autoPlayVideo={item.mediaType === 'VIDEO'}
             showPlayBadge={item.mediaType === 'VIDEO'}
             fillParent={!isOriginalRatio}
-          />
+          />}
           {/* The plate lifts out of the section's ground on hover: a hairline edge catches the
               light and the image warms very slightly. Both are barely-there by design. */}
           <span
@@ -837,53 +774,13 @@ export function EditorialGallerySection({
           }}
           /* `overflow-x-auto` computes `overflow-y` to `auto` too, so the plate's hover lift would
              be clipped (or spawn a vertical scrollbar) without room reserved for it up top —
-             exactly the `pt-16` the cinema strip keeps above its own track. */
+             a small top inset protects the hovering plate. */
           className="flex snap-x snap-mandatory items-start overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:cursor-grab sm:active:cursor-grabbing"
           style={{ gap: `${captionGap}px` }}
         >
           {sortedItems.map(captionCard)}
         </div>
         {presentation.captionPager === 'dots' ? paginationDots : null}
-      </div>
-    ) : presentation.design === 'cinema-strip' ? (
-      <div className={baseWidth} style={{ padding: `${presentation.padding}px` }}>
-        <div className="mb-4 flex justify-end">{carouselNavButtons(undefined, cycleCinema)}</div>
-        <div
-          ref={cinemaViewRef}
-          className={`pf-gallery-cinema-view overflow-hidden ${cinemaSliding ? 'pointer-events-none' : ''}`}
-          tabIndex={0}
-          role="region"
-          aria-label={t('Gallery')}
-          onKeyDown={(event) => {
-            if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
-              event.preventDefault();
-              cycleCinema(event.key === 'ArrowLeft' ? -1 : 1);
-            }
-          }}
-        >
-          <motion.div
-            className="flex items-end transform-gpu"
-            style={{ gap: `${presentation.gap}px` }}
-            initial={false}
-            animate={{ x: -cinemaX }}
-            transition={
-              reduceMotion
-                ? { type: false }
-                : { type: 'tween', duration: CINEMA_SLIDE_MS / 1000, ease: [0.33, 1, 0.68, 1] }
-            }
-          >
-            {sortedItems.map((item, index) => (
-              <div
-                key={item.id}
-                data-gallery-carousel-item
-                className="h-auto shrink-0"
-                style={{ width: `min(86vw, ${Math.round(presentation.captionCardWidthPx * 1.65)}px)` }}
-              >
-                {card(item, index)}
-              </div>
-            ))}
-          </motion.div>
-        </div>
       </div>
     ) : presentation.design === 'hero-mosaic' ? (
       // `group/mosaic` is what lets one tile pull focus: every tile dims while the mosaic is
@@ -983,11 +880,13 @@ export function EditorialGallerySection({
     ) : presentation.design === 'contact-sheet' ? (
       <div className={baseWidth} style={{ padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined }}>
         <GalleryContactSheet items={sortedItems} presentation={presentation} showTitle={showItemTitle}
+          renderMedia={renderPreviewMedia}
           onOpen={presentation.lightboxEnabled ? openLightbox : undefined} />
       </div>
     ) : presentation.design === 'visual-index' ? (
       <div className={baseWidth} style={{ padding: presentation.padding > 0 ? `${presentation.padding}px` : undefined }}>
         <GalleryVisualIndex items={sortedItems} presentation={presentation} showTitle={showItemTitle}
+          renderMedia={renderPreviewMedia}
           onOpen={presentation.lightboxEnabled ? openLightbox : undefined} />
       </div>
     ) : presentation.design === 'editorial-split' ? (

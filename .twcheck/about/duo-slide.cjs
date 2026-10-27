@@ -1,0 +1,10 @@
+const path=require('path');const {chromium}=require(path.join(__dirname,'..','..','node_modules','playwright-core'));
+(async()=>{const b=await chromium.launch();const p=await b.newPage({viewport:{width:1440,height:900},reducedMotion:'reduce'});
+await p.route('**/zz-harness',r=>r.fulfill({contentType:'text/html',body:'<body style="margin:0"><iframe id="f" src="/portfolio/tester1?embed=1" style="width:1440px;height:880px;border:0"></iframe></body>'}));
+await p.goto('http://localhost:3000/zz-harness',{waitUntil:'domcontentloaded'});await p.waitForTimeout(9000);
+const frame=p.frames().find(f=>f.url().includes('/portfolio/tester1'));
+await p.evaluate(()=>document.getElementById('f').contentWindow.postMessage({source:'skraft-portfolio-studio',type:'apply-settings',settings:{work:{sectionDesign:'projects-duotone',enabled:true,projectsDuotone:{scrollMode:'slide',frameColor:'none'}}}},location.origin));
+await p.waitForTimeout(10000);
+const r=await frame.evaluate(()=>{const s=document.getElementById('work');const slide=[...s.querySelectorAll('[aria-hidden="false"],div')].find(()=>true);const act=[...s.querySelectorAll('div[style*="translateX(0"]')][0];if(!act)return 'no active';const card=act.querySelector('[class*="rounded-[14px]"]');const hdr=card&&card.firstElementChild;const cr=card&&card.getBoundingClientRect();const hr=hdr&&hdr.getBoundingClientRect();const cnt=(act.textContent.match(/Fullstack Developer/g)||[]).length;return {cnt,header:hdr&&hdr.textContent.trim().slice(0,40),top:hr&&cr&&Math.round(hr.top-cr.top),leftHasMeta:/·/.test(act.textContent.split('Stripe')[0]||'')};});
+console.log(JSON.stringify(r));
+await b.close();})();

@@ -1,5 +1,6 @@
 'use client';
 
+import { FaqQuestionMarker } from '@/components/portfolio/portfolio-faq-marker';
 import type { CSSProperties, ReactNode } from 'react';
 import type { FaqItem } from '@/types/profile';
 
@@ -19,8 +20,9 @@ export function FaqTriGridDesign({
       style={{ '--pf-faq-font-scale': fontSizeScale } as CSSProperties}>
       {header && <div className="pf-faq-tri-head">{header}</div>}
       <div className="pf-faq-tri-grid" role="list">
-        {items.map(item => (
+        {items.map((item, index) => (
           <div key={item.id} className="pf-faq-tri-block" role="listitem">
+            <FaqQuestionMarker index={index} block />
             <h3 className="pf-faq-tri-q">{item.question}</h3>
             <p className="pf-faq-tri-a">{item.answer}</p>
           </div>

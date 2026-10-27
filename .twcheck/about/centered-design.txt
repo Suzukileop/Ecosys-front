@@ -1,0 +1,162 @@
+/**
+ * Centered — one quiet column on a single axis. A small label, a round portrait, a two-line headline
+ * and its lead, the quote set large with its author under it, then a short rule, the list as one
+ * line of words and a text link. No box, fill or shadow; centring and a four-step type scale do the
+ * work, and the accent touches the link alone.
+ */
+function AboutUsCenteredDesign({
+  aboutUs,
+  presentation,
+  sectionTitle,
+}: {
+  aboutUs: ProfileAboutUs;
+  presentation: PortfolioAboutUsPresentationSettings;
+  sectionTitle: string;
+}) {
+  const t = useT();
+  const title = aboutUs.title?.trim() ?? '';
+  const description = aboutUs.description?.trim() ?? '';
+  const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
+  const quote = aboutUs.quote?.trim() ?? '';
+  const founderName = aboutUs.founder?.name?.trim() ?? '';
+  const founderFunction = aboutUs.founder?.function?.trim() ?? '';
+  const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
+  // The portrait is the first image; with none, the founder's own photo stands in for it.
+  const portrait = filledImages(aboutUs.imageUrls)[0] || founderLogo;
+  const label = sectionTitle.trim();
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
+  const ctaLink = useAboutUsCtaLinkProps();
+  const chrome = aboutUsChrome(aboutUsIsDarkMode(presentation));
+  const showTasks = presentation.showTasks && tasks.length > 0;
+  const showQuote = presentation.showQuote && Boolean(quote);
+  const showFounder = presentation.showFounder && Boolean(founderName || founderFunction);
+  const titleStyle = aboutUsCustomTitleStyle(presentation);
+  // Words are told apart by a dot; a bullet picked under List bullets replaces it, "None" drops it.
+  const bullet = presentation.taskBulletStyle;
+  const customBullet = bullet && bullet !== 'none' && bullet !== 'number';
+
+  return (
+    <div className="mx-auto flex w-full max-w-[52rem] flex-col items-center text-center">
+      {label ? (
+        <p
+          className="text-[calc(12px*var(--pf-about-scale,1))] font-medium uppercase tracking-[0.22em] sm:text-[calc(13px*var(--pf-about-scale,1))]"
+          style={{ color: presentation.titleColor }}
+        >
+          {label}
+        </p>
+      ) : null}
+
+      {portrait ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          {...mediaImageResponsive(portrait, ABOUT_MEDIA_WIDTHS)}
+          sizes="128px"
+          alt=""
+          loading="lazy"
+          className={`h-28 w-28 rounded-full object-cover sm:h-32 sm:w-32 ${label ? 'mt-6 sm:mt-7' : ''}`}
+        />
+      ) : null}
+
+      {title ? (
+        <h3
+          className={`max-w-[15em] text-balance text-[calc(clamp(2rem,4.8vw,3.5rem)*var(--pf-about-scale,1))] font-normal leading-[1.08] tracking-[-0.03em] ${
+            portrait || label ? 'mt-8 sm:mt-9' : ''
+          }`}
+          style={titleStyle}
+        >
+          {title}
+        </h3>
+      ) : null}
+
+      {description ? (
+        <p
+          className={`max-w-[36rem] text-pretty text-[calc(1.0625rem*var(--pf-about-scale,1))] font-normal leading-[1.55] sm:text-[calc(1.25rem*var(--pf-about-scale,1))] ${
+            title ? 'mt-5 sm:mt-6' : ''
+          }`}
+          style={{ color: presentation.descriptionColor }}
+        >
+          {description}
+        </p>
+      ) : null}
+
+      {showQuote ? (
+        <blockquote
+          className={`max-w-[22em] text-balance text-[calc(clamp(1.625rem,3.6vw,2.5rem)*var(--pf-about-scale,1))] font-normal leading-[1.22] tracking-[-0.02em] ${
+            title || description || portrait ? 'mt-12 sm:mt-14' : ''
+          }`}
+          style={{ color: presentation.quoteColor }}
+        >
+          {'“'}
+          {quote}
+          {'”'}
+        </blockquote>
+      ) : null}
+
+      {showFounder ? (
+        <div className={showQuote ? 'mt-6' : title || description || portrait ? 'mt-10' : ''}>
+          {founderName ? (
+            <p
+              className="text-[calc(1.0625rem*var(--pf-about-scale,1))] font-normal leading-snug"
+              style={{ color: presentation.founderNameColor }}
+            >
+              {founderName}
+            </p>
+          ) : null}
+          {founderFunction ? (
+            <p
+              className="mt-0.5 text-[calc(15px*var(--pf-about-scale,1))] leading-snug"
+              style={{ color: presentation.founderFunctionColor }}
+            >
+              {founderFunction}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {showTasks || presentation.showCta ? (
+        <div
+          className={`w-full max-w-[46rem] ${
+            title || description || portrait || showQuote || showFounder ? `mt-12 border-t pt-7 sm:mt-14 ${chrome.divider}` : ''
+          }`}
+        >
+          {showTasks ? (
+            <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:gap-x-7">
+              {tasks.map((task, index) => (
+                <li key={`${index}-${task}`} className="flex items-center gap-x-5 sm:gap-x-7">
+                  {index > 0 && !bullet ? (
+                    <span aria-hidden className="hidden h-[3px] w-[3px] shrink-0 rounded-full bg-current opacity-50 sm:block" style={{ color: presentation.taskColor }} />
+                  ) : null}
+                  {customBullet ? (
+                    <span className="-mr-3 flex items-center">
+                      <AboutUsTaskMarker presentation={presentation} index={index} />
+                    </span>
+                  ) : null}
+                  <span
+                    className="text-[calc(14px*var(--pf-about-scale,1))] leading-snug tracking-wide sm:text-[calc(15px*var(--pf-about-scale,1))]"
+                    style={{ color: presentation.taskColor }}
+                  >
+                    {bullet === 'number' ? `${String(index + 1).padStart(2, '0')} ` : ''}
+                    {task}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {presentation.showCta ? (
+            <div className={`flex justify-center ${showTasks ? 'mt-6' : ''}`}>
+              <AboutUsCta
+                presentation={presentation}
+                label={ctaLabel}
+                linkProps={ctaLink}
+                solidClassName="inline-flex w-fit items-center justify-center rounded-full px-8 py-3.5 text-base font-semibold transition hover:opacity-90"
+                textClassName="text-[calc(1rem*var(--pf-about-scale,1))]"
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+

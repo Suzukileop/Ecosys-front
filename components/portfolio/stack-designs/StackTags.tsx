@@ -32,13 +32,13 @@ function stackTagsJustifyClass(alignment: PortfolioToolsContentAlignment): strin
 function stackTagsGapClass(gap: PortfolioToolsCardGap): string {
   switch (gap) {
     case 'medium':
-      return 'gap-3 sm:gap-3.5';
+      return 'gap-3';
     case 'large':
-      return 'gap-3.5 sm:gap-4';
+      return 'gap-6';
     case 'xlarge':
-      return 'gap-4 sm:gap-5';
+      return 'gap-10';
     default:
-      return 'gap-2.5 sm:gap-3';
+      return 'gap-0.5';
   }
 }
 
@@ -140,6 +140,7 @@ export function EditorialStackTags({
       className="pf-stack-tags flex w-full max-w-none flex-col"
       data-size={tagSize}
       data-content-align={contentAlignment}
+      data-tags-fill={presentation.stackTagsFill === true ? 'true' : 'false'}
       style={rootStyle}
     >
       <ul

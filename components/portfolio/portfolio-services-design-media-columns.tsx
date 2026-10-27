@@ -3,9 +3,11 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { fluidColumns, useFluidTrack } from '@/components/portfolio/portfolio-services-fluid-columns';
 import type { ProfileServiceItem } from '@/types/profile';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
 import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
+import { readableInk } from '@/components/portfolio/portfolio-services-pricing-shared';
 import {
   applyServicePriceLabels,
   resolveBillingSuffix,
@@ -53,6 +55,9 @@ const RATIO_CLASS: Record<PortfolioServicesMediaColumnsRatio, string> = {
   wide: 'aspect-[16/9]',
 };
 
+/** Narrowest a media card may get before its title and price wrap word by word. */
+const MIN_CARD_WIDTH = 240;
+
 const RADIUS: Record<PortfolioServicesMediaColumnsRadius, string> = {
   none: '0px',
   small: '6px',
@@ -98,27 +103,33 @@ export function ServicesMediaColumnsSection({
   const pricingStyle = useServicesPricingStyle(presentation);
   const show = resolveServicesCardElements(presentation);
   const ctaLabel = resolveServicesCtaLabel(presentation);
+  // Neutral ink like the other designs: the card titles and prices must not pick up the section's title/accent colour.
   const ink = isLight ? '#0a0a0a' : '#fafafa';
-  const inverse = isLight ? '#fafafa' : '#0a0a0a';
+  const muted = presentation.subtitleColor?.trim() || ink;
+  const inverse = readableInk(ink);
   // Tells the browser how wide each image is really drawn, so it asks for a matching rendition
   // instead of the 100vw default (a right-sized, properly resampled picture is the crisp one).
   const mediaSizes = `(min-width: 1024px) ${Math.round(100 / settings.columns)}vw, (min-width: 640px) 50vw, 100vw`;
 
   const gapPx = GAP_PX[settings.gap];
+  const listRef = useRef<HTMLDivElement>(null);
+  // Columns follow the block's real width (see portfolio-services-fluid-columns): the asked-for
+  // count is a ceiling, never forced when a card would get squeezed.
+  const track = useFluidTrack(listRef, count > 0, (width) => (width < 640 ? Math.min(gapPx, 24) : gapPx), MIN_CARD_WIDTH, `${gapPx}`);
+  const fluidCols = track ? fluidColumns(count, settings.columns, track.fit) : null;
   const vars = {
-    '--mc-gap': `${gapPx}px`,
-    '--mc-row-gap': `${Math.round(gapPx * 1.6)}px`,
-    // Phones always stack one card per row.
-    '--mc-c-base': 1,
-    '--mc-c-md': 2,
-    '--mc-c-lg': settings.columns,
-    '--mc-ink': isLight ? '#0a0a0a' : '#fafafa',
-    '--mc-muted': isLight ? 'rgba(10,10,10,0.6)' : 'rgba(250,250,250,0.6)',
+    '--mc-gap': `${track ? track.gap : gapPx}px`,
+    '--mc-row-gap': `${Math.round((track ? track.gap : gapPx) * 1.6)}px`,
+    // Phones always stack one card per row until the block measures itself.
+    '--mc-c-base': fluidCols ?? 1,
+    '--mc-c-md': fluidCols ?? 2,
+    '--mc-c-lg': fluidCols ?? settings.columns,
+    '--mc-ink': ink,
+    '--mc-muted': muted,
     '--mc-accent': accent,
     color: 'var(--mc-ink)',
   } as CSSProperties;
 
-  const listRef = useRef<HTMLDivElement>(null);
   const entranceKey = `${count}|${settings.columns}|${settings.mediaRatio}|${show.title}|${show.description}|${show.price}|${show.delivery}|${show.tasks}|${show.cta}`;
 
   useLayoutEffect(() => {
@@ -194,15 +205,15 @@ export function ServicesMediaColumnsSection({
               centered ? 'text-center' : 'text-left'
             } ${
               settings.hoverEffect === 'lift'
-                ? 'md:transition-transform md:duration-500 md:ease-[cubic-bezier(0.22,1,0.36,1)] md:hover:-translate-y-2'
+                ? 'md:transition-transform md:duration-500 md:ease-[cubic-bezier(0.22,1,0.36,1)] md:hover:-translate-y-4'
                 : ''
             }`}
             data-pf-no-color-transition=""
           >
-            <div
+            <div data-pf-no-color-transition=""
               className={`relative w-full overflow-hidden transition-shadow duration-500 ${RATIO_CLASS[settings.mediaRatio]} ${
-                settings.hoverEffect === 'glow'
-                  ? 'md:group-hover:shadow-[0_0_0_2px_var(--mc-accent),0_26px_46px_-26px_var(--mc-accent)]'
+                settings.hoverEffect === 'lift'
+                  ? 'md:group-hover:shadow-[0_30px_44px_-24px_rgba(0,0,0,0.4)]'
                   : ''
               }`}
               style={{ borderRadius: RADIUS[settings.cardRadius] }}
@@ -255,7 +266,7 @@ export function ServicesMediaColumnsSection({
               </p>
             ) : null}
             {delivery ? (
-              <p className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[color:var(--mc-muted)]">
+              <p className="mt-2 text-[0.8rem] font-medium uppercase tracking-[0.14em] text-[color:var(--mc-muted)]">
                 {delivery}
               </p>
             ) : null}
@@ -269,10 +280,10 @@ export function ServicesMediaColumnsSection({
             ) : null}
             {tasks.length > 0 ? (
               <ul
-                className={`mt-3 flex flex-col gap-y-1 text-[color:var(--mc-muted)] sm:flex-row sm:flex-wrap sm:gap-x-3 ${
+                className={`mt-3 flex flex-col gap-y-1 text-[color:var(--mc-ink)] sm:flex-row sm:flex-wrap sm:gap-x-3 ${
                   centered ? 'items-center sm:justify-center' : 'items-start sm:justify-start'
                 }`}
-                style={{ fontSize: FONT(0.82) }}
+                style={{ fontSize: FONT(0.9) }}
                 aria-label={t('{title} — included', { title: item.title })}
               >
                 {tasks.map((task, taskIndex) => (
@@ -290,11 +301,11 @@ export function ServicesMediaColumnsSection({
                 label={ctaLabel}
                 ink={ink}
                 surface={inverse}
-                className="group/cta mt-5 inline-flex items-center gap-2 border-b border-current pb-1 text-[0.85rem] font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
+                className="group/cta mt-5 inline-flex items-center gap-2 border-b border-current pb-1 text-[0.95rem] font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                 autoContent={
                   <>
                     {ctaLabel}
-                    <span aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-1">
+                    <span data-pf-no-color-transition="" aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-1">
                       &rarr;
                     </span>
                   </>

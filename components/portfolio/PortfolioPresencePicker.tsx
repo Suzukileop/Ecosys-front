@@ -20,9 +20,13 @@ type PortfolioPresencePickerProps = {
  * a white rule only (black & white chrome: no accent colour). The other two stay untouched.
  */
 
-const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
-const EASE_CLS = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
-const HOVER_MS = 600;
+// Ease-out cubic over a longer clock: the motion builds gently instead of snapping in the first frames.
+const EASE = 'cubic-bezier(0.33, 1, 0.68, 1)';
+const EASE_CLS = 'ease-[cubic-bezier(0.33,1,0.68,1)]';
+const HOVER_MS = 800;
+// Tailwind v4 lifts and zooms with the standalone `translate` / `scale` properties, not `transform`:
+// a `transform`-only transition left both instant.
+const HOVER_TRANSITION = `transform ${HOVER_MS}ms ${EASE}, translate ${HOVER_MS}ms ${EASE}, scale ${HOVER_MS}ms ${EASE}`;
 
 export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerProps) {
   const t = useT();
@@ -78,10 +82,10 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                  * compositor layer with paint containment: its clip is applied by the compositor
                  * instead of being re-rasterised against the moving still every frame.
                  */
-                style={{ transition: `transform ${HOVER_MS}ms ${EASE}` }}
+                style={{ transition: HOVER_TRANSITION }}
                 className={`group/panel relative flex min-h-[17rem] w-full cursor-pointer transform-gpu flex-col justify-between overflow-hidden bg-[#0F1419] p-6 text-left will-change-transform [backface-visibility:hidden] [contain:paint] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-2 dark:focus-visible:ring-[#E7E9EA] dark:ring-offset-black sm:min-h-[19rem] sm:p-7 md:min-h-[21rem] md:p-8 lg:h-full lg:min-h-0 lg:p-8 ${
                   isActive
-                    ? 'z-[1] -translate-y-1.5 lg:-translate-y-2'
+                    ? 'z-[1] -translate-y-1'
                     : 'translate-y-0'
                 }`}
               >
@@ -91,9 +95,9 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                  * boundary re-rasterised into a flickering hairline. The zoom runs on this frame.
                  */}
                 <span
-                  style={{ transition: `transform ${HOVER_MS}ms ${EASE}` }}
+                  style={{ transition: HOVER_TRANSITION }}
                   className={`pointer-events-none absolute -inset-[3%] transform-gpu will-change-transform [backface-visibility:hidden] ${
-                    isActive ? 'scale-[1.05]' : 'scale-100'
+                    isActive ? 'scale-[1.025]' : 'scale-100'
                   }`}
                 >
                   <Image
@@ -121,7 +125,7 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                 <span className="relative z-10 flex items-start justify-end">
                   <span
                     aria-hidden
-                    className={`block transition-[transform,translate,scale,rotate,color] duration-[600ms] ${EASE_CLS} ${
+                    className={`block transition-[transform,translate,scale,rotate,color] duration-[800ms] ${EASE_CLS} ${
                       isActive ? '-rotate-45 text-white' : 'rotate-0 text-white/45'
                     }`}
                   >
@@ -158,7 +162,7 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                     {t(option.title)}
                   </span>
                   <span
-                    className={`max-w-[22rem] text-[15px] font-normal leading-5 transition-colors duration-[600ms] ${EASE_CLS} ${
+                    className={`max-w-[22rem] text-[15px] font-normal leading-5 transition-colors duration-[800ms] ${EASE_CLS} ${
                       isActive ? 'text-white' : 'text-white/75'
                     }`}
                   >
@@ -167,7 +171,7 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                   {/* White rule — grows under the active card only */}
                   <span
                     aria-hidden
-                    className={`mt-1 block h-[2px] origin-left bg-white transition-transform duration-[600ms] ${EASE_CLS} ${
+                    className={`mt-1 block h-[2px] origin-left bg-white transition-transform duration-[800ms] ${EASE_CLS} ${
                       isActive ? 'w-10 scale-x-100' : 'w-10 scale-x-0'
                     }`}
                   />

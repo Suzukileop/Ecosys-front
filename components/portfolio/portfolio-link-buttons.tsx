@@ -40,6 +40,25 @@ export function experienceLinkButtonPalette(tokens: {
 
 const LINK_BUTTON_FONT = "'Inter', sans-serif";
 
+/** Filled buttons invert ink/surface; validate that pair independently of page mode. */
+function filledButtonText(palette: PortfolioLinkButtonPalette): string {
+  const luminance = (hex: string): number | null => {
+    let raw = hex.trim().replace(/^#/, '');
+    if (raw.length === 3) raw = raw.split('').map((c) => c + c).join('');
+    if (!/^[0-9a-f]{6}$/i.test(raw)) return null;
+    const channels = [0, 2, 4].map((offset) => parseInt(raw.slice(offset, offset + 2), 16) / 255)
+      .map((c) => c <= 0.04045 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
+    return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722;
+  };
+  const fill = luminance(palette.ink);
+  const preferred = luminance(palette.background);
+  if (fill === null) return palette.background;
+  if (preferred !== null && (Math.max(fill, preferred) + 0.05) / (Math.min(fill, preferred) + 0.05) >= 4.5) {
+    return palette.background;
+  }
+  return (fill + 0.05) / 0.05 > 1.05 / (fill + 0.05) ? '#171717' : '#ffffff';
+}
+
 type PortfolioLinkButtonProps = {
   href: string;
   label: string;
@@ -197,7 +216,7 @@ function LinkEditorial({ href, label, palette, className = '', preview, onClick 
       label={label}
       preview={preview}
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 rounded-full border px-4 py-2 text-[0.82rem] font-semibold transition hover:opacity-80 ${className}`}
+      className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-4 py-2 text-[0.82rem] font-semibold transition hover:opacity-80 ${className}`}
       style={{ borderColor: palette.accent, color: palette.accent }}
     >
       <span>{label}</span>
@@ -214,7 +233,7 @@ function LinkMilestone({ href, label, palette, className = '', preview, onClick 
       label={label}
       preview={preview}
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-90 ${className}`}
+      className={`inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold transition hover:opacity-90 ${className}`}
       style={{ color: palette.accent }}
     >
       <span>{label}</span>
@@ -231,7 +250,7 @@ function LinkTable({ href, label, palette, className = '', preview, onClick }: P
       label={label}
       preview={preview}
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 text-sm font-medium underline decoration-1 underline-offset-[0.28em] transition-opacity duration-200 hover:opacity-70 ${className}`}
+      className={`inline-flex min-h-10 items-center gap-1.5 text-sm font-medium underline decoration-1 underline-offset-[0.28em] transition-opacity duration-200 hover:opacity-70 ${className}`}
       style={{ color: palette.ink }}
     >
       <span>{label}</span>
@@ -248,7 +267,7 @@ function LinkCards({ href, label, palette, className = '', preview, onClick }: P
       label={label}
       preview={preview}
       onClick={onClick}
-      className={`inline-flex items-center gap-1.5 text-sm font-semibold transition hover:opacity-80 ${className}`}
+      className={`inline-flex min-h-10 items-center gap-1.5 text-sm font-semibold transition hover:opacity-80 ${className}`}
       style={{ color: palette.accent }}
     >
       <span>{label}</span>
@@ -265,7 +284,7 @@ function LinkReel({ href, label, palette, className = '', preview, onClick }: Po
       label={label}
       preview={preview}
       onClick={onClick}
-      className={`pf-reel-repo-link relative inline-flex w-fit items-center gap-2.5 pb-1 font-semibold ${className}`}
+      className={`pf-reel-repo-link relative inline-flex min-h-10 w-fit items-center gap-2.5 pb-1 font-semibold ${className}`}
       style={{
         color: palette.ink,
         fontSize: '1.05rem',
@@ -321,7 +340,7 @@ function LinkSpotlight({ href, label, palette, className = '', preview, onClick 
       preview={preview}
       onClick={onClick}
       className={`group/link inline-flex w-fit items-center rounded-full px-7 py-3.5 text-[0.82rem] font-semibold uppercase tracking-[0.14em] transition-transform duration-300 ease-out hover:-translate-y-0.5 ${className}`}
-      style={{ backgroundColor: palette.ink, color: palette.background }}
+      style={{ backgroundColor: palette.ink, color: filledButtonText(palette) }}
     >
       <span>{label}</span>
       <LinkExitArrow className="ml-3.5 h-3.5 w-3.5 opacity-80" />
@@ -337,10 +356,10 @@ function LinkLegacy({ href, label, palette, className = '', preview, onClick }: 
       label={label}
       preview={preview}
       onClick={onClick}
-      className={`pf-legacy-repo-link inline-flex w-fit items-center gap-2 font-mono uppercase ${className}`}
+      className={`pf-legacy-repo-link inline-flex min-h-10 w-fit items-center gap-2 font-mono uppercase ${className}`}
       style={{
-        fontSize: '0.72rem',
-        letterSpacing: '0.18em',
+        fontSize: '0.75rem',
+        letterSpacing: '0.16em',
         ['--pf-legacy-muted' as string]: palette.muted,
         ['--pf-legacy-accent' as string]: palette.accent,
       }}
@@ -401,7 +420,7 @@ function BtnSolid({
       className={`inline-flex items-center gap-[0.55rem] ${radiusClass} px-[1.2rem] py-[0.65rem] transition-opacity duration-200 hover:opacity-[0.85] ${className}`}
       style={{
         backgroundColor: palette.ink,
-        color: palette.background,
+        color: filledButtonText(palette),
         fontFamily: LINK_BUTTON_FONT,
         fontWeight: 600,
         fontSize: '0.9rem',

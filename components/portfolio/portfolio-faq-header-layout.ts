@@ -1,4 +1,8 @@
-import type { PortfolioFaqPresentationSettings } from '@/components/portfolio/portfolio-faq-settings';
+import type { CSSProperties } from 'react';
+import {
+  FAQ_FONT_WEIGHT_NUMBER,
+  type PortfolioFaqPresentationSettings,
+} from '@/components/portfolio/portfolio-faq-settings';
 import {
   faqHeaderPaletteTokenColor,
   type PortfolioFaqHeaderDesignSelectable,
@@ -116,6 +120,7 @@ const FAQ_HEADER_INK_OPTIONS = [
 ];
 
 export const FAQ_HEADER_LAYOUT_SPECS: Record<PortfolioFaqHeaderDesignSelectable, FaqHeaderLayoutElementSpec[]> = {
+  none: [],
   editorial: [
     text('kicker', 'Kicker', 'FAQ'),
     toggle('title', 'Title'),
@@ -303,4 +308,31 @@ export const FAQ_HEADER_TITLE_SIZE_CLASS: Record<string, string> = {
 export function faqHeaderCountLabel(count: number, customLabel: string | null): string {
   if (customLabel) return `${count} ${customLabel}`;
   return count === 1 ? '1 question' : `${count} questions`;
+}
+
+/**
+ * Text overrides shared by the Signal, Query and Dialogue headers (FAQ → Header → Text): the title / subtitle
+ * wording, and an ink, weight and (subtitle) size that default to Auto = the header's own look.
+ */
+export function faqHeaderTextOverride(p: Presentation, role: 'title' | 'subtitle'): string {
+  return (role === 'title' ? p.headerTextTitle : p.headerTextSubtitle)?.trim() ?? '';
+}
+
+const SUBTITLE_STEP_SIZE: Record<'sm' | 'md' | 'lg' | 'xl', string> = {
+  sm: '0.8125rem',
+  md: '0.9375rem',
+  lg: '1.0625rem',
+  xl: '1.25rem',
+};
+
+/** Inline style carrying ONLY what the creator changed; spread it after the header's own colour style. */
+export function faqHeaderRoleStyle(p: Presentation, role: 'title' | 'subtitle'): CSSProperties {
+  const ink = role === 'title' ? p.headerTitleInk : p.headerSubtitleInk;
+  const weight = role === 'title' ? p.headerTitleFontWeight : p.headerSubtitleFontWeight;
+  const step = role === 'subtitle' ? p.headerSubtitleSizeStep : undefined;
+  const style: CSSProperties = {};
+  if (ink && ink !== 'auto') style.color = faqHeaderPaletteTokenColor(ink);
+  if (weight && weight !== 'auto') style.fontWeight = FAQ_FONT_WEIGHT_NUMBER[weight];
+  if (step && step !== 'auto') style.fontSize = SUBTITLE_STEP_SIZE[step];
+  return style;
 }

@@ -1,5 +1,16 @@
 'use client';
+import { LayoutControlGroups } from './portfolio-tools-control-groups';
+import {DesignCatalogueCard} from './portfolio-design-catalogue-card';
+import { AboutUsDesignIllustration } from './portfolio-about-us-design-illustration';
+import { SectionBackgroundSettingsFields } from './portfolio-section-background-controls';
+import { usePortfolioDesignPreviewSource } from './PortfolioDesignLivePreview';
+import { resolveThumbnailTheme } from './portfolio-thumbnail-theme';
+import { ColorSwatchRow } from './portfolio-color-swatch-row';
 
+import { SectionPaletteFamilyControl } from '@/components/portfolio/portfolio-section-palette-family';
+import { TextSizeSlider } from '@/components/portfolio/portfolio-text-size-slider';
+import { CardsStyleControls } from '@/components/portfolio/portfolio-cards-style-controls';
+import { DEFAULT_CARDS_STYLE } from '@/components/portfolio/portfolio-cards-style';
 import { useState } from 'react';
 import { useContentMediaUpload } from '@/components/creator/creator-content-media';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
@@ -15,8 +26,6 @@ import {
   defaultsForAboutUsDesign,
   DEFAULT_ABOUT_US_PRESENTATION,
   isAboutUsSplitVariant,
-  PORTFOLIO_ABOUT_US_CARD_BORDER_OPTIONS,
-  PORTFOLIO_ABOUT_US_CARD_RADIUS_OPTIONS,
   PORTFOLIO_ABOUT_US_CARD_SHADOW_OPTIONS,
   PORTFOLIO_ABOUT_US_CONTENT_PLACEMENT_OPTIONS,
   PORTFOLIO_ABOUT_US_CTA_STYLE_OPTIONS,
@@ -34,8 +43,6 @@ import {
   ABOUT_US_EDITORIAL_TITLE_PX_MIN,
   resolveAboutUsCtaStyle,
   resolveAboutUsMediaSide,
-  type PortfolioAboutUsCardBorder,
-  type PortfolioAboutUsCardRadius,
   type PortfolioAboutUsCardShadow,
   type PortfolioAboutUsContentPlacement,
   type PortfolioAboutUsCtaStyle,
@@ -55,9 +62,7 @@ import {
   NpOptionCard,
   NpOptionCardGroup,
   NpPanelShell,
-  NpPickerRow,
-  NpSegmentedControl,
-  NpRangeField,
+    NpRangeField,
   NpToggleRow,
   type NpPanelChrome,
 } from '@/components/portfolio/portfolio-nav-panel-ui';
@@ -121,14 +126,15 @@ function AboutUsSplitVariantIllustration({ variant }: { variant: 'split-overlap'
 
 export type AboutUsSubSection = 'general' | 'design' | 'header' | 'background';
 
-const ABOUT_US_SUB_SECTIONS: { id: 'general' | 'design'; label: string }[] = [
+const ABOUT_US_SUB_SECTIONS: { id: AboutUsSubSection; label: string }[] = [
   { id: 'general', label: msg('General') },
   { id: 'design', label: msg('Design') },
+  { id: 'header', label: msg('Header') },
+  { id: 'background', label: msg('Background') },
 ];
 
-/** About us has two tabs; any other saved id (header, background) opens Design. */
-export function normalizeAboutUsSubSection(value: string | undefined): 'general' | 'design' {
-  return value === 'general' || value === undefined ? 'general' : 'design';
+export function normalizeAboutUsSubSection(value: string | undefined): AboutUsSubSection {
+  return value === 'design' || value === 'header' || value === 'background' ? value : 'general';
 }
 
 function Range({
@@ -233,8 +239,8 @@ function QuoteSvgEditor({
               onClick={() => onSelectId(option.value)}
               className={`rounded-2xl border p-3 text-left transition ${
                 active
-                  ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                  : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
+                  ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
+                  : 'border-transparent bg-[color:var(--np-idle-bg)] text-[color:var(--np-label)] hover:bg-[color:var(--np-idle-hover)]'
               }`}
             >
               <span
@@ -324,12 +330,23 @@ export function AboutUsSettingsPanel({
   const isSplitCard = aboutUs.design === 'split-card';
   const isSplitQuote = aboutUs.design === 'split-quote';
   const isEditorial = aboutUs.design === 'editorial';
+  const isPanorama = aboutUs.design === 'panorama';
+  const isFolio = aboutUs.design === 'folio';
+  const isCentered = aboutUs.design === 'centered';
+  // Panorama and Folio have no left / right side: the photo is full-width or a fixed portrait column.
+  const hasFixedMediaSide = isPanorama || isFolio || isCentered;
+  const hasCustomHeadline = isEditorial || isPanorama || isFolio || isCentered;
   const usesSplitChrome = aboutUsDesignUsesSplitChrome(aboutUs.design);
   const mediaSide = resolveAboutUsMediaSide(aboutUs.design, aboutUs.mediaSide);
-  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<'general' | 'design'>('general');
-  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<AboutUsSubSection>('general');
+  const previewSource = usePortfolioDesignPreviewSource();
+  const backgroundTheme = resolveThumbnailTheme(previewSource?.settings.global, aboutUs);
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(true);
   const subSection = normalizeAboutUsSubSection(controlledSubSection ?? uncontrolledSubSection);
-  const setSubSection = (value: 'general' | 'design') => {
+  const [previousSubSection,setPreviousSubSection]=useState(subSection);
+  if(previousSubSection!==subSection){setPreviousSubSection(subSection);if(subSection==='design')setDesignCatalogOpen(true);}
+  const setSubSection = (value: AboutUsSubSection) => {
+    if(value==='design')setDesignCatalogOpen(true);
     onSubSectionChange?.(value);
     if (controlledSubSection === undefined) setUncontrolledSubSection(value);
   };
@@ -360,31 +377,19 @@ export function AboutUsSettingsPanel({
 
       {subSection === 'general' ? (
         <div className="np-stack">
-          <NpToggleRow card title={t('Show About us section')} description={aboutUs.enabled ? t('Display About us on the public portfolio.') : t('Visitors go straight to the next section.')} checked={aboutUs.enabled} onChange={(enabled) => onChange({ enabled })} />
-          <div className="np-dimmable" data-disabled={aboutUs.enabled ? 'false' : 'true'} inert={!aboutUs.enabled}>
-            <NpCollapsibleSection title={t('Style')}>
-              {/* Both apply to the whole section, whichever design is active. */}
-              <SectionColorModeControl
+          <NpToggleRow card title={t('Show About us section')} checked={aboutUs.enabled} onChange={(enabled) => onChange({ enabled })} />
+          <div className="pb-6"><SectionColorModeControl hideLabel
                 label={t('Color mode')}
                 value={aboutUs.colorModeOverride}
                 onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-              />
-              <NpSegmentedControl
-                label={t('Text size')}
-                options={PORTFOLIO_ABOUT_US_TEXT_SIZE_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
-                value={aboutUs.textSize ?? 'medium'}
-                onChange={(textSize) => onChange({ textSize })}
-              />
+              /></div>
+          <div className="np-dimmable" data-disabled={aboutUs.enabled ? 'false' : 'true'} inert={!aboutUs.enabled}>
+          <NpCollapsibleSection title={t('Style')}>
+              {/* Both apply to the whole section, whichever design is active. */}
+              
+              <TextSizeSlider label={t('Text size')} options={PORTFOLIO_ABOUT_US_TEXT_SIZE_OPTIONS} value={aboutUs.textSize ?? 'medium'} onChange={(textSize) => onChange({ textSize })} />
             </NpCollapsibleSection>
-            <NpCollapsibleSection title={t('Content')}>
-      <TextField label={t('Section title')} value={aboutUs.title} onChange={(title) => onChange({ title })} />
-      {usesSplitChrome && !isSplitQuote && !isEditorial ? null : (
-        <TextField
-          label={t('Section subtitle')}
-          value={aboutUs.subtitle}
-          onChange={(subtitle) => onChange({ subtitle })}
-        />
-      )}
+            <NpCollapsibleSection title={t('Content shown')}>
 
       {/* Every design renders the task list, so every design gets its switch. */}
       <NpToggleRow
@@ -438,7 +443,7 @@ export function AboutUsSettingsPanel({
               ))}
             </NpOptionCardGroup>
           ) : null}
-          {isSplitOverlap || isSplitMediaLeft || isSplitCard || isSplitQuote || isEditorial ? (
+          {isSplitOverlap || isSplitMediaLeft || isSplitCard || isSplitQuote || isEditorial || isPanorama || isFolio || isCentered ? (
             <NpToggleRow
               title={t('Show quote')}
               checked={aboutUs.showQuote}
@@ -455,42 +460,53 @@ export function AboutUsSettingsPanel({
         </>
       ) : null}
 
-              <p className="text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
-                {t('Title, description, tasks, images, quote, and founder are edited in Information → About us.')}
-              </p>
             </NpCollapsibleSection>
           </div>
         </div>
       ) : null}
 
-      {subSection === 'design' && !aboutUs.enabled ? (
+      {subSection !== 'general' && !aboutUs.enabled ? (
         <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its design and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div>
       ) : null}
+
+      {subSection === 'header' && aboutUs.enabled ? <div className="np-stack">
+        <NpCollapsibleSection title={t('Header settings')}>
+          <TextField label={t('Section title')} value={aboutUs.title} onChange={title => onChange({ title })} />
+          {usesSplitChrome && !isSplitQuote && !isEditorial && !isPanorama && !isFolio && !isCentered ? null : <TextField label={t('Section subtitle')} value={aboutUs.subtitle} onChange={subtitle => onChange({ subtitle })} />}
+        </NpCollapsibleSection>
+      </div> : null}
+
+      {subSection === 'background' && aboutUs.enabled ? <div className="np-stack">
+        <NpCollapsibleSection title={t('Palette')}>
+          <SectionPaletteFamilyControl value={aboutUs.paletteFamily ?? 'global'} onChange={paletteFamily => onChange({ paletteFamily })} mode={backgroundTheme.mode} />
+        </NpCollapsibleSection>
+        <NpCollapsibleSection title={t('Background')}>
+          <SectionBackgroundSettingsFields settings={aboutUs} onChange={patch => onChange(patch)} renderColorField={({ label, value, onChange: changeColor }) => {
+            const options = ([['fond', 'Background'], ['neutre', 'Neutral'], ['principal', 'Primary'], ['secondaire', 'Secondary'], ['texteFort', 'Strong text']] as const)
+              .map(([token, text]) => ({ value: token, color: backgroundTheme.palette[token], label: t(text) }));
+            return <ColorSwatchRow label={label} value={options.find(option => option.color.toLowerCase() === value.toLowerCase())?.value ?? ''} onChange={token => { const option = options.find(option => option.value === token); if (option) changeColor(option.color); }} options={options} />;
+          }} />
+        </NpCollapsibleSection>
+      </div> : null}
 
       {subSection === 'design' && aboutUs.enabled ? (
         <div className="np-stack">
           {designCatalogOpen ? (
             <>
-              <NpBackRow title={t('About us design')} onBack={() => setDesignCatalogOpen(false)} />
-              <NpOptionCardGroup label={t('Choose a design')} columns={2}>
-                {PORTFOLIO_ABOUT_US_DESIGN_CATALOG.map((option) => (
-                  <NpOptionCard key={option.value} selected={isAboutUsSplitVariant(option.value) ? isSplitFamily : option.value === aboutUs.design} title={t(option.label)} subtitle={t(option.description)} illustration={<span className="np-illus"><span className="h-2 w-12 rounded-full bg-current opacity-70" /><span className="mt-2 h-1.5 w-16 rounded-full bg-current opacity-25" /><span className="mt-1 h-1.5 w-10 rounded-full bg-current opacity-25" /></span>} onClick={() => {
-                    // Picking "Split" while already on one of its variants keeps that variant and every setting.
-                    if (!(isAboutUsSplitVariant(option.value) && isSplitFamily)) {
-                      onChange(defaultsForAboutUsDesign(option.value as PortfolioAboutUsDesign));
-                    }
-                    setDesignCatalogOpen(false);
-                  }} />
-                ))}
-              </NpOptionCardGroup>
+              <div className="flex flex-col gap-7" aria-label={t('Choose a design')}>
+                {PORTFOLIO_ABOUT_US_DESIGN_CATALOG.map(option=>{
+                  const active=isAboutUsSplitVariant(option.value)?isSplitFamily:option.value===aboutUs.design;
+                  const select=()=>{if(!active)onChange(defaultsForAboutUsDesign(option.value as PortfolioAboutUsDesign));};
+                  return <DesignCatalogueCard key={option.value} label={t(option.label)} selected={active} onSelect={select} onCustomize={()=>{select();setDesignCatalogOpen(false);}}><span className="block aspect-[8/5] w-full overflow-hidden rounded-lg"><AboutUsDesignIllustration design={active && isSplitFamily && isAboutUsSplitVariant(option.value) ? aboutUs.design : option.value} /></span></DesignCatalogueCard>;
+                })}
+              </div>
             </>
           ) : (
             <>
-          <NpCollapsibleSection title={t('Design')}>
-            <NpPickerRow label={t('Design')} value={selectedVariant ? `${t(selectedDesign.label)} · ${t(selectedVariant.label)}` : t(selectedDesign.label)} thumbnail={<span className="np-illus"><span className="h-2 w-12 rounded-full bg-current opacity-70" /><span className="mt-2 h-1.5 w-16 rounded-full bg-current opacity-25" /></span>} onClick={() => setDesignCatalogOpen(true)} />
-          </NpCollapsibleSection>
-          <NpCollapsibleSection title={t('Layout')}>
-      {isEditorial ? (
+          <NpBackRow title={selectedVariant?`${t(selectedDesign.label)} · ${t(selectedVariant.label)}`:t(selectedDesign.label)} onBack={()=>setDesignCatalogOpen(true)}/>
+
+          <LayoutControlGroups>
+      {hasCustomHeadline ? (
         <div className="space-y-4">
           <p className="pf-stack-block-label">{t('Headline')}</p>
           <ColorField
@@ -500,7 +516,7 @@ export function AboutUsSettingsPanel({
           />
           <NpRangeField
             label={t('Headline size')}
-            value={aboutUs.editorialTitleSizePx ?? ABOUT_US_EDITORIAL_TITLE_AUTO_PX}
+            value={aboutUs.editorialTitleSizePx ?? (isFolio ? 60 : isCentered ? 56 : isPanorama ? 56 : ABOUT_US_EDITORIAL_TITLE_AUTO_PX)}
             min={ABOUT_US_EDITORIAL_TITLE_PX_MIN}
             max={ABOUT_US_EDITORIAL_TITLE_PX_MAX}
             step={2}
@@ -541,7 +557,13 @@ export function AboutUsSettingsPanel({
       {usesSplitChrome ? (
         <>
           <p className="rounded-2xl border border-dashed border-[color:var(--pf-palette-bordure)] bg-transparent px-4 py-3 text-sm text-[color:var(--pf-palette-texte-muted)]">
-            {isEditorial
+            {isCentered
+              ? t('Everything sits on one centred axis. The round portrait is the first photo (or the founder’s photo); the list runs as one line of words, with a dot between them unless you pick a bullet.')
+              : isFolio
+              ? t('The section title is the label on the top rule; a custom subtitle sits opposite it. The portrait is the first photo (or the founder’s photo), with the founder under it; the list is plain unless you pick a bullet.')
+              : isPanorama
+              ? t('The section title is the small label on the left; a custom subtitle closes the page on the right. The first photo, list, quote and founder come from Information → About us.')
+              : isEditorial
               ? t('The section title is the small label above the headline; a custom subtitle sits opposite it. The first photo, quote, list and founder come from Information → About us. Flip the photo left or right.')
               : isSplitQuote
               ? t('Pick Photo or SVG on the right (or left). The photo comes from Information → About us.')
@@ -553,6 +575,7 @@ export function AboutUsSettingsPanel({
                   ? t('A large rounded photo on one side, text and list on the other. Flip the image left or right.')
                   : t('Quote and founder stay hidden unless you turn them on. Flip the image left or right.')}
           </p>
+          {hasFixedMediaSide ? null : (
           <div>
             <p className="pf-stack-block-label">{t('Image')}</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
@@ -565,8 +588,8 @@ export function AboutUsSettingsPanel({
                     onClick={() => onChange({ mediaSide: option.value as PortfolioAboutUsMediaSide })}
                     className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
                       active
-                        ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                        : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
+                        ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
+                        : 'border-transparent bg-[color:var(--np-idle-bg)] text-[color:var(--np-label)] hover:bg-[color:var(--np-idle-hover)]'
                     }`}
                   >
                     {t(option.label)}
@@ -575,6 +598,7 @@ export function AboutUsSettingsPanel({
               })}
             </div>
           </div>
+          )}
           {isSplitQuote ? (
             <div>
               <p className="pf-stack-block-label">
@@ -590,8 +614,8 @@ export function AboutUsSettingsPanel({
                       onClick={() => onChange({ quoteMedia: option.value as PortfolioAboutUsQuoteMedia })}
                       className={`rounded-2xl border px-4 py-3 text-left transition ${
                         active
-                          ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                          : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
+                          ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
+                          : 'border-transparent bg-[color:var(--np-idle-bg)] text-[color:var(--np-label)] hover:bg-[color:var(--np-idle-hover)]'
                       }`}
                     >
                       <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
@@ -625,8 +649,8 @@ export function AboutUsSettingsPanel({
                     }
                     className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
                       active
-                        ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                        : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
+                        ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
+                        : 'border-transparent bg-[color:var(--np-idle-bg)] text-[color:var(--np-label)] hover:bg-[color:var(--np-idle-hover)]'
                     }`}
                   >
                     {t(option.label)}
@@ -659,8 +683,8 @@ export function AboutUsSettingsPanel({
                       }
                       className={`rounded-2xl border px-4 py-3 text-left transition ${
                         active
-                          ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                          : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
+                          ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
+                          : 'border-transparent bg-[color:var(--np-idle-bg)] text-[color:var(--np-label)] hover:bg-[color:var(--np-idle-hover)]'
                       }`}
                     >
                       <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
@@ -676,28 +700,11 @@ export function AboutUsSettingsPanel({
               <p className="pf-stack-block-label">
                 {isSplitQuote ? t('Quote card') : t('Frame')}
               </p>
-              <div>
-                <p className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('Rounding')}</p>
-                <div className="mt-2 grid grid-cols-5 gap-2">
-                  {PORTFOLIO_ABOUT_US_CARD_RADIUS_OPTIONS.map((option) => {
-                    const active = option.value === (aboutUs.cardRadius ?? 'lg');
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => onChange({ cardRadius: option.value as PortfolioAboutUsCardRadius })}
-                        className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
-                          active
-                            ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                            : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
-                        }`}
-                      >
-                        {t(option.label)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
+              <CardsStyleControls
+ collapsible={false}
+                value={aboutUs.cardsStyle ?? DEFAULT_CARDS_STYLE}
+                onChange={(cardsStyle) => onChange({ cardsStyle })}
+              />
               <div>
                 <p className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('Shadow')}</p>
                 <div className="mt-2 grid grid-cols-4 gap-2">
@@ -710,30 +717,8 @@ export function AboutUsSettingsPanel({
                         onClick={() => onChange({ cardShadow: option.value as PortfolioAboutUsCardShadow })}
                         className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
                           active
-                            ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                            : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
-                        }`}
-                      >
-                        {t(option.label)}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <div>
-                <p className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('Border')}</p>
-                <div className="mt-2 grid grid-cols-3 gap-2">
-                  {PORTFOLIO_ABOUT_US_CARD_BORDER_OPTIONS.map((option) => {
-                    const active = option.value === (aboutUs.cardBorder ?? 'thin');
-                    return (
-                      <button
-                        key={option.value}
-                        type="button"
-                        onClick={() => onChange({ cardBorder: option.value as PortfolioAboutUsCardBorder })}
-                        className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
-                          active
-                            ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                            : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
+                            ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
+                            : 'border-transparent bg-[color:var(--np-idle-bg)] text-[color:var(--np-label)] hover:bg-[color:var(--np-idle-hover)]'
                         }`}
                       >
                         {t(option.label)}
@@ -757,13 +742,6 @@ export function AboutUsSettingsPanel({
                   onChange={(cardBackgroundColor) => onChange({ cardBackgroundColor })}
                 />
               )}
-              {(aboutUs.cardBorder ?? 'thin') !== 'none' ? (
-                <ColorField
-                  label={t('Border colour')}
-                  value={aboutUs.cardBorderColor ?? '#e5e7eb'}
-                  onChange={(cardBorderColor) => onChange({ cardBorderColor })}
-                />
-              ) : null}
             </div>
           ) : null}
         </>
@@ -782,8 +760,8 @@ export function AboutUsSettingsPanel({
                   onClick={() => onChange({ sectionLayout: option.value as PortfolioAboutUsSectionLayout })}
                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                     active
-                      ? 'border-[color:var(--np-accent)] bg-[color:var(--np-accent-soft)] ring-1 ring-[color:var(--np-accent)]'
-                      : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
+                      ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
+                      : 'border-transparent bg-[color:var(--np-idle-bg)] text-[color:var(--np-label)] hover:bg-[color:var(--np-idle-hover)]'
                   }`}
                 >
                   <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
@@ -795,7 +773,7 @@ export function AboutUsSettingsPanel({
         </div>
       )}
 
-          </NpCollapsibleSection>
+          </LayoutControlGroups>
           {aboutUs.showTasks ? (
             <NpCollapsibleSection title={t('List bullets')}>
               <NpOptionCardGroup label={t('Task list bullet')} columns={3}>

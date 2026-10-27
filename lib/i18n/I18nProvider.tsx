@@ -35,14 +35,16 @@ export function I18nProvider({
   version: string;
   children: ReactNode;
 }) {
-  let messages = getDictionary(locale);
-  if (!messages && typeof window !== 'undefined') {
-    /* Only after a language switch (the page shipped the previous language's script). The switch
-       runs in a transition, so the current screen stays up while this loads. */
+  // This gate intentionally has no state/router hooks. Suspending a cold
+  // dictionary load must not interrupt initialization of the provider's hooks.
+  if (!getDictionary(locale) && typeof window !== 'undefined') {
     use(loadDictionary(locale, version));
-    messages = getDictionary(locale);
   }
-  const dictionary = messages ?? EMPTY_MESSAGES;
+  return <ResolvedI18nProvider locale={locale}>{children}</ResolvedI18nProvider>;
+}
+
+function ResolvedI18nProvider({locale, children}: {locale: Locale; children: ReactNode}) {
+  const dictionary = getDictionary(locale) ?? EMPTY_MESSAGES;
   const router = useRouter();
   const [switching, startTransition] = useTransition();
   const t = useMemo(() => createTranslator(locale, dictionary), [locale, dictionary]);
@@ -65,6 +67,35 @@ export function I18nProvider({
     [t, locale, switching, router],
   );
 
+  return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
+}
+
+/**
+ * Replaces the text of a few source strings for everything rendered inside (e.g. the creator's own names
+ * for the Info block labels). A replaced string is shown as typed, untranslated; every other string
+ * falls through to the surrounding translator. `overrides` must be memoized by the caller.
+ */
+export function TranslationOverrides({
+  overrides,
+  children,
+}: {
+  overrides: Readonly<Record<string, string>>;
+  children: ReactNode;
+}) {
+  const parent = useContext(I18nContext);
+  const value = useMemo<I18nContextValue | null>(() => {
+    if (!parent) return null;
+    if (Object.keys(overrides).length === 0) return parent;
+    const t = Object.assign(
+      ((source: string | null | undefined, vars?: Parameters<Translator>[1]) =>
+        source != null && Object.prototype.hasOwnProperty.call(overrides, source)
+          ? overrides[source]
+          : parent.t(source, vars)) as Translator,
+      parent.t
+    );
+    return { ...parent, t };
+  }, [parent, overrides]);
+  if (!value) return <>{children}</>;
   return <I18nContext.Provider value={value}>{children}</I18nContext.Provider>;
 }
 

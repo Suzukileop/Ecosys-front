@@ -100,6 +100,36 @@ export function mixHex(hexA: string, hexB: string, weightA: number): string {
   return `#${[channel(0), channel(1), channel(2)].map((v) => v.toString(16).padStart(2, '0')).join('')}`;
 }
 
+function relativeLuminance(hex: string): number {
+  const rgb = hexToRgbTuple(hex);
+  if (!rgb) return 0;
+  const [r, g, b] = rgb.map((v) => {
+    const c = v / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}
+
+/** WCAG contrast ratio between two opaque hex colours. */
+export function contrastRatio(a: string, b: string): number {
+  const la = relativeLuminance(a);
+  const lb = relativeLuminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+/**
+ * A softened version of `ink` for secondary text on `bg`: starts at `target` (1 = full ink) and only
+ * strengthens as far as needed to reach `min` contrast. A fixed alpha cannot do this: white at 60% is
+ * fine on near-black but unreadable on a mid-tone accent, which is where the featured card sits.
+ */
+export function softInk(ink: string, bg: string, target: number, min = 4.5): string {
+  for (let alpha = target; alpha < 1.0001; alpha += 0.04) {
+    const color = mixHex(ink, bg, Math.min(1, alpha));
+    if (contrastRatio(color, bg) >= min) return color;
+  }
+  return ink;
+}
+
 /** Near-black or near-white, whichever has the higher WCAG contrast on `hex` — unlike
  *  `pickContrastInk`'s brightness threshold, a mid red or grey correctly gets black. */
 export function readableInk(hex: string): string {
@@ -135,6 +165,22 @@ export function featuredFill(
   const alpha = Math.min(100, Math.max(0, opacity)) / 100;
   const blended = mixHex(color, surface, alpha);
   return { fill: alpha >= 1 ? color : withAlpha(color, alpha), blended, ink: pickContrastInk(blended) };
+}
+
+/**
+ * `featuredFill`, deepened only as much as needed for its text to reach 4.8:1. Light ink on a mid-tone
+ * accent (orange, red) peaks around 4.4:1 however it is softened, so the fill itself has to give.
+ */
+export function legibleFeaturedFill(
+  color: string,
+  opacity: number,
+  surface: string
+): { fill: string; blended: string; ink: string } {
+  let result = featuredFill(color, opacity, surface);
+  for (let k = 0.96; k >= 0.6 && contrastRatio(result.ink, result.blended) < 4.8; k -= 0.04) {
+    result = featuredFill(mixHex(color, '#000000', k), opacity, surface);
+  }
+  return result;
 }
 
 /* ----------------------------------------------------------------------- *
@@ -214,46 +260,87 @@ export function useServicesCardHover(
     const cleanups: Array<() => void> = [];
     cards.forEach((card) => {
       const restY = Number(card.dataset.restY ?? 0) || 0;
-      const rotX = effect === 'tilt' ? gsap.quickTo(card, 'rotationX', { duration: 0.5, ease: 'power3' }) : null;
-      const rotY = effect === 'tilt' ? gsap.quickTo(card, 'rotationY', { duration: 0.5, ease: 'power3' }) : null;
-      if (effect === 'tilt') gsap.set(card, { transformPerspective: 1000 });
+      const tilts = effect === 'tilt' || effect === 'both';
+      const lights = effect === 'glow' || effect === 'both';
+      const rotX = tilts ? gsap.quickTo(card, 'rotationX', { duration: 0.7, ease: 'power3' }) : null;
+      const rotY = tilts ? gsap.quickTo(card, 'rotationY', { duration: 0.7, ease: 'power3' }) : null;
+      if (tilts) gsap.set(card, { transformPerspective: 900 });
+
+      // The glow light trails the cursor: the target jumps, the drawn spot eases
+      // toward it (frame-rate independent), so it glides instead of snapping.
+      const light = { tx: 0, ty: 0, x: 0, y: 0, fresh: true };
+      const paintLight = (_time: number, deltaTime: number) => {
+        const k = 1 - Math.exp(-deltaTime / 80);
+        light.x += (light.tx - light.x) * k;
+        light.y += (light.ty - light.y) * k;
+        card.style.setProperty('--svc-gx', `${light.x.toFixed(1)}px`);
+        card.style.setProperty('--svc-gy', `${light.y.toFixed(1)}px`);
+        if (Math.abs(light.tx - light.x) < 0.2 && Math.abs(light.ty - light.y) < 0.2) gsap.ticker.remove(paintLight);
+      };
 
       const onEnter = () => {
+        if (card.dataset.hovered) return;
         card.dataset.hovered = 'true';
         if (effect === 'lift') {
-          gsap.to(card, { y: restY - 8, duration: 0.45, ease: 'power3.out', overwrite: 'auto' });
+          gsap.to(card, { y: restY - 10, scale: 1.012, duration: 0.7, ease: 'expo.out', overwrite: 'auto' });
+        } else if (tilts) {
+          gsap.to(card, { scale: 1.025, duration: 0.7, ease: 'expo.out', overwrite: 'auto' });
         }
       };
+      // The effect belongs to the card, not to its order button: it rests while the pointer is on it.
+      const overCta = (event: PointerEvent) => event.target instanceof Element && !!event.target.closest('[data-svc-cta]');
       const onMove = (event: PointerEvent) => {
+        if (overCta(event)) {
+          if (card.dataset.hovered) onLeave();
+          return;
+        }
+        if (!card.dataset.hovered) onEnter();
         const rect = card.getBoundingClientRect();
-        if (effect === 'glow') {
-          card.style.setProperty('--svc-gx', `${event.clientX - rect.left}px`);
-          card.style.setProperty('--svc-gy', `${event.clientY - rect.top}px`);
-        } else if (effect === 'tilt' && rotX && rotY) {
-          rotY(((event.clientX - rect.left) / rect.width - 0.5) * 7);
-          rotX(((event.clientY - rect.top) / rect.height - 0.5) * -7);
+        const px = event.clientX - rect.left;
+        const py = event.clientY - rect.top;
+        if (lights) {
+          light.tx = px;
+          light.ty = py;
+          if (light.fresh) {
+            // First move after entering: start the light under the cursor, not at the last position.
+            light.x = px;
+            light.y = py;
+            light.fresh = false;
+          }
+          gsap.ticker.add(paintLight);
+        }
+        if (rotX && rotY) {
+          rotY((px / rect.width - 0.5) * 12);
+          rotX((py / rect.height - 0.5) * -12);
         }
       };
       const onLeave = () => {
         delete card.dataset.hovered;
-        if (effect === 'lift') gsap.to(card, { y: restY, duration: 0.55, ease: 'power3.out', overwrite: 'auto' });
-        if (effect === 'tilt') {
+        light.fresh = true;
+        if (effect === 'lift') gsap.to(card, { y: restY, scale: 1, duration: 0.9, ease: 'expo.out', overwrite: 'auto' });
+        if (tilts) {
           rotX?.(0);
           rotY?.(0);
+          gsap.to(card, { scale: 1, duration: 0.9, ease: 'expo.out', overwrite: 'auto' });
         }
       };
 
-      card.addEventListener('pointerenter', onEnter);
+      const onPointerEnter = (event: PointerEvent) => {
+        if (!overCta(event)) onEnter();
+      };
+
+      card.addEventListener('pointerenter', onPointerEnter);
       card.addEventListener('pointermove', onMove);
       card.addEventListener('pointerleave', onLeave);
       cleanups.push(() => {
-        card.removeEventListener('pointerenter', onEnter);
+        card.removeEventListener('pointerenter', onPointerEnter);
         card.removeEventListener('pointermove', onMove);
         card.removeEventListener('pointerleave', onLeave);
         delete card.dataset.hovered;
-        gsap.killTweensOf(card, 'rotationX,rotationY');
-        if (effect === 'tilt') gsap.set(card, { clearProps: 'rotationX,rotationY,transformPerspective' });
-        if (effect === 'lift') gsap.set(card, { y: restY });
+        gsap.ticker.remove(paintLight);
+        gsap.killTweensOf(card, 'rotationX,rotationY,scale');
+        if (tilts) gsap.set(card, { clearProps: 'rotationX,rotationY,scale,transformPerspective' });
+        if (effect === 'lift') gsap.set(card, { y: restY, scale: 1 });
       });
     });
 

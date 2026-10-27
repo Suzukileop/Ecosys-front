@@ -20,6 +20,9 @@ export type HeroBackgroundFill = 'transparent' | 'none' | 'solid' | 'gradient' |
 export type HeroBackgroundGradientType = 'linear' | 'radial';
 
 export type PortfolioHeroBackgroundSettings = {
+  heroSectionBackgroundArt?: 'none' | 'mesh' | 'particles' | 'particle-ribbon' | 'layered-waves' | 'arc' | 'silk-arc' | 'eclipse-arc';
+  heroSectionBackgroundEnabled?: boolean;
+  heroSectionBackgroundEdgeFade?: boolean;
   heroSectionBackgroundFill: HeroBackgroundFill;
   heroSectionBackgroundColor: string;
   heroSectionBackgroundOpacity: number;
@@ -61,6 +64,8 @@ const DEFAULT_HERO_SECTION_BACKGROUND_COLOR = '#ffffff';
 const DEFAULT_HERO_MOTIF_GRADIENT_TO = '#0a0a0a';
 
 export const DEFAULT_HERO_BACKGROUND_SETTINGS: PortfolioHeroBackgroundSettings = {
+  heroSectionBackgroundArt: 'none',
+  heroSectionBackgroundEdgeFade: false,
   // 'none' = today's existing behavior (each banner design repaints its own Hero-palette
   // Fond color) — this must stay the default so portfolios that never touch this new
   // Background tab keep rendering exactly as before.
@@ -116,12 +121,7 @@ export const PORTFOLIO_HERO_SECTION_BACKGROUND_FILL_OPTIONS: {
     label: msg('Global wallpaper'),
     description: msg('No hero fill — repaints the Global color / shows the fixed image underneath.'),
   },
-  ...PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS,
-  {
-    value: 'split',
-    label: msg('Split X / Y'),
-    description: msg('Two color zones separated by a geometric line — like card fills.'),
-  },
+  ...PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS.filter(option => option.value === 'solid'),
   {
     value: 'image',
     label: msg('Image'),
@@ -353,16 +353,18 @@ export function mergeHeroBackgroundSettings(
   const dividerShape = record.heroSectionBackgroundDividerShape;
 
   return {
+    heroSectionBackgroundArt: record.heroSectionBackgroundArt === 'mesh' || record.heroSectionBackgroundArt === 'particles' || record.heroSectionBackgroundArt === 'particle-ribbon' || record.heroSectionBackgroundArt === 'layered-waves' || record.heroSectionBackgroundArt === 'arc' || record.heroSectionBackgroundArt === 'silk-arc' || record.heroSectionBackgroundArt === 'eclipse-arc' ? record.heroSectionBackgroundArt : record.heroSectionBackgroundArt === 'none' ? 'none' : base.heroSectionBackgroundArt ?? 'none',
     heroSectionBackgroundFill:
       sectionFill === 'transparent' ||
       sectionFill === 'none' ||
       sectionFill === 'solid' ||
-      sectionFill === 'gradient' ||
-      sectionFill === 'image' ||
-      sectionFill === 'split'
+      sectionFill === 'image'
         ? sectionFill
-        : base.heroSectionBackgroundFill,
+        : sectionFill === 'gradient' || sectionFill === 'split' ? 'solid'
+        : base.heroSectionBackgroundFill === 'gradient' || base.heroSectionBackgroundFill === 'split' ? 'solid' : base.heroSectionBackgroundFill,
     heroSectionBackgroundColor: sanitizeHex(record.heroSectionBackgroundColor, base.heroSectionBackgroundColor),
+    heroSectionBackgroundEdgeFade: typeof record.heroSectionBackgroundEdgeFade==='boolean'?record.heroSectionBackgroundEdgeFade:base.heroSectionBackgroundEdgeFade??false,
+    heroSectionBackgroundEnabled: typeof record.heroSectionBackgroundEnabled==='boolean'?record.heroSectionBackgroundEnabled:base.heroSectionBackgroundEnabled,
     heroSectionBackgroundOpacity: sanitizeOpacity(record.heroSectionBackgroundOpacity, base.heroSectionBackgroundOpacity),
     heroSectionBackgroundGradientType:
       sectionGradientType === 'linear' || sectionGradientType === 'radial'

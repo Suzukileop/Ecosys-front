@@ -39,7 +39,7 @@ export function FooterMiniBarContactCta({
       style={{ ...backgroundStyle, borderColor: hairline }}
     >
       <div className="mx-auto w-full max-w-none py-5">
-        <p className="text-center text-xs font-normal tracking-wide" style={{ opacity: 0.6, color: ink }}>
+        <p className="text-center text-[0.8125rem] font-normal tracking-wide" style={{ opacity: 0.7, color: ink }}>
           {text}
         </p>
       </div>

@@ -1,3 +1,9 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import {
+  DEFAULT_CARDS_STYLE,
+  mergeCardsStyle,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import type { CSSProperties } from 'react';
 import {
   isPortfolioListMarkerStyle,
@@ -34,7 +40,10 @@ export type PortfolioAboutUsDesign =
   | 'split-media-left'
   | 'split-card'
   | 'split-quote'
-  | 'editorial';
+  | 'editorial'
+  | 'panorama'
+  | 'folio'
+  | 'centered';
 export type PortfolioAboutUsContentPlacement = 'left' | 'center' | 'right';
 export type PortfolioAboutUsMediaSide = 'left' | 'right';
 export type PortfolioAboutUsImageFrame = 'layered' | 'slab' | 'duo' | 'ring';
@@ -42,6 +51,23 @@ export type PortfolioAboutUsCardRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 export type PortfolioAboutUsCardShadow = 'none' | 'soft' | 'medium' | 'strong';
 export type PortfolioAboutUsCardBorder = 'none' | 'thin' | 'medium';
 export type PortfolioAboutUsQuoteMedia = 'image' | 'svg';
+
+/**
+ * Inline style for a design's headline when the creator customised it (Design → Layout → Headline):
+ * their colour, and their size as the desktop size — it steps down with the viewport (never below
+ * 28px, or the value itself when smaller) so a large number cannot overflow a phone. Unset = {}.
+ */
+export function aboutUsCustomTitleStyle(
+  presentation: Pick<PortfolioAboutUsPresentationSettings, 'editorialTitleColor' | 'editorialTitleSizePx' | 'titleColor'>
+): { color: string; fontSize?: string } {
+  const px = presentation.editorialTitleSizePx;
+  return {
+    color: presentation.editorialTitleColor ?? presentation.titleColor,
+    ...(px
+      ? { fontSize: `clamp(${Math.max(Math.min(px, 28), Math.round(px * 0.42))}px, ${((px / 1100) * 100).toFixed(2)}vw, ${px}px)` }
+      : null),
+  };
+}
 
 export const ABOUT_US_EDITORIAL_TITLE_PX_MIN = 32;
 export const ABOUT_US_EDITORIAL_TITLE_PX_MAX = 160;
@@ -100,7 +126,13 @@ export function resolveAboutUsCtaStyle(
   presentation: Pick<PortfolioAboutUsPresentationSettings, 'ctaStyle' | 'design'>
 ): PortfolioAboutUsCtaStyle {
   if (presentation.ctaStyle && ABOUT_US_CTA_STYLES.includes(presentation.ctaStyle)) return presentation.ctaStyle;
-  return presentation.design === 'split-overlap' || presentation.design === 'editorial' ? 'link' : 'solid';
+  return presentation.design === 'split-overlap' ||
+    presentation.design === 'editorial' ||
+    presentation.design === 'panorama' ||
+    presentation.design === 'folio' ||
+    presentation.design === 'centered'
+    ? 'link'
+    : 'solid';
 }
 
 export type PortfolioAboutUsPresentationSettings = PortfolioSectionBackgroundSettings & {
@@ -115,6 +147,8 @@ export type PortfolioAboutUsPresentationSettings = PortfolioSectionBackgroundSet
   cardShadow: PortfolioAboutUsCardShadow;
   cardBorder: PortfolioAboutUsCardBorder;
   cardBorderColor: string;
+  /** Shared Design → Cards block; `auto` keeps the design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   cardBackgroundColor: string;
   /** When false, quote/card fill is transparent — border still applies. */
   cardBackgroundEnabled: boolean;
@@ -152,6 +186,8 @@ export type PortfolioAboutUsPresentationSettings = PortfolioSectionBackgroundSet
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
 };
 
 export type PortfolioAboutUsSectionSettings = PortfolioSectionCopy & PortfolioAboutUsPresentationSettings;
@@ -181,6 +217,7 @@ export const DEFAULT_ABOUT_US_PRESENTATION: PortfolioAboutUsPresentationSettings
   cardShadow: 'medium',
   cardBorder: 'thin',
   cardBorderColor: '#e5e7eb',
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   cardBackgroundColor: '#ffffff',
   cardBackgroundEnabled: true,
   accentColor: '#6d5efc',
@@ -195,6 +232,7 @@ export const DEFAULT_ABOUT_US_PRESENTATION: PortfolioAboutUsPresentationSettings
   quoteSvgUrls: DEFAULT_ABOUT_US_QUOTE_SVG_URLS,
   useHeroPalette: true,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
 };
 
 export const PORTFOLIO_ABOUT_US_DESIGN_OPTIONS: {
@@ -237,6 +275,21 @@ export const PORTFOLIO_ABOUT_US_DESIGN_OPTIONS: {
     label: msg('Editorial'),
     description: msg('Huge headline, a wide photo with the quote, a numbered list set between hairlines.'),
   },
+  {
+    value: 'panorama',
+    label: msg('Panorama'),
+    description: msg('Headline and lead, a full-width photo, then the list and the quote in columns.'),
+  },
+  {
+    value: 'folio',
+    label: msg('Folio'),
+    description: msg('A ruled page: portrait with its caption, headline, plain list, the quote as a closing line.'),
+  },
+  {
+    value: 'centered',
+    label: msg('Centered'),
+    description: msg('One centred column: round portrait, headline, large quote, the list as a single line.'),
+  },
 ];
 
 function isPortfolioAboutUsDesign(value: unknown): value is PortfolioAboutUsDesign {
@@ -247,7 +300,10 @@ function isPortfolioAboutUsDesign(value: unknown): value is PortfolioAboutUsDesi
     value === 'split-media-left' ||
     value === 'split-card' ||
     value === 'split-quote' ||
-    value === 'editorial'
+    value === 'editorial' ||
+    value === 'panorama' ||
+    value === 'folio' ||
+    value === 'centered'
   );
 }
 
@@ -278,7 +334,10 @@ export function aboutUsDesignEmbedsHeader(design: PortfolioAboutUsDesign | undef
     design === 'split-media-left' ||
     design === 'split-card' ||
     design === 'split-quote' ||
-    design === 'editorial'
+    design === 'editorial' ||
+    design === 'panorama' ||
+    design === 'folio' ||
+    design === 'centered'
   );
 }
 
@@ -394,6 +453,42 @@ export function defaultsForAboutUsDesign(
       cardBorder: 'thin',
       cardBorderColor: '#e5e7eb',
       cardBackgroundColor: '#ffffff',
+    };
+  }
+  if (design === 'centered') {
+    return {
+      design,
+      mediaSide: 'right',
+      showQuote: true,
+      showFounder: true,
+      showFounderRating: false,
+      showCta: true,
+      ctaLabel: 'Contact',
+      showTasks: true,
+    };
+  }
+  if (design === 'folio') {
+    return {
+      design,
+      mediaSide: 'left',
+      showQuote: true,
+      showFounder: true,
+      showFounderRating: false,
+      showCta: true,
+      ctaLabel: 'Contact',
+      showTasks: true,
+    };
+  }
+  if (design === 'panorama') {
+    return {
+      design,
+      mediaSide: 'right',
+      showQuote: true,
+      showFounder: true,
+      showFounderRating: false,
+      showCta: true,
+      ctaLabel: 'Contact',
+      showTasks: true,
     };
   }
   if (design === 'editorial') {
@@ -708,6 +803,7 @@ export function mergeAboutUsPresentation(
       ? record.cardBorder
       : (base.cardBorder ?? 'thin'),
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor ?? '#e5e7eb'),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     cardBackgroundColor: sanitizeHex(record.cardBackgroundColor, base.cardBackgroundColor ?? '#ffffff'),
     cardBackgroundEnabled:
       typeof record.cardBackgroundEnabled === 'boolean'
@@ -761,6 +857,7 @@ export function mergeAboutUsPresentation(
         ? record.activeColorMode
         : base.activeColorMode,
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
   };
 }
 

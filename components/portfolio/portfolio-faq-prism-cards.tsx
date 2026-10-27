@@ -1,5 +1,6 @@
 'use client';
 
+import { FaqQuestionMarker } from '@/components/portfolio/portfolio-faq-marker';
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import type { FaqItem } from '@/types/profile';
 
@@ -32,7 +33,10 @@ export function FaqPrismCardsDesign({
               <button id={questionId} type="button" className="pf-faq-prism-trigger"
                 aria-expanded={open} aria-controls={answerId}
                 onClick={() => setOpenId(current => current === item.id ? null : item.id)}>
-                <span className="pf-faq-prism-q" data-pf-no-color-transition>{item.question}</span>
+                <span className="pf-faq-lead">
+                  <FaqQuestionMarker index={index} />
+                  <span className="pf-faq-prism-q" data-pf-no-color-transition>{item.question}</span>
+                </span>
                 <span className="pf-faq-prism-icon" aria-hidden="true" data-pf-no-color-transition>
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">
                     <line className="pf-faq-prism-icon-bar" x1="9" y1="2.5" x2="9" y2="15.5"

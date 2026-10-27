@@ -12,13 +12,10 @@ import {
 import Link from 'next/link';
 import Image from 'next/image';
 import gsap from 'gsap';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
   PortfolioWorkProjectsCaseSettings,
-  PortfolioWorkProjectsSpecConsultDesign,
 } from '@/components/portfolio/portfolio-work-settings';
 import {
   DEFAULT_PROJECTS_CASE_SETTINGS,
@@ -100,7 +97,7 @@ const CASE_MOTION_CSS = `
 [data-case-gallery] [data-case-clip] {
   will-change: clip-path, transform;
 }
-[data-case-gallery][data-cursor-ready='true'] [data-cursor-target] {
+[data-case-gallery][data-cursor-ready='true'] [data-cursor-target][data-cursor-over-thumbnail='true'] {
   cursor: none;
 }
 .pf-work-case-cursor {
@@ -141,7 +138,10 @@ const CASE_MOTION_CSS = `
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: #0a0a0a;
-  white-space: nowrap;
+  text-align: center;
+  text-wrap: balance;
+  line-height: 1.3;
+  padding: 0 14px;
   transition: opacity 0.25s ease 0.05s;
 }
 .pf-work-case-cursor[data-cursor-state='view'] .pf-work-case-cursor-label {
@@ -212,7 +212,7 @@ function CaseRevealTitle({ text, allowItalic }: { text: string; allowItalic: boo
         <span className="pf-work-case-word-mask" key={`${word}-${index}`}>
           <span
             className={`pf-work-case-word-inner${
-              index === 0 && allowItalic ? ' font-light italic tracking-[-0.03em]' : ' font-semibold'
+              index === 0 && allowItalic ? ' font-light tracking-[-0.03em]' : ' font-semibold'
             }`}
             style={{ transitionDelay: `${80 + index * 55}ms` }}
           >
@@ -281,145 +281,23 @@ function CaseConsultAnchor({
 function CaseConsultControl({
   href,
   label,
-  design,
   accent,
-  ink,
-  surface,
 }: {
   href: string;
   label: string;
-  design: PortfolioWorkProjectsSpecConsultDesign;
   accent: string;
-  ink: string;
-  surface: string;
 }) {
-  const focusRing =
-    'focus:outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4';
-
-  if (design === 'underline') {
-    return (
-      <CaseConsultAnchor
-        href={href}
-        className={`group/consult relative inline-block text-[15px] tracking-[-0.015em] ${focusRing}`}
-        style={{ color: ink }}
-      >
-        <span>{label}</span>
-        <span
-          aria-hidden
-          data-pf-no-color-transition=""
-          className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-100 transition-transform duration-500 ease-out group-hover/consult:scale-x-0"
-          style={{ backgroundColor: ink, opacity: 0.28 }}
-        />
-        <span
-          aria-hidden
-          data-pf-no-color-transition=""
-          className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-0 transition-transform duration-500 ease-out group-hover/consult:scale-x-100"
-          style={{ backgroundColor: accent }}
-        />
-      </CaseConsultAnchor>
-    );
-  }
-
-  if (design === 'bracket') {
-    return (
-      <CaseConsultAnchor
-        href={href}
-        className={`group/consult inline-flex items-center gap-2 font-mono text-[11px] tracking-[0.08em] transition-opacity duration-300 hover:opacity-70 sm:text-xs ${focusRing}`}
-        style={{ color: ink }}
-        noColorTransition
-      >
-        <span aria-hidden className="opacity-45">
-          [
-        </span>
-        <span className="normal-case tracking-[-0.015em]">{label}</span>
-        <span
-          className="transition-transform duration-500 ease-out group-hover/consult:translate-x-1"
-          aria-hidden
-          data-pf-no-color-transition=""
-        >
-          →
-        </span>
-        <span aria-hidden className="opacity-45">
-          ]
-        </span>
-      </CaseConsultAnchor>
-    );
-  }
-
-  if (design === 'footer') {
-    return (
-      <CaseConsultAnchor
-        href={href}
-        className={`group/consult inline-flex items-center gap-3 text-[11px] font-medium tracking-[0.16em] uppercase transition-opacity duration-300 hover:opacity-70 sm:text-xs ${focusRing}`}
-        style={{ color: accent }}
-        noColorTransition
-      >
-        <span>{label}</span>
-        <span
-          className="inline-block h-px w-7 origin-left transition-transform duration-500 ease-out group-hover/consult:scale-x-[1.85]"
-          style={{ backgroundColor: accent }}
-          aria-hidden
-          data-pf-no-color-transition=""
-        />
-      </CaseConsultAnchor>
-    );
-  }
-
-  if (design === 'pill' || design === 'outline' || design === 'ghost' || design === 'solid') {
-    const buttonStyle =
-      design === 'outline'
-        ? {
-            color: ink,
-            backgroundColor: 'transparent',
-            border: `1px solid color-mix(in srgb, ${ink} 28%, transparent)`,
-          }
-        : design === 'ghost'
-          ? {
-              color: ink,
-              backgroundColor: `color-mix(in srgb, ${accent} 8%, transparent)`,
-              border: '1px solid transparent',
-            }
-          : design === 'solid'
-            ? {
-                color: surface,
-                backgroundColor: ink,
-                border: `1px solid ${ink}`,
-              }
-            : {
-                color: ink,
-                backgroundColor: `color-mix(in srgb, ${accent} 14%, transparent)`,
-                border: `1px solid color-mix(in srgb, ${accent} 22%, transparent)`,
-              };
-
-    return (
-      <CaseConsultAnchor
-        href={href}
-        className={`group/consult inline-flex items-center gap-2 px-3 py-1.5 text-[11px] font-medium tracking-[0.04em] transition-opacity duration-300 hover:opacity-75 sm:text-xs ${focusRing}`}
-        style={buttonStyle}
-        noColorTransition
-      >
-        <span className="normal-case tracking-[-0.015em]">{label}</span>
-        <FontAwesomeIcon
-          icon={faArrowUp}
-          className="size-2.5 rotate-45 opacity-70 transition-transform duration-500 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
-          aria-hidden
-          data-pf-no-color-transition=""
-        />
-      </CaseConsultAnchor>
-    );
-  }
-
   return (
     <CaseConsultAnchor
       href={href}
-      className={`group/consult inline-flex items-center gap-2 text-[15px] tracking-[-0.015em] transition-opacity duration-300 hover:opacity-70 ${focusRing}`}
+      className="group/consult inline-flex items-center gap-3 text-[12px] font-medium tracking-[0.14em] uppercase transition-opacity duration-300 hover:opacity-70 focus:outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4 sm:text-xs"
       style={{ color: accent }}
       noColorTransition
     >
       <span>{label}</span>
-      <FontAwesomeIcon
-        icon={faArrowUp}
-        className="size-2.5 rotate-45 transition-transform duration-500 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
+      <span
+        className="inline-block h-px w-7 origin-left transition-transform duration-500 ease-out group-hover/consult:scale-x-[1.85]"
+        style={{ backgroundColor: accent }}
         aria-hidden
         data-pf-no-color-transition=""
       />
@@ -517,8 +395,8 @@ function CaseDefRow({
     >
       {showLabel ? (
         <dt
-          className="font-mono text-[10px] font-medium uppercase tracking-[0.2em] sm:text-[11px]"
-          style={{ color: muted, opacity: 0.52 }}
+          className="font-mono text-[11px] font-medium uppercase tracking-[0.16em] sm:text-[12px]"
+          style={{ color: muted, opacity: 0.8 }}
         >
           {label}
         </dt>
@@ -539,16 +417,16 @@ function CaseDefRow({
   );
 }
 
-/** Magnetic cursor — lerps to the pointer, morphs into a "View project" pill over the
- *  invisible full-row link (`[data-cursor-target]`). Disabled on touch / reduced-motion. */
+/** Magnetic cursor appears only within a thumbnail, even when the full-row link overlays it. */
 function CaseMagneticCursor({
   stageRef,
   accent,
+  label,
 }: {
   stageRef: RefObject<HTMLElement | null>;
   accent: string;
+  label: string;
 }) {
-  const t = useT();
   const cursorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -561,29 +439,35 @@ function CaseMagneticCursor({
     const moveX = gsap.quickTo(cursor, 'x', { duration: 0.3, ease: 'power3.out' });
     const moveY = gsap.quickTo(cursor, 'y', { duration: 0.3, ease: 'power3.out' });
 
+    const targets = Array.from(stage.querySelectorAll<HTMLElement>('[data-cursor-target]'));
+    const thumbnails = Array.from(stage.querySelectorAll<HTMLElement>('[data-case-thumbnail-hit]'));
     const onMove = (event: PointerEvent) => {
       moveX(event.clientX);
       moveY(event.clientY);
+      const overThumbnail = thumbnails.some(el => {
+        if (!el.closest('[data-case-row]')?.querySelector('[data-cursor-target]')) return false;
+        const rect = el.getBoundingClientRect();
+        return event.clientX >= rect.left && event.clientX < rect.right && event.clientY >= rect.top && event.clientY < rect.bottom;
+      });
+      cursor.setAttribute('data-cursor-state', overThumbnail ? 'view' : 'idle');
+      cursor.setAttribute('data-cursor-active', String(overThumbnail));
+      targets.forEach(el=>el.setAttribute('data-cursor-over-thumbnail', String(overThumbnail)));
     };
-    const onEnter = () => cursor.setAttribute('data-cursor-state', 'view');
-    const onLeave = () => cursor.setAttribute('data-cursor-state', 'idle');
+    const onLeave = () => {
+      cursor.setAttribute('data-cursor-state', 'idle');
+      cursor.setAttribute('data-cursor-active', 'false');
+      targets.forEach(el=>el.removeAttribute('data-cursor-over-thumbnail'));
+    };
 
     stage.addEventListener('pointermove', onMove);
+    stage.addEventListener('pointerleave', onLeave);
     stage.setAttribute('data-cursor-ready', 'true');
-    const targets = Array.from(stage.querySelectorAll<HTMLElement>('[data-cursor-target]'));
-    targets.forEach((el) => {
-      el.addEventListener('pointerenter', onEnter);
-      el.addEventListener('pointerleave', onLeave);
-    });
-    cursor.setAttribute('data-cursor-active', 'true');
 
     return () => {
       stage.removeEventListener('pointermove', onMove);
+      stage.removeEventListener('pointerleave', onLeave);
+      onLeave();
       stage.removeAttribute('data-cursor-ready');
-      targets.forEach((el) => {
-        el.removeEventListener('pointerenter', onEnter);
-        el.removeEventListener('pointerleave', onLeave);
-      });
     };
   }, [stageRef]);
 
@@ -595,7 +479,7 @@ function CaseMagneticCursor({
       aria-hidden
       style={{ ['--pf-case-cursor-accent' as string]: accent }}
     >
-      <span className="pf-work-case-cursor-label">{t('View project')}</span>
+      <span className="pf-work-case-cursor-label">{label}</span>
     </div>
   );
 }
@@ -770,8 +654,6 @@ function CaseSheet({
     presentation.cardBackgroundColor ||
     presentation.toolsIconBackgroundColor ||
     '#fafafa';
-  const solidInk =
-    presentation.elementStyles?.toolsList?.color || presentation.titleColor || ink;
   const tagInk = presentation.elementStyles?.toolsList?.color || presentation.subtitleColor || ink;
   const tagSurface = presentation.cardBorderColor || rule;
   const categoryColor = accent && ink && sameHex(accent, ink) ? muted : accent;
@@ -794,10 +676,13 @@ function CaseSheet({
   const showFieldLabels = settings.showFieldLabels !== false;
   const descriptionLabel = settings.descriptionLabel?.trim() || t('Summary');
   const stackLabel = settings.stackLabel?.trim() || t('Stack');
-  const linkLabel = settings.linkLabel?.trim() || t('Link');
   const consultLabel = settings.consultLabel?.trim() || t('Consult this project');
-  const consultDesign = settings.consultDesign ?? 'bracket';
-  const consultInGrid = showConsult && href && consultDesign !== 'footer';
+  /** Hover (magnetic circle) and footer (always visible) are mutually exclusive. */
+  const consultMode = settings.consultMode ?? 'footer';
+  const showIndex = settings.showIndex !== false;
+  const plainTitle = settings.plainTitle === true;
+  const hasMeta = showIndex || showCategory || showRole;
+  const hoverConsult = showConsult && consultMode === 'hover';
   const sheetFrame = settings.sheetFrame ?? 'thin';
   const framed = sheetFrame !== 'none';
   const frameBorderColor = sheetFrame === 'accent' ? accent : rule;
@@ -823,8 +708,8 @@ function CaseSheet({
       label: descriptionLabel,
       content: (
         <p
-          className="max-w-[36em] text-[15px] font-light italic leading-[1.85] tracking-[-0.01em] sm:text-[1.05rem] sm:leading-[1.9]"
-          style={{ opacity: 0.86 }}
+          className="max-w-[36em] text-[15px] font-normal leading-[1.85] tracking-[-0.01em] sm:text-[1.05rem] sm:leading-[1.9]"
+          style={{ opacity: 0.88 }}
         >
           {description}
         </p>
@@ -840,8 +725,8 @@ function CaseSheet({
           {tools.map((tool, toolIndex) => (
             <li
               key={tool}
-              className="flex items-center text-[10px] font-medium tracking-[0.14em] uppercase sm:text-[11px]"
-              style={{ color: tagInk, opacity: 0.62 }}
+              className="flex items-center text-[11px] font-medium tracking-[0.12em] uppercase sm:text-[12px]"
+              style={{ color: tagInk, opacity: 0.85 }}
             >
               {toolIndex > 0 ? (
                 <span className="mx-2.5 opacity-35" aria-hidden>
@@ -855,62 +740,55 @@ function CaseSheet({
       ),
     });
   }
-  if (consultInGrid && href) {
-    rows.push({
-      key: 'consult',
-      label: linkLabel,
-      content: (
-        <CaseConsultControl
-          href={href}
-          label={consultLabel}
-          design={consultDesign}
-          accent={accent}
-          ink={consultDesign === 'solid' ? solidInk : ink}
-          surface={surface}
-        />
-      ),
-    });
-  }
-
   const body = (
     <>
-      <div className="flex items-start justify-between gap-4">
-        <p className="flex min-w-0 items-baseline gap-3">
-          <span
-            className="shrink-0 font-mono font-extralight leading-none tabular-nums tracking-tight"
-            style={{ color: categoryColor, opacity: 0.92, fontSize: 'clamp(1.85rem, 3.2vw, 2.6rem)' }}
-            data-pf-no-color-transition=""
-          >
-            {formatCaseIndex(index)}
-          </span>
-          {showCategory ? (
+      {hasMeta ? (
+        <div className="flex items-start justify-between gap-4">
+          {showIndex || showCategory ? (
+            <p className="flex min-w-0 items-baseline gap-3">
+              {showIndex ? (
+                <span
+                  className="shrink-0 font-mono font-light leading-none tabular-nums tracking-tight"
+                  style={{ color: categoryColor, opacity: 0.92, fontSize: 'clamp(1.85rem, 3.2vw, 2.6rem)' }}
+                  data-pf-no-color-transition=""
+                >
+                  {formatCaseIndex(index)}
+                </span>
+              ) : null}
+              {showCategory ? (
+                <span
+                  className="min-w-0 truncate text-[11px] font-medium uppercase tracking-[0.16em] sm:text-[12px]"
+                  style={{ color: categoryColor }}
+                >
+                  {category}
+                </span>
+              ) : null}
+            </p>
+          ) : null}
+          {showRole ? (
             <span
-              className="min-w-0 truncate text-[10px] font-medium uppercase tracking-[0.2em] sm:text-[11px]"
-              style={{ color: categoryColor }}
+              className="ml-auto max-w-[48%] truncate pt-1 text-right text-[11px] font-medium uppercase tracking-[0.14em] sm:text-[12px]"
+              style={{ color: muted, opacity: 0.85 }}
             >
-              {category}
+              {role}
             </span>
           ) : null}
-        </p>
-        {showRole ? (
-          <span
-            className="max-w-[48%] truncate pt-1 text-right text-[10px] font-medium uppercase tracking-[0.16em] sm:text-[11px]"
-            style={{ color: muted, opacity: 0.58 }}
-          >
-            {role}
-          </span>
-        ) : null}
-      </div>
+        </div>
+      ) : null}
 
       <h3
-        className="mt-4 font-normal leading-[0.96] tracking-[-0.055em] sm:mt-5"
+        className={`font-normal leading-[0.96] tracking-[-0.055em] ${hasMeta ? 'mt-4 sm:mt-5' : ''}`}
         data-pf-no-color-transition=""
         style={{
           color: ink,
-          fontSize: 'clamp(2.15rem, 4.6vw, 4rem)',
+          // Manual size scales down with the viewport like the default (64px at ~1440px wide).
+          fontSize:
+            settings.titleSize != null
+              ? `clamp(24px, ${settings.titleSize / 14.4}vw, ${settings.titleSize}px)`
+              : 'clamp(2.15rem, 4.6vw, 4rem)',
         }}
       >
-        <CaseRevealTitle text={title} allowItalic />
+        <CaseRevealTitle text={title} allowItalic={!plainTitle} />
       </h3>
 
       {rows.length > 0 ? (
@@ -931,7 +809,7 @@ function CaseSheet({
         </dl>
       ) : null}
 
-      {showConsult && href && consultDesign === 'footer' ? (
+      {showConsult && href && consultMode === 'footer' ? (
         <div className={`${rows.length > 0 ? 'mt-8 sm:mt-10' : 'mt-8 sm:mt-9'}`}>
           <span
             aria-hidden
@@ -942,10 +820,7 @@ function CaseSheet({
           <CaseConsultControl
             href={href}
             label={consultLabel}
-            design="footer"
             accent={accent}
-            ink={ink}
-            surface={surface}
           />
         </div>
       ) : null}
@@ -970,7 +845,7 @@ function CaseSheet({
       style={caseEnterStyle(revealed, revealDelay)}
     >
       {showThumb ? (
-        <div className="w-full shrink-0 overflow-hidden sm:w-[52%] lg:w-[54%]">
+        <div data-case-thumbnail-hit="" className="w-full shrink-0 overflow-hidden sm:w-[52%] lg:w-[54%]">
           <CaseThumbnail
             url={mediaUrl}
             alt={title}
@@ -1019,7 +894,7 @@ function CaseSheet({
           href={href}
           className="absolute inset-0 z-[2]"
           ariaLabel={t('View {title}', { title })}
-          magnetic
+          magnetic={hoverConsult}
           noColorTransition
         >
           <span className="sr-only">{`View ${title}`}</span>
@@ -1031,9 +906,9 @@ function CaseSheet({
 
 function caseSheetGapClass(gap: PortfolioWorkProjectsCaseSettings['sheetGap']): string {
   if (gap === 'tight') return 'mt-12 sm:mt-14 lg:mt-16';
-  if (gap === 'md') return 'mt-20 sm:mt-24 lg:mt-28';
-  if (gap === '2xl') return 'mt-36 sm:mt-44 lg:mt-52';
-  return 'mt-28 sm:mt-32 lg:mt-36';
+  if (gap === 'md') return 'mt-24 sm:mt-28 lg:mt-32';
+  if (gap === '2xl') return 'mt-44 sm:mt-56 lg:mt-64';
+  return 'mt-32 sm:mt-40 lg:mt-44';
 }
 
 /** Editorial case rows — large media left + dossier copy, asymmetric desktop scroll. */
@@ -1076,7 +951,13 @@ export function ProjectsCaseGallery({
           />
         </div>
       ))}
-      <CaseMagneticCursor stageRef={rootRef} accent={accent} />
+      {settings.showConsult !== false && settings.consultMode === 'hover' ? (
+        <CaseMagneticCursor
+          stageRef={rootRef}
+          accent={accent}
+          label={settings.consultLabel?.trim() || t('Consult this project')}
+        />
+      ) : null}
     </section>
   );
 }

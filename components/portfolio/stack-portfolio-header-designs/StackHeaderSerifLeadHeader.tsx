@@ -92,11 +92,14 @@ function splitSerifLeadLines(text: string): string[] {
 }
 
 /**
- * Serif lead — exact disposition + motion copy of Portfolio/Work's Serif lead
- * header (`WorkSerifLeadHeader`): a small uppercase label above a large serif
- * title split across up to two balanced lines, each masked and revealed with
- * a stagger. On scroll: the label drifts up while the title block slides and
- * fades away — two separate, scrubbed motions, not one shared recede.
+ * Serif lead — a small uppercase label above a large serif title split across up to two balanced lines.
+ *
+ * Motion — quiet and typographic, unlike the other Stack headers: the label's letter-spacing SETTLES (it
+ * arrives airy and tightens into place as it fades in), then each serif line comes into presence with a soft
+ * rise and a barely-there scale from 97%, one after the other, and the subtitle follows. No mask, no blur,
+ * no count: just tracking, light and a little depth. It replays on every pass; scrolling back up, the lines
+ * descend instead of rising. Leaving is shorter and lighter: the lines thin out toward the scroll direction,
+ * last line first, and the label opens its tracking again as it fades.
  */
 export function StackHeaderSerifLeadHeader({
   subtitle,
@@ -133,15 +136,19 @@ export function StackHeaderSerifLeadHeader({
   const subtitleFontSize = SUBTITLE_SIZE[presentation.headerSerifLeadSubtitleSize ?? 'md'];
   const subtitleFontWeight = SUBTITLE_WEIGHT[presentation.headerSerifLeadSubtitleWeight ?? 'regular'];
 
+  // Lines scale toward their own anchor, so a left-aligned title grows from the left edge, not its centre.
+  const originX = centered ? '50% 100%' : alignRight ? '100% 100%' : '0% 100%';
+
   const headerRef = useRef<HTMLElement>(null);
   const labelRef = useRef<HTMLParagraphElement>(null);
   const leadRef = useRef<HTMLHeadingElement>(null);
+  const subtitleRef = useRef<HTMLParagraphElement>(null);
   const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   useLayoutEffect(() => {
     const header = headerRef.current;
     const labelEl = labelRef.current;
-    const leadBlock = leadRef.current;
+    const subtitleEl = subtitleRef.current;
     if (!header) return;
     if (prefersReducedMotion() || !animationEnabled) return;
 
@@ -150,58 +157,84 @@ export function StackHeaderSerifLeadHeader({
       try {
         ScrollTrigger.refresh();
       } catch (error) {
-        // GSAP's ScrollTrigger.refresh() can throw internally on an edge case
-        // (e.g. "Cannot read properties of undefined (reading 'end')") during
-        // its own init-time recompute; uncaught, that crash propagates up
-        // through this deferred setTimeout with no React boundary to catch it
-        // and takes down the whole page. Never let a best-effort refresh do that.
+        // A best-effort refresh must never take the page down (GSAP can throw on an init-time edge case).
         console.error('[ScrollTrigger] deferred refresh() failed', error);
       }
     }, 90);
     const scroller = stackHeaderScrollParent(header);
     const lineEls = lineRefs.current.filter((node): node is HTMLSpanElement => Boolean(node));
+    const LABEL_TRACKING = '0.1em';
+    const LABEL_TRACKING_OPEN = '0.42em';
 
-    const ctx = gsap.context(() => {
-      if (labelEl) gsap.set(labelEl, { opacity: 0 });
-      if (lineEls.length) gsap.set(lineEls, { yPercent: 110 });
-      if (leadBlock) gsap.set(leadBlock, { x: 0, opacity: 1 });
+    let ctx: gsap.Context | undefined;
+    try {
+      ctx = gsap.context(() => {
+        // Hidden until the header first reaches the viewport (set before paint: no flash).
+        if (labelEl) gsap.set(labelEl, { opacity: 0, letterSpacing: LABEL_TRACKING_OPEN });
+        if (lineEls.length) gsap.set(lineEls, { opacity: 0, y: '0.35em', scale: 0.97, transformOrigin: originX });
+        if (subtitleEl) gsap.set(subtitleEl, { opacity: 0, y: 10 });
 
-      // Gated by ScrollTrigger, not fired on mount — a header mounted below
-      // the fold must stay in its hidden "from" state (set immediately, no
-      // flash) until it actually scrolls into view, not play-then-finish
-      // off-screen and show up already static.
-      const intro = gsap.timeline({
-        defaults: { overwrite: true },
-        scrollTrigger: { trigger: header, scroller, start: 'top 85%', once: true },
-      });
-      if (labelEl) intro.to(labelEl, { opacity: 1, duration: 0.7, ease: 'power2.out' });
-      if (lineEls.length) {
-        intro.to(lineEls, { yPercent: 0, duration: 0.95, ease: 'power3.out', stagger: 0.14 }, 0.12);
-      }
+        // dir 1: arriving from below (scrolling down); -1: arriving from above (scrolling up).
+        const enter = (dir: 1 | -1) => {
+          if (labelEl) {
+            gsap.to(labelEl, { opacity: 1, letterSpacing: LABEL_TRACKING, duration: 1.1, ease: 'expo.out', overwrite: true });
+          }
+          if (lineEls.length) {
+            gsap.fromTo(
+              lineEls,
+              { opacity: 0, y: `${0.35 * dir}em`, scale: 0.97 },
+              { opacity: 1, y: 0, scale: 1, duration: 1.2, ease: 'expo.out', stagger: 0.12, delay: 0.15, overwrite: true }
+            );
+          }
+          if (subtitleEl) {
+            gsap.fromTo(
+              subtitleEl,
+              { opacity: 0, y: 10 * dir },
+              { opacity: 1, y: 0, duration: 0.9, ease: 'power3.out', delay: 0.45, overwrite: true }
+            );
+          }
+        };
+        // dir 1: out through the top; -1: out through the bottom. Shorter and lighter than the entrance.
+        const leave = (dir: 1 | -1) => {
+          if (subtitleEl) gsap.to(subtitleEl, { opacity: 0, y: -8 * dir, duration: 0.35, ease: 'power2.in', overwrite: true });
+          if (lineEls.length) {
+            gsap.to(lineEls, {
+              opacity: 0,
+              y: `${-0.25 * dir}em`,
+              scale: 0.985,
+              duration: 0.5,
+              ease: 'power2.in',
+              stagger: { each: 0.06, from: 'end' },
+              overwrite: true,
+            });
+          }
+          if (labelEl) {
+            gsap.to(labelEl, { opacity: 0, letterSpacing: LABEL_TRACKING_OPEN, duration: 0.5, ease: 'power2.in', delay: 0.1, overwrite: true });
+          }
+        };
 
-      const fade = gsap.timeline({
-        scrollTrigger: {
+        ScrollTrigger.create({
           trigger: header,
           scroller,
-          start: 'top 52%',
-          end: 'top 0%',
-          scrub: 0.45,
-          invalidateOnRefresh: true,
-        },
-      });
-      if (labelEl) fade.fromTo(labelEl, { y: 0 }, { y: -26, ease: 'none' }, 0);
-      if (leadBlock) {
-        const slideX = centered ? 0 : alignRight ? 16 : -16;
-        fade.fromTo(leadBlock, { x: 0, opacity: 1 }, { x: 0, opacity: 1, duration: 0.22, ease: 'none' }, 0);
-        fade.to(leadBlock, { x: slideX, opacity: 0, duration: 0.78, ease: 'power1.in' }, 0.22);
-      }
-    }, header);
+          start: 'top 85%',
+          end: 'bottom 25%',
+          onEnter: () => enter(1),
+          onLeave: () => leave(1),
+          onEnterBack: () => enter(-1),
+          onLeaveBack: () => leave(-1),
+        });
+      }, header);
+    } catch (error) {
+      // Never leave the header invisible because the motion failed to initialise.
+      console.error('[StackHeaderSerifLeadHeader] motion setup failed', error);
+      ctx?.revert();
+    }
 
     return () => {
       window.clearTimeout(refreshId);
-      ctx.revert();
+      ctx?.revert();
     };
-  }, [animationEnabled, title, label, centered, alignRight, showLabel, showTitle]);
+  }, [animationEnabled, title, label, subtitleText, centered, alignRight, showLabel, showTitle, originX]);
 
   const textAlignClass = centered ? 'text-center' : alignRight ? 'text-right' : 'text-left';
   const itemsAlignClass = centered ? 'items-center' : alignRight ? 'items-end' : 'items-start';
@@ -245,7 +278,7 @@ export function StackHeaderSerifLeadHeader({
               }}
             >
               {lines.map((line, index) => (
-                <span key={`${line}-${index}`} className="block overflow-hidden" style={{ clipPath: 'inset(0)' }}>
+                <span key={`${line}-${index}`} className="block">
                   <span
                     ref={(node) => {
                       lineRefs.current[index] = node;
@@ -261,6 +294,7 @@ export function StackHeaderSerifLeadHeader({
           ) : null}
           {subtitleText ? (
             <p
+              ref={subtitleRef}
               className="mb-0 mt-3 max-w-xl leading-relaxed"
               style={{ color: subtitleTone, fontSize: subtitleFontSize, fontWeight: subtitleFontWeight }}
             >

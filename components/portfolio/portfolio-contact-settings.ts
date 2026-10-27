@@ -1,3 +1,10 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import {
+  DEFAULT_CARDS_STYLE,
+  cardsStyleCss,
+  mergeCardsStyle,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -61,8 +68,8 @@ import { msg } from '@/lib/i18n/config';
  * (`calc(<base> * var(--pf-contact-font-scale, 1))` — see the `#contact` rules near the
  * Experience font-scale block in globals.css). `medium` is each design's own current
  * baseline size — `small`/`large`/`xlarge`/`xxlarge` scale relative to that, not to some
- * other absolute reference. Brand-scale/hero display type (`clamp()`/`vw`-scaled headlines,
- * giant focal numbers) is NOT held to this control — only body copy and small labels are.
+ * other absolute reference. Display headlines and email/phone links also use this scale;
+ * portraits, icons and layout spacing retain their own dimensions.
  */
 export type PortfolioContactPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 
@@ -229,7 +236,6 @@ export type PortfolioContactCardDesign =
   | 'liquid-distortion'
   | 'sequential-reveal'
   | 'studio-overlap'
-  | 'borderless-grid'
   | 'broken-grid'
   | 'numbered-narrative'
   | 'magnetic-overlap';
@@ -246,7 +252,6 @@ export const CONTACT_PREMIUM_DESIGNS = [
   'liquid-distortion',
   'sequential-reveal',
   'studio-overlap',
-  'borderless-grid',
   'broken-grid',
   'numbered-narrative',
   'magnetic-overlap',
@@ -263,7 +268,6 @@ export function isContactPremiumDesign(design: PortfolioContactCardDesign | unde
     design === 'liquid-distortion' ||
     design === 'sequential-reveal' ||
     design === 'studio-overlap' ||
-    design === 'borderless-grid' ||
     design === 'broken-grid' ||
     design === 'numbered-narrative' ||
     design === 'magnetic-overlap'
@@ -561,8 +565,6 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   premiumMarqueeText: string;
   /** Premium designs only — the airy slogan line for "Sequential reveal"'s hero entrance. */
   sequentialRevealTagline: string;
-  /** Premium designs only — "Borderless grid"'s second stacked headline line. */
-  borderlessGridSubline: string;
   /** Premium designs only — "Magnetic overlap"'s small italic eyebrow above the headline. */
   magneticOverlapEyebrow: string;
   /** General → Photo: replaces the profile photo in every premium design that shows one. */
@@ -597,6 +599,8 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   itemGap: PortfolioContactItemGap;
   cardBorder: PortfolioServicesCardBorder;
   cardBorderColor: string;
+  /** Shared Design → Cards block; `auto` keeps each design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   cardBackgroundEnabled: boolean;
   cardBackgroundColor: string;
   cardBorderRadius: PortfolioServicesCardRadius;
@@ -620,6 +624,8 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
   /** Section-wide "Font size" control — see `PortfolioContactPremiumFontSize` doc comment. */
   premiumFontSize: PortfolioContactPremiumFontSize;
   contactFormTitle: string;
@@ -768,7 +774,6 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   liquidDistortionWatermark: 'CONNECT',
   premiumMarqueeText: "Let's talk — Say hello — Reach out — ",
   sequentialRevealTagline: "Share your idea, let's build something meaningful together.",
-  borderlessGridSubline: 'Start a conversation.',
   magneticOverlapEyebrow: 'Say hey',
   photoUrl: '',
   designLayouts: {},
@@ -790,6 +795,7 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   itemGap: 'md',
   cardBorder: 'soft',
   cardBorderColor: DEFAULT_CONTACT_CARD_BORDER_COLOR,
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   cardBackgroundEnabled: false,
   cardBackgroundColor: DEFAULT_CONTACT_CARD_BACKGROUND_COLOR,
   cardBorderRadius: 'md',
@@ -825,6 +831,7 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   channelCardsBorderColor: DEFAULT_CONTACT_CARD_BORDER_COLOR,
   useHeroPalette: false,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
   premiumFontSize: 'medium',
   contactColorBindings: { ...DEFAULT_CONTACT_COLOR_BINDINGS },
   elementStyles: DEFAULT_CONTACT_ELEMENT_STYLES,
@@ -958,12 +965,6 @@ export const PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS: {
     label: msg('Studio overlap'),
     description:
       msg('Asymmetric split — headline and contact blocks left, full-bleed portrait right with an overlapping label. Light/dark aware.'),
-  },
-  {
-    value: 'borderless-grid',
-    label: msg('Borderless grid'),
-    description:
-      msg('Stacked monumental headlines left, icon-free raw data right — address, phone, email each larger than the last.'),
   },
   {
     value: 'broken-grid',
@@ -1160,13 +1161,14 @@ export function contactCardFrameClass(p: PortfolioContactPresentationSettings): 
 
 export function contactCardFrameStyle(p: PortfolioContactPresentationSettings): CSSProperties {
   const style: CSSProperties = {};
+  const shared = cardsStyleCss(p.cardsStyle);
   // Tiles / channel-cards own per-item chrome — no outer grey panel fill.
   if (
     p.cardDesign === 'tiles' ||
     p.cardDesign === 'channel-cards' ||
     isContactOwnedLayoutDesign(p.cardDesign)
   ) {
-    return style;
+    return shared.borderRadius !== undefined ? { borderRadius: shared.borderRadius } : style;
   }
 
   const ink = sanitizeHex(p.titleColor, DEFAULT_CONTACT_TITLE_COLOR);
@@ -1188,7 +1190,7 @@ export function contactCardFrameStyle(p: PortfolioContactPresentationSettings): 
       ? 'color-mix(in srgb, #ffffff 16%, transparent)'
       : 'var(--contact-border, #e5e5e5)';
   }
-  return style;
+  return { ...style, ...shared };
 }
 
 /** CSS vars for inner chrome — dividers, accents, hovers — synced to Frame / palette. */
@@ -1943,7 +1945,6 @@ function migrateContactCardDesign(value: unknown): PortfolioContactCardDesign | 
     value === 'liquid-distortion' ||
     value === 'sequential-reveal' ||
     value === 'studio-overlap' ||
-    value === 'borderless-grid' ||
     value === 'broken-grid' ||
     value === 'numbered-narrative' ||
     value === 'magnetic-overlap'
@@ -1951,6 +1952,8 @@ function migrateContactCardDesign(value: unknown): PortfolioContactCardDesign | 
     return value;
   }
   if (value === 'split-manifesto') return 'magnetic-overlap';
+  // Retired design: accounts that picked it keep a similar stacked-headline layout.
+  if (value === 'borderless-grid') return 'editorial-focus';
   return null;
 }
 
@@ -1995,10 +1998,6 @@ export function mergeContactPresentation(
       typeof record.sequentialRevealTagline === 'string'
         ? record.sequentialRevealTagline
         : base.sequentialRevealTagline,
-    borderlessGridSubline:
-      typeof record.borderlessGridSubline === 'string'
-        ? record.borderlessGridSubline
-        : base.borderlessGridSubline,
     magneticOverlapEyebrow:
       typeof record.magneticOverlapEyebrow === 'string'
         ? record.magneticOverlapEyebrow
@@ -2373,6 +2372,7 @@ export function mergeContactPresentation(
     itemGap: pick(record.itemGap, ['none', 'sm', 'md', 'lg'], base.itemGap ?? 'md'),
     cardBorder: pick(record.cardBorder, ['none', 'soft', 'solid', 'accent'], base.cardBorder),
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     cardBackgroundEnabled:
       typeof record.cardBackgroundEnabled === 'boolean' ? record.cardBackgroundEnabled : base.cardBackgroundEnabled,
     cardBackgroundColor: sanitizeHex(record.cardBackgroundColor, base.cardBackgroundColor),
@@ -2510,6 +2510,7 @@ export function mergeContactPresentation(
     ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
     premiumFontSize: pick(record.premiumFontSize, CONTACT_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     contactColorBindings: mergeContactColorBindings(
       mergeContactColorBindings(DEFAULT_CONTACT_COLOR_BINDINGS, base.contactColorBindings),

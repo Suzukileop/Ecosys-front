@@ -5,8 +5,8 @@ import type { Messages } from '@/lib/i18n/translate';
  * Where I18nProvider finds the active dictionary, instead of receiving it as a prop.
  *
  * As a prop, the whole dictionary (~370 KB for French) was serialized into every HTML page. Now:
- * - in the browser, /i18n/<locale>.js (app/i18n/[file]/route.ts) fills it before hydration
- *   (next/script beforeInteractive) and is cached for a year under a content hash;
+ * - in the browser, /i18n/<locale>.js (app/i18n/[file]/route.ts) fills it through the provider's
+ *   Suspense gate and is cached for a year under a content hash;
  * - on the server, the root layout registers it before rendering. One dictionary per locale and they
  *   never change while the server runs, so concurrent requests in different languages cannot clash.
  */
@@ -34,7 +34,7 @@ export function dictionaryScriptUrl(locale: Locale, version: string): string {
 
 const loading = new Map<string, Promise<void>>();
 
-/** Browser only: loads a dictionary not shipped with the page (after switching language). */
+/** Browser only: loads a dictionary before mounting the resolved provider. */
 export function loadDictionary(locale: Locale, version: string): Promise<void> {
   const url = dictionaryScriptUrl(locale, version);
   let promise = loading.get(url);
@@ -43,8 +43,16 @@ export function loadDictionary(locale: Locale, version: string): Promise<void> {
       const script = document.createElement('script');
       script.src = url;
       script.async = true;
-      script.onload = () => resolve();
+      script.onload = () => {
+        script.remove();
+        if (getDictionary(locale)) resolve();
+        else {
+          loading.delete(url);
+          reject(new Error(`The ${locale} dictionary script loaded without registering its messages`));
+        }
+      };
       script.onerror = () => {
+        script.remove();
         loading.delete(url);
         reject(new Error(`Could not load the ${locale} dictionary`));
       };

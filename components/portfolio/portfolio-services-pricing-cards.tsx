@@ -2,7 +2,8 @@
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useEffect, useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import { useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
+import { balancedColumns, fluidColumns, useFluidTrack } from '@/components/portfolio/portfolio-services-fluid-columns';
 import type { ProfileServiceItem } from '@/types/profile';
 import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
@@ -14,16 +15,19 @@ import {
   featuredFill,
   ctaLookOverride,
   getScrollParent,
+  legibleFeaturedFill,
   mixHex,
   prefersReducedMotion,
   useServicesCardHover,
   useServicesFinePointer,
   useServicesMediaQuery,
+  contrastRatio,
   readableInk,
+  softInk,
   withAlpha,
   type PricingCardData,
 } from '@/components/portfolio/portfolio-services-pricing-shared';
-import { resolveServicesCardElements, resolveServicesCtaLabel } from '@/components/portfolio/portfolio-services-card-elements';
+import { resolveServicesCardElements, resolveServicesCtaLabel, ServicesHoverAnchor } from '@/components/portfolio/portfolio-services-card-elements';
 import {
   useServicesPricingStyle,
   type ServicesPricingStyle,
@@ -33,6 +37,7 @@ import {
   priceWordLabel,
   resolveBillingSuffix,
   resolveFeaturedIndex,
+  resolveIncludedLabel,
   SERVICES_FEATURED_DEFAULT_OPACITY,
   type PortfolioServicesListBullet,
 } from '@/components/portfolio/portfolio-services-pricing-style';
@@ -55,7 +60,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
  *   width), micro-cap tier names, bracketed "[ Get started → ]" links; a flex row so an
  *   incomplete last row centres itself.
  * - Bento: a two-column composition where the featured card leads, spans the row, and carries a
- *   textured graphic header; the others stay minimal and outlined.
+ *   pattern behind its content; the others stay minimal and outlined.
  *
  * Everything that is not layout is shared: the real price (currency, "starting at", the service's
  * own billing period), the featured card (which one, its label, colour and background opacity),
@@ -119,135 +124,98 @@ function FromMark({ show, color }: { show: boolean; color: string }) {
   const t = useT();
   if (!show) return null;
   return (
-    <span className="mb-1 block text-[0.68rem] font-semibold uppercase tracking-[0.18em]" style={{ color }}>
+    <span className="mb-1 block text-[length:calc(0.75rem*var(--pf-services-font-scale,1))] font-semibold uppercase tracking-[0.16em]" style={{ color }}>
       {t('From')}
     </span>
   );
 }
 
 /* ----------------------------------------------------------------------- *
- * Bento graphic header
+ * Bento card pattern
  * ----------------------------------------------------------------------- */
 
-function BentoMotifLayer({
-  accent,
-  fade,
-  motif,
-}: {
-  accent: string;
-  fade: string;
-  motif: Exclude<PortfolioServicesPricingBentoMotif, 'none' | 'shapes'>;
-}) {
-  const fadeLayer = <span className="absolute inset-0" style={{ backgroundImage: fade }} />;
-  if (motif === 'lines') {
-    return (
-      <>
-        <span
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `repeating-linear-gradient(135deg, ${accent} 0 2px, transparent 2px 16px)`,
-            opacity: 0.55,
-          }}
-        />
-        {fadeLayer}
-      </>
-    );
-  }
-  if (motif === 'dots') {
-    return (
-      <>
-        <span
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle, ${accent} 0 2px, transparent 2.5px)`,
-            backgroundSize: '18px 18px',
-            opacity: 0.6,
-          }}
-        />
-        {fadeLayer}
-      </>
-    );
-  }
-  if (motif === 'grid') {
-    return (
-      <>
-        <span
-          className="absolute inset-0"
-          style={{
-            backgroundImage: `linear-gradient(${accent} 1px, transparent 1px), linear-gradient(90deg, ${accent} 1px, transparent 1px)`,
-            backgroundSize: '28px 28px',
-            opacity: 0.4,
-          }}
-        />
-        {fadeLayer}
-      </>
-    );
-  }
-  return (
-    <svg
-      className="absolute inset-0 h-full w-full"
-      viewBox="0 0 400 160"
-      preserveAspectRatio="none"
-      fill="none"
-      aria-hidden
-    >
-      {[0, 1, 2, 3].map((row) => (
-        <path
-          key={row}
-          d={`M0 ${50 + row * 22} C 60 ${20 + row * 22}, 120 ${80 + row * 22}, 200 ${50 + row * 22} S 340 ${20 + row * 22}, 400 ${50 + row * 22}`}
-          stroke={accent}
-          strokeOpacity={0.7 - row * 0.14}
-          strokeWidth={2}
-        />
-      ))}
-    </svg>
-  );
-}
-
-function BentoGraphicHeader({
-  accent,
+/**
+ * The featured Bento card's pattern, drawn *behind* its content instead of in a header strip of its
+ * own: it adds no height, and a corner mask keeps it to the card's edge so it never sits under the
+ * text at full strength. `color` is already picked to stay visible on the card's tint.
+ */
+function BentoPatternBackdrop({
+  color,
   tint,
-  ink,
   motif,
 }: {
-  accent: string;
+  color: string;
   tint: string;
-  ink: string;
   motif: Exclude<PortfolioServicesPricingBentoMotif, 'none'>;
 }) {
-  const soft = mixHex(accent, tint, 0.55);
-  return (
-    <div className="relative h-32 w-full overflow-hidden sm:h-40" style={{ backgroundColor: tint }} aria-hidden>
-      {motif === 'shapes' ? (
-        <>
-          <span
-            className="absolute -right-10 -top-14 h-48 w-48"
-            style={{
-              background: `linear-gradient(135deg, ${accent} 0%, ${soft} 100%)`,
-              borderRadius: '38% 62% 63% 37% / 41% 44% 56% 59%',
-              opacity: 0.95,
-            }}
-          />
-          <span
-            className="absolute -bottom-12 -left-8 h-32 w-32 rounded-full"
-            style={{ backgroundColor: soft, opacity: 0.5 }}
-          />
-          <span
-            className="absolute right-10 top-8 h-16 w-16 rounded-[26%] border"
-            style={{ borderColor: ink, opacity: 0.16, transform: 'rotate(22deg)' }}
-          />
-          <span
-            className="absolute bottom-6 left-10 h-2 w-14 rounded-full"
-            style={{ backgroundColor: ink, opacity: 0.14 }}
-          />
-        </>
-      ) : (
-        <BentoMotifLayer
-          accent={accent}
-          fade={`linear-gradient(115deg, transparent 0%, ${tint} 100%)`}
-          motif={motif}
+  // Strongest in the top-right corner, gone before the middle of the card.
+  const mask = 'radial-gradient(130% 110% at 100% 0%, #000 0%, rgba(0,0,0,0.55) 38%, transparent 72%)';
+  const masked: CSSProperties = { WebkitMaskImage: mask, maskImage: mask };
+  let layer: ReactNode;
+  if (motif === 'shapes') {
+    const soft = mixHex(color, tint, 0.55);
+    layer = (
+      <>
+        <span
+          className="absolute -right-12 -top-16 h-56 w-56"
+          style={{
+            background: `linear-gradient(135deg, ${color} 0%, ${soft} 100%)`,
+            borderRadius: '38% 62% 63% 37% / 41% 44% 56% 59%',
+            opacity: 0.5,
+          }}
         />
-      )}
+        <span
+          className="absolute right-24 top-24 h-16 w-16 rounded-[26%] border-2"
+          style={{ borderColor: color, opacity: 0.4, transform: 'rotate(22deg)' }}
+        />
+        <span className="absolute -bottom-14 -left-10 h-36 w-36 rounded-full" style={{ backgroundColor: soft, opacity: 0.3 }} />
+      </>
+    );
+  } else if (motif === 'lines') {
+    layer = (
+      <span
+        className="absolute inset-0"
+        style={{ ...masked, backgroundImage: `repeating-linear-gradient(135deg, ${color} 0 1.5px, transparent 1.5px 16px)`, opacity: 0.5 }}
+      />
+    );
+  } else if (motif === 'dots') {
+    layer = (
+      <span
+        className="absolute inset-0"
+        style={{ ...masked, backgroundImage: `radial-gradient(circle, ${color} 0 1.6px, transparent 2px)`, backgroundSize: '18px 18px', opacity: 0.6 }}
+      />
+    );
+  } else if (motif === 'grid') {
+    layer = (
+      <span
+        className="absolute inset-0"
+        style={{
+          ...masked,
+          backgroundImage: `linear-gradient(${color} 1px, transparent 1px), linear-gradient(90deg, ${color} 1px, transparent 1px)`,
+          backgroundSize: '28px 28px',
+          opacity: 0.4,
+        }}
+      />
+    );
+  } else {
+    layer = (
+      <svg className="absolute inset-0 h-full w-full" style={masked} viewBox="0 0 400 300" preserveAspectRatio="none" fill="none">
+        {[0, 1, 2, 3, 4].map((row) => (
+          <path
+            key={row}
+            d={`M0 ${30 + row * 22} C 60 ${row * 22}, 120 ${60 + row * 22}, 200 ${30 + row * 22} S 340 ${row * 22}, 400 ${30 + row * 22}`}
+            stroke={color}
+            strokeOpacity={0.6 - row * 0.1}
+            strokeWidth={1.5}
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+    );
+  }
+  return (
+    <div className="pointer-events-none absolute inset-0 z-0 overflow-hidden" aria-hidden>
+      {layer}
     </div>
   );
 }
@@ -270,30 +238,173 @@ type LayoutCardProps = {
   hover: string;
   raised: boolean;
   motif: PortfolioServicesPricingBentoMotif;
-  /** Bento wide card: heading above the checklist (empty hides it). */
+  /** Bento wide card: heading above the checklist ('' when hidden). */
   includedLabel: string;
 };
 
-function cardVars(tokens: CardsTokens): CSSProperties {
+function cardVars(tokens: CardsTokens, pricingStyle: ServicesPricingStyle): CSSProperties {
   return {
-    '--svc-glow': tokens.ink,
+    '--svc-glow': pricingStyle.glowColor ?? tokens.ink,
+    '--svc-glow-a': pricingStyle.glowAlpha,
     '--svc-shadow': tokens.isLight ? 'rgba(10,10,10,0.22)' : 'rgba(0,0,0,0.65)',
   } as CSSProperties;
 }
 
-function GridCard({ card, featured, tokens, fill, badge, ctaLabel, pricingStyle, hover, raised }: LayoutCardProps) {
+function GridCard({
+  card,
+  featured,
+  tokens,
+  fill,
+  badge,
+  ctaLabel,
+  pricingStyle,
+  hover,
+  raised,
+  wide = false,
+}: LayoutCardProps & {
+  /** One card per row: a horizontal composition (plan and price left, what's included and the button right)
+   *  instead of a tall stack that leaves the full width empty. */
+  wide?: boolean;
+}) {
   const ink = featured ? fill.ink : tokens.ink;
-  const muted = featured ? `${fill.ink}93` : tokens.muted;
+  // Secondary text on the featured card sits on a mid-tone accent: soften it only as far as stays readable.
+  const muted = featured ? softInk(fill.ink, fill.blended, 0.8) : tokens.muted;
+  const listInk = featured ? softInk(fill.ink, fill.blended, 0.92) : ink;
   const { period } = priceView(card, pricingStyle);
   const price = applyServicePriceLabels(card.price, pricingStyle.style);
+  const isAmount = price.kind === 'amount';
+  const divider = featured ? `${fill.ink}24` : tokens.cardBorder;
+
+  const titleNode = card.show.title ? (
+    <h3
+      // One class, not `text-xl sm:text-2xl`: the Services font-size rules (#services .text-xl) outrank the
+      // `sm:` size, which pinned the title at 20px on desktop.
+      className={
+        wide
+          ? `text-[length:calc(1.75rem*var(--pf-services-font-scale,1))] font-semibold leading-[1.15] tracking-[-0.02em] md:text-[length:calc(2.25rem*var(--pf-services-font-scale,1))] ${featured && badge ? 'pr-20' : ''}`
+          : `text-[length:calc(1.5rem*var(--pf-services-font-scale,1))] font-semibold leading-[1.2] tracking-[-0.015em] sm:text-[length:calc(1.625rem*var(--pf-services-font-scale,1))] ${featured && badge ? 'pr-20' : ''}`
+      }
+      style={{ color: ink }}
+    >
+      {card.title}
+    </h3>
+  ) : null;
+
+  const descriptionNode = card.description ? (
+    <p className={`mt-3 text-[0.95rem] leading-relaxed ${wide ? 'max-w-xl md:text-base md:leading-[1.7]' : ''}`} style={{ color: muted }}>
+      {card.description}
+    </p>
+  ) : null;
+
+  const priceNode = card.show.price ? (
+    <div className={wide ? 'mt-8 md:mt-10' : 'mt-8 sm:mt-9'}>
+      <FromMark show={price.isFrom && price.kind === 'amount'} color={muted} />
+      <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+        <span
+          // A figure is the focal point; a word standing in for one ("On request", "Custom") is not.
+          className={
+            isAmount
+              ? 'text-[length:calc(2.5rem*var(--pf-services-font-scale,1))] font-bold leading-none tracking-[-0.03em] sm:text-[length:calc(3rem*var(--pf-services-font-scale,1))]'
+              : 'text-[length:calc(1.5rem*var(--pf-services-font-scale,1))] font-semibold leading-tight tracking-[-0.015em] sm:text-[length:calc(1.75rem*var(--pf-services-font-scale,1))]'
+          }
+          style={{ color: ink }}
+        >
+          {price.text}
+        </span>
+        {period ? (
+          <span className="text-[0.75rem] font-light tracking-[0.02em]" style={{ color: muted }}>
+            {period}
+          </span>
+        ) : null}
+      </div>
+    </div>
+  ) : null;
+
+  const deliveryNode = card.delivery ? (
+    <p className="mt-2 text-[13px] font-medium" style={{ color: muted }}>
+      {card.delivery}
+    </p>
+  ) : null;
+
+  const featuresNode =
+    card.features.length > 0 ? (
+      <ul className={`flex flex-1 flex-col gap-4 sm:gap-5 ${wide ? 'md:mt-0' : 'mt-9 sm:mt-10'}`}>
+        {card.features.map((feature, i) =>
+          pricingStyle.style.listBullet !== 'auto' ? (
+            <ServicesBulletItem
+              key={`${card.id}-f-${i}`}
+              bullet={pricingStyle.style.listBullet}
+              index={i}
+              markerColor={pricingStyle.bulletColor ?? ink}
+              className="text-[0.95rem] font-normal leading-snug"
+              textStyle={{ color: listInk, opacity: featured ? 1 : 0.92 }}
+            >
+              {feature}
+            </ServicesBulletItem>
+          ) : (
+            <li
+              key={`${card.id}-f-${i}`}
+              className="text-[0.95rem] font-normal leading-snug"
+              style={{ color: listInk, opacity: featured ? 1 : 0.92 }}
+            >
+              {feature}
+            </li>
+          )
+        )}
+      </ul>
+    ) : (
+      <div className="flex-1" />
+    );
+
+  const ctaNode = card.show.cta ? (
+    <ServicesHoverAnchor
+      pricingStyle={pricingStyle}
+      label={ctaLabel}
+      className={`inline-flex min-h-[48px] w-full items-center justify-center rounded-full px-6 text-sm font-semibold ${
+        wide ? 'mt-9 md:mt-10' : 'mt-9 sm:mt-10'
+      }`}
+      style={{
+        backgroundColor: featured ? ink : tokens.ink,
+        color: featured ? fill.blended : tokens.cardBg,
+        ...(pricingStyle.ctaRadius != null ? { borderRadius: pricingStyle.ctaRadius } : null),
+        ...ctaLookOverride(
+          pricingStyle.style.ctaStyle,
+          featured ? ink : tokens.ink,
+          featured ? fill.blended : tokens.cardBg,
+          pricingStyle.ctaRadius
+        ),
+      }}
+    >
+      {ctaLabel}
+    </ServicesHoverAnchor>
+  ) : null;
+
+  const badgeNode =
+    featured && badge ? (
+      <span
+        className="absolute right-7 top-8 text-[length:calc(0.6875rem*var(--pf-services-font-scale,1))] font-semibold uppercase tracking-[0.22em]"
+        style={{ color: muted }}
+      >
+        {badge}
+      </span>
+    ) : null;
+
+  const hasAside = card.features.length > 0 || Boolean(ctaNode);
+
   return (
     <div
       data-svc-card=""
       data-svc-hover={hover}
       data-rest-y={raised ? -20 : 0}
-      className="relative flex h-full flex-col rounded-[2rem] border p-7 sm:p-9"
+      className={
+        wide
+          ? `relative grid h-full gap-10 rounded-[2rem] border p-7 sm:p-9 md:gap-0 md:p-0 ${
+              hasAside ? 'md:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]' : ''
+            }`
+          : 'relative flex h-full flex-col rounded-[2rem] border p-7 sm:p-9'
+      }
       style={{
-        ...cardVars(tokens),
+        ...cardVars(tokens, pricingStyle),
         backgroundColor: featured ? fill.fill : tokens.cardBg,
         borderColor: pricingStyle.borderColor ?? (featured ? `${fill.ink}24` : tokens.cardBorder),
         ...(pricingStyle.borderWidthPx != null ? { borderWidth: pricingStyle.borderWidthPx } : null),
@@ -303,103 +414,35 @@ function GridCard({ card, featured, tokens, fill, badge, ctaLabel, pricingStyle,
       }}
       data-pf-no-color-transition=""
     >
-      {featured && badge ? (
-        <span
-          className="absolute right-7 top-8 text-[10px] font-semibold uppercase tracking-[0.26em]"
-          style={{ color: muted }}
-        >
-          {badge}
-        </span>
-      ) : null}
-
-      {card.show.title ? (
-        <h3
-          className={`text-xl font-black tracking-[-0.01em] sm:text-2xl ${featured && badge ? 'pr-20' : ''}`}
-          style={{ color: ink }}
-        >
-          {card.title}
-        </h3>
-      ) : null}
-      {card.description ? (
-        <p className="mt-3 text-[0.95rem] leading-relaxed" style={{ color: muted }}>
-          {card.description}
-        </p>
-      ) : null}
-
-      {card.show.price ? (
-        <div className="mt-8 sm:mt-9">
-          <FromMark show={price.isFrom && price.kind === 'amount'} color={muted} />
-          <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-            <span
-              className="text-[length:calc(2.5rem*var(--pf-services-font-scale,1))] font-black leading-none tracking-[-0.03em] sm:text-[length:calc(3.1rem*var(--pf-services-font-scale,1))]"
-              style={{ color: ink }}
-            >
-              {price.text}
-            </span>
-            {period ? (
-              <span className="text-[0.75rem] font-light tracking-[0.02em]" style={{ color: muted }}>
-                {period}
-              </span>
-            ) : null}
+      {badgeNode}
+      {wide ? (
+        <>
+          <div className="flex min-w-0 flex-col md:p-12">
+            {titleNode}
+            {descriptionNode}
+            {priceNode}
+            {deliveryNode}
           </div>
-        </div>
-      ) : null}
-      {card.delivery ? (
-        <p className="mt-2 text-[13px] font-medium" style={{ color: muted }}>
-          {card.delivery}
-        </p>
-      ) : null}
-
-      {card.features.length > 0 ? (
-        <ul className="mt-9 flex flex-1 flex-col gap-4 sm:mt-10 sm:gap-5">
-          {card.features.map((feature, i) =>
-            pricingStyle.style.listBullet !== 'auto' ? (
-              <ServicesBulletItem
-                key={`${card.id}-f-${i}`}
-                bullet={pricingStyle.style.listBullet}
-                index={i}
-                markerColor={pricingStyle.bulletColor ?? ink}
-                className="text-[0.95rem] font-normal leading-snug"
-                textStyle={{ color: ink, opacity: 0.75 }}
-              >
-                {feature}
-              </ServicesBulletItem>
-            ) : (
-            <li
-              key={`${card.id}-f-${i}`}
-              className="text-[0.95rem] font-normal leading-snug"
-              style={{ color: ink, opacity: 0.6 }}
+          {hasAside ? (
+            <div
+              className="flex min-w-0 flex-col md:border-l md:p-12"
+              style={{ borderColor: divider }}
             >
-              {feature}
-            </li>
-            )
-          )}
-        </ul>
+              {featuresNode}
+              {ctaNode}
+            </div>
+          ) : null}
+        </>
       ) : (
-        <div className="flex-1" />
+        <>
+          {titleNode}
+          {descriptionNode}
+          {priceNode}
+          {deliveryNode}
+          {featuresNode}
+          {ctaNode}
+        </>
       )}
-
-      {card.show.cta ? (
-      <a
-        {...pricingStyle.anchorProps}
-        data-svc-cta=""
-        className="mt-9 inline-flex min-h-[48px] w-full items-center justify-center rounded-full px-6 text-sm font-semibold sm:mt-10"
-        style={{
-          backgroundColor: featured ? ink : tokens.ink,
-          color: featured ? fill.blended : tokens.cardBg,
-          ...(pricingStyle.ctaRadius != null ? { borderRadius: pricingStyle.ctaRadius } : null),
-          ...ctaLookOverride(
-            pricingStyle.style.ctaStyle,
-            featured ? ink : tokens.ink,
-            featured ? fill.blended : tokens.cardBg,
-            pricingStyle.ctaRadius
-          ),
-        }}
-        data-pf-no-color-transition=""
-      >
-        {ctaLabel}
-      </a>
-      ) : null}
     </div>
   );
 }
@@ -415,54 +458,66 @@ function MonolithCard({
   pricingStyle,
   hover,
   raised,
-}: LayoutCardProps) {
+  wide = false,
+}: LayoutCardProps & {
+  /** One card per row: plan and price on the left, description, included items and button on the right. */
+  wide?: boolean;
+}) {
   const { price, period } = priceView(card, pricingStyle);
-  const border = featured ? withAlpha(accent, tokens.isLight ? 0.42 : 0.55) : tokens.cardBorder;
-  const faint = tokens.isLight ? 'rgba(10,10,10,0.38)' : 'rgba(245,245,244,0.4)';
+  // An accent close to the page tone (white on a light page, black on a dark one) would leave the
+  // featured slab with no visible edge or fill: frame it with the ink instead.
+  const accentShows = contrastRatio(accent, tokens.surface) >= 1.5;
+  const frameColor = accentShows ? accent : tokens.ink;
+  const border = featured ? withAlpha(frameColor, tokens.isLight ? 0.42 : 0.55) : tokens.cardBorder;
+  const background = featured
+    ? accentShows
+      ? fill.fill
+      : withAlpha(tokens.ink, tokens.isLight ? 0.05 : 0.08)
+    : tokens.cardBg;
+  const badgeColor = contrastRatio(accent, tokens.surface) >= 3 ? accent : tokens.ink;
+  // The text sits on whatever the featured fill really paints: a strong fill (Contrast at 100%) flips the
+  // ink, a faint tint keeps the design's own. Everything is read off the opaque colour the fill shows as.
+  const onFill = featured && accentShows;
+  const ink = onFill ? readableInk(fill.blended) : tokens.ink;
+  const muted = onFill ? softInk(ink, fill.blended, 0.72) : tokens.muted;
+  const faint = onFill
+    ? softInk(ink, fill.blended, 0.62)
+    : tokens.isLight
+      ? 'rgba(10,10,10,0.6)'
+      : 'rgba(245,245,244,0.62)';
+  const hairline = onFill ? withAlpha(ink, 0.2) : tokens.hairline;
+  // Checks and bullets keep the accent unless it would melt into its own fill.
+  const markColor = onFill && contrastRatio(frameColor, fill.blended) < 3 ? ink : frameColor;
   const figure =
     price.kind === 'amount'
       ? price.amount
       : priceWordLabel(pricingStyle.style, price.kind, price.kind === 'free' ? 'Free' : 'Custom');
-  return (
-    <div
-      data-svc-card=""
-      data-svc-hover={hover}
-      data-rest-y={raised ? -12 : 0}
-      className={`pf-svc-cards-mono-card relative flex flex-col gap-6 rounded-[22px] border px-6 py-9 backdrop-blur-[12px] [container-type:inline-size] sm:gap-7 sm:px-8 md:rounded-[28px] md:px-7 ${
-        featured ? 'md:py-14' : 'md:py-11'
-      }`}
-      style={{
-        ...cardVars(tokens),
-        backgroundColor: featured ? fill.fill : tokens.cardBg,
-        borderColor: pricingStyle.borderColor ?? border,
-        ...(pricingStyle.borderWidthPx != null ? { borderWidth: pricingStyle.borderWidthPx } : null),
-        ...(pricingStyle.cardRadiusPx != null ? { borderRadius: pricingStyle.cardRadiusPx } : null),
-        WebkitTapHighlightColor: 'transparent',
-      }}
-      data-pf-no-color-transition=""
-    >
-      {featured && badge ? (
+  const badgeNode = featured && badge ? (
+        // Sits on the card's top edge, out of the flow, so the featured card's title, price and button
+        // stay on the same lines as its neighbours'.
         <span
-          className="inline-flex w-fit items-center gap-2 rounded-full border px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.18em]"
-          style={{ color: accent, borderColor: border }}
+          className="absolute left-6 top-0 inline-flex w-fit -translate-y-1/2 items-center gap-2 rounded-full border px-3 py-1 text-[length:calc(0.6875rem*var(--pf-services-font-scale,1))] font-semibold uppercase tracking-[0.16em] sm:left-8 md:left-7"
+          style={{ color: badgeColor, borderColor: border, backgroundColor: tokens.surface }}
         >
           {badge}
         </span>
-      ) : null}
-
-      {card.show.title ? (
-        <p className="text-[11px] font-medium uppercase leading-none tracking-[0.18em]" style={{ color: tokens.muted }}>
+      ) : null;
+  const titleNode = card.show.title ? (
+        <p className="text-[length:calc(0.8125rem*var(--pf-services-font-scale,1))] font-medium uppercase leading-none tracking-[0.14em]" style={{ color: ink }}>
           {card.title}
         </p>
-      ) : null}
-
-      {card.show.price ? (
+      ) : null;
+  const priceNode = card.show.price ? (
       <div>
         <FromMark show={price.isFrom && price.kind === 'amount'} color={faint} />
         <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
           <span
-            className="whitespace-nowrap text-[length:calc(clamp(2.25rem,13cqi,4.5rem)*var(--pf-services-font-scale,1))] font-black leading-[0.9] tracking-[-0.04em]"
-            style={{ color: tokens.ink }}
+            className={
+              price.kind === 'amount'
+                ? 'whitespace-nowrap text-[length:calc(clamp(2.25rem,13cqi,4.5rem)*var(--pf-services-font-scale,1))] font-extrabold leading-[0.9] tracking-[-0.04em]'
+                : 'text-[length:calc(clamp(1.75rem,9cqi,2.75rem)*var(--pf-services-font-scale,1))] font-semibold leading-[1.05] tracking-[-0.025em]'
+            }
+            style={{ color: ink }}
           >
             {price.kind === 'amount' && price.symbolFirst ? (
               <span className="mr-1 text-[0.32em] font-semibold" style={{ opacity: 0.65 }}>
@@ -478,7 +533,7 @@ function MonolithCard({
           </span>
           {period ? (
             <span
-              className="pb-[0.3em] text-[11px] font-medium uppercase leading-none tracking-[0.18em]"
+              className="pb-[0.3em] text-[length:calc(0.75rem*var(--pf-services-font-scale,1))] font-medium uppercase leading-none tracking-[0.14em]"
               style={{ color: faint }}
             >
               {period}
@@ -486,29 +541,28 @@ function MonolithCard({
           ) : null}
         </div>
       </div>
-      ) : null}
-      {card.delivery ? (
-        <p className="text-[13px] font-medium" style={{ color: tokens.muted }}>
+      ) : null;
+  const deliveryNode = card.delivery ? (
+        <p className="text-[13px] font-medium" style={{ color: muted }}>
           {card.delivery}
         </p>
-      ) : null}
-      {card.description ? (
-        <p className="text-sm leading-[1.6]" style={{ color: tokens.muted }}>
+      ) : null;
+  const descriptionNode = card.description ? (
+        <p className="text-sm leading-[1.6]" style={{ color: muted }}>
           {card.description}
         </p>
-      ) : null}
-
-      {card.features.length > 0 ? (
-        <ul className="flex flex-col gap-3">
+      ) : null;
+  const featuresNode = card.features.length > 0 ? (
+        <ul className={`grid gap-3 ${wide && card.features.length > 3 ? '@2xl:grid-cols-2 @2xl:gap-x-8' : ''}`}>
           {card.features.map((feature, i) =>
             pricingStyle.style.listBullet !== 'auto' ? (
               <ServicesBulletItem
                 key={`${card.id}-f-${i}`}
                 bullet={pricingStyle.style.listBullet}
                 index={i}
-                markerColor={pricingStyle.bulletColor ?? accent}
+                markerColor={pricingStyle.bulletColor ?? markColor}
                 className="text-sm leading-[1.5]"
-                textStyle={{ color: tokens.muted }}
+                textStyle={{ color: ink, opacity: 0.9 }}
               >
                 {feature}
               </ServicesBulletItem>
@@ -517,30 +571,31 @@ function MonolithCard({
               <svg viewBox="0 0 16 16" className="mt-0.5 h-3.5 w-3.5 shrink-0" fill="none" aria-hidden>
                 <path
                   d="M3 8.5l3 3 7-7.5"
-                  stroke={accent}
+                  stroke={markColor}
                   strokeWidth={1.6}
                   strokeLinecap="round"
                   strokeLinejoin="round"
                 />
               </svg>
-              <span style={{ color: tokens.muted }}>{feature}</span>
+              <span style={{ color: ink, opacity: 0.9 }}>{feature}</span>
             </li>
             )
           )}
         </ul>
-      ) : null}
-
-      {card.show.cta ? (
-      <a
-        {...pricingStyle.anchorProps}
-        data-svc-cta=""
+      ) : null;
+  const ctaNode = card.show.cta ? (
+      <ServicesHoverAnchor
+        pricingStyle={pricingStyle}
+        label={ctaLabel}
         className="mt-auto flex min-h-[48px] w-full items-center justify-center gap-1.5 pt-4 text-sm font-medium tracking-[0.02em] md:w-fit md:justify-start"
         style={{
-          color: tokens.ink,
-          borderTop: `1px solid ${tokens.hairline}`,
-          ...ctaLookOverride(pricingStyle.style.ctaStyle, tokens.ink, tokens.surface, pricingStyle.ctaRadius),
+          color: ink,
+          // The hairline only belongs to the "auto" look. It is an inset shadow rather than `borderTop`
+          // because the override sets borderStyle/borderWidth, and mixing those with a border
+          // shorthand/longhand breaks React's style update when the look changes.
+          ...(pricingStyle.style.ctaStyle === 'auto' ? { boxShadow: `inset 0 1px 0 ${hairline}` } : null),
+          ...ctaLookOverride(pricingStyle.style.ctaStyle, ink, onFill ? fill.blended : tokens.surface, pricingStyle.ctaRadius),
         }}
-        data-pf-no-color-transition=""
       >
         {pricingStyle.style.ctaStyle === 'auto' ? (
           <span aria-hidden style={{ color: faint }}>
@@ -556,8 +611,61 @@ function MonolithCard({
             ]
           </span>
         ) : null}
-      </a>
-      ) : null}
+      </ServicesHoverAnchor>
+      ) : null;
+
+  const hasAside = Boolean(descriptionNode) || card.features.length > 0 || Boolean(ctaNode);
+  return (
+    <div
+      data-svc-card=""
+      data-svc-hover={hover}
+      data-rest-y={raised ? -12 : 0}
+      // Same padding on every card (the lift marks the featured one), so titles, prices and buttons
+      // line up across the row.
+      className="pf-svc-cards-mono-card relative flex w-full flex-col gap-6 rounded-[22px] border px-6 py-9 backdrop-blur-[12px] [container-type:inline-size] sm:gap-7 sm:px-8 md:rounded-[28px] md:px-7 md:py-11"
+      style={{
+        ...cardVars(tokens, pricingStyle),
+        backgroundColor: background,
+        borderColor: pricingStyle.borderColor ?? border,
+        ...(pricingStyle.borderWidthPx != null ? { borderWidth: pricingStyle.borderWidthPx } : null),
+        ...(pricingStyle.cardRadiusPx != null ? { borderRadius: pricingStyle.cardRadiusPx } : null),
+        WebkitTapHighlightColor: 'transparent',
+      }}
+      data-pf-no-color-transition=""
+    >
+      {badgeNode}
+      {wide ? (
+        // Container queries (the card is the container), so the two columns follow the card's own width: a
+        // narrow card, wherever it sits, keeps the stacked reading order.
+        <div
+          className={`grid gap-8 ${hasAside ? '@2xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.15fr)] @2xl:gap-0' : ''}`}
+        >
+          <div className="flex min-w-0 flex-col gap-6 sm:gap-7 @2xl:pr-10">
+            {titleNode}
+            {priceNode}
+            {deliveryNode}
+          </div>
+          {hasAside ? (
+            <div
+              className="flex min-w-0 flex-col gap-6 sm:gap-7 @2xl:border-l @2xl:pl-10"
+              style={{ borderColor: hairline }}
+            >
+              {descriptionNode}
+              {featuresNode}
+              {ctaNode}
+            </div>
+          ) : null}
+        </div>
+      ) : (
+        <>
+          {titleNode}
+          {priceNode}
+          {deliveryNode}
+          {descriptionNode}
+          {featuresNode}
+          {ctaNode}
+        </>
+      )}
     </div>
   );
 }
@@ -587,7 +695,7 @@ function BentoCheckItem({
         index={index}
         markerColor={markerColor ?? ink}
         className="text-[0.98rem] leading-snug"
-        textStyle={{ color: ink, opacity: strong ? 0.9 : 0.7 }}
+        textStyle={{ color: ink, opacity: strong ? 1 : 0.92 }}
       >
         {children}
       </ServicesBulletItem>
@@ -604,7 +712,7 @@ function BentoCheckItem({
           <path d="M3.5 8.5l2.8 2.8L12.5 5" stroke={ink} strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </span>
-      <span className="text-[0.98rem] leading-snug" style={{ color: ink, opacity: strong ? 0.9 : 0.7 }}>
+      <span className="text-[0.98rem] leading-snug" style={{ color: ink, opacity: strong ? 1 : 0.92 }}>
         {children}
       </span>
     </li>
@@ -627,7 +735,9 @@ function BentoCard({
 }: LayoutCardProps & { wide: boolean }) {
   const { period } = priceView(card, pricingStyle);
   const price = applyServicePriceLabels(card.price, pricingStyle.style);
-  const showHeader = featured && motif !== 'none';
+  const showPattern = featured && motif !== 'none';
+  // On a pale tint (light mode) the accent itself can be nearly invisible: fall back to the ink.
+  const patternColor = contrastRatio(accent, fill.blended) >= 1.6 ? accent : fill.ink;
   // The featured card is painted with the accent tint, so its text is picked against that tint
   // (not the page): `fill.ink` is the readable ink for it.
   const ink = featured ? fill.ink : tokens.ink;
@@ -639,7 +749,7 @@ function BentoCard({
   const badgeEl =
     featured && badge ? (
       <span
-        className="mb-5 inline-flex w-fit items-center rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]"
+        className="mb-5 inline-flex w-fit items-center rounded-full px-3 py-1 text-[length:calc(0.6875rem*var(--pf-services-font-scale,1))] font-bold uppercase tracking-[0.16em]"
         style={{ backgroundColor: ink, color: featured ? fill.blended : tokens.surface }}
       >
         {badge}
@@ -648,7 +758,7 @@ function BentoCard({
 
   const titleEl = card.show.title ? (
     <h3
-      className={`font-sans font-black leading-[1.05] tracking-tight ${
+      className={`font-sans font-semibold leading-[1.05] tracking-tight ${
         wide ? 'text-2xl sm:text-[2rem]' : 'text-2xl sm:text-[1.7rem]'
       }`}
       style={{ color: ink }}
@@ -664,7 +774,7 @@ function BentoCard({
   ) : null;
 
   const priceEl = !card.show.price ? null : price.kind === 'quote' ? (
-    <p className="mt-7 text-[1.05rem] font-medium italic" style={{ color: muted }}>
+    <p className="mt-7 text-[1.05rem] font-medium" style={{ color: muted }}>
       {priceWordLabel(pricingStyle.style, 'quote', 'Price on request')}
     </p>
   ) : (
@@ -672,7 +782,7 @@ function BentoCard({
       <FromMark show={price.isFrom && price.kind === 'amount'} color={muted} />
       <div className="flex flex-wrap items-baseline gap-x-1.5 gap-y-1">
         <span
-          className="text-[length:calc(2.4rem*var(--pf-services-font-scale,1))] font-black leading-none tracking-tight sm:text-[length:calc(3rem*var(--pf-services-font-scale,1))]"
+          className="text-[length:calc(2.4rem*var(--pf-services-font-scale,1))] font-bold leading-none tracking-tight sm:text-[length:calc(3rem*var(--pf-services-font-scale,1))]"
           style={{ color: ink }}
         >
           {price.text}
@@ -694,10 +804,10 @@ function BentoCard({
 
   const ctaEl = card.show.cta ? (
     <div className="mt-auto pt-8 sm:pt-9">
-      <a
-        {...pricingStyle.anchorProps}
-        data-svc-cta=""
-        className="group relative inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full px-6 text-[0.95rem] font-semibold md:w-auto"
+      <ServicesHoverAnchor
+        pricingStyle={pricingStyle}
+        label={ctaLabel}
+        className="relative inline-flex min-h-[48px] w-full items-center justify-center gap-2 rounded-full px-6 text-[0.95rem] font-semibold md:w-auto"
         style={{
           ...(pricingStyle.ctaRadius != null ? { borderRadius: pricingStyle.ctaRadius } : null),
           backgroundColor: featured ? ctaInk : 'transparent',
@@ -707,13 +817,12 @@ function BentoCard({
           borderColor: featured ? ctaInk : tokens.cardBorder,
           ...ctaLookOverride(pricingStyle.style.ctaStyle, ctaInk, ctaSurface, pricingStyle.ctaRadius),
         }}
-        data-pf-no-color-transition=""
       >
         {ctaLabel}
-        <span aria-hidden className="inline-block transition-transform duration-300 ease-out group-hover:translate-x-1">
+        <span aria-hidden className="inline-block">
           →
         </span>
-      </a>
+      </ServicesHoverAnchor>
     </div>
   ) : null;
 
@@ -724,7 +833,7 @@ function BentoCard({
       data-rest-y={0}
       className={`relative flex flex-col overflow-hidden rounded-[28px] border ${wide ? 'md:col-span-2' : ''}`}
       style={{
-        ...cardVars(tokens),
+        ...cardVars(tokens, pricingStyle),
         backgroundColor: featured ? fill.blended : tokens.cardBg,
         borderColor: pricingStyle.borderColor ?? tokens.cardBorder,
         ...(pricingStyle.borderWidthPx != null ? { borderWidth: pricingStyle.borderWidthPx } : null),
@@ -732,11 +841,13 @@ function BentoCard({
       }}
       data-pf-no-color-transition=""
     >
-      {showHeader ? (
-        <BentoGraphicHeader accent={accent} tint={fill.blended} ink={tokens.ink} motif={motif as Exclude<PortfolioServicesPricingBentoMotif, 'none'>} />
-      ) : (
-        <div className="h-2 w-full" aria-hidden />
-      )}
+      {showPattern ? (
+        <BentoPatternBackdrop
+          color={patternColor}
+          tint={fill.blended}
+          motif={motif as Exclude<PortfolioServicesPricingBentoMotif, 'none'>}
+        />
+      ) : null}
       {children}
     </div>
   );
@@ -747,7 +858,7 @@ function BentoCard({
   if (wide) {
     const features = card.features;
     return shell(
-      <div className="flex flex-1 flex-col md:flex-row">
+      <div className="relative z-[1] flex flex-1 flex-col md:flex-row">
         <div className="flex flex-col p-6 sm:p-9 md:w-[42%] md:shrink-0 lg:p-12">
           {badgeEl}
           {titleEl}
@@ -762,7 +873,7 @@ function BentoCard({
             style={{ borderColor: hairline }}
           >
             {includedLabel ? (
-              <p className="mb-6 text-[11px] font-semibold uppercase tracking-[0.2em]" style={{ color: muted }}>
+              <p className="mb-6 text-[length:calc(0.75rem*var(--pf-services-font-scale,1))] font-semibold uppercase tracking-[0.18em]" style={{ color: muted }}>
                 {includedLabel}
               </p>
             ) : null}
@@ -782,7 +893,7 @@ function BentoCard({
   }
 
   return shell(
-    <div className="flex flex-1 flex-col p-6 sm:p-9">
+    <div className="relative z-[1] flex flex-1 flex-col p-6 sm:p-9">
       {badgeEl}
       {titleEl}
       {descriptionEl}
@@ -826,6 +937,28 @@ function basis(columns: number, gapPx: number): string {
   return `calc((100% - ${gapPx * (columns - 1)}px) / ${columns})`;
 }
 
+/** Narrowest a pricing card may get before its price, tasks and button start to wrap badly. */
+const MIN_CARD_WIDTH = 272;
+const pricingGapFor = (width: number) => (width < 640 ? 20 : width < 1024 ? 28 : 32);
+
+const CARD_MAX_REM = 26;
+const WIDE_CARD_MAX_REM = { full: 80, comfortable: 62 } as const;
+
+/**
+ * Width of the whole group of cards: capped and centred so two cards no longer stretch across the full
+ * section. One card per row has its own, larger cap since it is a horizontal composition.
+ */
+function cardsWidthStyle(
+  width: 'full' | 'comfortable',
+  cols: number,
+  gapPx: number,
+  wide: boolean
+): CSSProperties {
+  if (wide) return { maxWidth: `${WIDE_CARD_MAX_REM[width]}rem`, marginInline: 'auto' };
+  if (width === 'full') return {};
+  return { maxWidth: `calc(${cols} * ${CARD_MAX_REM}rem + ${(cols - 1) * gapPx}px)`, marginInline: 'auto' };
+}
+
 export function ServicesPricingCardsSection({
   services,
   presentation,
@@ -833,6 +966,7 @@ export function ServicesPricingCardsSection({
   services: ProfileServiceItem[];
   presentation: PortfolioServicesPresentationSettings;
 }) {
+  const t = useT();
   const settings = mergeServicesPricingCardsSettings(DEFAULT_SERVICES_PRICING_CARDS_SETTINGS, presentation.pricingCards);
   const layout = settings.layout;
   const pricingStyle = useServicesPricingStyle(presentation);
@@ -877,7 +1011,7 @@ export function ServicesPricingCardsSection({
       // The raw palette colour reads neon next to near-black cards, so the default blends a little
       // of the card tone in; an explicit opacity from the creator is honoured as set.
       const base = style.featuredOpacity == null ? mixHex(accent, tokens.surface, 0.85) : accent;
-      return featuredFill(base, opacity, tokens.surface);
+      return legibleFeaturedFill(base, opacity, tokens.surface);
     }
     if (layout === 'bento') {
       // Bento: the featured header is a *tint* of the accent over the card surface.
@@ -888,8 +1022,16 @@ export function ServicesPricingCardsSection({
   })();
 
   const badge = style.featuredShowLabel && style.featuredLabel.trim() ? style.featuredLabel.trim() : null;
+  const includedLabel = resolveIncludedLabel(
+    style,
+    { show: settings.showIncludedLabel, label: settings.includedLabel },
+    t("What's included")
+  );
 
   const rootRef = useRef<HTMLDivElement>(null);
+  // Real width of the block → how many cards fit. `null` until measured (server render, first paint):
+  // the viewport breakpoints below then act as the fallback.
+  const track = useFluidTrack(rootRef, count > 0, pricingGapFor, MIN_CARD_WIDTH, layout);
   const finePointer = useServicesFinePointer();
   const isLg = useServicesMediaQuery('(min-width: 1024px)');
   const isMd = useServicesMediaQuery('(min-width: 768px)');
@@ -940,35 +1082,20 @@ export function ServicesPricingCardsSection({
 
   useServicesCardHover(rootRef, style.hoverEffect, finePointer, itemsKey);
 
-  // Magnetic order buttons (fine pointer only).
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || !finePointer || prefersReducedMotion()) return undefined;
-    const ctas = Array.from(root.querySelectorAll<HTMLElement>('[data-svc-cta]'));
-    const cleanups: Array<() => void> = [];
-    ctas.forEach((el) => {
-      const moveX = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3' });
-      const moveY = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3' });
-      const onMove = (event: PointerEvent) => {
-        const rect = el.getBoundingClientRect();
-        moveX((event.clientX - (rect.left + rect.width / 2)) * 0.3);
-        moveY((event.clientY - (rect.top + rect.height / 2)) * 0.3);
-      };
-      const onLeave = () => gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
-      el.addEventListener('pointermove', onMove);
-      el.addEventListener('pointerleave', onLeave);
-      cleanups.push(() => {
-        el.removeEventListener('pointermove', onMove);
-        el.removeEventListener('pointerleave', onLeave);
-        gsap.killTweensOf(el);
-        gsap.set(el, { clearProps: 'x,y' });
-      });
-    });
-    return () => cleanups.forEach((off) => off());
-  }, [finePointer, itemsKey]);
 
   if (count === 0) return null;
 
+  // Columns the grid / monolith really lays out on desktop; the featured card only stands proud of its row
+  // when there are three or more across (centre of a trio) — in a pair the lift just reads as misalignment.
+  const askedCols = Math.max(1, Math.min(settings.cardsPerRow, layout === 'monolith' ? 4 : 6, count));
+  const desktopCols = layout === 'monolith' ? askedCols : balancedColumns(count, askedCols);
+  // Once measured, the columns follow the block's real width instead of the window's breakpoints.
+  const fluid = track
+    ? {
+        cols: layout === 'monolith' ? fluidColumns(count, askedCols, track.fit) : balancedColumns(count, Math.max(1, Math.min(askedCols, track.fit))),
+        gap: track.gap,
+      }
+    : null;
   const common = (card: PricingCardData, index: number): LayoutCardProps => {
     const featured = index === featuredIndex;
     return {
@@ -985,9 +1112,13 @@ export function ServicesPricingCardsSection({
       raised:
         featured &&
         count > 1 &&
-        (layout === 'grid' ? isLg && settings.cardsPerRow > 1 : layout === 'monolith' ? isMd : false),
+        (layout === 'grid' || layout === 'monolith'
+          ? fluid
+            ? fluid.cols > 2
+            : isLg && desktopCols > 2
+          : false),
       motif: settings.graphicMotif,
-      includedLabel: settings.includedLabel,
+      includedLabel: includedLabel ?? '',
     };
   };
 
@@ -1004,9 +1135,13 @@ export function ServicesPricingCardsSection({
     const GAP_TABLET = 24;
     const GAP_DESKTOP = 32;
     const colsTablet = Math.max(1, Math.min(settings.cardsPerRow, 2, count));
+    // Monolith keeps its asked-for columns: an incomplete last row is centred by the flex row below.
     const colsDesktop = Math.max(1, Math.min(settings.cardsPerRow, 4, count));
-    const tabletBasis = colsTablet === 1 ? '28rem' : basis(colsTablet, GAP_TABLET);
-    const desktopBasis = colsDesktop === 1 ? '28rem' : basis(colsDesktop, GAP_DESKTOP);
+    // One card per row (with several plans): a horizontal rectangle, as wide as the Card width setting allows.
+    const wideMono = (fluid ? fluid.cols : colsDesktop) === 1 && count > 1;
+    const wideBasis = `${WIDE_CARD_MAX_REM[settings.cardWidth]}rem`;
+    const tabletBasis = wideMono ? wideBasis : colsTablet === 1 ? '28rem' : basis(colsTablet, GAP_TABLET);
+    const desktopBasis = wideMono ? wideBasis : colsDesktop === 1 ? '28rem' : basis(colsDesktop, GAP_DESKTOP);
     return (
       <div ref={rootRef} className="relative" data-pf-no-color-transition="">
         <style>{`
@@ -1024,10 +1159,27 @@ export function ServicesPricingCardsSection({
         `}</style>
         {frame}
         <div className={`relative z-[1] w-full ${style.showFrame ? 'py-14 sm:py-20 md:py-24' : ''}`}>
-          <div className="pf-svc-cards-mono-row">
+          <div
+            className="pf-svc-cards-mono-row"
+            style={{
+              ...(fluid ? { gap: fluid.gap } : null),
+              ...cardsWidthStyle(settings.cardWidth, fluid ? fluid.cols : colsDesktop, fluid ? fluid.gap : GAP_DESKTOP, wideMono),
+            }}
+          >
             {cards.map((card, index) => (
-              <div key={card.id} className="pf-svc-cards-mono-slot">
-                <MonolithCard {...common(card, index)} />
+              <div
+                key={card.id}
+                className="pf-svc-cards-mono-slot"
+                style={
+                  fluid
+                    ? (() => {
+                        const slot = wideMono ? wideBasis : fluid.cols === 1 ? '28rem' : basis(fluid.cols, fluid.gap);
+                        return { flexBasis: slot, maxWidth: slot };
+                      })()
+                    : undefined
+                }
+              >
+                <MonolithCard {...common(card, index)} wide={wideMono} />
               </div>
             ))}
           </div>
@@ -1042,16 +1194,31 @@ export function ServicesPricingCardsSection({
         {frame}
         <div className={`relative z-[1] w-full ${style.showFrame ? 'py-10 sm:py-14 md:py-16' : ''}`}>
           <div className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
-            {cards.map((card, index) => (
-              <BentoCard key={card.id} {...common(card, index)} wide={index === 0 && featuredIndex === 0 && count >= 3} />
-            ))}
+            {cards.map((card, index) => {
+              const wide = index === 0 && featuredIndex === 0 && count >= 3;
+              // After the wide featured card the rest run two by two: an odd one out spans both columns
+              // instead of sitting alone on the left; it stays one card wide, centred under the pair.
+              const rest = count - (featuredIndex === 0 && count >= 3 ? 1 : 0);
+              const spansRow = index === count - 1 && !wide && rest > 1 && rest % 2 === 1;
+              return spansRow ? (
+                <div key={card.id} className="flex md:col-span-2 md:justify-center [&>*]:w-full md:[&>*]:w-[calc(50%-0.75rem)]">
+                  <BentoCard {...common(card, index)} wide={false} />
+                </div>
+              ) : (
+                <BentoCard key={card.id} {...common(card, index)} wide={wide} />
+              );
+            })}
           </div>
         </div>
       </div>
     );
   }
 
-  const cols = Math.max(1, Math.min(settings.cardsPerRow, count));
+  const cols = balancedColumns(count, Math.max(1, Math.min(settings.cardsPerRow, count)));
+  const shownCols = fluid ? fluid.cols : cols;
+  // One card per row (with more than one plan): the horizontal composition, not a tall full-width stack.
+  const wideGrid = shownCols === 1 && count > 1;
+  const gridWidth = cardsWidthStyle(settings.cardWidth, shownCols, fluid ? fluid.gap : 32, wideGrid);
   if (settings.centerLastRow && count > 1) {
     // Same gaps and columns as the grid below, but flex-wrap + a width calc so an incomplete
     // last row can sit centered.
@@ -1060,11 +1227,18 @@ export function ServicesPricingCardsSection({
         {frame}
         <div
           className="relative z-[1] flex flex-wrap justify-center gap-5 py-4 [--pc-g:1.25rem] [--pc-c:1] sm:gap-7 sm:[--pc-g:1.75rem] md:[--pc-c:2] lg:gap-8 lg:[--pc-g:2rem] lg:[--pc-c:var(--pc-c-lg)]"
-          style={{ '--pc-c-lg': cols } as CSSProperties}
+          style={
+            {
+              ...(fluid
+                ? { gap: fluid.gap, '--pc-c': fluid.cols, '--pc-g': `${fluid.gap}px` }
+                : { '--pc-c-lg': cols }),
+              ...gridWidth,
+            } as unknown as CSSProperties
+          }
         >
           {cards.map((card, index) => (
             <div key={card.id} className="flex min-w-0 w-[calc((100%-(var(--pc-c)-1)*var(--pc-g))/var(--pc-c))] [&>*]:w-full">
-              <GridCard {...common(card, index)} />
+              <GridCard {...common(card, index)} wide={wideGrid} />
             </div>
           ))}
         </div>
@@ -1078,9 +1252,13 @@ export function ServicesPricingCardsSection({
         className={`relative z-[1] grid grid-cols-1 gap-5 py-4 sm:gap-7 md:grid-cols-2 lg:gap-8 ${GRID_COLS_LG[cols]} ${
           count === 1 ? 'mx-auto max-w-xl' : ''
         }`}
+        style={{
+          ...(fluid ? { gap: fluid.gap, gridTemplateColumns: `repeat(${fluid.cols}, minmax(0, 1fr))` } : null),
+          ...gridWidth,
+        }}
       >
         {cards.map((card, index) => (
-          <GridCard key={card.id} {...common(card, index)} />
+          <GridCard key={card.id} {...common(card, index)} wide={wideGrid} />
         ))}
       </div>
     </div>

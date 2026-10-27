@@ -44,17 +44,9 @@ function RowSwitch({ checked, onChange, label }: { checked: boolean; onChange: (
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${FOCUS_RING}`}
-      style={{
-        backgroundColor: checked
-          ? 'var(--pf-palette-texte-fort,#171717)'
-          : 'color-mix(in srgb, var(--pf-palette-texte-fort,#171717) 20%, transparent)',
-      }}
+      className="np-switch"
     >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left] duration-200 ease-[cubic-bezier(0.34,1.4,0.64,1)]"
-        style={{ left: checked ? '1.125rem' : '0.125rem', backgroundColor: 'var(--pf-palette-fond,#ffffff)' }}
-      />
+      <span className="np-switch-knob" aria-hidden />
     </button>
   );
 }

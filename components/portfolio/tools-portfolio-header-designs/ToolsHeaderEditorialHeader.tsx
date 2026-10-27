@@ -141,7 +141,8 @@ export function ToolsHeaderEditorialHeader({
     }, 90);
 
     let ctx: gsap.Context | undefined;
-    try {
+    let retryId = 0;
+    const build = () => {
       ctx = gsap.context(() => {
         const pick = (selector: string) =>
           [...header.querySelectorAll<HTMLElement>(selector)].filter(isLaidOut);
@@ -195,7 +196,8 @@ export function ToolsHeaderEditorialHeader({
           );
         }
       }, header);
-    } catch (error) {
+    };
+    const failSafe = (error: unknown) => {
       // Observed intermittently on page load/reload: GSAP ScrollTrigger throws
       // "Cannot read properties of undefined (reading 'end')" from inside its own init-time
       // self.refresh() for this header's scroll-scrubbed stage effect. Uncaught, that crash
@@ -213,10 +215,27 @@ export function ToolsHeaderEditorialHeader({
         ),
         { clearProps: 'all' }
       );
+    };
+    try {
+      build();
+    } catch {
+      // The crash comes from another section's `once` ScrollTrigger killing itself while this one refreshes the
+      // list (GSAP then reads a removed entry). It is a timing race, so a second attempt on the next frame,
+      // once that refresh is over, normally succeeds; only a second failure falls back to the static header.
+      ctx?.revert();
+      ctx = undefined;
+      retryId = window.requestAnimationFrame(() => {
+        try {
+          build();
+        } catch (error) {
+          failSafe(error);
+        }
+      });
     }
 
     return () => {
       window.clearTimeout(refreshId);
+      window.cancelAnimationFrame(retryId);
       ctx?.revert();
     };
   }, [animationEnabled, labelText, titleText, subtitleText, showLabel, showTitle, showSubtitle]);
@@ -227,7 +246,7 @@ export function ToolsHeaderEditorialHeader({
       className={`pf-tools-header-editorial-header relative w-full ${centered ? 'text-center' : right ? 'text-right' : 'text-left'}`}
       style={{ marginBottom: `${TOOLS_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
     >
-      <div className={`pf-tools-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'items-center sm:flex-col sm:items-center' : right ? 'items-end sm:flex-col sm:items-end' : ''}`}>
+      <div className={`pf-tools-header-editorial-stage flex flex-col gap-6 ${centered ? 'items-center' : right ? 'items-end' : 'sm:flex-row sm:items-end sm:justify-between'}`}>
         <div className="min-w-0 max-w-3xl">
           {showLabel ? (
             <p

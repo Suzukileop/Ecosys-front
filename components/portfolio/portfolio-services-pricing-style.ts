@@ -26,12 +26,13 @@ export type PortfolioServicesPricingCtaShape = 'auto' | 'square' | 'rounded' | '
 export type PortfolioServicesPricingCtaStyle = 'auto' | 'filled' | 'outline' | 'link';
 export type PortfolioServicesPricingCtaLinkMode = 'contact' | 'section' | 'url';
 /** Simple card hover effects — none of them dims or blurs the neighbouring cards. */
-export type PortfolioServicesHoverEffect = 'lift' | 'glow' | 'tilt' | 'none';
+export type PortfolioServicesHoverEffect = 'lift' | 'glow' | 'tilt' | 'both' | 'none';
 /** Where the price suffix ("/ month") comes from: each service's own billing period, one custom
  *  label for every card, or nothing. */
 export type PortfolioServicesBillingSource = 'service' | 'custom' | 'hidden';
-/** How the featured card is chosen: by position, by the service's own "popular" flag, or none. */
-export type PortfolioServicesFeaturedSource = 'index' | 'service' | 'none';
+/** How the featured card is chosen: by position, or none. (A stored 'service' — the old
+ *  "Marked popular" choice — falls back to the default when merged.) */
+export type PortfolioServicesFeaturedSource = 'index' | 'none';
 /** Marker in front of each task line on the designs with a vertical task list. `auto` keeps
  *  each design's own marker. */
 export type PortfolioServicesListBullet =
@@ -44,6 +45,9 @@ export type PortfolioServicesListBullet =
   | 'plus'
   | 'number'
   | 'none';
+/** How strong the Glow hover effect is. */
+export type PortfolioServicesGlowIntensity = 'soft' | 'medium' | 'strong';
+
 export type PortfolioServicesFeaturedColor = 'auto' | 'principal' | 'secondaire' | 'texteFort' | 'neutre';
 
 export type PortfolioServicesPricingStyleSettings = {
@@ -53,6 +57,8 @@ export type PortfolioServicesPricingStyleSettings = {
   /** Corner shape of the filled order buttons (Grid / Bento / Toggle). */
   ctaShape: PortfolioServicesPricingCtaShape;
   ctaStyle: PortfolioServicesPricingCtaStyle;
+  /** Hover motion of the order button; Default keeps each design's own. */
+  ctaHover: PortfolioServicesPricingCtaHover;
   /** Where every order button points: the Contact section, another section, or a custom URL. */
   ctaLinkMode: PortfolioServicesPricingCtaLinkMode;
   /** Section id used when `ctaLinkMode === 'section'`. */
@@ -66,6 +72,10 @@ export type PortfolioServicesPricingStyleSettings = {
   showFrame: boolean;
   /** Hover effect on a card (every Services design with cards reads this). */
   hoverEffect: PortfolioServicesHoverEffect;
+  /** Color of the Glow hover light: `auto` keeps each design's own ink, the others are palette tokens. */
+  glowColor: PortfolioServicesFeaturedColor;
+  /** Opacity of the Glow hover light. */
+  glowIntensity: PortfolioServicesGlowIntensity;
   /** Where the period suffix after a price comes from. */
   billingSource: PortfolioServicesBillingSource;
   /** Suffix used when `billingSource === 'custom'`. */
@@ -90,6 +100,11 @@ export type PortfolioServicesPricingStyleSettings = {
   listBullet: PortfolioServicesListBullet;
   /** Marker color of the list bullet (palette token); `auto` keeps each design's own. */
   listBulletColor: PortfolioServicesFeaturedColor;
+  /** Small "What's included" heading above the task list (General). `null` keeps each design's
+   *  own choice (on for the Bento wide card, off for Pricing Toggle). */
+  showIncludedLabel: boolean | null;
+  /** Text of that heading; empty keeps each design's own ("What's included"). */
+  includedLabel: string;
 };
 
 export const DEFAULT_SERVICES_PRICING_STYLE_SETTINGS: PortfolioServicesPricingStyleSettings = {
@@ -98,12 +113,15 @@ export const DEFAULT_SERVICES_PRICING_STYLE_SETTINGS: PortfolioServicesPricingSt
   cardBorderColor: 'auto',
   ctaShape: 'auto',
   ctaStyle: 'auto',
+  ctaHover: 'auto',
   ctaLinkMode: 'contact',
   ctaLinkSection: 'contact',
   ctaLinkUrl: '',
   ctaLinkNewTab: true,
   showFrame: false,
   hoverEffect: 'lift',
+  glowColor: 'auto',
+  glowIntensity: 'medium',
   billingSource: 'service',
   billingCustomLabel: '/ month',
   showPrice: false,
@@ -117,6 +135,8 @@ export const DEFAULT_SERVICES_PRICING_STYLE_SETTINGS: PortfolioServicesPricingSt
   freePriceLabel: '',
   listBullet: 'auto',
   listBulletColor: 'auto',
+  showIncludedLabel: null,
+  includedLabel: '',
 };
 
 export const PORTFOLIO_SERVICES_HOVER_EFFECT_OPTIONS: {
@@ -126,8 +146,31 @@ export const PORTFOLIO_SERVICES_HOVER_EFFECT_OPTIONS: {
   { value: 'lift', label: msg('Lift') },
   { value: 'glow', label: msg('Glow') },
   { value: 'tilt', label: msg('Tilt') },
+  { value: 'both', label: msg('Tilt + Glow') },
   { value: 'none', label: msg('None') },
 ];
+
+export const PORTFOLIO_SERVICES_GLOW_COLOR_OPTIONS: {
+  value: PortfolioServicesFeaturedColor;
+  label: string;
+}[] = [
+  { value: 'auto', label: msg('Default') },
+  { value: 'principal', label: msg('Principal') },
+  { value: 'secondaire', label: msg('Secondary') },
+  { value: 'texteFort', label: msg('Contrast') },
+];
+
+export const PORTFOLIO_SERVICES_GLOW_INTENSITY_OPTIONS: {
+  value: PortfolioServicesGlowIntensity;
+  label: string;
+}[] = [
+  { value: 'soft', label: msg('Soft') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'strong', label: msg('Strong') },
+];
+
+/** Glow light opacity (% of the glow color) for each intensity. */
+const GLOW_ALPHA_PCT: Record<PortfolioServicesGlowIntensity, number> = { soft: 12, medium: 22, strong: 38 };
 
 export const PORTFOLIO_SERVICES_BILLING_SOURCE_OPTIONS: {
   value: PortfolioServicesBillingSource;
@@ -143,7 +186,6 @@ export const PORTFOLIO_SERVICES_FEATURED_SOURCE_OPTIONS: {
   label: string;
 }[] = [
   { value: 'index', label: msg('Pick one') },
-  { value: 'service', label: msg('Marked popular') },
   { value: 'none', label: msg('None') },
 ];
 
@@ -225,6 +267,18 @@ export const PORTFOLIO_SERVICES_PRICING_CTA_SHAPE_OPTIONS: {
   { value: 'pill', label: msg('Pill') },
 ];
 
+export type PortfolioServicesPricingCtaHover = 'auto' | 'roll' | 'arrow' | 'magnet';
+
+export const PORTFOLIO_SERVICES_PRICING_CTA_HOVER_OPTIONS: {
+  value: PortfolioServicesPricingCtaHover;
+  label: string;
+}[] = [
+  { value: 'auto', label: msg('Default') },
+  { value: 'roll', label: msg('Text roll') },
+  { value: 'arrow', label: msg('Arrow slide') },
+  { value: 'magnet', label: msg('Magnetic') },
+];
+
 export const PORTFOLIO_SERVICES_PRICING_CTA_STYLE_OPTIONS: {
   value: PortfolioServicesPricingCtaStyle;
   label: string;
@@ -294,6 +348,11 @@ export function mergeServicesPricingStyleSettings(
       PORTFOLIO_SERVICES_PRICING_CTA_STYLE_OPTIONS.map((o) => o.value),
       base.ctaStyle
     ),
+    ctaHover: pickOne(
+      record.ctaHover,
+      PORTFOLIO_SERVICES_PRICING_CTA_HOVER_OPTIONS.map((o) => o.value),
+      base.ctaHover
+    ),
     ctaLinkMode: pickOne(
       record.ctaLinkMode,
       PORTFOLIO_SERVICES_PRICING_CTA_LINK_MODE_OPTIONS.map((o) => o.value),
@@ -302,11 +361,22 @@ export function mergeServicesPricingStyleSettings(
     ctaLinkSection: pickOne(record.ctaLinkSection, SECTION_IDS, base.ctaLinkSection),
     ctaLinkUrl: typeof record.ctaLinkUrl === 'string' ? record.ctaLinkUrl.trim().slice(0, 500) : base.ctaLinkUrl,
     ctaLinkNewTab: typeof record.ctaLinkNewTab === 'boolean' ? record.ctaLinkNewTab : base.ctaLinkNewTab,
-    showFrame: typeof record.showFrame === 'boolean' ? record.showFrame : base.showFrame,
+    // Background frame was retired from the Services Design tab; always off, even for saved data.
+    showFrame: false,
     hoverEffect: pickOne(
       record.hoverEffect,
       PORTFOLIO_SERVICES_HOVER_EFFECT_OPTIONS.map((o) => o.value),
       base.hoverEffect
+    ),
+    glowColor: pickOne(
+      record.glowColor,
+      PORTFOLIO_SERVICES_GLOW_COLOR_OPTIONS.map((o) => o.value),
+      base.glowColor
+    ),
+    glowIntensity: pickOne(
+      record.glowIntensity,
+      PORTFOLIO_SERVICES_GLOW_INTENSITY_OPTIONS.map((o) => o.value),
+      base.glowIntensity
     ),
     billingSource: pickOne(
       record.billingSource,
@@ -356,6 +426,12 @@ export function mergeServicesPricingStyleSettings(
       PORTFOLIO_SERVICES_FEATURED_COLOR_OPTIONS.map((o) => o.value),
       base.listBulletColor
     ),
+    showIncludedLabel:
+      record.showIncludedLabel === null || typeof record.showIncludedLabel === 'boolean'
+        ? record.showIncludedLabel
+        : base.showIncludedLabel,
+    includedLabel:
+      typeof record.includedLabel === 'string' ? record.includedLabel.trim().slice(0, 40) : base.includedLabel,
   };
 }
 
@@ -372,15 +448,15 @@ export function readServicesPricingStyle(presentation: unknown): PortfolioServic
 const CARD_RADIUS_PX: Record<Exclude<PortfolioServicesPricingCardRadius, 'auto'>, number> = {
   square: 0,
   soft: 12,
-  rounded: 24,
-  xl: 40,
+  rounded: 30,
+  xl: 56,
 };
 
 const BORDER_WIDTH_PX: Record<Exclude<PortfolioServicesPricingBorderWidth, 'auto'>, number> = {
   none: 0,
   thin: 1,
-  medium: 2,
-  thick: 4,
+  medium: 3,
+  thick: 6,
 };
 
 const CTA_RADIUS: Record<Exclude<PortfolioServicesPricingCtaShape, 'auto'>, string> = {
@@ -433,6 +509,21 @@ export function pricingFeaturedColor(
   return resolveHeroPaletteColor(palette, style.featuredColor);
 }
 
+/** Glow hover color resolved from the Services palette, or `null` to keep the design's own ink. */
+export function pricingGlowColor(
+  style: PortfolioServicesPricingStyleSettings,
+  servicesPalette: PortfolioServicesPalette | undefined
+): string | null {
+  if (style.glowColor === 'auto') return null;
+  const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, servicesPalette);
+  return resolveHeroPaletteColor(palette, style.glowColor);
+}
+
+/** Glow light opacity as a CSS percentage. */
+export function pricingGlowAlpha(style: PortfolioServicesPricingStyleSettings): string {
+  return `${GLOW_ALPHA_PCT[style.glowIntensity]}%`;
+}
+
 /** List-bullet marker color resolved from the Services palette, or `null` to keep the design's own. */
 export function pricingListBulletColor(
   style: PortfolioServicesPricingStyleSettings,
@@ -456,15 +547,14 @@ export const SERVICES_FEATURED_DEFAULT_OPACITY = {
 export type ServicesFeaturedDesignKey = keyof typeof SERVICES_FEATURED_DEFAULT_OPACITY;
 
 /**
- * Which card is featured: the one at `featuredIndex` (clamped to the list), the first service the
- * creator marked "popular", or none. Returns -1 when nothing is featured.
+ * Which card is featured: the one at `featuredIndex` (clamped to the list), or none. Returns -1
+ * when nothing is featured.
  */
 export function resolveFeaturedIndex(
   style: PortfolioServicesPricingStyleSettings,
   flags: readonly boolean[]
 ): number {
   if (flags.length === 0 || style.featuredSource === 'none') return -1;
-  if (style.featuredSource === 'service') return flags.findIndex(Boolean);
   return Math.min(style.featuredIndex, flags.length - 1);
 }
 
@@ -505,6 +595,18 @@ export function applyServicePriceLabels<T extends { kind: 'free' | 'quote' | 'am
 ): T {
   if (parts.kind === 'amount') return parts;
   return { ...parts, text: priceWordLabel(style, parts.kind, parts.text) };
+}
+
+/** The "What's included" heading a design shows above its task list, or null when hidden: the
+ *  shared General setting, falling back to the design's own (older) fields when it was never set. */
+export function resolveIncludedLabel(
+  style: PortfolioServicesPricingStyleSettings,
+  own: { show: boolean; label: string },
+  fallback: string
+): string | null {
+  const show = style.showIncludedLabel ?? own.show;
+  if (!show) return null;
+  return style.includedLabel.trim() || own.label.trim() || fallback;
 }
 
 /** "/ month" for one service according to the billing setting; null hides the suffix. */

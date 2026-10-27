@@ -6,7 +6,7 @@ import {
 } from '@/components/portfolio/portfolio-editorial-layout';
 import {
   footerMiniBarCopyrightBase,
-  prefersReducedMotion,
+  scrollPortfolioPageToTop,
   type FooterMiniBarVariantProps,
 } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -40,7 +40,7 @@ export function FooterMiniBarInvertedWordmark({
   const credit = creditLabel?.trim() || DEFAULT_CREDIT;
 
   const handleBackToTop = () => {
-    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+    scrollPortfolioPageToTop();
   };
 
   return (
@@ -51,12 +51,12 @@ export function FooterMiniBarInvertedWordmark({
       style={backgroundStyle}
     >
       {text ? (
-        <p className="text-[0.65rem] font-medium uppercase tracking-[0.14em]" style={{ color: barInk }}>
+        <p className="text-xs font-medium uppercase tracking-[0.14em]" style={{ color: barInk }}>
           {text}
         </p>
       ) : null}
       <p
-        className="text-[0.65rem] font-medium uppercase tracking-[0.14em] sm:absolute sm:left-1/2 sm:[transform:translateX(-50%)]"
+        className="text-xs font-medium uppercase tracking-[0.14em] lg:absolute lg:left-1/2 lg:[transform:translateX(-50%)]"
         style={{ color: barInk }}
       >
         {credit}
@@ -65,7 +65,7 @@ export function FooterMiniBarInvertedWordmark({
         type="button"
         onClick={handleBackToTop}
         data-pf-no-color-transition=""
-        className="w-fit text-[0.65rem] font-semibold uppercase tracking-[0.14em] opacity-85 transition-opacity duration-500 ease-out hover:opacity-100"
+        className="w-fit text-xs font-semibold uppercase tracking-[0.14em] opacity-85 transition-opacity duration-500 ease-out hover:opacity-100"
         style={{ color: barInkStrong }}
       >
         {t('Back to top ↑')}

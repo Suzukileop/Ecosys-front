@@ -1,0 +1,10 @@
+.root { container-type: inline-size; min-width: 0; overflow-wrap: anywhere; }
+.layout { display: grid; align-items: center; gap: 36px; }
+.copy { order: 1; min-width: 0; }
+.media { order: 2; min-width: 0; width: 100%; max-width: 560px; height: clamp(352px, 48cqw, 520px); }
+@media (max-width: 1023px) { .root { width: 100% !important; } }
+@container (min-width: 900px) {
+  .layout[data-split='true'] { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 48px; }
+  .layout[data-media-left='true'] > .media { order: 1; }
+  .layout[data-media-left='true'] > .copy { order: 2; }
+}

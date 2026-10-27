@@ -113,7 +113,7 @@ function SplitFormField({
       <label
         ref={labelRef}
         htmlFor={id}
-        className="pointer-events-none absolute left-0 top-3 origin-left text-base"
+        className="pointer-events-none absolute left-0 top-3 max-w-[calc(100%-2rem)] origin-left truncate text-base"
         style={{ color: muted }}
         data-pf-no-color-transition=""
       >
@@ -129,7 +129,7 @@ function SplitFormField({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onChange={(event) => onChange(event.target.value)}
-          className={`${sharedClassName} resize-none`}
+          className={`${sharedClassName} min-h-28 resize-y`}
           style={{ color: ink, borderColor: hairline, transition: MODE_TRANSITION }}
           data-pf-no-color-transition=""
         />
@@ -208,7 +208,7 @@ function SplitFormSelect({
     <div ref={wrapRef} className="relative" data-pf-no-color-transition="">
       <label
         htmlFor={id}
-        className="pointer-events-none absolute left-0 top-3 origin-left text-base transition motion-reduce:transition-none"
+        className="pointer-events-none absolute left-0 top-3 max-w-[calc(100%-2rem)] origin-left truncate text-base transition motion-reduce:transition-none"
         style={{
           color: elevated ? ink : muted,
           transform: elevated ? 'translateY(-22px) scale(0.76)' : 'translateY(0) scale(1)',
@@ -223,11 +223,11 @@ function SplitFormSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between border-0 border-b bg-transparent pb-2.5 pt-6 text-left text-base outline-hidden"
+        className="flex w-full items-center justify-between border-0 border-b bg-transparent pb-2.5 pt-6 text-left text-base outline-hidden focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
         style={{ color: ink, borderColor: hairline, transition: MODE_TRANSITION }}
         data-pf-no-color-transition=""
       >
-        <span>{value || ' '}</span>
+        <span className="min-w-0 truncate">{value || ' '}</span>
         <span
           aria-hidden
           data-pf-no-color-transition=""
@@ -248,7 +248,7 @@ function SplitFormSelect({
           data-pf-no-color-transition=""
         >
           {options.map((option) => (
-            <li key={option}>
+            <li key={option} role="presentation">
               <button
                 type="button"
                 role="option"
@@ -257,7 +257,7 @@ function SplitFormSelect({
                   onChange(option);
                   setOpen(false);
                 }}
-                className="block w-full px-4 py-2.5 text-left text-sm transition hover:opacity-70"
+                className="block min-h-11 w-full px-4 py-3 text-left text-sm transition hover:opacity-70"
                 style={{ color: ink, transition: MODE_TRANSITION }}
                 data-pf-no-color-transition=""
               >
@@ -292,7 +292,7 @@ function SplitFormSubmit({
       type="submit"
       disabled={pending}
       data-pf-no-color-transition=""
-      className="inline-flex shrink-0 items-center justify-center px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] disabled:cursor-not-allowed disabled:opacity-50"
+      className="inline-flex min-h-12 shrink-0 items-center justify-center px-8 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] hover:opacity-85 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current disabled:cursor-not-allowed disabled:opacity-60"
       style={{ backgroundColor: ink, color: bg, transition: MODE_TRANSITION }}
     >
       {sent ? t('Message sent') : pending ? t('Sending…') : label}
@@ -460,7 +460,7 @@ export function FooterDesignSplitForm({
           {/* Left column — identity & info. Reordered after the form on mobile (order-2)
               per the "headline + form first" conversion rule, restored to the true left
               column at lg. */}
-          <div className="order-2 flex min-w-0 flex-col lg:order-1">
+          <div className="order-2 flex min-w-0 flex-col lg:order-1 lg:justify-between">
             {showPortrait ? (
               <div className="relative aspect-[4/5] w-full max-w-[16rem] overflow-hidden lg:max-w-[18rem]" data-pf-no-color-transition="">
                 {avatarUrl ? (
@@ -496,12 +496,16 @@ export function FooterDesignSplitForm({
                was pure redundancy. */}
             {showName ? (
               <div className={showPortrait ? 'mt-6' : ''}>
+                {/* Without the portrait the column has no visual anchor, so the name steps up to a display size
+                    (still well below the headline opposite) instead of staying a small caption. */}
                 <span
-                  className="font-semibold uppercase tracking-[0.1em]"
+                  className={showPortrait ? 'font-semibold uppercase tracking-[0.1em]' : 'block font-bold leading-[1.02] tracking-tight [overflow-wrap:anywhere]'}
                   style={{
                     color: ink,
                     transition: MODE_TRANSITION,
-                    fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+                    fontSize: showPortrait
+                      ? 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))'
+                      : 'calc(clamp(1.75rem, 3.2vw, 2.75rem) * var(--pf-footer-font-scale, 1))',
                   }}
                 >
                   {creatorName}
@@ -511,10 +515,10 @@ export function FooterDesignSplitForm({
 
             {/* A generous breathing gap — the column is only photo + name + contact — kept in
                 proportion so the footer doesn't run past a screen and a half. */}
-            <div className={showPortrait || showName ? 'mt-12 sm:mt-16 lg:mt-24' : ''}>
+            <div className={showPortrait || showName ? 'mt-12 sm:mt-16 lg:mt-16' : ''}>
               {contactHeading ? (
                 <p
-                  className="mb-3 font-light uppercase tracking-[0.12em]"
+                  className="mb-3 font-normal uppercase tracking-[0.12em]"
                   style={{
                     color: muted,
                     transition: MODE_TRANSITION,
@@ -528,7 +532,7 @@ export function FooterDesignSplitForm({
                 {phoneDisplay ? (
                   <a
                     href={`tel:${phone!.replace(/\s+/g, '')}`}
-                    className="text-[clamp(1.6rem,3.4vw,2.5rem)] font-bold leading-none tracking-tight"
+                    className="inline-flex min-h-11 items-center text-[clamp(1.6rem,3.4vw,2.5rem)] font-bold leading-none tracking-tight"
                     style={{ color: ink, transition: MODE_TRANSITION }}
                   >
                     {phoneDisplay}
@@ -537,7 +541,7 @@ export function FooterDesignSplitForm({
                 {trimmedEmail ? (
                   <a
                     href={`mailto:${trimmedEmail}`}
-                    className="w-fit break-all font-medium"
+                    className="inline-flex min-h-11 w-fit items-center font-medium [overflow-wrap:anywhere] hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
                     style={{
                       color: ink,
                       transition: MODE_TRANSITION,
@@ -563,7 +567,7 @@ export function FooterDesignSplitForm({
           <div className="order-1 flex min-w-0 flex-col justify-center lg:order-2">
             {headlineLines.length > 0 ? (
               <h2
-                className="mb-6 text-[clamp(2.75rem,7.5vw,6rem)] font-black leading-[0.95] tracking-[-0.02em]"
+                className="mb-6 text-[clamp(2.5rem,5.6vw,6rem)] font-black leading-[0.95] [overflow-wrap:anywhere] tracking-[-0.02em]"
                 style={{ color: ink, transition: MODE_TRANSITION }}
               >
                 {headlineLines.map((line, index) => (
@@ -642,12 +646,12 @@ export function FooterDesignSplitForm({
               ) : null}
 
               {error ? (
-                <p className="text-xs font-medium text-red-500" role="alert">
+                <p className="text-sm font-medium" style={{ color: isLight ? '#b91c1c' : '#f87171' }} role="alert">
                   {error}
                 </p>
               ) : null}
 
-              <div className="pt-2">
+              <div className="pt-2" aria-live="polite">
                 <SplitFormSubmit pending={pending} sent={sent} ink={ink} bg={bg} label={submitLabel} />
               </div>
             </form>
@@ -663,7 +667,7 @@ export function FooterDesignSplitForm({
           <div>
             {navHeading ? (
               <p
-                className="mb-6 font-light uppercase tracking-[0.12em]"
+                className="mb-6 font-normal uppercase tracking-[0.12em]"
                 style={{
                   color: muted,
                   transition: MODE_TRANSITION,
@@ -673,12 +677,13 @@ export function FooterDesignSplitForm({
                 {navHeading}
               </p>
             ) : null}
-            <nav aria-label={t('Footer')} className="flex flex-col gap-4">
+            <nav aria-label={t('Footer')} className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <a
                   key={link.id}
                   href={link.url}
-                  className="w-fit font-medium"
+                  {...(/^https?:\/\//i.test(link.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  className="inline-flex min-h-11 w-fit items-center font-medium hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
                   style={{
                     color: ink,
                     transition: MODE_TRANSITION,
@@ -695,7 +700,7 @@ export function FooterDesignSplitForm({
           <div className="sm:text-right">
             {visitHeading ? (
               <p
-                className="font-light uppercase tracking-[0.12em]"
+                className="font-normal uppercase tracking-[0.12em]"
                 style={{
                   color: muted,
                   transition: MODE_TRANSITION,

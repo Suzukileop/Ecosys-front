@@ -1,17 +1,18 @@
 'use client';
 
-import type { CSSProperties } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
 import { galleryAspectStyle, galleryEffectiveVerticalGap, galleryItemDisplayTitle, type PortfolioGalleryPresentationSettings } from './portfolio-gallery-settings';
 import type { ProfileGalleryItem } from '@/types/profile';
 import { useT } from '@/lib/i18n/I18nProvider';
 import styles from './portfolio-gallery-design-contact-sheet.module.css';
 
-export function GalleryContactSheet({ items, presentation, showTitle, onOpen }: {
+export function GalleryContactSheet({ items, presentation, showTitle, onOpen, renderMedia }: {
   items: ProfileGalleryItem[];
   presentation: PortfolioGalleryPresentationSettings;
   showTitle: boolean;
   onOpen?: (item: ProfileGalleryItem) => void;
+  renderMedia?: (item: ProfileGalleryItem, index: number) => ReactNode;
 }) {
   const t = useT();
   if (!items.length) return null;
@@ -26,7 +27,7 @@ export function GalleryContactSheet({ items, presentation, showTitle, onOpen }: 
       {items.map((item, index) => {
         const title = galleryItemDisplayTitle(item.title) || t('Gallery media');
         const video = item.mediaType === 'VIDEO';
-        const media = <PortfolioDeferredMedia src={item.mediaUrl} alt={title} kind={video ? 'video' : 'image'}
+        const media = renderMedia ? renderMedia(item,index) : <PortfolioDeferredMedia src={item.mediaUrl} alt={title} kind={video ? 'video' : 'image'}
           className="h-full w-full" fillParent objectFit={presentation.objectFit} objectPosition={presentation.objectPosition}
           eager={index < 3} highPriority={index === 0} controls={video} autoPlayVideo={false}
           sizes="(max-width: 520px) 100vw, (max-width: 900px) 50vw, 33vw" />;

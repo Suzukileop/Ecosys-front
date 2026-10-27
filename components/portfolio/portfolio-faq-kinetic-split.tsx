@@ -116,14 +116,16 @@ export function FaqKineticSplitDesign({
       return;
     }
 
-    gsap.set(text, { fontSize: `${2.35 * fontSizeScale}rem` });
+    // The question grows from where it is (never snapped to its final size first), on a long ease-out; the
+    // panel opens with the same easing instead of an elastic bounce, so the two read as one calm movement.
+    gsap.to(text, { fontSize: `${2.35 * fontSizeScale}rem`, duration: 0.8, ease: 'power3.out', overwrite: 'auto' });
     gsap.set(panel, { height: 'auto' });
     const target = panel.offsetHeight;
-    gsap.fromTo(panel, { height: 0 }, { height: target, duration: 1, ease: 'elastic.out(1, 0.78)' });
+    gsap.fromTo(panel, { height: 0 }, { height: target, duration: 0.8, ease: 'power3.out', overwrite: 'auto' });
 
     const lines = buildMaskedLines(answerEl);
     gsap.set(lines, { yPercent: 110 });
-    gsap.to(lines, { yPercent: 0, duration: 0.85, ease: 'power4.out', stagger: 0.055, delay: 0.18 });
+    gsap.to(lines, { yPercent: 0, duration: 0.9, ease: 'power3.out', stagger: 0.05, delay: 0.14 });
   }
 
   function closeRow(index: number) {
@@ -134,8 +136,8 @@ export function FaqKineticSplitDesign({
     const text = trigger?.querySelector<HTMLElement>('.pf-faq-kinetic-text');
     const panel = row.querySelector<HTMLElement>('.pf-faq-kinetic-panel');
     trigger?.setAttribute('aria-expanded', 'false');
-    if (text) gsap.to(text, { fontSize: `${1.4 * fontSizeScale}rem`, duration: 0.5, ease: 'power2.out' });
-    if (panel) gsap.to(panel, { height: 0, duration: 0.5, ease: 'power3.inOut' });
+    if (text) gsap.to(text, { fontSize: `${1.4 * fontSizeScale}rem`, duration: 0.7, ease: 'power2.inOut', overwrite: 'auto' });
+    if (panel) gsap.to(panel, { height: 0, duration: 0.7, ease: 'power2.inOut', overwrite: 'auto' });
   }
 
   if (items.length === 0) return null;
@@ -166,7 +168,7 @@ export function FaqKineticSplitDesign({
                 aria-controls={`${answerIdPrefix}-answer-${index}`}
                 onClick={() => handleToggle(index)}
               >
-                <span className="pf-faq-kinetic-index">{String(index + 1).padStart(2, '0')}</span>
+                <span className="pf-faq-kinetic-index pf-faq-marker">{String(index + 1).padStart(2, '0')}</span>
                 <span className="pf-faq-kinetic-text" data-pf-no-color-transition="">
                   {item.question}
                 </span>

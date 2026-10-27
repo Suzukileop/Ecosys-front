@@ -1,8 +1,10 @@
 'use client';
+import { portfolioEditorialGutterNegativeX } from '@/components/portfolio/portfolio-editorial-layout';
 
 import gsap from 'gsap';
 import Image from 'next/image';
 import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useFitText } from '@/components/portfolio/portfolio-contact-fit-text';
 import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import {
@@ -77,6 +79,9 @@ export function ContactDesignMagneticOverlap({
   const badgeSetting = layout.option('socialBadges');
   const title = layout.text('title') || sectionTitle?.trim() || DEFAULT_TITLE;
   const trimmedEmail = email?.trim() || '';
+  const emailBoxRef = useRef<HTMLAnchorElement>(null);
+  const emailLineRef = useRef<HTMLSpanElement>(null);
+  useFitText(emailBoxRef, emailLineRef, [trimmedEmail, colorMode]);
   const trimmedPhone = phone?.trim() || '';
   const displayName = heroImageAlt?.trim() || '';
   const initials = useMemo(() => initialsFromName(displayName), [displayName]);
@@ -144,7 +149,7 @@ export function ContactDesignMagneticOverlap({
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
+      className={`relative overflow-hidden ${portfolioEditorialGutterNegativeX(contentGutter)}`}
       data-pf-no-color-transition=""
     >
       <div className={`relative w-full py-20 sm:py-24 md:py-28 ${portfolioEditorialGutterX(contentGutter)}`}>
@@ -163,19 +168,23 @@ export function ContactDesignMagneticOverlap({
               </p>
             ) : null}
             <h2
-              className="m-0 select-none font-sans text-[clamp(2.25rem,6.5vw,4.5rem)] font-black leading-[0.9] tracking-[-0.02em]"
+              className="m-0 select-none font-sans text-[calc(clamp(2.25rem,6.5vw,4.5rem)*var(--pf-contact-font-scale,1))] font-black leading-[0.9] tracking-[-0.02em]"
               style={{ color: tokens.ink }}
             >
               {title}
             </h2>
             {trimmedEmail ? (
-              <div className="mt-2 flex flex-wrap items-center gap-5">
+              <div className="mt-2 flex flex-nowrap items-center gap-5">
                 <a
+                  ref={emailBoxRef}
                   href={`mailto:${trimmedEmail}`}
-                  className="block max-w-full min-w-0 shrink break-all font-sans text-[clamp(2.25rem,6.5vw,4.5rem)] font-black leading-[0.9] tracking-[-0.02em]"
-                  style={{ color: tokens.ink }}
+                  className="block min-w-0 flex-1 font-sans font-black leading-[0.9] tracking-[-0.02em]"
+                  // One line next to the arrow, as large as the width allows (useFitText sets --fit).
+                  style={{ color: tokens.ink, fontSize: 'calc(clamp(2.25rem, 6.5vw, 4.5rem) * var(--pf-contact-font-scale, 1) * var(--fit, 1))' }}
                 >
-                  {trimmedEmail}
+                  <span ref={emailLineRef} className="inline-block whitespace-nowrap">
+                    {trimmedEmail}
+                  </span>
                 </a>
                 <a
                   ref={arrowRef}
@@ -209,7 +218,7 @@ export function ContactDesignMagneticOverlap({
               />
             ) : (
               <div className="flex h-full w-full items-center justify-center" style={{ backgroundColor: tokens.placeholderBg }}>
-                <span className="font-sans text-5xl font-semibold" style={{ color: tokens.muted }} aria-hidden>
+                <span className="font-sans text-[calc(3rem*var(--pf-contact-font-scale,1))] font-semibold" style={{ color: tokens.muted }} aria-hidden>
                   {initials || '—'}
                 </span>
               </div>

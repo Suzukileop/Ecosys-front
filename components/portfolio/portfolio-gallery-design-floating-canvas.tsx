@@ -36,7 +36,7 @@
  * globals.css replaces its `transition-property` and the motion silently disappears.
  */
 
-import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
@@ -130,6 +130,7 @@ function FloatingCanvasCard({
   showTitle,
   hairline,
   badgeDark,
+  renderMedia,
 }: {
   item: ProfileGalleryItem;
   index: number;
@@ -139,6 +140,7 @@ function FloatingCanvasCard({
   showTitle: boolean;
   hairline: string;
   badgeDark: boolean;
+  renderMedia?: (item: ProfileGalleryItem, index: number) => ReactNode;
 }) {
   const t = useT();
   const step = CANVAS_RHYTHM[index % CANVAS_RHYTHM.length];
@@ -206,7 +208,7 @@ function FloatingCanvasCard({
             }`}
             data-pf-no-color-transition=""
           >
-            <PortfolioDeferredMedia
+            {renderMedia ? renderMedia(item,index) : <PortfolioDeferredMedia
               src={item.mediaUrl}
               alt={title || t('Gallery media')}
               sizes="(max-width: 767px) 92vw, (max-width: 1279px) 44vw, 30vw"
@@ -218,7 +220,7 @@ function FloatingCanvasCard({
               autoPlayVideo={item.mediaType === 'VIDEO'}
               showPlayBadge={item.mediaType === 'VIDEO'}
               noColorTransition
-            />
+            />}
           </div>
           {/* The translucent separation between a dark card and a dark ground — inset, so it
               never becomes a drawn box around the photograph. */}
@@ -256,11 +258,14 @@ export function GalleryFloatingCanvas({
   presentation,
   onOpen,
   showTitle,
+  renderMedia,
 }: {
   items: ProfileGalleryItem[];
   presentation: PortfolioGalleryPresentationSettings;
   onOpen?: (item: ProfileGalleryItem) => void;
   showTitle: boolean;
+  /** A catalogue can replace media without changing the actual layout. */
+  renderMedia?: (item: ProfileGalleryItem, index: number) => ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement>(null);
   const laneCount = (presentation.floatingCanvasLanes ?? '3') === '2' ? 2 : 3;
@@ -414,6 +419,7 @@ export function GalleryFloatingCanvas({
                     showTitle={showTitle}
                     hairline={hairline}
                     badgeDark={badgeDark}
+                    renderMedia={renderMedia}
                   />
                 </div>
               );

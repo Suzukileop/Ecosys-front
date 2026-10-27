@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import { useMemo, useRef, useEffect, type CSSProperties } from 'react';
@@ -85,9 +86,9 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     );
   }, [data.description, t]);
 
-  // Layout options → tool picker (up to 12); no pick = the profile's first 12 tools.
+  // Keep the stack compact: at most four tools, including previously saved selections.
   const tools = useMemo(
-    () => resolveHeroBannerTools(data.tools, data.presentation.heroEditorialRailSelectedTools, 12),
+    () => resolveHeroBannerTools(data.tools, data.presentation.heroEditorialRailSelectedTools, 4),
     [data.tools, data.presentation.heroEditorialRailSelectedTools]
   );
 
@@ -209,7 +210,10 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
       const relativeScroll = scrollY - sectionTop;
       
       // Calculate scroll progress (0 = top of section, 1 = bottom of section)
-      const scrollProgress = Math.max(0, Math.min(1, relativeScroll / (sectionHeight - viewportHeight)));
+      const scrollableHeight = Math.max(0, sectionHeight - viewportHeight);
+      const scrollProgress = scrollableHeight > 0
+        ? Math.max(0, Math.min(1, relativeScroll / scrollableHeight))
+        : 0;
       
       // Only activate scroll effects after initial reveal
       if (relativeScroll < 0) {
@@ -246,13 +250,13 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
       // 3. PORTRAIT STICKY: Keep portrait pinned during scroll
       if (portraitContainer && scrollProgress < 0.85) {
         // Pin the portrait by applying transform to counteract scroll
-        const maxPin = sectionHeight - viewportHeight;
+        const maxPin = scrollableHeight;
         const pinAmount = Math.min(relativeScroll, maxPin * 0.7);
         portraitContainer.style.transform = `translateY(${pinAmount}px)`;
       } else if (portraitContainer) {
         // Release pin for exit transition
         const releaseProgress = (scrollProgress - 0.85) / 0.15;
-        const maxPin = (sectionHeight - viewportHeight) * 0.7;
+        const maxPin = scrollableHeight * 0.7;
         const releaseAmount = maxPin * (1 - releaseProgress * 0.3);
         portraitContainer.style.transform = `translateY(${releaseAmount}px)`;
       }
@@ -402,7 +406,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
   // max-width reduced to create more vertical gutter between text and portrait
   // Note: Final opacity is 0.6, but starts at 0 for animation
   const bioBlock = (
-    <p
+    <p data-hero-bio
       className="m-0 max-w-[35ch] font-sans font-normal tracking-[-0.01em]"
       style={{
         color: ink,
@@ -428,7 +432,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
       style={{ alignItems: 'flex-start' }}
     >
       {showAvailability ? (
-        <div
+        <div data-hero-availability
           className="inline-flex w-fit items-center gap-2.5 px-3 py-2"
           style={{
             backgroundColor: toolSurface,
@@ -486,7 +490,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
         }}
         data-gsap-reveal="headline"
       >
-        {t('Hi, I\'m {displayName}.', { displayName })}
+        {resolveHeroGreeting(data.presentation,t('Hi, I\'m {displayName}.', { displayName }),displayName,data.specialite??'')}
       </h1>
     </div>
   );
@@ -645,7 +649,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
             >
               “
             </span>
-            <p
+            <p data-hero-bio
               className="m-0 font-sans text-[0.96rem] font-normal leading-[1.7] tracking-[-0.01em]"
               style={{ color: muted }}
             >
@@ -797,7 +801,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
           </span>
 
           {/* Bio with 60% opacity */}
-          <p
+          <p data-hero-bio
             className="m-0 font-sans font-normal tracking-[-0.01em]"
             style={{ 
               color: ink, 

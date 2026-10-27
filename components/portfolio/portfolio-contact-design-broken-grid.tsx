@@ -1,8 +1,10 @@
 'use client';
+import { portfolioEditorialGutterNegativeX } from '@/components/portfolio/portfolio-editorial-layout';
 
 import gsap from 'gsap';
 import Image from 'next/image';
 import { useLayoutEffect, useMemo, useRef } from 'react';
+import { useFitText } from '@/components/portfolio/portfolio-contact-fit-text';
 import type { EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   DEFAULT_CONTENT_GUTTER,
@@ -72,6 +74,9 @@ export function ContactDesignBrokenGrid({
   const trimmedLocation = locationLabel?.trim() || '';
   const displayName = heroImageAlt?.trim() || '';
   const initials = useMemo(() => initialsFromName(displayName), [displayName]);
+  const emailBoxRef = useRef<HTMLAnchorElement>(null);
+  const emailLineRef = useRef<HTMLSpanElement>(null);
+  useFitText(emailBoxRef, emailLineRef, [trimmedEmail, colorMode]);
   const showPortrait = layout.isVisible('portrait');
   const portraitShapeClass = PORTRAIT_SHAPE_CLASS[layout.option('portraitShape')] ?? PORTRAIT_SHAPE_CLASS.circle;
 
@@ -121,7 +126,7 @@ export function ContactDesignBrokenGrid({
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
+      className={`relative overflow-hidden ${portfolioEditorialGutterNegativeX(contentGutter)}`}
       data-pf-no-color-transition=""
     >
       <div
@@ -131,7 +136,7 @@ export function ContactDesignBrokenGrid({
           className={`order-1 flex items-start justify-between md:absolute md:top-24 ${portfolioHeroLayerInset(contentGutter)}`}
         >
           <h2
-            className="m-0 block overflow-hidden select-none font-sans text-[clamp(2.75rem,8vw,5.5rem)] font-black uppercase leading-[0.9] tracking-[-0.03em]"
+            className="m-0 block overflow-hidden select-none font-sans text-[calc(clamp(2.75rem,8vw,5.5rem)*var(--pf-contact-font-scale,1))] font-black uppercase leading-[0.9] tracking-[-0.03em]"
             style={{ color: tokens.ink }}
           >
             <span data-mask-line className="block will-change-transform">
@@ -177,7 +182,7 @@ export function ContactDesignBrokenGrid({
               className="flex h-full w-full items-center justify-center"
               style={{ backgroundColor: tokens.placeholderBg }}
             >
-              <span className="font-sans text-4xl font-semibold" style={{ color: tokens.muted }} aria-hidden>
+              <span className="font-sans text-[calc(2.25rem*var(--pf-contact-font-scale,1))] font-semibold" style={{ color: tokens.muted }} aria-hidden>
                 {initials || '—'}
               </span>
             </div>
@@ -234,12 +239,14 @@ export function ContactDesignBrokenGrid({
             className={`order-5 md:absolute md:bottom-16 md:flex md:justify-end ${portfolioHeroLayerInset(contentGutter)}`}
           >
             <a
+              ref={emailBoxRef}
               href={`mailto:${trimmedEmail}`}
               data-pf-no-color-transition=""
-              className="m-0 block w-full min-w-0 overflow-hidden break-all text-center font-sans text-[clamp(2.25rem,8vw,5.5rem)] font-black leading-[0.92] tracking-[-0.03em] md:text-right"
-              style={{ color: tokens.ink }}
+              className="m-0 block w-full min-w-0 overflow-hidden text-center font-sans font-black leading-[0.92] tracking-[-0.03em] md:text-right"
+              // One line, as large as the width allows (useFitText sets --fit).
+              style={{ color: tokens.ink, fontSize: 'calc(clamp(2.25rem, 8vw, 5.5rem) * var(--pf-contact-font-scale, 1) * var(--fit, 1))' }}
             >
-              <span data-mask-line className="block will-change-transform">
+              <span ref={emailLineRef} data-mask-line className="inline-block whitespace-nowrap will-change-transform">
                 {trimmedEmail}
               </span>
             </a>

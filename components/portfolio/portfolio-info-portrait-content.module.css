@@ -1,0 +1,48 @@
+.content :global(.pf-about-portrait-skills) { gap:0; }
+.content :global(.pf-about-portrait-skill + .pf-about-portrait-skill) {
+  border-top:1px solid color-mix(in srgb,var(--pf-about-portrait-ink) 12%,transparent);
+}
+.content :global(.pf-about-portrait-skill-btn) {
+  padding:1rem .25rem 1rem 1.25rem;
+  gap:1rem;
+  line-height:1.35;
+}
+.index {
+  flex:none;
+  width:1.5rem;
+  font-family:ui-sans-serif,system-ui,sans-serif;
+  font-size:11px;
+  font-weight:400;
+  font-variant-numeric:tabular-nums;
+  color:var(--pf-about-portrait-muted);
+}
+.content :global(.pf-about-portrait-bio) { line-height:1.75; }
+.content :global(.pf-about-portrait-kicker) { letter-spacing:.08em; font-weight:500; }
+.content :global(.pf-about-portrait-bring-item) { padding-block:1rem; }
+.content :global(.pf-about-portrait-edu-item) {
+  padding-block:1.25rem;
+  border-bottom:1px solid color-mix(in srgb,var(--pf-about-portrait-ink) 12%,transparent);
+}
+.content :global(.pf-about-portrait-education-title) { font-weight:500; }
+.content :global(.pf-about-portrait-lang-name) { display:block; font-size:.875rem; line-height:1.5; color:var(--pf-about-portrait-muted); }
+@media (min-width:1024px) {
+  .content[data-portrait-enabled='false'] :global(.pf-about-portrait-sticky) {
+    position:relative;
+    top:auto;
+    min-height:0;
+  }
+  .content[data-portrait-enabled='false'] :global(.pf-about-portrait-grid) {
+    grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);
+    grid-template-rows:auto auto;
+    grid-template-areas:'kicker kicker' 'stage bio';
+    align-items:start;
+    gap:1.5rem clamp(2rem,5vw,5rem);
+  }
+  .content[data-portrait-enabled='false'] :global(.pf-about-portrait-bio--desktop) {
+    align-self:start;
+    max-width:none;
+  }
+}
+@media (max-width:479px) {
+  .content :global(.pf-about-portrait-skill-btn) { gap:.5rem; padding-left:.75rem; }
+}

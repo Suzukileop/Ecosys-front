@@ -55,6 +55,27 @@ function sectionHexLuminance(hex: string | undefined): number | null {
 /** Luminance where black and white text reach the same contrast ratio (~4.58:1 each). */
 const SECTION_INK_FLIP_LUMINANCE = 0.179;
 
+/** Composite a section's solid fill over the page before choosing readable foregrounds. */
+export function resolveSectionVisibleSurface(background: {
+  sectionBackgroundEnabled: boolean;
+  sectionBackgroundFill: string;
+  sectionBackgroundColor: string;
+  sectionBackgroundOpacity?: number;
+}, backdrop: string): string {
+  if (!background.sectionBackgroundEnabled || background.sectionBackgroundFill !== 'solid') return backdrop;
+  const expand = (color: string) => {
+    const raw = color.trim().replace(/^#/, '');
+    return raw.length === 3 ? raw.replace(/./g, digit => digit + digit) : raw;
+  };
+  const foreground = expand(background.sectionBackgroundColor);
+  const under = expand(backdrop);
+  if (!/^[\da-f]{6}$/i.test(foreground) || !/^[\da-f]{6}$/i.test(under)) return backdrop;
+  const alpha = Math.max(0, Math.min(100, background.sectionBackgroundOpacity ?? 100)) / 100;
+  return '#' + [0, 2, 4].map(offset => Math.round(
+    parseInt(foreground.slice(offset, offset + 2), 16) * alpha + parseInt(under.slice(offset, offset + 2), 16) * (1 - alpha)
+  ).toString(16).padStart(2, '0')).join('');
+}
+
 type SectionFillForContrast = {
   sectionBackgroundEnabled: boolean;
   sectionBackgroundFill: 'solid' | 'gradient' | 'image' | 'split';

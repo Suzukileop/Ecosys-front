@@ -12,8 +12,6 @@ import {
   resolveToolsDesignBrandColumnsPerRow,
   resolveToolsLevelBarSize,
   resolveToolsShowLevel,
-  toolsLevelCircularCardsGridClass,
-  toolsLevelIndicatorGridGapClass,
   toolsLevelCircularRingStroke,
   toolsLevelSvgRingPx,
   type PortfolioToolsPresentationSettings,
@@ -30,24 +28,14 @@ type ToolsGalleryProps = {
   presentation: PortfolioToolsPresentationSettings;
 };
 
-function mixLogoPrincipal(logoColor: string, principal: string, fromLogo: boolean): string {
-  const accent = principal.trim();
-  if (!accent) return logoColor;
-  if (!fromLogo) return accent;
-  if (logoColor.toLowerCase() === accent.toLowerCase()) return logoColor;
-  return `color-mix(in srgb, ${logoColor} 64%, ${accent} 36%)`;
-}
-
 function resolveRingFillColor(
   presentation: PortfolioToolsPresentationSettings,
-  logoBarColor: string,
-  fromLogo: boolean
+  logoBarColor: string
 ): string {
-  const principal = presentation.levelAccentColor?.trim() || presentation.labelColor;
   if (presentation.logosGrayscale === true) {
-    return presentation.labelColor?.trim() || principal;
+    return presentation.labelColor?.trim() || (presentation.activeColorMode === 'dark' ? '#f5f5f5' : '#171717');
   }
-  return mixLogoPrincipal(logoBarColor, principal, fromLogo);
+  return logoBarColor;
 }
 
 function ToolLevelSvgRingCardItem({
@@ -66,13 +54,13 @@ function ToolLevelSvgRingCardItem({
   const name = resolveSkillName(tool);
   const level = resolveSkillLevel(tool);
   const iconUrl = resolveSkillIconUrl(tool);
-  const { barColor: logoBarColor, fromLogo } = useToolLevelBarColor(
+  const { barColor: logoBarColor } = useToolLevelBarColor(
     name,
     iconUrl,
     presentation.labelColor,
     presentation.cardBackgroundColor
   );
-  const fillColor = `color-mix(in srgb, ${resolveRingFillColor(presentation, logoBarColor, fromLogo)} 78%, ${presentation.labelColor})`;
+  const fillColor = resolveRingFillColor(presentation, logoBarColor);
   const percent = resolveToolLevelPercent(level);
   const trackInk = `color-mix(in srgb, ${presentation.labelColor} 13%, transparent)`;
   const nameInk = presentation.labelColor;
@@ -151,6 +139,8 @@ export function EditorialToolsLevelSvgRings({ tools, presentation }: ToolsGaller
   const showName = presentation.showLabels !== false;
   const showLevel = resolveToolsShowLevel(presentation);
   const columnsPerRow = resolveToolsDesignBrandColumnsPerRow('level-svg-rings', presentation);
+  const gap = presentation.levelProgressRowGap;
+  const gapRem = gap === 'tight' ? 0.25 : gap === 'large' ? 2 : gap === 'xlarge' ? 3.5 : 1;
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -216,15 +206,22 @@ export function EditorialToolsLevelSvgRings({ tools, presentation }: ToolsGaller
   return (
     <ul
       ref={rootRef}
-      className={`pf-stack-svg-rings-grid grid w-full list-none p-0 ${toolsLevelCircularCardsGridClass(columnsPerRow)} ${toolsLevelIndicatorGridGapClass(presentation.levelProgressRowGap)}`}
+      className="pf-stack-svg-rings-grid pf-stack-circular-root w-full list-none p-0"
       role="list"
-      data-balanced-six={tools.length === 6 ? 'true' : undefined}
+      data-columns={columnsPerRow}
+      data-align={presentation.brandCardsContentAlignment ?? 'center'}
+      style={{
+        '--pf-circular-gap-base': `${gapRem}rem`,
+        '--pf-circular-gap-sm': `${gapRem}rem`,
+        '--pf-circular-gap-lg': `${gapRem}rem`,
+        rowGap: 'var(--pf-circular-gap)',
+      } as CSSProperties}
     >
       {tools.map((tool) => {
         const key = typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`;
 
         return (
-          <li key={key} className="pf-stack-svg-rings-cell min-w-0">
+          <li key={key} className="pf-stack-svg-rings-cell pf-stack-circular-item min-w-0">
             <ToolLevelSvgRingCardItem
               tool={tool}
               presentation={presentation}

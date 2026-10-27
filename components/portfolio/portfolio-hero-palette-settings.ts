@@ -52,6 +52,10 @@ export type HeroColorSlot =
   | 'metaAccentProjects'
   | 'metaAccentLocation'
   | 'sectionBackground'
+  | 'sectionGradientFrom'
+  | 'sectionGradientTo'
+  | 'sectionSplitA'
+  | 'sectionSplitB'
   | 'motif'
   | 'portraitFrame'
   | 'portraitMat'
@@ -100,6 +104,10 @@ const HERO_COLOR_SLOT_IDS: HeroColorSlot[] = [
   'metaAccentProjects',
   'metaAccentLocation',
   'sectionBackground',
+  'sectionGradientFrom',
+  'sectionGradientTo',
+  'sectionSplitA',
+  'sectionSplitB',
   'motif',
   'portraitFrame',
   'portraitMat',
@@ -128,11 +136,11 @@ export const PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS: {
  * n'importe quelle autre famille pour une identité "encre & papier".
  */
 export const DEFAULT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#E2572E',
+  principal: '#E35C34',
   secondaire: '#22C48F',
   texteFort: '#F5F0E8',
   texteMuted: '#A99D89',
-  texteFaint: '#6F6553',
+  texteFaint: '#8F8779',
   neutre: '#241E15',
   fond: '#15110B',
   bordure: '#3B3323',
@@ -145,10 +153,10 @@ export const DEFAULT_HERO_PALETTE: PortfolioHeroPalette = {
  */
 export const LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
   principal: '#C2410C',
-  secondaire: '#00875F',
+  secondaire: '#00805A',
   texteFort: '#201A10',
   texteMuted: '#6B6047',
-  texteFaint: '#9C8F73',
+  texteFaint: '#786E59',
   neutre: '#FFFFFF',
   fond: '#FAF6EE',
   bordure: '#E7DFCC',
@@ -160,11 +168,11 @@ export const LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
  * (jamais slate générique) pour une identité "tech nocturne" propre.
  */
 export const INDIGO_DARK_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#6366F1',
+  principal: '#7678F3',
   secondaire: '#F59E0B',
   texteFort: '#F5F5FF',
   texteMuted: '#A6A8C9',
-  texteFaint: '#6E7096',
+  texteFaint: '#8284A5',
   neutre: '#1B1C33',
   fond: '#0D0E1F',
   bordure: '#2E2F52',
@@ -177,10 +185,10 @@ export const INDIGO_DARK_HERO_PALETTE: PortfolioHeroPalette = {
  */
 export const INDIGO_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
   principal: '#4338CA',
-  secondaire: '#EA580C',
+  secondaire: '#C2490A',
   texteFort: '#16162E',
   texteMuted: '#4B4D75',
-  texteFaint: '#8688AC',
+  texteFaint: '#6B6D8A',
   neutre: '#FFFFFF',
   fond: '#F5F5FC',
   bordure: '#E1E1F2',
@@ -196,7 +204,7 @@ export const VERDANT_DARK_HERO_PALETTE: PortfolioHeroPalette = {
   secondaire: '#FB7185',
   texteFort: '#F8FAFC',
   texteMuted: '#94A3B8',
-  texteFaint: '#64748B',
+  texteFaint: '#748297',
   neutre: '#0F172A',
   fond: '#020617',
   bordure: '#1E293B',
@@ -207,11 +215,11 @@ export const VERDANT_DARK_HERO_PALETTE: PortfolioHeroPalette = {
  * Vert / rubis inchangés ; textes slate, cartes blanc pur, fond cassé propre.
  */
 export const VERDANT_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#2A9608',
+  principal: '#258407',
   secondaire: '#BE123C',
   texteFort: '#0F172A',
   texteMuted: '#475569',
-  texteFaint: '#94A3B8',
+  texteFaint: '#687281',
   neutre: '#FFFFFF',
   fond: '#F8FAFC',
   bordure: '#E2E8F0',
@@ -224,10 +232,10 @@ export const VERDANT_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
  */
 export const VIVE_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
   principal: '#6C1BB9',
-  secondaire: '#D01C82',
+  secondaire: '#C11A79',
   texteFort: '#09090B',
   texteMuted: '#52525B',
-  texteFaint: '#71717A',
+  texteFaint: '#66666E',
   neutre: '#FFFFFF',
   /** Identité jaune conservée (le dégradé blanc→jaune se règle via fond de page si besoin). */
   fond: '#FEE685',
@@ -240,12 +248,12 @@ export const VIVE_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
  * Accents légèrement relevés pour rester vivants sur fond sombre.
  */
 export const VIVE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#8B3AD9',
-  secondaire: '#E82896',
+  principal: '#A565E1',
+  secondaire: '#EA379D',
   /** Echo of light Fond — strong brand continuity */
   texteFort: '#FEE685',
   texteMuted: '#C9B56E',
-  texteFaint: '#7D6E3F',
+  texteFaint: '#91845C',
   neutre: '#1F1A10',
   fond: '#12100A',
   bordure: '#4A3F22',
@@ -258,10 +266,10 @@ export const VIVE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
  */
 export const SAFRAN_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
   principal: '#3D2B84',
-  secondaire: '#0E7C6B',
+  secondaire: '#0D7364',
   texteFort: '#1C1917',
   texteMuted: '#57534E',
-  texteFaint: '#78716C',
+  texteFaint: '#6C6661',
   neutre: '#FFFFFF',
   fond: '#FCE96A',
   bordure: '#E7E5E4',
@@ -284,35 +292,32 @@ export const SAFRAN_DARK_HERO_PALETTE: PortfolioHeroPalette = {
 };
 
 /**
- * Citron — Mode clair (rectifié).
- * Fond citron #C8E01A + Principal violet inchangé ; Secondaire bleu roi ;
- * textes / neutre / bordure en slate froid pour respirer hors du vert.
+ * Ruby — raspberry canvas with ivory accents and wine surfaces. The citron identifier
+ * remains stable for saved portfolios; the visible family is now Ruby.
  */
 export const CITRON_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#4C1D6B',
-  secondaire: '#2563EB',
-  texteFort: '#0F172A',
-  texteMuted: '#475569',
-  texteFaint: '#94A3B8',
-  neutre: '#F8FAFC',
-  fond: '#C8E01A',
-  bordure: '#E2E8F0',
+  principal: '#FFFFFF',
+  secondaire: '#FFF8E8',
+  texteFort: '#FFFFFF',
+  texteMuted: '#FFF5F8',
+  texteFaint: '#FFF5F8',
+  neutre: '#AF2C55',
+  fond: '#9E002F',
+  bordure: '#9B294E',
 };
 
 /**
- * Citron — Mode sombre (rectifié).
- * Principal / Secondaire inchangés ; fond / neutre / textes / bordure en slate
- * pour faire ressortir violet + orange sans dominante verte.
+ * Ruby dark — burgundy ink, soft ruby and dusty rose on warm wine surfaces.
  */
 export const CITRON_DARK_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#A78BFA',
-  secondaire: '#F0985A',
-  texteFort: '#F8FAFC',
-  texteMuted: '#94A3B8',
-  texteFaint: '#64748B',
-  neutre: '#1E293B',
-  fond: '#0F172A',
-  bordure: '#334155',
+  principal: '#FF8497',
+  secondaire: '#D6A2B7',
+  texteFort: '#FFF1F4',
+  texteMuted: '#D5ACB7',
+  texteFaint: '#B48D98',
+  neutre: '#301B24',
+  fond: '#1B1015',
+  bordure: '#57343F',
 };
 
 /**
@@ -320,11 +325,11 @@ export const CITRON_DARK_HERO_PALETTE: PortfolioHeroPalette = {
  * Rouge CTA #DC2626 + cyan électrique #0EA5E9 ; neutres Zinc pour cartes blanches.
  */
 export const ROUGE_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#DC2626',
-  secondaire: '#0EA5E9',
+  principal: '#D52525',
+  secondaire: '#0A75A5',
   texteFort: '#09090B',
   texteMuted: '#52525B',
-  texteFaint: '#71717A',
+  texteFaint: '#6E6E76',
   neutre: '#FFFFFF',
   fond: '#F4F4F5',
   bordure: '#E4E4E7',
@@ -350,11 +355,11 @@ export const ROUGE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
  * Rouge #DF1C1C + émeraude #10B981 ; cartes gris clair sur blanc pur.
  */
 export const ECARLATE_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#DF1C1C',
-  secondaire: '#10B981',
+  principal: '#DB1B1B',
+  secondaire: '#0B7E58',
   texteFort: '#171717',
   texteMuted: '#525252',
-  texteFaint: '#737373',
+  texteFaint: '#6E6E6E',
   neutre: '#F5F5F5',
   fond: '#FFFFFF',
   bordure: '#E5E5E5',
@@ -369,7 +374,7 @@ export const ECARLATE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
   secondaire: '#34D399',
   texteFort: '#F5F5F5',
   texteMuted: '#A3A3A3',
-  texteFaint: '#737373',
+  texteFaint: '#818181',
   neutre: '#171717',
   fond: '#000000',
   bordure: '#262626',
@@ -383,11 +388,11 @@ export const ECARLATE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
  * générique ni proche de Classic (chaud/brun) ou Indigo (violet saturé).
  */
 export const ARDOISE_LIGHT_HERO_PALETTE: PortfolioHeroPalette = {
-  principal: '#1D6FA8',
-  secondaire: '#C97A1E',
+  principal: '#1D6EA6',
+  secondaire: '#955A16',
   texteFort: '#101820',
   texteMuted: '#51606D',
-  texteFaint: '#8996A3',
+  texteFaint: '#606972',
   neutre: '#FFFFFF',
   fond: '#E7EBEF',
   bordure: '#D6DCE2',
@@ -403,7 +408,7 @@ export const ARDOISE_DARK_HERO_PALETTE: PortfolioHeroPalette = {
   secondaire: '#E8A33D',
   texteFort: '#EEF2F5',
   texteMuted: '#99A7B3',
-  texteFaint: '#687784',
+  texteFaint: '#808D98',
   neutre: '#1C2530',
   fond: '#0A0F15',
   bordure: '#303B47',
@@ -439,7 +444,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'indigo-dark',
     label: msg('Mode sombre'),
-    description: msg('Indigo #6366F1 / ambre #F59E0B — fond violet nocturne #0D0E1F.'),
+    description: msg('Indigo #7678F3 / ambre #F59E0B — fond violet nocturne #0D0E1F.'),
     family: 'indigo',
     mode: 'dark',
     palette: INDIGO_DARK_HERO_PALETTE,
@@ -447,7 +452,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'indigo-light',
     label: msg('Mode clair'),
-    description: msg('Indigo #4338CA / orange #EA580C — fond #F5F5FC (violet doux).'),
+    description: msg('Indigo #4338CA / orange #C2490A — fond #F5F5FC (violet doux).'),
     family: 'indigo',
     mode: 'light',
     palette: INDIGO_LIGHT_HERO_PALETTE,
@@ -455,7 +460,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'classic-dark',
     label: msg('Classic dark'),
-    description: msg('Terracotta #E2572E / pin #22C48F — fond encre chaude #15110B.'),
+    description: msg('Terracotta #E35C34 / pin #22C48F — fond encre chaude #15110B.'),
     family: 'classic',
     mode: 'dark',
     palette: DEFAULT_HERO_PALETTE,
@@ -463,7 +468,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'classic-light',
     label: msg('Classic light'),
-    description: msg('Terracotta #C2410C / pin #00875F — fond ivoire chaud #FAF6EE.'),
+    description: msg('Terracotta #C2410C / pin #00805A — fond ivoire chaud #FAF6EE.'),
     family: 'classic',
     mode: 'light',
     palette: LIGHT_HERO_PALETTE,
@@ -479,7 +484,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'verdant-light',
     label: msg('Verdant clair'),
-    description: msg('Vert #2A9608 / rubis #BE123C — fond #F8FAFC (slate).'),
+    description: msg('Vert #258407 / rubis #BE123C — fond #F8FAFC (slate).'),
     family: 'verdant',
     mode: 'light',
     palette: VERDANT_LIGHT_HERO_PALETTE,
@@ -487,7 +492,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'vive-dark',
     label: msg('Vive sombre'),
-    description: msg('Violet #8B3AD9 / fuchsia #E82896 — fond #12100A.'),
+    description: msg('Violet #A565E1 / fuchsia #EA379D — fond #12100A.'),
     family: 'vive',
     mode: 'dark',
     palette: VIVE_DARK_HERO_PALETTE,
@@ -495,7 +500,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'vive-light',
     label: msg('Vive clair'),
-    description: msg('Violet #6C1BB9 / magenta #D01C82 — fond #FEE685 (Zinc + blanc).'),
+    description: msg('Violet #6C1BB9 / magenta #C11A79 — fond #FEE685 (Zinc + blanc).'),
     family: 'vive',
     mode: 'light',
     palette: VIVE_LIGHT_HERO_PALETTE,
@@ -511,23 +516,23 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'safran-light',
     label: msg('Safran clair'),
-    description: msg('Violet #3D2B84 / émeraude #0E7C6B — fond #FCE96A (Stone neutres).'),
+    description: msg('Violet #3D2B84 / émeraude #0D7364 — fond #FCE96A (Stone neutres).'),
     family: 'safran',
     mode: 'light',
     palette: SAFRAN_LIGHT_HERO_PALETTE,
   },
   {
     id: 'citron-dark',
-    label: msg('Citron sombre'),
-    description: msg('Violet #A78BFA / orange #F0985A — fond slate #0F172A.'),
+    label: msg('Ruby'),
+    description: msg('Ruby'),
     family: 'citron',
     mode: 'dark',
     palette: CITRON_DARK_HERO_PALETTE,
   },
   {
     id: 'citron-light',
-    label: msg('Citron clair'),
-    description: msg('Violet #4C1D6B / bleu #2563EB — fond #C8E01A (slate neutres).'),
+    label: msg('Ruby'),
+    description: msg('Ruby'),
     family: 'citron',
     mode: 'light',
     palette: CITRON_LIGHT_HERO_PALETTE,
@@ -543,7 +548,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'rouge-light',
     label: msg('Rouge clair'),
-    description: msg('Rouge #DC2626 / cyan #0EA5E9 — fond #F4F4F5 (Zinc + blanc).'),
+    description: msg('Rouge #D52525 / cyan #0A75A5 — fond #F4F4F5 (Zinc + blanc).'),
     family: 'rouge',
     mode: 'light',
     palette: ROUGE_LIGHT_HERO_PALETTE,
@@ -559,7 +564,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'ecarlate-light',
     label: msg('Écarlate clair'),
-    description: msg('Rouge #DF1C1C / émeraude #10B981 — fond blanc pur #FFFFFF.'),
+    description: msg('Rouge #DB1B1B / émeraude #0B7E58 — fond blanc pur #FFFFFF.'),
     family: 'ecarlate',
     mode: 'light',
     palette: ECARLATE_LIGHT_HERO_PALETTE,
@@ -575,7 +580,7 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
   {
     id: 'ardoise-light',
     label: msg('Ardoise clair'),
-    description: msg('Bleu acier #1D6FA8 / cuivre #C97A1E — fond #E7EBEF (pierre).'),
+    description: msg('Bleu acier #1D6EA6 / cuivre #955A16 — fond #E7EBEF (pierre).'),
     family: 'ardoise',
     mode: 'light',
     palette: ARDOISE_LIGHT_HERO_PALETTE,
@@ -583,6 +588,29 @@ export const PORTFOLIO_HERO_PALETTE_PRESETS: {
 ];
 
 /** Best-effort match of the current palette to a named preset (for UI highlight). */
+/** Exact legacy signatures keep saved built-in palettes recognizable without changing custom colors. */
+const LEGACY_PALETTE_SIGNATURES: Record<string, string> = {
+  '#4c1d6b|#934411|#c8e01a|#0f172a': 'citron-light',
+  '#6366f1|#f59e0b|#0d0e1f|#f5f5ff': 'indigo-dark',
+  '#4338ca|#ea580c|#f5f5fc|#16162e': 'indigo-light',
+  '#e2572e|#22c48f|#15110b|#f5f0e8': 'classic-dark',
+  '#c2410c|#00875f|#faf6ee|#201a10': 'classic-light',
+  '#43e00b|#fb7185|#020617|#f8fafc': 'verdant-dark',
+  '#2a9608|#be123c|#f8fafc|#0f172a': 'verdant-light',
+  '#8b3ad9|#e82896|#12100a|#fee685': 'vive-dark',
+  '#6c1bb9|#d01c82|#fee685|#09090b': 'vive-light',
+  '#fce96a|#17977f|#0c0a09|#fafaf9': 'safran-dark',
+  '#3d2b84|#0e7c6b|#fce96a|#1c1917': 'safran-light',
+  '#a78bfa|#f0985a|#0f172a|#f8fafc': 'citron-dark',
+  '#4c1d6b|#2563eb|#c8e01a|#0f172a': 'citron-light',
+  '#ef4444|#38bdf8|#020202|#fafafa': 'rouge-dark',
+  '#dc2626|#0ea5e9|#f4f4f5|#09090b': 'rouge-light',
+  '#ff3333|#34d399|#000000|#f5f5f5': 'ecarlate-dark',
+  '#df1c1c|#10b981|#ffffff|#171717': 'ecarlate-light',
+  '#5b9bd1|#e8a33d|#0a0f15|#eef2f5': 'ardoise-dark',
+  '#1d6fa8|#c97a1e|#e7ebef|#101820': 'ardoise-light',
+};
+
 export function matchHeroPalettePresetId(
   palette: PortfolioHeroPalette | undefined | null
 ): (typeof PORTFOLIO_HERO_PALETTE_PRESETS)[number]['id'] | null {
@@ -599,7 +627,8 @@ export function matchHeroPalettePresetId(
       return preset.id;
     }
   }
-  return null;
+  const signature = [palette.principal, palette.secondaire, palette.fond, palette.texteFort].map(norm).join('|');
+  return (LEGACY_PALETTE_SIGNATURES[signature] as (typeof PORTFOLIO_HERO_PALETTE_PRESETS)[number]['id']) ?? null;
 }
 
 export const DEFAULT_HERO_COLOR_BINDINGS: PortfolioHeroColorBindings = {
@@ -635,6 +664,10 @@ export const DEFAULT_HERO_COLOR_BINDINGS: PortfolioHeroColorBindings = {
   metaAccentProjects: 'secondaire',
   metaAccentLocation: 'principal',
   sectionBackground: 'fond',
+  sectionGradientFrom: 'fond',
+  sectionGradientTo: 'neutre',
+  sectionSplitA: 'fond',
+  sectionSplitB: 'neutre',
   /** Motif, portrait frame/mat/caption, and stats borders each have their own
    * binding (all default to Bordure — change a slot’s token to detach it). */
   motif: 'bordure',
@@ -863,6 +896,12 @@ export function applyHeroPaletteToPresentation(
     metaLocationAccentColor: color('metaAccentLocation'),
     metaAccentColor: color('metaAccentYears'),
     heroSectionBackgroundColor: color('sectionBackground'),
+    ...(presentation.heroBackgroundPaletteBindings?{
+      heroSectionBackgroundGradientFrom: color('sectionGradientFrom'),
+      heroSectionBackgroundGradientTo: color('sectionGradientTo'),
+      heroSectionBackgroundColorA: color('sectionSplitA'),
+      heroSectionBackgroundColorB: color('sectionSplitB'),
+    }:{}),
     motifColor: color('motif'),
     portraitFrameColor: color('portraitFrame'),
     portraitFrameBackgroundColor: color('portraitMat'),

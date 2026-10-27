@@ -1,0 +1,19 @@
+.team-veil-card { min-width: 0; align-self: start; }
+.team-veil-stack { display: grid; grid-template-columns: minmax(0, 1fr); position: relative; overflow: hidden; border-radius: inherit; }
+.team-veil-media { grid-area: 1 / 1; position: relative; width: 100%; min-width: 0; align-self: stretch; }
+.team-veil-photo { height: 100%; width: 100%; transition: transform 500ms cubic-bezier(.22, 1, .36, 1); }
+.team-veil-caption { grid-area: 1 / 1; align-self: end; display: flex; flex-direction: column; position: relative; min-width: 0; z-index: 2; padding: 24px; background: rgb(0 0 0 / .82); color: white; opacity: 0; transform: translateY(6px); pointer-events: none; transition: opacity 350ms ease, transform 400ms cubic-bezier(.22, 1, .36, 1); }
+.team-veil-card:hover .team-veil-caption, .team-veil-card:focus-within .team-veil-caption, .team-veil-card[data-with-image='false'] .team-veil-caption, .team-veil-card[data-always-visible='true'] .team-veil-caption { opacity: 1; transform: none; pointer-events: auto; }
+.team-veil-card .team-veil-name { margin: 0; font-size: calc(clamp(1.25rem, 1.7vw, 1.75rem) * var(--pf-team-font-scale, 1)); font-weight: 500; line-height: 1.25; letter-spacing: -.02em; overflow-wrap: anywhere; text-wrap: pretty; color: white; }
+.team-veil-card .team-veil-role { margin: 8px 0 0; font-size: calc(.875rem * var(--pf-team-font-scale, 1)); font-weight: 400; line-height: 1.55; letter-spacing: 0; text-transform: none; overflow-wrap: anywhere; color: white; }
+.team-veil-accent { width: 22px; height: 2px; flex: none; margin-bottom: 12px; background: var(--pf-palette-principal, currentColor); }
+.team-veil-socials { margin-top: 14px; }
+.team-veil-socials a { min-width: 44px; min-height: 44px; opacity: 1; }
+.team-veil-card:focus-visible, .team-veil-socials a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.team-veil-index { position: absolute; top: 12px; left: 12px; z-index: 3; padding: 5px 7px; border-radius: 4px; font-size: 12px; font-weight: 400; line-height: 1.3; font-variant-numeric: tabular-nums; color: white; background: rgb(0 0 0 / .78); pointer-events: none; }
+@media (hover: hover) and (pointer: fine) { .team-veil-card:hover .team-veil-photo { transform: scale(1.025); } }
+@media (hover: none) { .team-veil-card .team-veil-caption { opacity: 1; transform: none; pointer-events: auto; } }
+@media (prefers-reduced-motion: reduce) {
+  .team-veil-card [data-pf-no-color-transition] { transition: none !important; }
+  .team-veil-card:hover .team-veil-photo, .team-veil-card .team-veil-caption { transform: none; }
+}

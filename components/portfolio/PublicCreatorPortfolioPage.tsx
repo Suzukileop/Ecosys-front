@@ -1,7 +1,44 @@
 'use client';
+import aboutUsContentStyles from './portfolio-about-us-content.module.css';
+import { withFooterTypography } from './portfolio-footer-content';
+import { withPeopleMediaTypography } from './portfolio-people-media-content';
+import { withContactTypography } from './portfolio-contact-content';
+import { withFaqTypography } from './portfolio-faq-content';
+import { withExperienceTypography } from './portfolio-experience-content';
+import servicesContentStyles from './portfolio-services-content.module.css';
+import { resolveWorkReadingPresentation } from './portfolio-work-resolved-palette';
+import { formatInfoBio } from './portfolio-info-bio';
+import { ensureExperienceInkContrast } from './portfolio-experience-settings';
+import stackCatalogueStyles from './portfolio-stack-catalogue-preview.module.css';
+import toolsCatalogueStyles from './portfolio-tools-catalogue-preview.module.css';
+import servicesCatalogueStyles from './portfolio-services-catalogue-preview.module.css';
+import experienceCatalogueStyles from './portfolio-experience-catalogue-preview.module.css';
+import stackHeaderPreviewStyles from './portfolio-stack-header-preview.module.css';
+import workHeaderPreviewStyles from './portfolio-work-header-preview.module.css';
+import toolsHeaderPreviewStyles from './portfolio-tools-header-preview.module.css';
+import servicesHeaderPreviewStyles from './portfolio-services-header-preview.module.css';
+import experienceHeaderPreviewStyles from './portfolio-experience-header-preview.module.css';
+import teamHeaderPreviewStyles from './portfolio-team-header-preview.module.css';
+import galleryHeaderPreviewStyles from './portfolio-gallery-header-preview.module.css';
+import faqHeaderPreviewStyles from './portfolio-faq-header-preview.module.css';
+import footerHeaderPreviewStyles from './portfolio-footer-header-preview.module.css';
+import {headerPreviewCopy} from './portfolio-header-preview-copy';
+import infoHeaderPreviewStyles from './portfolio-info-header-preview.module.css';
+import {PortfolioSmoothScroll} from './portfolio-smooth-scroll';
 
 // @refresh reset
 
+import { sectionFamilyPalette } from '@/components/portfolio/portfolio-section-palette-family';
+import {
+  ExperienceHeaderAccentCountHeader,
+  ExperienceHeaderBillboardHeader,
+  ExperienceHeaderEditorialHeader,
+  ExperienceHeaderIndexHeader,
+  ExperienceHeaderMarqueeHeader,
+  ExperienceHeaderMastheadHeader,
+  ExperienceHeaderSerifLeadHeader,
+  ExperienceHeaderSplitHeadingHeader,
+} from '@/components/portfolio/experience-portfolio-header-designs';
 import dynamic from 'next/dynamic';
 import {
   Fragment,
@@ -35,6 +72,9 @@ import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { PortfolioHeroSection } from '@/components/portfolio/PortfolioHeroSection';
 import { PortfolioPagesSlideViewport } from '@/components/portfolio/portfolio-pages-transition';
+import { patchNavPalette } from '@/components/portfolio/portfolio-nav-palette-settings';
+import { resolveStudioSplitSurface } from '@/components/portfolio/portfolio-studio-split-surface';
+import { useNavigationSection } from '@/components/portfolio/use-navigation-section';
 import { PortfolioCaseOverlayNav } from '@/components/portfolio/portfolio-case-overlay-nav';
 import { PortfolioDutenPanelNav } from '@/components/portfolio/portfolio-duten-panel-nav';
 import { PortfolioHalfPanelNav } from '@/components/portfolio/portfolio-half-panel-nav';
@@ -61,7 +101,7 @@ import {
   type DesignPreviewTarget,
 } from '@/lib/portfolio-design-preview';
 import { scrollToPortfolioSection } from '@/components/portfolio/portfolio-nav-top-clearance';
-import { writeHeroBannerDesignHint } from '@/components/portfolio/portfolio-hero-banner-hint';
+import { writeHeroBannerDesignHint, writeHeroLoadingSettingsHint } from '@/components/portfolio/portfolio-hero-banner-hint';
 import {
   DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
   normalizePortfolioHeroBannerDesign,
@@ -70,7 +110,6 @@ import {
 import { resolveHeroLayoutDivision } from '@/components/portfolio/portfolio-hero-layout-division';
 import {
   EditorialSectionStickyHeader,
-  MarketplaceProfileLink,
   portfolioEditorialShellClass,
   SIDE_INFO_ICONS,
   ServicesOrderCtaHrefProvider,
@@ -78,17 +117,6 @@ import {
 /* The navigation is on screen from the first paint, so it stays in the page bundle. */
 import { PortfolioFloatingNav, useNavVisibility } from '@/components/portfolio/portfolio-section-nav';
 import { ServicesBackgroundFrame } from '@/components/portfolio/portfolio-services-card-elements';
-import {
-  ExperienceCardsHeader,
-  ExperienceDuotoneHeader,
-  ExperienceGalleryHeader,
-  ExperienceLegacyHeader,
-  ExperienceLoftHeader,
-  ExperiencePressHeader,
-  ExperienceReelHeader,
-  ExperienceSpotlightHeader,
-  ExperienceTableHeader,
-} from '@/components/portfolio/experience-header-designs';
 import {
   WorkEditorialHeader,
   WorkMarqueeHeader,
@@ -175,7 +203,8 @@ import {
   resolveHeroStatementCtaTools,
   resolveHeroPortraitBalanceTools,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
-import { pickWorkPresentationSettings, resolveWorkSectionSubtitle, resolveWorkSectionTitle, workSectionDesignSettingsPatch } from '@/components/portfolio/portfolio-work-settings';
+import { resolveWorkSectionSubtitle, resolveWorkSectionTitle, workSectionDesignSettingsPatch } from '@/components/portfolio/portfolio-work-settings';
+import { WorkTextScale, SectionContentTextScale } from './portfolio-work-text-scale';
 import { aboutContentPairAlignClass, aboutSidePanelTwinAlignClass, filterAboutStats, isAboutSideInfoItemVisible, pickAboutPresentationSettings } from '@/components/portfolio/portfolio-about-settings';
 import {
   pickServicesPresentationSettings,
@@ -199,6 +228,7 @@ import {
   faqSectionLayoutIsAside,
   faqPremiumFontScale,
   faqTextColorVars,
+  resolveFaqHeaderPosition,
 } from '@/components/portfolio/portfolio-faq-settings';
 import {
   FaqHeaderEditorialHeader,
@@ -213,7 +243,7 @@ import {
   FaqHeaderQueryHeader,
   FaqHeaderDialogueHeader,
 } from '@/components/portfolio/faq-portfolio-header-designs';
-import { FaqDesignFrame } from '@/components/portfolio/portfolio-faq-frame';
+import { FaqDesignFrame, FaqHeaderPlacement, faqDesignAllowsFrame } from '@/components/portfolio/portfolio-faq-frame';
 import {
   pickTeamPresentationSettings,
   teamPremiumFontScale,
@@ -276,7 +306,7 @@ import {
   resolveAboutUsSectionTitle,
 } from '@/components/portfolio/portfolio-about-us-settings';
 import { portfolioPresenceShowsAboutUs } from '@/components/portfolio/portfolio-presence';
-import { pickExperiencePresentationSettings, resolveExperienceSectionSubtitle, resolveExperienceSectionTitle, experienceDesignUsesFlatHeader, experienceDesignUsesTableHeader, experienceDesignUsesCardsHeader, experienceHeaderDesignIsApplied, accentYearsHasCustomCopy, experiencePremiumFontScale } from '@/components/portfolio/portfolio-experience-settings';
+import { pickExperiencePresentationSettings, resolveExperienceSectionSubtitle, resolveExperienceSectionTitle, experienceDesignUsesFlatHeader, experienceDesignUsesTableHeader, experienceDesignUsesCardsHeader, experienceHeaderDesignIsApplied, experiencePremiumFontScale } from '@/components/portfolio/portfolio-experience-settings';
 import { PortfolioLinkArrowProvider } from '@/components/portfolio/portfolio-link-buttons';
 import {
   pickContactPresentationSettings,
@@ -307,7 +337,6 @@ import {
   applyHeroPaletteToStack,
   applyHeroPaletteToTeam,
   applyHeroPaletteToTools,
-  applyHeroPaletteToWork,
   resolveHeroPaletteFromSettings,
 } from '@/components/portfolio/portfolio-section-palette';
 import { portfolioPaletteCssVars, resolveActivePortfolioPalette } from '@/components/portfolio/portfolio-color-mode';
@@ -315,9 +344,11 @@ import {
   resolveSectionActiveMode,
   resolveSectionBackgroundIsolation,
   resolveSectionContrastOverride,
+  resolveSectionVisibleSurface,
   resolveSectionPalette,
 } from '@/components/portfolio/portfolio-section-color-mode';
-import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { resolveHeroPaletteColor, applyHeroPaletteToPresentation } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { heroSectionBackgroundFields } from './portfolio-hero-section-background';
 import { syncExperiencePeriodRulePair } from '@/components/portfolio/portfolio-experience-palette-settings';
 import {
   resolveNavItemLabel,
@@ -366,19 +397,17 @@ const NAV_PREVIEW_ZOOM = 1.75;
  * design, so each is its own chunk.
  */
 const loadExperienceLists = () => import('@/components/portfolio/portfolio-experience-lists');
-const ExperienceEditorialHeader = dynamic(() => loadExperienceLists().then((m) => m.ExperienceEditorialHeader));
-const ExperienceMilestoneHeader = dynamic(() => loadExperienceLists().then((m) => m.ExperienceMilestoneHeader));
-const EditorialExperienceList = dynamic(() => loadExperienceLists().then((m) => m.EditorialExperienceList));
-const MilestoneExperienceList = dynamic(() => loadExperienceLists().then((m) => m.MilestoneExperienceList));
-const TableExperienceList = dynamic(() => loadExperienceLists().then((m) => m.TableExperienceList));
-const CardsExperienceList = dynamic(() => loadExperienceLists().then((m) => m.CardsExperienceList));
-const ReelExperienceList = dynamic(() => loadExperienceLists().then((m) => m.ReelExperienceList));
-const DuotoneExperienceList = dynamic(() => loadExperienceLists().then((m) => m.DuotoneExperienceList));
-const GalleryExperienceList = dynamic(() => loadExperienceLists().then((m) => m.GalleryExperienceList));
-const LoftExperienceList = dynamic(() => loadExperienceLists().then((m) => m.LoftExperienceList));
-const PressExperienceList = dynamic(() => loadExperienceLists().then((m) => m.PressExperienceList));
-const LegacyExperienceList = dynamic(() => loadExperienceLists().then((m) => m.LegacyExperienceList));
-const KineticExperienceList = dynamic(() => loadExperienceLists().then((m) => m.KineticExperienceList));
+const EditorialExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.EditorialExperienceList)));
+const MilestoneExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.MilestoneExperienceList)));
+const TableExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.TableExperienceList)));
+const CardsExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.CardsExperienceList)));
+const ReelExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.ReelExperienceList)));
+const DuotoneExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.DuotoneExperienceList)));
+const GalleryExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.GalleryExperienceList)));
+const LoftExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.LoftExperienceList)));
+const PressExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.PressExperienceList)));
+const LegacyExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.LegacyExperienceList)));
+const KineticExperienceList = withExperienceTypography(dynamic(() => loadExperienceLists().then((m) => m.KineticExperienceList)));
 /*
  * Every other section is its own chunk (they used to share one 11,000-line module): a portfolio
  * only downloads the sections it shows. Server rendering is unchanged — next/dynamic renders them
@@ -391,21 +420,21 @@ const loadSideInfo = () => import('@/components/portfolio/portfolio-section-side
 const EditorialSideInfoHeading = dynamic(() => loadSideInfo().then((m) => m.EditorialSideInfoHeading));
 const EditorialSideInfoPanel = dynamic(() => loadSideInfo().then((m) => m.EditorialSideInfoPanel));
 const EditorialStatGrid = dynamic(() => loadSideInfo().then((m) => m.EditorialStatGrid));
-const EditorialTeamGallery = dynamic(() =>
+const EditorialTeamGallery = withPeopleMediaTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-team-designs').then((m) => m.EditorialTeamGallery)
-);
-const EditorialGallerySection = dynamic(() =>
+));
+const EditorialGallerySection = withPeopleMediaTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-section-gallery').then((m) => m.EditorialGallerySection)
-);
-const EditorialFaqList = dynamic(() =>
+));
+const EditorialFaqList = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-section-faq').then((m) => m.EditorialFaqList)
-);
-const EditorialContactSection = dynamic(() =>
+));
+const EditorialContactSection = withContactTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-section-contact').then((m) => m.EditorialContactSection)
-);
-const EditorialPortfolioFooter = dynamic(() =>
+));
+const EditorialPortfolioFooter = withFooterTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-section-footer').then((m) => m.EditorialPortfolioFooter)
-);
+));
 
 /* The footer, reading the visit counter from its own store (profile-visits-store) so the update
    that follows the recorded view re-renders the footer alone rather than the whole page. */
@@ -457,33 +486,30 @@ const ServicesIndexListSection = dynamic(() =>
 const ServicesPricingToggleSection = dynamic(() =>
   import('@/components/portfolio/portfolio-services-pricing-toggle').then((m) => m.ServicesPricingToggleSection)
 );
-const FaqKineticSplitDesign = dynamic(() =>
+const FaqKineticSplitDesign = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-faq-kinetic-split').then((m) => m.FaqKineticSplitDesign)
-);
-const FaqFloatingGalleryDesign = dynamic(() =>
+));
+const FaqFloatingGalleryDesign = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-faq-floating-gallery').then((m) => m.FaqFloatingGalleryDesign)
-);
-const FaqEditorialMasonryDesign = dynamic(() =>
+));
+const FaqEditorialMasonryDesign = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-faq-editorial-masonry').then((m) => m.FaqEditorialMasonryDesign)
-);
-const FaqPrismCardsDesign = dynamic(() =>
+));
+const FaqPrismCardsDesign = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-faq-prism-cards').then((m) => m.FaqPrismCardsDesign)
-);
-const FaqStarScrollDesign = dynamic(() =>
-  import('@/components/portfolio/portfolio-faq-star-scroll').then((m) => m.FaqStarScrollDesign)
-);
-const FaqTriGridDesign = dynamic(() =>
+));
+const FaqTriGridDesign = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-faq-tri-grid').then((m) => m.FaqTriGridDesign)
-);
-const FaqSplitIndexDesign = dynamic(() =>
+));
+const FaqSplitIndexDesign = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-faq-split-index').then((m) => m.FaqSplitIndexDesign)
-);
-const FaqCenteredFocusDesign = dynamic(() =>
+));
+const FaqCenteredFocusDesign = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-faq-centered-focus').then((m) => m.FaqCenteredFocusDesign)
-);
-const FaqBentoDualDesign = dynamic(() =>
+));
+const FaqBentoDualDesign = withFaqTypography(dynamic(() =>
   import('@/components/portfolio/portfolio-faq-bento-dual').then((m) => m.FaqBentoDualDesign)
-);
+));
 
 type PublicCreatorPortfolioPageProps = {
   creatorId: string;
@@ -828,14 +854,15 @@ export function PublicCreatorPortfolioPage({
   const previewTarget = studioEmbed ? designPreview : null;
   const isDesignPreview = previewTarget != null;
   const isFooterPreview = previewTarget?.section === 'footer';
+  const usesPreviewSampleContent = isDesignPreview && previewTarget?.section !== 'footerHeader';
   // Picker previews keep the creator's portrait while filling sparse content with sample data.
   const profile = useMemo(
-    () => (isDesignPreview ? withDesignPreviewProfile(sourceProfile) : sourceProfile),
-    [isDesignPreview, sourceProfile]
+    () => (usesPreviewSampleContent ? withDesignPreviewProfile(sourceProfile) : sourceProfile),
+    [usesPreviewSampleContent, sourceProfile]
   );
-  const locationLabel = isDesignPreview ? DESIGN_PREVIEW_LOCATION_LABEL : sourceLocationLabel;
+  const locationLabel = usesPreviewSampleContent ? DESIGN_PREVIEW_LOCATION_LABEL : sourceLocationLabel;
   // The Work section reads this prop before the profile's own posts — placeholders win in a preview.
-  const portfolioPosts = isDesignPreview ? DESIGN_PREVIEW_PORTFOLIO_POSTS : sourcePortfolioPosts;
+  const portfolioPosts = usesPreviewSampleContent ? DESIGN_PREVIEW_PORTFOLIO_POSTS : sourcePortfolioPosts;
   const { user, isLoading: authLoading } = useAuth();
   const isPortfolioOwner = !authLoading && user?.id === creatorId;
   const hideOwnerChrome = studioEmbed;
@@ -860,19 +887,32 @@ export function PublicCreatorPortfolioPage({
     switch (previewTarget.section) {
       case 'footer':
         return { ...storedSettings, footer: { ...storedSettings.footer, enabled: true, design: previewTarget.design } };
+      case 'footerHeader':
+        return {
+          ...storedSettings,
+          footer: { ...storedSettings.footer, enabled: true, headerDesign: previewTarget.design },
+        };
       case 'contact':
         return { ...storedSettings, contact: { ...storedSettings.contact, enabled: true, cardDesign: previewTarget.design } };
       case 'team':
         return { ...storedSettings, team: { ...storedSettings.team, enabled: true, layout: previewTarget.design } };
+      case 'teamHeader':
+        return {...storedSettings,team:{...storedSettings.team,...headerPreviewCopy('team',t),enabled:true,headerDesign:previewTarget.design}};
       case 'gallery':
         return { ...storedSettings, gallery: { ...storedSettings.gallery, enabled: true, design: previewTarget.design } };
+      case 'galleryHeader':
+        return {...storedSettings,gallery:{...storedSettings.gallery,...headerPreviewCopy('gallery',t),enabled:true,headerDesign:previewTarget.design}};
       case 'faq':
         return { ...storedSettings, faq: { ...storedSettings.faq, enabled: true, design: previewTarget.design } };
+      case 'faqHeader':
+        return { ...storedSettings, faq: { ...storedSettings.faq, enabled: true, headerDesign: previewTarget.design } };
       case 'experience':
         return {
           ...storedSettings,
           experience: { ...storedSettings.experience, enabled: true, experienceDesign: previewTarget.design },
         };
+      case 'experienceHeader':
+        return {...storedSettings,experience:{...storedSettings.experience,...headerPreviewCopy('experience',t),enabled:true,headerDesign:previewTarget.design}};
       case 'aboutUs':
         // Picking an About us design also applies that design's own defaults (see the panel).
         return {
@@ -884,7 +924,10 @@ export function PublicCreatorPortfolioPage({
           ...storedSettings,
           services: { ...storedSettings.services, enabled: true, sectionDesign: previewTarget.design },
         };
-      // Tools / Work / Info: picking a design also applies its own defaults — mirror the panels.
+      case 'servicesHeader':
+        return {...storedSettings,services:{...storedSettings.services,...headerPreviewCopy('services',t),enabled:true,headerDesign:previewTarget.design}};
+      case 'toolsHeader':
+        return { ...storedSettings, tools: { ...storedSettings.tools, ...headerPreviewCopy('tools',t), enabled: true, headerDesign: previewTarget.design } };
       case 'tools':
         return {
           ...storedSettings,
@@ -894,16 +937,22 @@ export function PublicCreatorPortfolioPage({
             enabled: true,
           },
         };
+      case 'workHeader':
+        return { ...storedSettings, work: { ...storedSettings.work, ...headerPreviewCopy('work',t), enabled: true, headerDesign: previewTarget.design } };
       case 'work':
         return {
           ...storedSettings,
           work: { ...storedSettings.work, ...workSectionDesignSettingsPatch(previewTarget.design), enabled: true },
         };
+      case 'infoHeader':
+        return { ...storedSettings, info: { ...storedSettings.info, ...headerPreviewCopy('info',t), enabled: true, headerDesign: previewTarget.design } };
       case 'info':
         return {
           ...storedSettings,
           info: { ...storedSettings.info, ...infoDesignSettingsPatch(previewTarget.design), enabled: true },
         };
+      case 'stackHeader':
+        return { ...storedSettings, stack: { ...storedSettings.stack, ...headerPreviewCopy('stack',t), enabled: true, headerDesign: previewTarget.design } };
       case 'stack':
         return {
           ...storedSettings,
@@ -934,7 +983,7 @@ export function PublicCreatorPortfolioPage({
         };
       }
     }
-  }, [previewTarget, storedSettings]);
+  }, [previewTarget, storedSettings, t]);
   const previewSectionFocusRef = useRef<(sectionId: string) => void>(() => {});
   /* Studio preview only: hover outlines a section, a click opens its settings (set by the studio). */
   const [studioInspect, setStudioInspect] = useState(false);
@@ -986,7 +1035,8 @@ export function PublicCreatorPortfolioPage({
       settings.hero.heroBannerDesign ?? DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN
     );
     writeHeroBannerDesignHint([creatorId, profile.id, profile.username], design);
-  }, [creatorId, profile.id, profile.username, settings.hero.heroBannerDesign]);
+    writeHeroLoadingSettingsHint([creatorId, profile.id, profile.username], settings);
+  }, [creatorId, profile.id, profile.username, settings]);
 
   const workItems = useMemo(() => {
     const posts = portfolioPosts ?? profile.portfolioPosts ?? [];
@@ -1045,21 +1095,37 @@ export function PublicCreatorPortfolioPage({
     );
     if (banner === 'work-duo') {
       const selectedIds = settings.hero.heroWorkDuoSelectedWorkIds ?? [];
-      if (selectedIds.length > 0) {
-        const byId = new Map(availableHeroWorks.map((work) => [work.id, work]));
-        return selectedIds
-          .map((id) => byId.get(id))
-          .filter((work): work is NonNullable<typeof work> => Boolean(work))
-          .slice(0, 2);
-      }
-      return availableHeroWorks.slice(0, 2);
+      const byId = new Map(availableHeroWorks.map((work) => [work.id, work]));
+      return selectedIds
+        .map((id) => byId.get(id))
+        .filter((work): work is NonNullable<typeof work> => Boolean(work))
+        .slice(0, 2);
     }
-    // Colophon lists its index as rows, so it has room for one more project.
-    if (banner === 'colophon') return availableHeroWorks.slice(0, 5);
+    if (banner === 'selected-works') {
+      const selectedIds = settings.hero.heroSelectedWorksSelectedWorkIds;
+      // null keeps the historical automatic selection; an empty array is an
+      // intentional, valid identity-only composition.
+      if (selectedIds === null || selectedIds === undefined) {
+        return availableHeroWorks.slice(0, 4);
+      }
+      const byId = new Map(availableHeroWorks.map((work) => [work.id, work]));
+      return selectedIds
+        .map((id) => byId.get(id))
+        .filter((work): work is NonNullable<typeof work> => Boolean(work))
+        .slice(0, 4);
+    }
+    if (banner === 'colophon') {
+      const selected = settings.hero.heroColophonSelectedWorkIds;
+      if (selected == null) return availableHeroWorks.slice(0, 4);
+      const byId = new Map(availableHeroWorks.map(work => [work.id, work]));
+      return selected.map(id => byId.get(id)).filter((work): work is NonNullable<typeof work> => Boolean(work)).slice(0, 4);
+    }
     return availableHeroWorks.slice(0, 4);
   }, [
     availableHeroWorks,
     settings.hero.heroBannerDesign,
+    settings.hero.heroSelectedWorksSelectedWorkIds,
+    settings.hero.heroColophonSelectedWorkIds,
     settings.hero.heroWorkDuoSelectedWorkIds,
   ]);
   const experienceBlocks = profile.experienceBlocks ?? [];
@@ -1156,6 +1222,17 @@ export function PublicCreatorPortfolioPage({
   const navSocialLinkOptions = navProfileLinkOptions;
 
   const previewGalleryKey = JSON.stringify(profile.galleryItems ?? []);
+  const previewApplyRequestRef = useRef<number | null>(null);
+  const [previewApplyRevision, setPreviewApplyRevision] = useState(0);
+  useEffect(() => {
+    if (!isDesignPreview || previewApplyRequestRef.current == null) return;
+    const previewRequestId = previewApplyRequestRef.current;
+    const frame = requestAnimationFrame(() => {
+      window.parent.postMessage({ source: PORTFOLIO_STUDIO_PREVIEW_SOURCE, type: 'design-preview-applied', previewRequestId }, window.location.origin);
+      if (previewApplyRequestRef.current === previewRequestId) previewApplyRequestRef.current = null;
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [settings, isDesignPreview, previewApplyRevision]);
   const previewGalleryItems = useMemo(
     () => JSON.parse(previewGalleryKey) as NonNullable<typeof profile.galleryItems>,
     [previewGalleryKey]
@@ -1187,7 +1264,15 @@ export function PublicCreatorPortfolioPage({
         // the WHOLE page is swapped for the skeleton and remounted (scroll reset, every entrance
         // replayed). In a transition React keeps the current page on screen until the chunk is in.
         const incomingSettings = event.data.settings;
-        startTransition(() => applyExternalSettings(incomingSettings));
+        if (isDesignPreview && typeof event.data.previewRequestId === 'number') {
+          previewApplyRequestRef.current = event.data.previewRequestId;
+        }
+        startTransition(() => {
+          applyExternalSettings(incomingSettings);
+          // Equal settings may intentionally skip the settings state update. Still
+          // acknowledge this request after commit so its card never waits forever.
+          if (previewApplyRequestRef.current != null) setPreviewApplyRevision(previewApplyRequestRef.current);
+        });
         return;
       }
       if (event.data.type === 'scroll-to-section') {
@@ -1308,8 +1393,30 @@ export function PublicCreatorPortfolioPage({
   const heroToolDetailsProp = passHeroTools ? heroToolDetails : [];
 
   const heroPresentation = useMemo(
-    () => pickHeroPresentationSettings(settings.hero),
-    [settings.hero]
+    () => {
+      const presentation = pickHeroPresentationSettings(settings.hero);
+      const background = heroSectionBackgroundFields(presentation);
+      // Procedural art already derives its own tones; only custom solid fills need rebalancing.
+      if (!background.sectionBackgroundEnabled || background.sectionBackgroundFill !== 'solid' || (presentation.heroSectionBackgroundArt && presentation.heroSectionBackgroundArt !== 'none')) return presentation;
+      const palette = resolveHeroPaletteFromSettings(presentation.palette);
+      const surface = resolveSectionVisibleSurface(background, palette.fond);
+      const baseMode = resolveSectionActiveMode(settings.hero.colorModeOverride, settings.global.colorMode ?? 'dark');
+      const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', {
+        ...background, sectionBackgroundColor: surface, sectionBackgroundOpacity: 100,
+      }, baseMode), baseMode);
+      const readingPalette = { ...(mode === baseMode ? palette : sectionFamilyPalette(settings.hero.paletteFamily, mode)
+        ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode })), fond: surface };
+      return { ...presentation, ...applyHeroPaletteToPresentation({ ...presentation, palette: readingPalette }),
+        palette: readingPalette,
+        // Never repaint the selected background from the contrasting foreground palette.
+        heroSectionBackgroundColor: presentation.heroSectionBackgroundColor,
+        heroSectionBackgroundGradientFrom: presentation.heroSectionBackgroundGradientFrom,
+        heroSectionBackgroundGradientTo: presentation.heroSectionBackgroundGradientTo,
+        heroSectionBackgroundColorA: presentation.heroSectionBackgroundColorA,
+        heroSectionBackgroundColorB: presentation.heroSectionBackgroundColorB,
+      };
+    },
+    [settings.hero, settings.global]
   );
   const heroPalette = useMemo(
     () => resolveHeroPaletteFromSettings(heroPresentation.palette),
@@ -1332,30 +1439,31 @@ export function PublicCreatorPortfolioPage({
   );
   const workPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.work.paletteFamily,
+        resolveSectionActiveMode(settings.work.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.work.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
         dark: darkGlobalPalette,
       }),
-    [settings.work.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+    [
+      settings.work.paletteFamily,
+      settings.work.colorModeOverride,
+      settings.global.colorMode,
+      activeGlobalPalette,
+      lightGlobalPalette,
+      darkGlobalPalette,
+    ]
   );
-  const workPresentation = useMemo(
-    () =>
-      resolveSectionBackgroundIsolation(
-        applyHeroPaletteToWork(pickWorkPresentationSettings(settings.work), workPalette),
-        settings.work.colorModeOverride,
-        workPalette.fond
-      ),
-    [settings.work, workPalette]
+  const workResolved = useMemo(
+    () => resolveWorkReadingPresentation(settings.work, settings.global, workPalette),
+    [settings.work, settings.global, workPalette]
   );
-  const workColorMode = useMemo(
-    () =>
-      resolveSectionActiveMode(
-        settings.work.colorModeOverride,
-        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
-    [settings.work.colorModeOverride, settings.global.colorMode]
-  );
+  const workPresentation = workResolved.presentation;
+  const workReadingPalette = workResolved.palette;
+  const workColorMode = workResolved.mode;
   const workSectionTitle = useMemo(
     () => resolveWorkSectionTitle(settings.work),
     [settings.work]
@@ -1393,6 +1501,10 @@ export function PublicCreatorPortfolioPage({
   );
   const experiencePalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.experience.paletteFamily,
+        resolveSectionActiveMode(settings.experience.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.experience.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
@@ -1403,7 +1515,7 @@ export function PublicCreatorPortfolioPage({
       activeGlobalPalette,
       lightGlobalPalette,
       darkGlobalPalette,
-    ]
+    , settings.experience.paletteFamily, settings.global.colorMode]
   );
   const experiencePresentation = useMemo(() => {
     const picked = pickExperiencePresentationSettings(settings.experience);
@@ -1430,12 +1542,23 @@ export function PublicCreatorPortfolioPage({
             periodRuleColorDark: picked.periodRuleColorDark,
             periodRuleFollowPalette: false as const,
           };
+    const isolated = resolveSectionBackgroundIsolation(painted, experienceOverride, experiencePalette.fond);
     return {
-      ...resolveSectionBackgroundIsolation(painted, experienceOverride, experiencePalette.fond),
+      ...isolated,
+      // A disabled fill is stored for later, but must not remain the contrast surface.
+      sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : experiencePalette.fond,
       ...periodRulePair,
       activeColorMode: mode,
     };
   }, [settings.experience, settings.global, experiencePalette, lightGlobalPalette, darkGlobalPalette]);
+  const experienceReadingPalette = useMemo(() => {
+    const surface = experiencePresentation.sectionBackgroundEnabled && experiencePresentation.sectionBackgroundOpacity === 100 && experiencePresentation.sectionBackgroundFill === 'solid'
+      ? experiencePresentation.sectionBackgroundColor : experiencePalette.fond;
+    const ink = (color: string) => ensureExperienceInkContrast(color, experiencePresentation.activeColorMode === 'dark', '#171717', '#f5f5f5', surface);
+    return { ...experiencePalette, fond: surface,
+      texteFort: ink(experiencePalette.texteFort), texteMuted: ink(experiencePalette.texteMuted), texteFaint: ink(experiencePalette.texteFaint),
+      principal: ink(experiencePalette.principal), secondaire: ink(experiencePalette.secondaire) };
+  }, [experiencePresentation, experiencePalette]);
   const experienceSectionTitle = useMemo(
     () => resolveExperienceSectionTitle(settings.experience),
     [settings.experience]
@@ -1446,6 +1569,10 @@ export function PublicCreatorPortfolioPage({
   );
   const galleryPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.gallery.paletteFamily,
+        resolveSectionActiveMode(settings.gallery.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.gallery.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
@@ -1456,20 +1583,31 @@ export function PublicCreatorPortfolioPage({
       activeGlobalPalette,
       lightGlobalPalette,
       darkGlobalPalette,
-    ]
+    , settings.gallery.paletteFamily, settings.global.colorMode]
   );
-  const galleryPresentation = useMemo(() => {
+  const galleryResolved = useMemo(() => {
     const picked = pickGalleryPresentationSettings(settings.gallery);
     const painted =
       picked.useHeroPalette === false
         ? picked
         : { ...picked, ...applyGalleryPaletteToSettings(picked, galleryPalette) };
-    return resolveSectionBackgroundIsolation(
+    const isolated = resolveSectionBackgroundIsolation(
       painted,
       settings.gallery.colorModeOverride,
       galleryPalette.fond
     );
-  }, [settings.gallery, galleryPalette]);
+    const baseMode = resolveSectionActiveMode(settings.gallery.colorModeOverride, settings.global.colorMode ?? 'dark');
+    const surface = resolveSectionVisibleSurface(isolated, galleryPalette.fond);
+    const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', { ...isolated, sectionBackgroundEnabled: true, sectionBackgroundFill: 'solid', sectionBackgroundColor: surface, sectionBackgroundOpacity: 100 }, baseMode), baseMode);
+    const palette = mode === baseMode ? galleryPalette : sectionFamilyPalette(settings.gallery.paletteFamily, mode)
+      ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode });
+    return { presentation: { ...isolated, ...applyGalleryPaletteToSettings(isolated, palette),
+      sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : galleryPalette.fond,
+      activeColorMode: mode,
+    }, palette: { ...palette, fond: surface } };
+  }, [settings.gallery, settings.global, galleryPalette]);
+  const galleryPresentation = galleryResolved.presentation;
+  const galleryReadingPalette = galleryResolved.palette;
   const gallerySectionTitle = useMemo(
     () => resolveGallerySectionTitle(settings.gallery),
     [settings.gallery]
@@ -1480,6 +1618,10 @@ export function PublicCreatorPortfolioPage({
   );
   const servicesPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.services.paletteFamily,
+        resolveSectionActiveMode(settings.services.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.services.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
@@ -1490,25 +1632,40 @@ export function PublicCreatorPortfolioPage({
       activeGlobalPalette,
       lightGlobalPalette,
       darkGlobalPalette,
-    ]
+    , settings.services.paletteFamily, settings.global.colorMode]
   );
-  const servicesPresentation = useMemo(
-    () => ({
-      ...resolveSectionBackgroundIsolation(
+  const servicesResolved = useMemo(
+    () => {
+      const isolated = resolveSectionBackgroundIsolation(
         applyHeroPaletteToServices(
           pickServicesPresentationSettings(settings.services),
           servicesPalette
         ),
         settings.services.colorModeOverride,
         servicesPalette.fond
-      ),
-      activeColorMode: resolveSectionActiveMode(
+      );
+      const baseMode = resolveSectionActiveMode(
         settings.services.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
-    }),
-    [settings.services, settings.global.colorMode, servicesPalette]
+      );
+      const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', isolated, baseMode), baseMode);
+      const readingPalette = mode === baseMode ? servicesPalette : sectionFamilyPalette(settings.services.paletteFamily, mode)
+        ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode });
+      const painted = applyHeroPaletteToServices(isolated, readingPalette);
+      const surface = isolated.sectionBackgroundEnabled && isolated.sectionBackgroundFill === 'solid' && isolated.sectionBackgroundOpacity === 100
+        ? isolated.sectionBackgroundColor : servicesPalette.fond;
+      return {
+        presentation: { ...painted,
+          sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : servicesPalette.fond,
+          activeColorMode: mode,
+        },
+        palette: { ...readingPalette, fond: surface },
+      };
+    },
+    [settings.services, settings.global, servicesPalette]
   );
+  const servicesPresentation = servicesResolved.presentation;
+  const servicesReadingPalette = servicesResolved.palette;
   const isDistinctServicesOrganization = servicesUsesDistinctSections(
     servicesPresentation.sectionOrganization
   );
@@ -1564,33 +1721,41 @@ export function PublicCreatorPortfolioPage({
   );
   const faqPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.faq.paletteFamily,
+        resolveSectionActiveMode(settings.faq.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.faq.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
         dark: darkGlobalPalette,
       }),
-    [settings.faq.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+    [settings.faq.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette, settings.faq.paletteFamily, settings.global.colorMode]
   );
-  const faqPresentation = useMemo(
-    () =>
-      resolveSectionBackgroundIsolation(
+  const faqResolved = useMemo(
+    () => {
+      const isolated = resolveSectionBackgroundIsolation(
         applyHeroPaletteToFaq(pickFaqPresentationSettings(settings.faq), faqPalette),
         settings.faq.colorModeOverride,
         faqPalette.fond
-      ),
-    [settings.faq, faqPalette]
+      );
+      const baseMode = resolveSectionActiveMode(settings.faq.colorModeOverride, settings.global.colorMode ?? 'dark');
+      const surface = resolveSectionVisibleSurface(isolated, faqPalette.fond);
+      const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', { ...isolated, sectionBackgroundEnabled: true, sectionBackgroundFill: 'solid', sectionBackgroundColor: surface, sectionBackgroundOpacity: 100 }, baseMode), baseMode);
+      const palette = mode === baseMode ? faqPalette : sectionFamilyPalette(settings.faq.paletteFamily, mode)
+        ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode });
+      return { presentation: { ...applyHeroPaletteToFaq(isolated, palette),
+        sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : faqPalette.fond,
+      }, palette: { ...palette, fond: surface }, mode };
+    },
+    [settings.faq, settings.global, faqPalette]
   );
+  const faqPresentation = faqResolved.presentation;
+  const faqReadingPalette = faqResolved.palette;
   // Prism Cards, Star Scroll, Tri Grid, Split Index, Centered Focus and Bento Dual
   // read this to resolve `[data-pf-faq-mode]` — Kinetic Split, Floating Gallery and
   // Editorial Masonry track `--pf-palette-fond` directly instead.
-  const faqActiveColorMode = useMemo(
-    () =>
-      resolveSectionActiveMode(
-        settings.faq.colorModeOverride,
-        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
-    [settings.faq.colorModeOverride, settings.global.colorMode]
-  );
+  const faqActiveColorMode = faqResolved.mode;
   // Multiplies every premium FAQ design's own font-size declarations via a shared
   // `--pf-faq-font-scale` CSS custom property — see General tab's "Font size" control.
   const faqFontSizeScale = faqPremiumFontScale(faqPresentation.premiumFontSize);
@@ -1598,27 +1763,41 @@ export function PublicCreatorPortfolioPage({
   const faqSectionSubtitle = useMemo(() => resolveFaqSectionSubtitle(settings.faq), [settings.faq]);
   const teamPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.team.paletteFamily,
+        resolveSectionActiveMode(settings.team.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.team.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
         dark: darkGlobalPalette,
       }),
-    [settings.team.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+    [settings.team.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette, settings.team.paletteFamily, settings.global.colorMode]
   );
-  const teamPresentation = useMemo(
-    () => ({
-      ...resolveSectionBackgroundIsolation(
+  const teamResolved = useMemo(
+    () => {
+      const isolated = resolveSectionBackgroundIsolation(
         applyHeroPaletteToTeam(pickTeamPresentationSettings(settings.team), teamPalette),
         settings.team.colorModeOverride,
         teamPalette.fond
-      ),
-      activeColorMode: resolveSectionActiveMode(
+      );
+      const baseMode = resolveSectionActiveMode(
         settings.team.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
-    }),
-    [settings.team, settings.global.colorMode, teamPalette]
+      );
+      const surface = resolveSectionVisibleSurface(isolated, teamPalette.fond);
+      const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', { ...isolated, sectionBackgroundEnabled: true, sectionBackgroundFill: 'solid', sectionBackgroundColor: surface, sectionBackgroundOpacity: 100 }, baseMode), baseMode);
+      const readingPalette = mode === baseMode ? teamPalette : sectionFamilyPalette(settings.team.paletteFamily, mode)
+        ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode });
+      return { presentation: { ...applyHeroPaletteToTeam(isolated, readingPalette),
+        sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : teamPalette.fond,
+        activeColorMode: mode,
+      }, palette: { ...readingPalette, fond: surface } };
+    },
+    [settings.team, settings.global, teamPalette]
   );
+  const teamPresentation = teamResolved.presentation;
+  const teamReadingPalette = teamResolved.palette;
   const teamSectionTitle = useMemo(() => resolveTeamSectionTitle(settings.team), [settings.team]);
   const teamSectionSubtitle = useMemo(() => resolveTeamSectionSubtitle(settings.team), [settings.team]);
   // Info's effective light/dark mode: the owner's override, or — on 'auto' — the mode its own
@@ -1634,12 +1813,16 @@ export function PublicCreatorPortfolioPage({
   );
   const infoPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.info.paletteFamily,
+        resolveSectionActiveMode(infoColorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(infoColorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
         dark: darkGlobalPalette,
       }),
-    [infoColorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+    [infoColorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette, settings.info.paletteFamily, settings.global.colorMode]
   );
   const infoPresentation = useMemo(
     () => ({
@@ -1683,35 +1866,50 @@ export function PublicCreatorPortfolioPage({
   const isAboutHeroInfo = isAboutSplitInfo || isAboutBannerInfo;
   const toolsPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.tools.paletteFamily,
+        resolveSectionActiveMode(settings.tools.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.tools.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
         dark: darkGlobalPalette,
       }),
-    [settings.tools.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+    [settings.tools.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette, settings.tools.paletteFamily, settings.global.colorMode]
   );
   const toolsPresentation = useMemo(
-    () => ({
-      ...resolveSectionBackgroundIsolation(
+    () => {
+      const isolated = resolveSectionBackgroundIsolation(
         applyHeroPaletteToTools(pickToolsPresentationSettings(settings.tools), toolsPalette),
         settings.tools.colorModeOverride,
         toolsPalette.fond
-      ),
-      activeColorMode: resolveSectionActiveMode(
+      );
+      const baseMode = resolveSectionActiveMode(
         settings.tools.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
-    }),
-    [settings.tools, settings.global.colorMode, toolsPalette]
+      );
+      const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', isolated, baseMode), baseMode);
+      const palette = mode === baseMode ? toolsPalette : sectionFamilyPalette(settings.tools.paletteFamily, mode)
+        ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode });
+      return { ...applyHeroPaletteToTools(isolated, palette),
+        sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : toolsPalette.fond,
+        toolsPalette: palette, activeColorMode: mode };
+    },
+    [settings.tools, settings.global, toolsPalette]
   );
+  const toolsReadingPalette = toolsPresentation.toolsPalette ?? toolsPalette;
   const stackPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.stack.paletteFamily,
+        resolveSectionActiveMode(settings.stack.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.stack.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
         dark: darkGlobalPalette,
       }),
-    [settings.stack.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+    [settings.stack.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette, settings.stack.paletteFamily, settings.global.colorMode]
   );
   const stackPresentation = useMemo((): PortfolioStackPresentationSettings & {
     activeColorMode: 'light' | 'dark';
@@ -1720,23 +1918,24 @@ export function PublicCreatorPortfolioPage({
     const isBrandCards = picked.design === 'brand-cards';
     const stackSupportsDescription =
       picked.design === 'brand-cards' || picked.design === 'brand-index';
+    const isolated = resolveSectionBackgroundIsolation(applyHeroPaletteToStack(picked, stackPalette), settings.stack.colorModeOverride, stackPalette.fond);
+    const baseMode = resolveSectionActiveMode(settings.stack.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark');
+    const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', isolated, baseMode), baseMode);
+    const palette = mode === baseMode ? stackPalette : sectionFamilyPalette(settings.stack.paletteFamily, mode)
+      ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode });
     return {
       ...picked,
-      ...resolveSectionBackgroundIsolation(
-        applyHeroPaletteToStack(picked, stackPalette),
-        settings.stack.colorModeOverride,
-        stackPalette.fond
-      ),
-      activeColorMode: resolveSectionActiveMode(
-        settings.stack.colorModeOverride,
-        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
+      ...applyHeroPaletteToStack(isolated, palette),
+      sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : stackPalette.fond,
+      toolsPalette: palette,
+      activeColorMode: mode,
       showUseCases: isBrandCards ? picked.showUseCases !== false : false,
       showCategory: picked.design === 'brand-index',
       showDescription: stackSupportsDescription ? picked.showDescription !== false : false,
       showLevel: isBrandCards ? picked.showLevel !== false : picked.showLevel,
     };
-  }, [settings.stack, settings.global.colorMode, stackPalette]);
+  }, [settings.stack, settings.global, stackPalette]);
+  const stackReadingPalette = stackPresentation.toolsPalette ?? stackPalette;
   const toolsSectionTitle = useMemo(() => resolveToolsSectionTitle(settings.tools), [settings.tools]);
   const toolsSectionSubtitle = useMemo(
     () => resolveToolsSectionSubtitle(settings.tools),
@@ -1749,6 +1948,10 @@ export function PublicCreatorPortfolioPage({
   );
   const aboutUsPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.aboutUs.paletteFamily,
+        resolveSectionActiveMode(settings.aboutUs.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.aboutUs.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
@@ -1759,22 +1962,42 @@ export function PublicCreatorPortfolioPage({
       activeGlobalPalette,
       lightGlobalPalette,
       darkGlobalPalette,
-    ]
+    , settings.aboutUs.paletteFamily, settings.global.colorMode]
   );
   const aboutUsPresentation = useMemo(
-    () => ({
-      ...resolveSectionBackgroundIsolation(
+    () => {
+      const isolated = resolveSectionBackgroundIsolation(
         applyHeroPaletteToAboutUs(pickAboutUsPresentationSettings(settings.aboutUs), aboutUsPalette),
         settings.aboutUs.colorModeOverride,
         aboutUsPalette.fond
-      ),
-      activeColorMode: resolveSectionActiveMode(
+      );
+      const mode = resolveSectionActiveMode(
         settings.aboutUs.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
-    }),
+      );
+      const surface = isolated.sectionBackgroundEnabled && isolated.sectionBackgroundFill === 'solid' && isolated.sectionBackgroundOpacity === 100
+        ? isolated.sectionBackgroundColor : aboutUsPalette.fond;
+      const ink = (color: string) => ensureExperienceInkContrast(color, mode === 'dark', '#171717', '#f5f5f5', surface);
+      return {
+        ...isolated,
+        sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : aboutUsPalette.fond,
+        titleColor: ink(isolated.titleColor), subtitleColor: ink(isolated.subtitleColor),
+        descriptionColor: ink(isolated.descriptionColor), taskColor: ink(isolated.taskColor),
+        quoteColor: ink(isolated.quoteColor), founderNameColor: ink(isolated.founderNameColor),
+        founderFunctionColor: ink(isolated.founderFunctionColor), accentColor: ink(isolated.accentColor),
+        editorialTitleColor: isolated.editorialTitleColor ? ink(isolated.editorialTitleColor) : undefined,
+        activeColorMode: mode,
+      };
+    },
     [settings.aboutUs, settings.global.colorMode, aboutUsPalette]
   );
+  const aboutUsReadingPalette = useMemo(() => ({ ...aboutUsPalette,
+    fond: aboutUsPresentation.sectionBackgroundEnabled && aboutUsPresentation.sectionBackgroundFill === 'solid' && aboutUsPresentation.sectionBackgroundOpacity === 100 ? aboutUsPresentation.sectionBackgroundColor : aboutUsPalette.fond,
+    texteFort: aboutUsPresentation.titleColor,
+    texteMuted: aboutUsPresentation.descriptionColor,
+    texteFaint: aboutUsPresentation.subtitleColor,
+    principal: aboutUsPresentation.accentColor,
+  }), [aboutUsPalette, aboutUsPresentation]);
   const aboutUsSectionTitle = useMemo(
     () => resolveAboutUsSectionTitle(settings.aboutUs),
     [settings.aboutUs]
@@ -1785,6 +2008,10 @@ export function PublicCreatorPortfolioPage({
   );
   const contactPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.contact.paletteFamily,
+        resolveSectionActiveMode(settings.contact.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.contact.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
@@ -1795,22 +2022,32 @@ export function PublicCreatorPortfolioPage({
       activeGlobalPalette,
       lightGlobalPalette,
       darkGlobalPalette,
-    ]
+    , settings.contact.paletteFamily, settings.global.colorMode]
   );
-  const contactPresentation = useMemo(
-    () => ({
-      ...resolveSectionBackgroundIsolation(
+  const contactResolved = useMemo(
+    () => {
+      const isolated = resolveSectionBackgroundIsolation(
         applyHeroPaletteToContact(pickContactPresentationSettings(settings.contact), contactPalette),
         settings.contact.colorModeOverride,
         contactPalette.fond
-      ),
-      activeColorMode: resolveSectionActiveMode(
+      );
+      const baseMode = resolveSectionActiveMode(
         settings.contact.colorModeOverride,
         (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
-    }),
-    [settings.contact, settings.global.colorMode, contactPalette]
+      );
+      const surface = resolveSectionVisibleSurface(isolated, contactPalette.fond);
+      const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', { ...isolated, sectionBackgroundEnabled: true, sectionBackgroundFill: 'solid', sectionBackgroundColor: surface, sectionBackgroundOpacity: 100 }, baseMode), baseMode);
+      const palette = mode === baseMode ? contactPalette : sectionFamilyPalette(settings.contact.paletteFamily, mode)
+        ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode });
+      return { presentation: { ...applyHeroPaletteToContact(isolated, palette),
+        sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : contactPalette.fond,
+        activeColorMode: mode,
+      }, palette: { ...palette, fond: surface } };
+    },
+    [settings.contact, settings.global, contactPalette]
   );
+  const contactPresentation = contactResolved.presentation;
+  const contactReadingPalette = contactResolved.palette;
   const contactSectionTitle = useMemo(
     () => resolveContactSectionTitle(settings.contact),
     [settings.contact]
@@ -1821,30 +2058,41 @@ export function PublicCreatorPortfolioPage({
   );
   const footerPalette = useMemo(
     () =>
+      sectionFamilyPalette(
+        settings.footer.paletteFamily,
+        resolveSectionActiveMode(settings.footer.colorModeOverride, (settings.global.colorMode ?? 'dark') as 'light' | 'dark')
+      ) ??
       resolveSectionPalette(settings.footer.colorModeOverride, {
         auto: activeGlobalPalette,
         light: lightGlobalPalette,
         dark: darkGlobalPalette,
       }),
-    [settings.footer.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette]
+    [settings.footer.colorModeOverride, activeGlobalPalette, lightGlobalPalette, darkGlobalPalette, settings.footer.paletteFamily, settings.global.colorMode]
   );
-  const footerPresentation = useMemo(
-    () =>
-      resolveSectionBackgroundIsolation(
+  const footerResolved = useMemo(
+    () => {
+      const isolated = resolveSectionBackgroundIsolation(
         applyHeroPaletteToFooter(pickFooterPresentationSettings(settings.footer), footerPalette),
         settings.footer.colorModeOverride,
         footerPalette.fond
-      ),
-    [settings.footer, footerPalette]
+      );
+      const basePalette = isolated.footerPalette ?? footerPalette;
+      const surface = resolveSectionVisibleSurface(isolated, basePalette.fond);
+      const baseMode = resolveSectionActiveMode(settings.footer.colorModeOverride, settings.global.colorMode ?? 'dark');
+      const mode = resolveSectionActiveMode(resolveSectionContrastOverride('auto', { ...isolated, sectionBackgroundEnabled: true, sectionBackgroundFill: 'solid', sectionBackgroundColor: surface, sectionBackgroundOpacity: 100 }, baseMode), baseMode);
+      const palette = mode === baseMode ? basePalette : sectionFamilyPalette(settings.footer.paletteFamily, mode)
+        ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: mode });
+      return { presentation: { ...applyHeroPaletteToFooter({ ...isolated, lockPaletteAcrossColorModes: false }, palette),
+        lockPaletteAcrossColorModes: isolated.lockPaletteAcrossColorModes,
+        sectionBackgroundColor: isolated.sectionBackgroundEnabled ? isolated.sectionBackgroundColor : basePalette.fond,
+      }, palette: { ...palette, fond: surface }, mode };
+    },
+    [settings.footer, settings.global, footerPalette]
   );
-  const footerColorMode = useMemo(
-    () =>
-      resolveSectionActiveMode(
-        settings.footer.colorModeOverride,
-        (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-      ),
-    [settings.footer.colorModeOverride, settings.global.colorMode]
-  );
+  const footerPresentation = footerResolved.presentation;
+  const footerReadingPalette = footerResolved.palette;
+  const footerColorMode = footerResolved.mode;
+  const footerHeaderReadingPalette = footerPresentation.headerBackgroundUnified && footerPresentation.sectionBackgroundEnabled ? footerReadingPalette : footerPalette;
   // Same resolved Background-tab style the main Footer section's own designs now paint
   // with (see `EditorialPortfolioFooter`'s `footerBackgroundStyle`) — the Mini bar is a
   // separate sibling element below it, so it needs its own copy of this computation to
@@ -1877,7 +2125,7 @@ export function PublicCreatorPortfolioPage({
     () =>
       contentSectionOrder
         .map((sectionKey) => {
-          if (!sectionVisibility[sectionKey]) return null;
+          if (!sectionVisibility[sectionKey] && !(sectionKey === 'contact' && settings.footer.enabled)) return null;
 
           return {
             id: sectionKey,
@@ -1889,6 +2137,7 @@ export function PublicCreatorPortfolioPage({
     [
       contentSectionOrder,
       sectionVisibility,
+      settings.footer.enabled,
       settings.navigation.itemLabels,
       settings.navigation.itemIcons,
     ]
@@ -1926,6 +2175,7 @@ export function PublicCreatorPortfolioPage({
 
     const meta = {
       availableTools: strengthNames,
+      availableSkills: [...(profile.aboutSkills ?? [])].sort((a, b) => a.sortOrder - b.sortOrder).filter(skill => skill.title.trim()).map(({ id, title }) => ({ id, title })),
       availableWorks: availableHeroWorks.map(({ id, title, imageUrl }) => ({ id, title, imageUrl })),
       availableServices,
       navSocialLinkOptions,
@@ -1945,6 +2195,7 @@ export function PublicCreatorPortfolioPage({
     navSocialLinkOptions,
     footerSectionLinkOptions,
     profile.avatarUrl,
+    profile.aboutSkills,
     previewGalleryItems,
     isDesignPreview,
   ]);
@@ -2016,15 +2267,38 @@ export function PublicCreatorPortfolioPage({
     const items = isPagesMode ? pagesNavItems : navItems.filter((item) => !hidden.has(item.id));
     return isNavigationPreview ? items.slice(0, NAV_PREVIEW_MAX_ITEMS) : items;
   }, [isPagesMode, pagesNavItems, navItems, hiddenNavItems, isNavigationPreview]);
-  const navActiveColorMode = resolveSectionActiveMode(
-    settings.navigation.colorModeOverride,
-    (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
-  );
   const isCaseOverlayNav = portfolioNavUsesCaseOverlayLayout(settings.navigation);
   const isDutenPanelNav = portfolioNavUsesDutenPanelLayout(settings.navigation);
   const isHalfPanelNav = portfolioNavUsesHalfPanelLeftLayout(settings.navigation);
   const [activePageId, setActivePageId] = useState(() => pagesNavItems[0]?.id ?? 'hero');
   const [pageSlideDirection, setPageSlideDirection] = useState<1 | -1>(1);
+  const navigationSectionIds = useMemo(() => [...new Set(['hero', ...contentSectionOrder, 'footer'])], [contentSectionOrder]);
+  const scrollingSectionId = useNavigationSection(navigationSectionIds, !isPagesMode);
+  const navigationSectionId = isPagesMode ? activePageId : scrollingSectionId;
+  const studioNavSurface = resolveStudioSplitSurface(
+    heroPresentation.heroStudioSplitAccentColor?.trim() || heroPalette.principal,
+    heroPresentation.heroStudioSplitAccentOpacity,
+    heroPalette.fond
+  );
+  const heroNavPalette = heroPresentation.heroBannerDesign === 'studio-split'
+    ? { ...(sectionFamilyPalette(settings.hero.paletteFamily, studioNavSurface.mode)
+        ?? resolveActivePortfolioPalette({ ...settings.global, colorMode: studioNavSurface.mode })),
+        fond: studioNavSurface.surface, texteFort: studioNavSurface.ink,
+        texteMuted: studioNavSurface.ink }
+    : heroPalette;
+  const pagePalette = ({ hero: heroNavPalette, work: workReadingPalette, about: aboutPalette,
+    aboutUs: aboutUsReadingPalette, info: infoPalette, experience: experienceReadingPalette,
+    gallery: galleryReadingPalette, services: servicesReadingPalette, faq: faqReadingPalette,
+    team: teamReadingPalette, tools: toolsReadingPalette, stack: stackReadingPalette, contact: contactReadingPalette, footer: footerReadingPalette,
+  } as Record<string, typeof activeGlobalPalette>)[navigationSectionId] ?? activeGlobalPalette;
+  const pageModeOverride = navigationSectionId === 'info' ? infoColorModeOverride
+    : (settings[navigationSectionId as keyof typeof settings] as { colorModeOverride?: 'auto' | 'light' | 'dark' } | undefined)?.colorModeOverride;
+  const navActiveColorMode = resolveSectionActiveMode(
+    pageModeOverride,
+    (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
+  );
+  // Runtime-only palette: preserve the creator's saved navigation settings and DOM.
+  const pageNavigationSettings = { ...settings.navigation, ...patchNavPalette(settings.navigation, pagePalette) };
 
   useEffect(() => {
     if (!isPagesMode || pagesNavItems.length === 0) return;
@@ -2045,14 +2319,13 @@ export function PublicCreatorPortfolioPage({
   const lastContentPageId = navItems[navItems.length - 1]?.id;
   const shouldShowFooterOnPage = (pageId: string) => {
     if (!settings.footer.enabled) return false;
-    if (sectionVisibility.contact) return pageId === 'contact';
-    return Boolean(lastContentPageId) && pageId === lastContentPageId;
+    return pageId === 'contact';
   };
 
   const contactCtaHref =
     primaryLink?.url ??
     (resolvedContactEmail ? `mailto:${resolvedContactEmail}` : '#footer');
-  const pagesContactTarget = sectionVisibility.contact
+  const pagesContactTarget = sectionVisibility.contact || settings.footer.enabled
     ? 'contact'
     : lastContentPageId ?? 'contact';
 
@@ -2062,15 +2335,17 @@ export function PublicCreatorPortfolioPage({
     const targetIndex = pagesNavItems.findIndex((item) => item.id === normalized);
     if (targetIndex < 0) {
       if (lastContentPageId) {
-        setActivePageId(pagesContactTarget);
+        startTransition(() => setActivePageId(pagesContactTarget));
       }
       return;
     }
     const currentIndex = pagesNavItems.findIndex((item) => item.id === activePageId);
-    if (currentIndex >= 0 && targetIndex !== currentIndex) {
-      setPageSlideDirection(targetIndex > currentIndex ? 1 : -1);
-    }
-    setActivePageId(normalized);
+    startTransition(() => {
+      if (currentIndex >= 0 && targetIndex !== currentIndex) {
+        setPageSlideDirection(targetIndex > currentIndex ? 1 : -1);
+      }
+      setActivePageId(normalized);
+    });
   };
 
   previewSectionFocusRef.current = (sectionId: string) => {
@@ -2088,10 +2363,12 @@ export function PublicCreatorPortfolioPage({
   // One shared, GSAP-animated header design (Header) mounts above the Footer section,
   // independent of `footerPresentation.design` (which of Footer's own layouts renders
   // the content below) — same mechanism/placement convention as Team/Work/Info/etc.
+  const footerHeaderPresentation = footerPresentation.headerBackgroundUnified && footerPresentation.sectionBackgroundEnabled
+    ? footerPresentation : applyHeroPaletteToFooter(pickFooterPresentationSettings(settings.footer), footerHeaderReadingPalette);
   const footerHeaderProps = {
-    title: profile.fullName,
+    title: previewTarget?.section === 'footerHeader' ? 'Alex Martin' : profile.fullName,
     subtitle: undefined as string | undefined,
-    presentation: footerPresentation,
+    presentation: previewTarget?.section === 'footerHeader' ? {...footerHeaderPresentation,...headerPreviewCopy('footer',t)} : footerHeaderPresentation,
     itemCount: uniqueContactLinks.length,
     ctaHref: resolvedContactEmail ? `mailto:${resolvedContactEmail}` : heroContactHref,
     locationLabel,
@@ -2120,7 +2397,7 @@ export function PublicCreatorPortfolioPage({
     );
   const navContactHref = isPagesMode
     ? `#${pagesContactTarget}`
-    : sectionVisibility.contact
+    : sectionVisibility.contact || settings.footer.enabled
       ? '#contact'
       : contactCtaHref;
   const servicesOrderCtaHref = resolveServicesOrderCtaHref({
@@ -2185,7 +2462,7 @@ export function PublicCreatorPortfolioPage({
   const effectiveTitleScroll = titleScrollBehavior;
   const motionEnabled = settings.global.motionEnabled !== false;
   // Before any child renders: effects run child-first, so this must happen during render.
-  setPortfolioMotionOff(!motionEnabled);
+  setPortfolioMotionOff(isDesignPreview || !motionEnabled);
   const motionProfile = motionEnabled ? settings.global.motionProfile : 'none';
   const titleChrome = useMemo(
     () => resolveGlobalSectionTitleChrome(settings.global),
@@ -2245,7 +2522,10 @@ export function PublicCreatorPortfolioPage({
       },
       globalTypographyContext
     );
-    return { title, subtitle };
+    return {
+      title: { ...title, style: { ...title.style, color: aboutUsPresentation.titleColor } },
+      subtitle: { ...subtitle, style: { ...subtitle.style, color: aboutUsPresentation.subtitleColor } },
+    };
   }, [settings.global, aboutUsPresentation, globalTypographyContext]);
 
   const contactHeaderTypography = useMemo(() => {
@@ -2280,8 +2560,9 @@ export function PublicCreatorPortfolioPage({
       title: {
         ...title,
         className: title.className.replace(/\buppercase\b/g, '').replace(/\s+/g, ' ').trim(),
+        style: { ...title.style, color: contactPresentation.titleColor },
       },
-      subtitle,
+      subtitle: { ...subtitle, style: { ...subtitle.style, color: contactPresentation.subtitleColor } },
     };
   }, [settings.global, contactPresentation, globalTypographyContext]);
 
@@ -2398,7 +2679,7 @@ export function PublicCreatorPortfolioPage({
           itemCount: infoHeaderItemCount,
         };
         const infoHeaderBlock =
-          infoPresentation.headerDesign === 'marquee' ? (
+          infoPresentation.headerDesign === 'none' ? null : infoPresentation.headerDesign === 'marquee' ? (
             <InfoHeaderMarqueeHeader {...infoHeaderProps} />
           ) : infoPresentation.headerDesign === 'index' ? (
             <InfoHeaderIndexHeader {...infoHeaderProps} />
@@ -2419,12 +2700,19 @@ export function PublicCreatorPortfolioPage({
           ) : (
             <InfoHeaderEditorialHeader {...infoHeaderProps} />
           );
+        if (previewTarget?.section === 'infoHeader') {
+          return (
+            <div id="info" className="flex min-h-[480px] w-full items-center justify-center" style={{ ...portfolioPaletteCssVars(infoPalette), backgroundColor: infoPalette.fond }}>
+              <div className={infoHeaderPreviewStyles.preview} data-info-header-preview={infoPresentation.headerDesign} style={{ width: '86%' }}>{infoHeaderBlock}</div>
+            </div>
+          );
+        }
         return (
           <PortfolioSectionShell
             id="info"
             // A section in its own mode re-scopes the palette tokens, so token-driven pieces
             // (the shared header) follow it instead of the Global palette on the theme root.
-            cssVars={infoColorModeOverride === 'auto' ? undefined : portfolioPaletteCssVars(infoPalette)}
+            cssVars={infoColorModeOverride === 'auto' && (settings.info.paletteFamily ?? 'global') === 'global' ? undefined : portfolioPaletteCssVars(infoPalette)}
             background={infoPresentation}
             fitContent
             suppressBackground={suppressSectionBackground(infoPresentation)}
@@ -2440,10 +2728,11 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingStyle={isAboutHeroInfo ? undefined : sectionBottomSpacingStyle}
             header={infoHeaderBlock}
           >
+            <div data-info-bio-font={infoPresentation.bioFontFamily} className={`contents pf-info-bio-format${infoPresentation.bioColor || (infoPresentation.bioOpacity ?? 100) !== 100 ? ' pf-info-bio-custom-color' : ''}${infoPresentation.bioFontSize ? ' pf-info-bio-custom-size' : ''}${infoPresentation.bioBold ? ' pf-info-bio-bold' : ''}${infoPresentation.bioItalic ? ' pf-info-bio-italic' : ''}${infoPresentation.bioLineHeight ? ' pf-info-bio-spacing' : ''}`} style={{ '--info-bio-color': infoPresentation.bioColor === 'principal' ? 'var(--pf-palette-principal)' : infoPresentation.bioColor === 'texteMuted' ? 'var(--pf-palette-texte-muted, #a3a3a3)' : infoPresentation.bioColor === 'texteFort' ? 'var(--pf-palette-texte-fort)' : infoPresentation.bodyColor, '--info-bio-opacity': (infoPresentation.bioOpacity ?? 100) / 100, '--info-bio-line-height': infoPresentation.bioLineHeight, '--info-bio-font-size': infoPresentation.bioFontSize ? infoPresentation.bioFontSize + 'px' : undefined, '--info-default-font-family': infoPresentation.titleFont === 'serif' ? "ui-serif, Georgia, 'Times New Roman', serif" : undefined } as CSSProperties}>
             <EditorialAboutMeSection
               title={infoSectionTitle}
               subtitle={infoSectionSubtitle}
-              bio={profile.bio}
+              bio={formatInfoBio(infoPresentation.bioCustom?.trim() || profile.bio || '', infoPresentation.bioCase)}
               specialty={resolveHeroSpecialtyValue(profile.specialite)}
               avatarUrl={profile.avatarUrl}
               fullName={profile.fullName}
@@ -2458,6 +2747,7 @@ export function PublicCreatorPortfolioPage({
               heroPalette={infoPalette}
               terminalDarkColors={infoAboutTerminalDarkColors}
             />
+            </div>
           </PortfolioSectionShell>
         );
       }
@@ -2465,6 +2755,10 @@ export function PublicCreatorPortfolioPage({
         const layout = workPresentation.sectionLayout ?? 'stacked';
         const aside = faqSectionLayoutIsAside(layout);
         const workDesign = workPresentation.sectionDesign;
+        const previewCount = ['projects-index', 'projects-duotone', 'projects-frames', 'projects-case', 'projects-split'].includes(workDesign) ? 1 : ['projects-grid', 'projects-accordion', 'projects-carousel', 'projects-showcase', 'projects-ledger', 'projects-spec'].includes(workDesign) ? 3 : 2;
+        const designItems = previewTarget?.section === 'work'
+          ? workSectionItems.slice(0, previewCount).map(item => ({ ...item, description: item.description?.slice(0, 100) ?? null, toolsUsed: item.toolsUsed?.slice(0, 2) }))
+          : workSectionItems;
         const projectsBoard = workDesign === 'projects-board';
         const projectsAccordion = workDesign === 'projects-accordion';
         const projectsFrames = workDesign === 'projects-frames';
@@ -2494,19 +2788,15 @@ export function PublicCreatorPortfolioPage({
           projectsPress ||
           projectsDuotone ||
           projectsCascade;
-        const marketplaceTrailing = settings.work.showMarketplaceLink ? (
-          <MarketplaceProfileLink creatorId={creatorId} color={workPresentation.titleColor} />
-        ) : null;
         // One shared, GSAP-animated header design (Header → Design) mounts above every
         // project layout — no per-layout header is baked in here anymore.
         const workHeaderProps = {
           sectionTitle: workSectionTitle,
           sectionSubtitle: workSectionSubtitle || undefined,
           presentation: workPresentation,
-          trailing: marketplaceTrailing,
         };
         const workHeaderCountProps = { ...workHeaderProps, projectCount: workItems.length };
-        const headerBlock = (
+        const headerBlock = workPresentation.headerDesign === 'none' ? null : (
           <div className={aside ? 'w-full' : undefined}>
             {workPresentation.headerDesign === 'marquee' ? (
               <WorkMarqueeHeader {...workHeaderProps} />
@@ -2527,7 +2817,15 @@ export function PublicCreatorPortfolioPage({
             )}
           </div>
         );
+        if (previewTarget?.section === 'workHeader') {
+          return (
+            <div id="work" className="flex min-h-[480px] w-full items-center justify-center" style={{...portfolioPaletteCssVars(workReadingPalette),backgroundColor:workReadingPalette.fond}}>
+              <div className={workHeaderPreviewStyles.preview} data-work-header-preview={workPresentation.headerDesign} style={{width:'86%'}}>{headerBlock}</div>
+            </div>
+          );
+        }
         const contentBlock = (
+          <WorkTextScale size={settings.work.textSize}>
           <SectionIllustratedContent
             variant={namedWorkDesign ? 'none' : workPresentation.illustrationVariant}
             placement={workPresentation.illustrationPlacement}
@@ -2537,58 +2835,65 @@ export function PublicCreatorPortfolioPage({
           >
             {projectsBoard ? (
               <ProjectsBoardGallery
-                items={workSectionItems}
+                items={designItems}
                 presentation={workPresentation}
               />
             ) : projectsAccordion ? (
-              <ProjectsAccordionGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsAccordionGallery items={designItems} presentation={workPresentation} />
             ) : projectsFrames ? (
-              <ProjectsFramesGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsFramesGallery items={designItems} presentation={workPresentation} />
             ) : projectsIndex ? (
-              <ProjectsIndexGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsIndexGallery items={designItems} presentation={workPresentation} />
             ) : projectsGrid ? (
-              <ProjectsGridSection items={workSectionItems} presentation={workPresentation} />
+              <ProjectsGridSection items={designItems} presentation={workPresentation} />
             ) : projectsCarousel ? (
               <ProjectsCarouselSection
                 title={workSectionTitle}
-                items={workSectionItems}
+                items={designItems}
                 presentation={workPresentation}
               />
             ) : projectsShowcase ? (
-              <ProjectsShowcaseGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsShowcaseGallery items={designItems} presentation={workPresentation} />
             ) : projectsLedger ? (
-              <ProjectsLedgerGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsLedgerGallery items={designItems} presentation={workPresentation} />
             ) : projectsSpec ? (
-              <ProjectsSpecGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsSpecGallery items={designItems} presentation={workPresentation} />
             ) : projectsCase ? (
-              <ProjectsCaseGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsCaseGallery items={designItems} presentation={workPresentation} />
             ) : projectsPress ? (
-              <ProjectsPressGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsPressGallery items={designItems} presentation={workPresentation} />
             ) : projectsDuotone ? (
-              <ProjectsDuotoneGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsDuotoneGallery items={designItems} presentation={workPresentation} />
             ) : projectsCascade ? (
-              <ProjectsCascadeGallery items={workSectionItems} presentation={workPresentation} colorMode={workColorMode} />
+              <ProjectsCascadeGallery items={designItems} presentation={workPresentation} colorMode={workColorMode} />
             ) : projectsSplit ? (
-              <ProjectsSplitGallery items={workSectionItems} presentation={workPresentation} />
+              <ProjectsSplitGallery items={designItems} presentation={workPresentation} />
             ) : (
               <EditorialWorkGallery
-                items={workSectionItems}
+                items={designItems}
                 presentation={workPresentation}
                 motionProfile={motionProfile}
               />
             )}
           </SectionIllustratedContent>
+          </WorkTextScale>
         );
+        if (previewTarget?.section === 'work') {
+          return (
+            <PortfolioSectionShell id="work" cssVars={portfolioPaletteCssVars(workReadingPalette)}
+              background={workPresentation} fitContent
+              suppressBackground={suppressSectionBackground(workPresentation)}
+              topSpacingClass="pt-0" bottomSpacingClass="pb-0">
+              <div className="flex min-h-[640px] w-full items-center py-10"><div className="w-full">{contentBlock}</div></div>
+            </PortfolioSectionShell>
+          );
+        }
         return (
           <PortfolioSectionShell
             id="work"
             // Same as Info: a section in its own mode re-scopes the palette tokens, so the
             // token-driven Work headers (var(--pf-palette-*)) follow it, not the Global palette.
-            cssVars={
-              (settings.work.colorModeOverride ?? 'auto') === 'auto'
-                ? undefined
-                : portfolioPaletteCssVars(workPalette)
-            }
+            cssVars={portfolioPaletteCssVars(workReadingPalette)}
             background={workPresentation}
             fitContent
             suppressBackground={suppressSectionBackground(workPresentation)}
@@ -2609,6 +2914,9 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'services': {
+        const cataloguePreview=previewTarget?.section==='services';
+        const rowPreview=['services-pricing-toggle','services-index-list','services-band-index','services-cascade'].includes(servicesPresentation.sectionDesign);
+        const services=cataloguePreview?(profile.profileServices??[]).slice(0,rowPreview?1:servicesPresentation.sectionDesign==='services-icon-cards'?2:3).map(service=>({...service,description:servicesPresentation.sectionDesign.startsWith('services-pricing')?'':service.description,tasks:service.tasks?.slice(0,1)})):profile.profileServices??[];
         const servicesLayout = settings.services.servicesHeader.sectionLayout ?? 'stacked';
         const servicesAside =
           isDistinctServicesOrganization && faqSectionLayoutIsAside(servicesLayout);
@@ -2625,7 +2933,7 @@ export function PublicCreatorPortfolioPage({
         };
         // One shared, GSAP-animated header design (Header) mounts above the section.
         const servicesHeaderBlock =
-          servicesPresentation.headerDesign === 'marquee' ? (
+          servicesPresentation.headerDesign === 'none' ? null : servicesPresentation.headerDesign === 'marquee' ? (
             <ServicesHeaderMarqueeHeader {...servicesHeaderProps} />
           ) : servicesPresentation.headerDesign === 'index' ? (
             <ServicesHeaderIndexHeader {...servicesHeaderProps} />
@@ -2675,6 +2983,7 @@ export function PublicCreatorPortfolioPage({
               surface={servicesPresentation.cardBackgroundColor}
             >
               <>
+                <div className={servicesContentStyles.content}>
                 <ServicesBackgroundFrame presentation={servicesPresentation}>
                 {servicesMediaColumns ? (
                   <ServicesMediaColumnsSection services={services} presentation={servicesPresentation} />
@@ -2696,6 +3005,7 @@ export function PublicCreatorPortfolioPage({
                   <ServicesIndexListSection services={services} presentation={servicesPresentation} />
                 )}
                 </ServicesBackgroundFrame>
+                </div>
                 {services.length === 0 ? (
                   <p className="mt-8 text-base leading-relaxed text-neutral-500">
                     {t('Contact me to discuss a custom engagement.')}
@@ -2709,8 +3019,24 @@ export function PublicCreatorPortfolioPage({
         // General tab "Font size" — one scale read by every Services design via
         // `--pf-services-font-scale` (see the standardized override block in globals.css).
         const servicesFontScaleVars: CSSProperties = {
+          ...portfolioPaletteCssVars(servicesReadingPalette),
           '--pf-services-font-scale': servicesPremiumFontScale(servicesPresentation.premiumFontSize),
         } as CSSProperties;
+
+        if(cataloguePreview){
+          return <PortfolioSectionShell id="services" cssVars={servicesFontScaleVars} background={servicesPresentation} fitContent suppressBackground={suppressSectionBackground(servicesPresentation)} topSpacingClass="pt-0" bottomSpacingClass="pb-0">
+            <div className="flex min-h-[426px] w-full items-center py-4"><div className={`${servicesCatalogueStyles.preview} w-full`} data-services-design-preview={servicesDesign}>{servicesContentBlock}</div></div>
+          </PortfolioSectionShell>;
+        }
+        if (previewTarget?.section === 'servicesHeader') {
+          return (
+            <div id="services" className="flex min-h-[480px] w-full items-center justify-center" style={{...servicesFontScaleVars,backgroundColor:servicesReadingPalette.fond}}>
+              <div className={servicesHeaderPreviewStyles.preview} data-services-header-preview={servicesPresentation.headerDesign} style={{width:'86%'}}>
+                {servicesHeaderBlock}
+              </div>
+            </div>
+          );
+        }
 
         return (
           <PortfolioSectionShell
@@ -2834,107 +3160,47 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'experience': {
-        const showExperienceYears =
-          settings.experience.showYears &&
-          profile.yearsOfExperience != null &&
-          profile.yearsOfExperience > 0;
         const appliedHeaderDesign = experiencePresentation.headerDesign ?? 'none';
         const showAppliedHeaderZone = experienceHeaderDesignIsApplied(
           appliedHeaderDesign,
           experiencePresentation.experienceDesign
         );
         const wrapAppliedExperienceHeader = (node: ReactNode) => (
-          <div className="pf-exp-applied-header relative w-full">{node}</div>
+          <div className="pf-exp-applied-header relative w-full" style={portfolioPaletteCssVars(experienceReadingPalette)}>{node}</div>
         );
+        const experienceHeaderProps = {
+          title: experienceSectionTitle,
+          subtitle: experienceSectionSubtitle || undefined,
+          presentation: experiencePresentation,
+          itemCount: experienceBlocks.length,
+        };
+        // One shared, GSAP-animated header design (Header) mounts above the section.
         let appliedExperienceHeaderZone: ReactNode = null;
         if (showAppliedHeaderZone) {
           switch (appliedHeaderDesign) {
+            case 'marquee':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(<ExperienceHeaderMarqueeHeader {...experienceHeaderProps} />);
+              break;
+            case 'index':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(<ExperienceHeaderIndexHeader {...experienceHeaderProps} />);
+              break;
+            case 'accent-count':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(<ExperienceHeaderAccentCountHeader {...experienceHeaderProps} />);
+              break;
+            case 'serif-lead':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(<ExperienceHeaderSerifLeadHeader {...experienceHeaderProps} />);
+              break;
+            case 'billboard':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(<ExperienceHeaderBillboardHeader {...experienceHeaderProps} />);
+              break;
+            case 'masthead':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(<ExperienceHeaderMastheadHeader {...experienceHeaderProps} />);
+              break;
+            case 'split-heading':
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(<ExperienceHeaderSplitHeadingHeader {...experienceHeaderProps} />);
+              break;
             case 'editorial':
-              appliedExperienceHeaderZone =
-                showExperienceYears || accentYearsHasCustomCopy(experiencePresentation)
-                  ? wrapAppliedExperienceHeader(
-                      <ExperienceEditorialHeader
-                        years={profile.yearsOfExperience ?? 0}
-                        presentation={experiencePresentation}
-                      />
-                    )
-                  : null;
-              break;
-            case 'milestone':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceMilestoneHeader
-                  sectionTitle={experienceSectionTitle}
-                  sectionSubtitle={experienceSectionSubtitle}
-                  years={profile.yearsOfExperience}
-                  presentation={experiencePresentation}
-                />
-              );
-              break;
-            case 'table':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceTableHeader
-                  sectionTitle={experienceSectionTitle}
-                  sectionSubtitle={experienceSectionSubtitle}
-                  years={profile.yearsOfExperience}
-                  presentation={experiencePresentation}
-                />
-              );
-              break;
-            case 'cards':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceCardsHeader
-                  sectionTitle={experienceSectionTitle}
-                  sectionSubtitle={experienceSectionSubtitle}
-                  years={profile.yearsOfExperience}
-                  presentation={experiencePresentation}
-                />
-              );
-              break;
-            case 'reel':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceReelHeader
-                  sectionTitle={experienceSectionTitle}
-                  sectionSubtitle={experienceSectionSubtitle}
-                  presentation={experiencePresentation}
-                />
-              );
-              break;
-            case 'duotone':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceDuotoneHeader
-                  sectionTitle={experienceSectionTitle}
-                  sectionSubtitle={experienceSectionSubtitle}
-                  presentation={experiencePresentation}
-                />
-              );
-              break;
-            case 'gallery':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceGalleryHeader
-                  roleCount={experienceBlocks.length}
-                  presentation={experiencePresentation}
-                />
-              );
-              break;
-            case 'spotlight':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceSpotlightHeader presentation={experiencePresentation} />
-              );
-              break;
-            case 'loft':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceLoftHeader presentation={experiencePresentation} />
-              );
-              break;
-            case 'press':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperiencePressHeader presentation={experiencePresentation} />
-              );
-              break;
-            case 'legacy':
-              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(
-                <ExperienceLegacyHeader presentation={experiencePresentation} />
-              );
+              appliedExperienceHeaderZone = wrapAppliedExperienceHeader(<ExperienceHeaderEditorialHeader {...experienceHeaderProps} />);
               break;
             default:
               appliedExperienceHeaderZone = null;
@@ -2953,6 +3219,57 @@ export function PublicCreatorPortfolioPage({
           '--pf-experience-font-scale': experiencePremiumFontScale(experiencePresentation.premiumFontSize),
         } as CSSProperties;
 
+        if (previewTarget?.section === 'experienceHeader') {
+          return (
+            <div
+              id="experience"
+              className="flex min-h-[480px] w-full items-center justify-center"
+              style={{...experienceFontScaleVars,...portfolioPaletteCssVars(experiencePalette),backgroundColor:experiencePalette.fond}}
+            >
+              <div className={experienceHeaderPreviewStyles.preview} data-experience-header-preview={appliedHeaderDesign} style={{width:'86%'}}>
+                {appliedExperienceHeaderZone}
+              </div>
+            </div>
+          );
+        }
+
+        if (previewTarget?.section === 'experience') {
+          const design = experiencePresentation.experienceDesign;
+          const single = ['kinetic', 'reel', 'duotone', 'legacy', 'cards'].includes(design);
+          const blocks = experienceBlocks.slice(0, single ? 1 : 2).map(block => ({
+            ...block,
+            tasks: block.tasks?.slice(0, 2),
+            tools: block.tools?.slice(0, 2),
+            links: [],
+          }));
+          const props = { blocks, presentation: experiencePresentation, motionProfile };
+          const content = design === 'kinetic' ? <KineticExperienceList {...props} />
+            : design === 'reel' ? <ReelExperienceList {...props} />
+            : design === 'duotone' ? <DuotoneExperienceList {...props} />
+            : design === 'gallery' ? <GalleryExperienceList {...props} />
+            : design === 'loft' ? <LoftExperienceList {...props} />
+            : design === 'press' ? <PressExperienceList {...props} />
+            : design === 'legacy' ? <LegacyExperienceList {...props} />
+            : design === 'milestone' ? <MilestoneExperienceList {...props} />
+            : design === 'table' ? <TableExperienceList {...props} />
+            : design === 'cards' ? <CardsExperienceList {...props} />
+            : <EditorialExperienceList {...props} />;
+          return wrapExperienceLinks(
+            <PortfolioSectionShell
+              id="experience"
+              cssVars={{ '--pf-experience-font-scale': experiencePremiumFontScale(experiencePresentation.premiumFontSize) * (design === 'kinetic' ? 1.2 : 1.55) } as CSSProperties}
+              background={experiencePresentation}
+              fitContent
+              suppressBackground={suppressSectionBackground(experiencePresentation)}
+              topSpacingClass="pt-0"
+              bottomSpacingClass="pb-0"
+            >
+              <div className={`${experienceCatalogueStyles.preview} pf-experience-catalogue-preview flex min-h-[800px] w-full items-center py-10`}>
+                <div className="w-full">{content}</div>
+              </div>
+            </PortfolioSectionShell>
+          );
+        }
         if (experiencePresentation.experienceDesign === 'reel') {
           return wrapExperienceLinks(
             <PortfolioSectionShell
@@ -3168,7 +3485,7 @@ export function PublicCreatorPortfolioPage({
             centered={aboutUsHeaderAlign.centered}
             alignRight={aboutUsHeaderAlign.alignRight}
             alwaysCentered={aboutUsHeaderAlign.alwaysCentered}
-            className={aside ? 'mb-0 w-full' : undefined}
+            className={`${aboutUsContentStyles.header} ${aside ? 'mb-0 w-full' : ''}`}
             titleTypographyClass={aboutUsHeaderTypography.title.className}
             titleTypographyStyle={aboutUsHeaderTypography.title.style}
             titleDecorationStyle={aboutUsHeaderTypography.title.decorationStyle}
@@ -3196,6 +3513,7 @@ export function PublicCreatorPortfolioPage({
         return (
           <PortfolioSectionShell
             id="aboutUs"
+            cssVars={portfolioPaletteCssVars(aboutUsReadingPalette)}
             background={aboutUsPresentation}
             fitContent
             suppressBackground={suppressSectionBackground(aboutUsPresentation)}
@@ -3226,7 +3544,7 @@ export function PublicCreatorPortfolioPage({
         };
         // One shared, GSAP-animated header design (Header) mounts above the section.
         const headerBlock =
-          teamPresentation.headerDesign === 'marquee' ? (
+          teamPresentation.headerDesign === 'none' ? null : teamPresentation.headerDesign === 'marquee' ? (
             <TeamHeaderMarqueeHeader {...teamHeaderProps} />
           ) : teamPresentation.headerDesign === 'index' ? (
             <TeamHeaderIndexHeader {...teamHeaderProps} />
@@ -3261,8 +3579,26 @@ export function PublicCreatorPortfolioPage({
         // General tab "Font size" — one scale read by every member-facing text size across the
         // ten Team designs via `--pf-team-font-scale`.
         const teamFontScaleVars: CSSProperties = {
+          ...portfolioPaletteCssVars(teamReadingPalette),
           '--pf-team-font-scale': teamPremiumFontScale(teamPresentation.premiumFontSize),
         } as CSSProperties;
+        if (previewTarget?.section === 'teamHeader') {
+          return (
+            <div
+              id="team"
+              className="flex min-h-[480px] w-full items-center justify-center"
+              style={{...teamFontScaleVars,backgroundColor:teamReadingPalette.fond}}
+            >
+              <div
+                className={teamHeaderPreviewStyles.preview}
+                data-team-header-preview={teamPresentation.headerDesign}
+                style={{width:'86%'}}
+              >
+                {headerBlock}
+              </div>
+            </div>
+          );
+        }
         return (
           <PortfolioSectionShell
             id="team"
@@ -3297,7 +3633,7 @@ export function PublicCreatorPortfolioPage({
         };
         // One shared, GSAP-animated header design (Header) mounts above the section.
         const headerBlock =
-          gallerySectionTitle || gallerySectionSubtitle ? (
+          galleryPresentation.headerDesign === 'none' ? null : gallerySectionTitle || gallerySectionSubtitle ? (
             galleryPresentation.headerDesign === 'marquee' ? (
               <GalleryHeaderMarqueeHeader {...galleryHeaderProps} />
             ) : galleryPresentation.headerDesign === 'index' ? (
@@ -3333,8 +3669,26 @@ export function PublicCreatorPortfolioPage({
         // General tab "Font size" — one scale read by `.pf-gallery-media-title*` and the
         // lightbox caption via `--pf-gallery-font-scale` (see globals.css).
         const galleryFontScaleVars: CSSProperties = {
+          ...portfolioPaletteCssVars(galleryReadingPalette),
           '--pf-gallery-font-scale': galleryPremiumFontScale(galleryPresentation.premiumFontSize),
         } as CSSProperties;
+        if (previewTarget?.section === 'galleryHeader') {
+          return (
+            <div
+              id="gallery"
+              className="flex min-h-[480px] w-full items-center justify-center"
+              style={{...galleryFontScaleVars,backgroundColor:galleryReadingPalette.fond}}
+            >
+              <div
+                className={galleryHeaderPreviewStyles.preview}
+                data-gallery-header-preview={galleryPresentation.headerDesign}
+                style={{width:'86%'}}
+              >
+                {headerBlock}
+              </div>
+            </div>
+          );
+        }
         return (
           <PortfolioSectionShell
             id="gallery"
@@ -3359,10 +3713,10 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'faq': {
+        const faqPalette = faqReadingPalette;
         // These designs own their layout: a persisted aside setting must not select the generic list.
         const faqAside = faqPresentation.design !== 'editorial-masonry' &&
           faqPresentation.design !== 'prism-cards' &&
-          faqPresentation.design !== 'star-scroll' &&
           faqPresentation.design !== 'tri-grid' &&
           faqPresentation.design !== 'split-index' &&
           faqPresentation.design !== 'centered-focus' &&
@@ -3375,7 +3729,6 @@ export function PublicCreatorPortfolioPage({
         const faqFloatingGallery = faqPresentation.design === 'floating-gallery';
         const faqMasonry = faqPresentation.design === 'editorial-masonry';
         const faqPrismCards = faqPresentation.design === 'prism-cards';
-        const faqStarScroll = faqPresentation.design === 'star-scroll';
         const faqTriGrid = faqPresentation.design === 'tri-grid';
         const faqSplitIndex = faqPresentation.design === 'split-index';
         const faqCenteredFocus = faqPresentation.design === 'centered-focus';
@@ -3385,7 +3738,6 @@ export function PublicCreatorPortfolioPage({
           faqFloatingGallery ||
           faqMasonry ||
           faqPrismCards ||
-          faqStarScroll ||
           faqTriGrid ||
           faqSplitIndex ||
           faqCenteredFocus ||
@@ -3399,13 +3751,13 @@ export function PublicCreatorPortfolioPage({
         // purpose-built ones — 'signal' | 'query' | 'dialogue' (see
         // faq-header-tab-3-new-designs memory).
         const faqHeaderProps = {
-          title: faqSectionTitle,
-          subtitle: faqSectionSubtitle || undefined,
+          title: previewTarget?.section === 'faqHeader' ? t('Your questions, our answers.') : faqSectionTitle,
+          subtitle: previewTarget?.section === 'faqHeader' ? t('The essentials for moving forward together.') : faqSectionSubtitle || undefined,
           presentation: faqPresentation,
           itemCount: faqItems.length,
         };
         const faqHeaderBlock =
-          faqPresentation.headerDesign === 'marquee' ? (
+          faqPresentation.headerDesign === 'none' ? null : faqPresentation.headerDesign === 'marquee' ? (
             <FaqHeaderMarqueeHeader {...faqHeaderProps} />
           ) : faqPresentation.headerDesign === 'index' ? (
             <FaqHeaderIndexHeader {...faqHeaderProps} />
@@ -3428,6 +3780,22 @@ export function PublicCreatorPortfolioPage({
           ) : (
             <FaqHeaderEditorialHeader {...faqHeaderProps} />
           );
+        // Header placement. A design renders the header itself only when the creator's position is its native
+        // one (Kinetic split: left, the others: top); any other position puts the header outside it.
+        const faqHeaderPosition = resolveFaqHeaderPosition(faqPresentation.headerPosition, faqPresentation.design);
+        const faqHeaderExternal =
+          Boolean(faqHeaderBlock) &&
+          faqBespokeDesign &&
+          !faqAside &&
+          faqHeaderPosition !== (faqKinetic ? 'left' : 'top');
+        const faqDesignHeader = faqHeaderExternal ? undefined : faqHeaderBlock;
+        if (previewTarget?.section === 'faqHeader') {
+          return (
+            <div id="faq" className="flex min-h-[480px] w-full items-center justify-center" style={{...portfolioPaletteCssVars(faqPalette),backgroundColor:faqPalette.fond}}>
+              <div className={faqHeaderPreviewStyles.preview} data-faq-header-preview={faqPresentation.headerDesign} style={{width:'86%'}}>{faqHeaderBlock}</div>
+            </div>
+          );
+        }
         const faqListBlock = (
           <div
             className={
@@ -3448,10 +3816,49 @@ export function PublicCreatorPortfolioPage({
           </div>
         );
 
+        if (previewTarget?.section === 'faq') {
+          const previewItems = faqItems.slice(0, faqKinetic ? 3 : 4);
+          const previewProps = { items: previewItems, header: faqHeaderBlock, fontSizeScale: faqFontSizeScale * 1.1, activeColorMode: faqActiveColorMode };
+          const previewContent = faqKinetic ? <FaqKineticSplitDesign {...previewProps} />
+            : faqFloatingGallery ? <FaqFloatingGalleryDesign {...previewProps} />
+            : faqMasonry ? <FaqEditorialMasonryDesign {...previewProps} />
+            : faqPrismCards ? <FaqPrismCardsDesign {...previewProps} />
+            : faqTriGrid ? <FaqTriGridDesign {...previewProps} />
+            : faqSplitIndex ? <FaqSplitIndexDesign {...previewProps} />
+            : faqCenteredFocus ? <FaqCenteredFocusDesign {...previewProps} />
+            : faqBentoDual ? <FaqBentoDualDesign {...previewProps}
+                cardColor={faqPalette[faqPresentation.bentoDualCardColorToken]}
+                cardRadius={faqPresentation.bentoDualCardRadius}
+                cardBorder={faqPresentation.bentoDualCardBorder}
+                cardOpacity={faqPresentation.bentoDualCardOpacity}
+                cardsStyle={faqPresentation.cardsStyle}
+                palette={faqPalette}
+              /> : faqListBlock;
+          return (
+            <PortfolioSectionShell
+              id="faq"
+              background={faqPresentation}
+              cssVars={portfolioPaletteCssVars(faqReadingPalette)}
+              fitContent
+              suppressBackground={suppressSectionBackground(faqPresentation)}
+              topSpacingClass="pt-0"
+              bottomSpacingClass="pb-0"
+            >
+              <div className="flex min-h-[640px] w-full items-center justify-center overflow-hidden">
+                <div className="w-full">
+                  <FaqDesignFrame frame={faqDesignAllowsFrame(faqPresentation.design) ? faqPresentation.designFrame : { ...faqPresentation.designFrame, enabled: false }} textColors={faqTextColorVars(faqPresentation)} marker={faqPresentation.questionMarker ?? 'auto'}>
+                    {previewContent}
+                  </FaqDesignFrame>
+                </div>
+              </div>
+            </PortfolioSectionShell>
+          );
+        }
         return (
           <PortfolioSectionShell
             id="faq"
             background={faqPresentation}
+            cssVars={portfolioPaletteCssVars(faqReadingPalette)}
             fitContent
             suppressBackground={suppressSectionBackground(faqPresentation)}
             topSpacingClass={sectionTopSpacingClass}
@@ -3460,7 +3867,8 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingStyle={sectionBottomSpacingStyle}
             header={faqAside || faqBespokeDesign ? undefined : faqHeaderBlock}
           >
-            <FaqDesignFrame frame={faqPresentation.designFrame} textColors={faqTextColorVars(faqPresentation)}>
+            <FaqDesignFrame frame={faqDesignAllowsFrame(faqPresentation.design) ? faqPresentation.designFrame : { ...faqPresentation.designFrame, enabled: false }} textColors={faqTextColorVars(faqPresentation)} marker={faqPresentation.questionMarker ?? 'auto'}>
+            <FaqHeaderPlacement position={faqHeaderExternal ? faqHeaderPosition : null} header={faqHeaderBlock}>
             {faqAside ? (
               <SectionAsideContent
                 layout={faqPresentation.sectionLayout ?? 'aside-left'}
@@ -3469,60 +3877,56 @@ export function PublicCreatorPortfolioPage({
                 {faqListBlock}
               </SectionAsideContent>
             ) : faqKinetic ? (
-              <FaqKineticSplitDesign items={faqItems} header={faqHeaderBlock} fontSizeScale={faqFontSizeScale} />
+              <FaqKineticSplitDesign items={faqItems} header={faqDesignHeader} fontSizeScale={faqFontSizeScale} />
             ) : faqFloatingGallery ? (
-              <FaqFloatingGalleryDesign items={faqItems} header={faqHeaderBlock} fontSizeScale={faqFontSizeScale} />
+              <FaqFloatingGalleryDesign items={faqItems} header={faqDesignHeader} fontSizeScale={faqFontSizeScale} />
             ) : faqMasonry ? (
-              <FaqEditorialMasonryDesign items={faqItems} header={faqHeaderBlock} fontSizeScale={faqFontSizeScale} />
+              <FaqEditorialMasonryDesign items={faqItems} header={faqDesignHeader} fontSizeScale={faqFontSizeScale} />
             ) : faqPrismCards ? (
               <FaqPrismCardsDesign
                 items={faqItems}
-                header={faqHeaderBlock}
-                activeColorMode={faqActiveColorMode}
-                fontSizeScale={faqFontSizeScale}
-              />
-            ) : faqStarScroll ? (
-              <FaqStarScrollDesign
-                items={faqItems}
-                header={faqHeaderBlock}
+                header={faqDesignHeader}
                 activeColorMode={faqActiveColorMode}
                 fontSizeScale={faqFontSizeScale}
               />
             ) : faqTriGrid ? (
               <FaqTriGridDesign
                 items={faqItems}
-                header={faqHeaderBlock}
+                header={faqDesignHeader}
                 activeColorMode={faqActiveColorMode}
                 fontSizeScale={faqFontSizeScale}
               />
             ) : faqSplitIndex ? (
               <FaqSplitIndexDesign
                 items={faqItems}
-                header={faqHeaderBlock}
+                header={faqDesignHeader}
                 activeColorMode={faqActiveColorMode}
                 fontSizeScale={faqFontSizeScale}
               />
             ) : faqCenteredFocus ? (
               <FaqCenteredFocusDesign
                 items={faqItems}
-                header={faqHeaderBlock}
+                header={faqDesignHeader}
                 activeColorMode={faqActiveColorMode}
                 fontSizeScale={faqFontSizeScale}
               />
             ) : faqBentoDual ? (
               <FaqBentoDualDesign
                 items={faqItems}
-                header={faqHeaderBlock}
+                header={faqDesignHeader}
                 activeColorMode={faqActiveColorMode}
                 fontSizeScale={faqFontSizeScale}
                 cardColor={faqPalette[faqPresentation.bentoDualCardColorToken]}
                 cardRadius={faqPresentation.bentoDualCardRadius}
                 cardBorder={faqPresentation.bentoDualCardBorder}
                 cardOpacity={faqPresentation.bentoDualCardOpacity}
+                cardsStyle={faqPresentation.cardsStyle}
+                palette={faqPalette}
               />
             ) : (
               faqListBlock
             )}
+            </FaqHeaderPlacement>
             </FaqDesignFrame>
           </PortfolioSectionShell>
         );
@@ -3530,25 +3934,28 @@ export function PublicCreatorPortfolioPage({
       case 'contact':
         return (
           <EditorialContactSection
+            pageNavigation={isDesignPreview || isPagesMode}
+            previewFontScale={isDesignPreview ? 1.1 : 1}
             creatorId={creatorId}
             email={resolvedContactEmail || null}
             phone={profile.phone}
             locationLabel={locationLabel}
-            links={uniqueContactLinks}
+            links={isDesignPreview ? uniqueContactLinks.slice(0, 3) : uniqueContactLinks}
             ctaHref={contactCtaHref}
             responseTimeLabel={profile.responseTimeLabel}
             heroImageUrl={profile.avatarUrl}
             heroImageAlt={profile.fullName}
             contentGutter={settings.global.contentGutter}
-            globalColorMode={settings.global.colorMode ?? 'dark'}
+            globalColorMode={contactPresentation.activeColorMode}
+            paletteCssVars={portfolioPaletteCssVars(contactReadingPalette)}
             sectionTitle={contactSectionTitle}
             sectionSubtitle={contactSectionSubtitle || undefined}
             presentation={contactPresentation}
             motionProfile={motionProfile}
-            topSpacingClass={sectionTopSpacingClass}
-            topSpacingStyle={sectionTopSpacingStyle}
-            bottomSpacingClass={sectionBottomSpacingClass}
-            bottomSpacingStyle={sectionBottomSpacingStyle}
+            topSpacingClass={isDesignPreview ? 'pt-0' : sectionTopSpacingClass}
+            topSpacingStyle={isDesignPreview ? undefined : sectionTopSpacingStyle}
+            bottomSpacingClass={isDesignPreview ? 'pb-0' : sectionBottomSpacingClass}
+            bottomSpacingStyle={isDesignPreview ? undefined : sectionBottomSpacingStyle}
             titleTypographyClass={contactHeaderTypography.title.className}
             titleTypographyStyle={contactHeaderTypography.title.style}
             subtitleTypographyClass={contactHeaderTypography.subtitle.className}
@@ -3588,8 +3995,11 @@ export function PublicCreatorPortfolioPage({
           itemCount: stackItems.length,
         };
         // One shared, GSAP-animated header design (Header) mounts above the section.
-        const headerBlock = (
-          <div className={stackAside ? 'w-full' : undefined}>
+        const headerBlock = stackPresentation.headerDesign === 'none' ? null : (
+          <div
+            className={stackAside ? 'w-full' : undefined}
+            style={portfolioPaletteCssVars(stackReadingPalette)}
+          >
             {stackPresentation.headerDesign === 'marquee' ? (
               <StackHeaderMarqueeHeader {...stackHeaderProps} />
             ) : stackPresentation.headerDesign === 'index' ? (
@@ -3609,7 +4019,41 @@ export function PublicCreatorPortfolioPage({
             )}
           </div>
         );
-        const stackGallery = <EditorialStackGallery items={stackItems} presentation={stackPresentation} />;
+        const stackGallery = <SectionContentTextScale size={settings.stack.textSize}><EditorialStackGallery items={stackItems} presentation={stackPresentation} /></SectionContentTextScale>;
+        if (previewTarget?.section === 'stackHeader') {
+          return (
+            <div id="stack" className="flex min-h-[480px] w-full items-center justify-center" style={{ ...portfolioPaletteCssVars(stackPalette), backgroundColor: stackPalette.fond }}>
+              <div className={stackHeaderPreviewStyles.preview} data-stack-header-preview={stackPresentation.headerDesign} style={{ width: '86%' }}>{headerBlock}</div>
+            </div>
+          );
+        }
+        if (previewTarget?.section === 'stack') {
+          const design = stackPresentation.design;
+          const indexPreview = design === 'brand-index';
+          const rows = ['brand-index', 'level-progress-rows', 'level-category-rows', 'level-table-rows', 'level-star-cards'].includes(design);
+          const count = design === 'workflow-rail' ? 5 : design === 'stack-tags' || design === 'level-bento-categories' ? 6 : indexPreview ? 2 : rows ? 3 : 4;
+          const items = stackItems.slice(0, count).map(item => indexPreview
+            ? typeof item === 'string'
+              ? { name: item, description: t('Development and integration') }
+              : { ...item, description: item.description?.trim() || item.useCases?.slice(0, 2).join(' · ') || t('Development and integration') }
+            : item);
+          return (
+            <PortfolioSectionShell
+              id="stack"
+              background={stackPresentation}
+              fitContent
+              suppressBackground={suppressSectionBackground(stackPresentation)}
+              topSpacingClass="pt-0"
+              bottomSpacingClass="pb-0"
+            >
+              <div className="flex min-h-[426px] w-full items-center py-4">
+                <div className={`${stackCatalogueStyles.preview} w-full [&_.pf-stack-brand-index-name]:!text-[2.75rem] [&_.pf-stack-brand-index-description]:!text-[1.5rem] [&_.pf-stack-brand-index-description]:!leading-relaxed`}>
+                  <EditorialStackGallery items={items} presentation={{ ...stackPresentation, sectionLayout: 'stacked', showDescription: indexPreview, showCategory: indexPreview ? false : stackPresentation.showCategory, showUseCases: false }} />
+                </div>
+              </div>
+            </PortfolioSectionShell>
+          );
+        }
         return (
           <PortfolioSectionShell
             id="stack"
@@ -3621,6 +4065,7 @@ export function PublicCreatorPortfolioPage({
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
             header={stackAside ? undefined : headerBlock}
+            cssVars={portfolioPaletteCssVars(stackReadingPalette)}
           >
             {stackAside ? (
               <SectionAsideContent
@@ -3638,6 +4083,7 @@ export function PublicCreatorPortfolioPage({
         );
       }
       case 'tools': {
+        const toolsAside = toolsPresentation.sectionLayout === 'aside-left' || toolsPresentation.sectionLayout === 'aside-right';
         const toolsHeaderProps = {
           title: toolsSectionTitle,
           subtitle: toolsSectionSubtitle || undefined,
@@ -3645,8 +4091,8 @@ export function PublicCreatorPortfolioPage({
           itemCount: strengths.length,
         };
         // One shared, GSAP-animated header design (Header) mounts above the section.
-        const headerBlock =
-          toolsPresentation.headerDesign === 'marquee' ? (
+        const toolsHeaderContent =
+          toolsPresentation.headerDesign === 'none' ? null : toolsPresentation.headerDesign === 'marquee' ? (
             <ToolsHeaderMarqueeHeader {...toolsHeaderProps} />
           ) : toolsPresentation.headerDesign === 'index' ? (
             <ToolsHeaderIndexHeader {...toolsHeaderProps} />
@@ -3663,6 +4109,42 @@ export function PublicCreatorPortfolioPage({
           ) : (
             <ToolsHeaderEditorialHeader {...toolsHeaderProps} />
           );
+        const headerBlock = toolsHeaderContent ? (
+          <div style={portfolioPaletteCssVars(toolsReadingPalette)}>{toolsHeaderContent}</div>
+        ) : null;
+        if (previewTarget?.section === 'toolsHeader') {
+          return (
+            <div id="tools" className="flex min-h-[480px] w-full items-center justify-center" style={{...portfolioPaletteCssVars(toolsPalette),backgroundColor:toolsPalette.fond}}>
+              <div className={toolsHeaderPreviewStyles.preview} data-tools-header-preview={toolsPresentation.headerDesign} style={{width:'86%'}}>{headerBlock}</div>
+            </div>
+          );
+        }
+        if (previewTarget?.section === 'tools') {
+          const indexPreview = toolsPresentation.design === 'brand-index';
+          const rows = ['brand-directory', 'brand-index', 'level-progress-rows', 'level-category-rows', 'level-table-rows', 'level-star-cards'].includes(toolsPresentation.design);
+          const count = toolsPresentation.design === 'workflow-rail' ? 5 : indexPreview ? 2 : rows ? 3 : 4;
+          const previewTools = strengths.slice(0, count).map(tool => indexPreview
+            ? typeof tool === 'string'
+              ? { name: tool, description: t('Design and creation') }
+              : { ...tool, description: tool.description?.trim() || tool.useCases?.slice(0, 2).join(' · ') || t('Design and creation') }
+            : tool);
+          return (
+            <PortfolioSectionShell
+              id="tools"
+              background={toolsPresentation}
+              fitContent
+              suppressBackground={suppressSectionBackground(toolsPresentation)}
+              topSpacingClass="pt-0"
+              bottomSpacingClass="pb-0"
+            >
+              <div className="flex min-h-[426px] w-full items-center py-4">
+                <div className={`${toolsCatalogueStyles.preview} w-full [&_.pf-stack-brand-index-name]:!text-[2.75rem] [&_.pf-stack-brand-index-description]:!text-[1.5rem] [&_.pf-stack-brand-index-description]:!leading-relaxed`}>
+                  <EditorialToolsGallery tools={previewTools} presentation={{ ...toolsPresentation, showDescription: indexPreview, showCategory: indexPreview ? false : toolsPresentation.showCategory, showUseCases: false }} />
+                </div>
+              </div>
+            </PortfolioSectionShell>
+          );
+        }
         return (
           <PortfolioSectionShell
             id="tools"
@@ -3673,9 +4155,14 @@ export function PublicCreatorPortfolioPage({
             topSpacingStyle={sectionTopSpacingStyle}
             bottomSpacingClass={sectionBottomSpacingClass}
             bottomSpacingStyle={sectionBottomSpacingStyle}
-            header={headerBlock}
+            header={toolsAside ? undefined : headerBlock}
+            cssVars={portfolioPaletteCssVars(toolsReadingPalette)}
           >
-            <EditorialToolsGallery tools={strengths} presentation={toolsPresentation} />
+            {toolsAside ? <SectionAsideContent layout={toolsPresentation.sectionLayout ?? 'aside-left'} header={headerBlock} centerHeader={(toolsPresentation.asideTitlePlacement ?? 'center') === 'center'} stickyHeader={toolsPresentation.asideTitleSticky !== false}>
+              <SectionContentTextScale size={settings.tools.textSize}>
+              <EditorialToolsGallery tools={strengths} presentation={{ ...toolsPresentation, levelProgressColumnsPerRow: 1, brandCardsColumnsPerRow: ['level-circular-cards', 'level-star-cards', 'level-svg-rings'].includes(toolsPresentation.design) ? 2 : 1, brandRowColumnsPerRow: 1 }} />
+              </SectionContentTextScale>
+            </SectionAsideContent> : <SectionContentTextScale size={settings.tools.textSize}><EditorialToolsGallery tools={strengths} presentation={toolsPresentation} /></SectionContentTextScale>}
           </PortfolioSectionShell>
         );
       }
@@ -3690,7 +4177,7 @@ export function PublicCreatorPortfolioPage({
       <PortfolioCaseOverlayNav
         items={navBarItems}
         visible={panelNavVisible}
-        settings={settings.navigation}
+        settings={pageNavigationSettings}
         activeId={isPagesMode ? activePageId : undefined}
         onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
         brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
@@ -3704,7 +4191,7 @@ export function PublicCreatorPortfolioPage({
       <PortfolioDutenPanelNav
         items={navBarItems}
         visible={panelNavVisible}
-        settings={settings.navigation}
+        settings={pageNavigationSettings}
         activeId={isPagesMode ? activePageId : undefined}
         onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
         avatarUrl={profile.avatarUrl}
@@ -3720,7 +4207,7 @@ export function PublicCreatorPortfolioPage({
       <PortfolioHalfPanelNav
         items={navBarItems}
         visible={panelNavVisible}
-        settings={settings.navigation}
+        settings={pageNavigationSettings}
         activeId={isPagesMode ? activePageId : undefined}
         onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
         avatarUrl={profile.avatarUrl}
@@ -3736,7 +4223,7 @@ export function PublicCreatorPortfolioPage({
       <>
         <PortfolioFloatingNav
           items={navBarItems}
-          settings={settings.navigation}
+          settings={pageNavigationSettings}
           activeId={isPagesMode ? activePageId : undefined}
           onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
           chromeLinks={navChromeLinks}
@@ -3796,46 +4283,7 @@ export function PublicCreatorPortfolioPage({
   /** Footer header block + Footer + Mini bar — shared by both layouts and the design preview.
    *  The design preview leaves the header block out: it has its own design setting, so it would
    *  only repeat the same block on top of every card. */
-  const footerStack = (
-    <div className="mt-auto w-full shrink-0">
-      {isFooterPreview ? null : (
-        <div
-          className={`w-full pf-footer-shell-x ${editorialShellClass}`}
-          style={footerHeaderBackgroundStyle}
-        >
-          {footerHeaderBlock}
-        </div>
-      )}
-      <PortfolioFooterWithVisits
-        creatorName={profile.fullName}
-        creatorId={creatorId}
-        avatarUrl={profile.avatarUrl}
-        bio={profile.bio}
-        email={resolvedContactEmail || null}
-        phone={profile.phone}
-        locationLabel={locationLabel}
-        hoursLabel={availabilityDisplay}
-        initialVisits={profile.profileVisits ?? 0}
-        links={uniqueContactLinks}
-        contentClassName={contentShellClass}
-        presentation={footerPresentation}
-        transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
-        isAvailable={profile.isAvailable}
-        responseTimeLabel={profile.responseTimeLabel}
-        contactHref={
-          resolvedContactEmail
-            ? `mailto:${resolvedContactEmail}`
-            : heroContactHref
-        }
-        motionProfile={motionProfile}
-        bottomClearanceClass={footerNavClearanceClass}
-        sectionLinkOptions={footerSectionLinkOptions}
-                sectionPalette={footerPalette}
-        globalColorMode={footerColorMode}
-        timezoneId={profile.timezoneId}
-        contentGutter={settings.global.contentGutter}
-      />
-      {footerPresentation.showMiniBar ? (
+  const footerMiniBar = isPagesMode || footerPresentation.showMiniBar ? (
         <PortfolioFooterMiniBar
           design={footerPresentation.miniBarDesign}
           creatorName={profile.fullName}
@@ -3851,15 +4299,62 @@ export function PublicCreatorPortfolioPage({
           creditLabel={footerPresentation.invertedWordmarkCredit}
           backgroundStyle={footerMiniBarBackgroundStyle}
         />
-      ) : null}
+  ) : null;
+
+  const footerStack = (
+    <div
+      className={isFooterPreview ? 'flex min-h-[640px] w-full flex-col justify-center' : 'mt-auto w-full shrink-0'}
+      style={isFooterPreview ? { backgroundColor: footerPalette.fond, ...sectionBackgroundStyle(footerPresentation) } : undefined}
+    >
+      {isFooterPreview ? null : (
+        <div
+          className={`w-full ${contentShellClass}`}
+          style={{
+            ...portfolioPaletteCssVars(footerHeaderReadingPalette),
+            ...footerHeaderBackgroundStyle,
+          }}
+        >
+          {footerHeaderBlock}
+        </div>
+      )}
+      <PortfolioFooterWithVisits
+        creatorName={profile.fullName}
+        creatorId={creatorId}
+        avatarUrl={profile.avatarUrl}
+        bio={isFooterPreview ? (profile.bio ?? '').slice(0, 120) : profile.bio}
+        email={resolvedContactEmail || null}
+        phone={profile.phone}
+        locationLabel={locationLabel}
+        hoursLabel={availabilityDisplay}
+        initialVisits={profile.profileVisits ?? 0}
+        links={isFooterPreview ? uniqueContactLinks.slice(0, 4) : uniqueContactLinks}
+        contentClassName={contentShellClass}
+        presentation={footerPresentation}
+        transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
+        isAvailable={profile.isAvailable}
+        responseTimeLabel={profile.responseTimeLabel}
+        contactHref={
+          resolvedContactEmail
+            ? `mailto:${resolvedContactEmail}`
+            : heroContactHref
+        }
+        motionProfile={motionProfile}
+        bottomClearanceClass={footerNavClearanceClass}
+        sectionLinkOptions={isFooterPreview ? footerSectionLinkOptions.slice(0, 4) : footerSectionLinkOptions}
+                sectionPalette={footerPalette}
+        globalColorMode={footerColorMode}
+        timezoneId={profile.timezoneId}
+        contentGutter={settings.global.contentGutter}
+      />
+      {!isFooterPreview && (!isPagesMode || isDesignPreview) ? footerMiniBar : null}
     </div>
   );
 
   if (isDesignPreview) {
     return (
-      <PortfolioMotionOffContext.Provider value={!motionEnabled}>
-        <PortfolioHeaderMotionOffContext.Provider value={settings.global.headerMotionEnabled === false}>
-          <PortfolioMotionProvider key={motionEnabled ? 'motion-on' : 'motion-off'} timing={settings.global.motionTiming}>
+      <PortfolioMotionOffContext.Provider value={true}>
+        <PortfolioHeaderMotionOffContext.Provider value={true}>
+          <PortfolioMotionProvider timing={settings.global.motionTiming}>
             <PortfolioThemeRoot
               themeId={settings.themeId}
               customThemes={settings.customThemes}
@@ -3869,9 +4364,41 @@ export function PublicCreatorPortfolioPage({
               fixedBackgroundStyle={globalFixedBgStyle}
               suppressDefaultBackground={hasGlobalBg}
             >
+              <style>{`
+                /* Catalogue iframes never scroll. The public page's stable scrollbar gutter
+                   otherwise leaves a strip of the GLOBAL canvas beside a section-local theme. */
+                html[data-portfolio-color-mode] {
+                  scrollbar-gutter: auto !important;
+                  scrollbar-width: none !important;
+                  overflow: hidden !important;
+                }
+                html[data-portfolio-color-mode] body {
+                  overflow: hidden !important;
+                }
+                html::-webkit-scrollbar, body::-webkit-scrollbar {
+                  display: none !important;
+                  width: 0 !important;
+                  height: 0 !important;
+                }
+              `}</style>
               <div data-design-preview-root className="flex w-full flex-col">
                 {previewTarget.section === 'footer' ? (
                   footerStack
+                ) : previewTarget.section === 'contact' ? (
+                  <main className="flex min-h-[640px] w-full items-center" style={{ backgroundColor: contactPalette.fond, ...sectionBackgroundStyle(contactPresentation) }}>
+                    <div className="w-full">{renderContentSection('contact')}</div>
+                  </main>
+                ) : previewTarget.section === 'footerHeader' ? (
+                  <div
+                    className="flex min-h-[480px] w-full items-center justify-center"
+                    style={{
+                      ...portfolioPaletteCssVars(footerHeaderReadingPalette),
+                      backgroundColor:footerHeaderReadingPalette.fond,
+                      ...footerHeaderBackgroundStyle,
+                    }}
+                  >
+                    <div className={footerHeaderPreviewStyles.preview} data-footer-header-preview={footerPresentation.headerDesign} style={{width:'86%'}}>{footerHeaderBlock}</div>
+                  </div>
                 ) : previewTarget.section === 'hero' ? (
                   heroElement
                 ) : previewTarget.section === 'navigation' ? (
@@ -3879,6 +4406,24 @@ export function PublicCreatorPortfolioPage({
                   <div className="relative" style={{ height: navPreviewBandHeight }}>
                     {navElement}
                   </div>
+                ) : previewTarget.section === 'galleryHeader' ? (
+                  <main className="w-full">{renderContentSection('gallery')}</main>
+                ) : previewTarget.section === 'teamHeader' ? (
+                  <main className="w-full">{renderContentSection('team')}</main>
+                ) : previewTarget.section === 'experienceHeader' ? (
+                  <main className="w-full">{renderContentSection('experience')}</main>
+                ) : previewTarget.section === 'servicesHeader' ? (
+                  <main className="w-full">{renderContentSection('services')}</main>
+                ) : previewTarget.section === 'faqHeader' ? (
+                  <main className="w-full">{renderContentSection('faq')}</main>
+                ) : previewTarget.section === 'infoHeader' ? (
+                  <main className="w-full">{renderContentSection('info')}</main>
+                ) : previewTarget.section === 'workHeader' ? (
+                  <main className="w-full">{renderContentSection('work')}</main>
+                ) : previewTarget.section === 'stackHeader' ? (
+                  <main className="w-full">{renderContentSection('stack')}</main>
+                ) : previewTarget.section === 'toolsHeader' ? (
+                  <main className="w-full">{renderContentSection('tools')}</main>
                 ) : (
                   <main className={`w-full ${contentShellClass}`}>{renderContentSection(previewTarget.section)}</main>
                 )}
@@ -3926,27 +4471,28 @@ export function PublicCreatorPortfolioPage({
       }
     >
       <CreatorProfileViewTracker creatorId={creatorId} onVisitRecorded={onVisitRecorded} />
+      <PortfolioSmoothScroll enabled={!isDesignPreview&&settings.global.smoothScrollEnabled===true&&motionEnabled} softness={settings.global.smoothScrollSoftness??50} wheelSpeed={settings.global.smoothScrollWheelSpeed??100} pages={isPagesMode}/>
       {navElement}
 
       {isPagesMode ? (
         <div className="relative flex h-[100dvh] flex-col overflow-hidden">
+          <div className="min-h-0 flex-1">
           <PortfolioPagesSlideViewport pageId={activePageId} direction={pageSlideDirection}>
+            <div className="flex min-h-full w-full flex-col">
+            <div className="flex-1">
             {settings.hero.enabled && activePageId === 'hero' ? heroElement : null}
 
             {contentSectionOrder.map((sectionKey) => {
-              if (!sectionVisibility[sectionKey]) return null;
+              if (!sectionVisibility[sectionKey] && !(sectionKey === 'contact' && settings.footer.enabled)) return null;
               if (activePageId !== sectionKey) return null;
               const showFooter = shouldShowFooterOnPage(sectionKey);
               return (
                 <div
                   key={sectionKey}
-                  className="flex min-h-full w-full flex-col overflow-x-clip"
-                  style={{ minHeight: '100%' }}
+                  className="flex w-full flex-col overflow-x-clip"
                 >
                   <main
-                    className={`flex w-full flex-1 grow flex-col ${contentShellClass} ${
-                      showFooter ? 'pb-0' : 'pb-24 sm:pb-28'
-                    }`}
+                    className={`flex w-full flex-col ${contentShellClass}`}
                   >
                     {renderContentSection(sectionKey)}
                   </main>
@@ -3954,7 +4500,13 @@ export function PublicCreatorPortfolioPage({
                 </div>
               );
             })}
+            </div>
+          <div className="w-full shrink-0" data-pf-pages-mini-bar="">
+            {footerMiniBar}
+          </div>
+            </div>
           </PortfolioPagesSlideViewport>
+          </div>
         </div>
       ) : (
         <div className="flex min-h-[100dvh] min-h-screen max-w-full flex-col overflow-x-clip">
@@ -3970,7 +4522,12 @@ export function PublicCreatorPortfolioPage({
             ))}
           </main>
 
-          {settings.footer.enabled ? footerStack : null}
+          {settings.footer.enabled ? (
+            <>
+              {!sectionVisibility.contact ? <span id="contact" aria-hidden="true" className="block scroll-mt-24" /> : null}
+              {footerStack}
+            </>
+          ) : null}
         </div>
       )}
     </PortfolioThemeRoot>

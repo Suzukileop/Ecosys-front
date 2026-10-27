@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -75,7 +76,10 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
   const imageBw = data.presentation.heroImageGrayscale === true;
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
-  const titleLines = useMemo(() => splitExperienceTitle(displayName), [displayName]);
+  const titleLines = useMemo(() => {
+    const original=splitExperienceTitle(displayName);
+    return data.presentation.heroGreetingOverrides?.[data.presentation.heroBannerDesign]?.trim()?resolveHeroGreeting(data.presentation,original.join('\n'),displayName,data.specialite??'').split('\n'):original;
+  }, [displayName,data.presentation,data.specialite]);
   const specialty = resolveHeroSpecialtyValue(data.specialite);
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
@@ -345,7 +349,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
       <aside
         className={`pf-exp-split-east relative flex min-w-0 flex-col items-start ${asideTop} ${className}`.trim()}
       >
-        {showAvailability ? <div className="pf-exp-split-cascade inline-flex min-h-9 items-center gap-2.5 rounded-full border px-3.5 py-2" style={{ borderColor: frameColor, backgroundColor: `color-mix(in srgb, ${neutre} 68%, transparent)` }}>
+        {showAvailability ? <div data-hero-availability className="pf-exp-split-cascade inline-flex min-h-9 items-center gap-2.5 rounded-full border px-3.5 py-2" style={{ borderColor: frameColor, backgroundColor: `color-mix(in srgb, ${neutre} 68%, transparent)` }}>
           <span className="relative flex size-2" aria-hidden>
             <span className="absolute inline-flex size-full animate-ping rounded-full opacity-30" style={{ backgroundColor: principal }} />
             <span className="relative inline-flex size-2 rounded-full" style={{ backgroundColor: principal }} />
@@ -374,7 +378,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
             {t('Years of experience')}
           </p>
         </div>
-        <p
+        <p data-hero-bio
           className="pf-exp-split-cascade pf-exp-split-bio mb-0 ml-0 mr-0 max-w-[23rem] border-l font-sans font-normal tracking-[-0.01em]"
           style={{ color: muted, borderColor: frameColor, fontSize: bioSize, lineHeight: 1.6, marginTop: bioMt, paddingLeft: '1.25rem' }}
         >
@@ -442,19 +446,25 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
         {showPrimaryCta ? <a
             href={primaryHref}
             onClick={onNavClick(primaryHref)}
-            className={`${CTA_SHAPE} rounded-full transition duration-300 hover:-translate-y-0.5 hover:brightness-110 ${stacked ? 'w-full px-3 text-[0.64rem]' : ''}`}
+            className={`${CTA_SHAPE} pf-circle-cta ${stacked ? 'w-full px-3 text-[0.64rem]' : ''}`}
+            data-shape={data.presentation.heroExperienceSplitButtonShape ?? 'pill'}
+            data-pf-no-color-transition=""
             style={{ backgroundColor: ink, color: fond }}
           >
-            {t('Let\'s talk')}
-            <span aria-hidden>↗</span>
+            <span className="pf-circle-cta-fill" aria-hidden data-pf-no-color-transition="" style={{ backgroundColor: fond }} />
+            <span>{t('Let\'s talk')}</span>
+            <span className="pf-bowl-cta-arrow" data-pf-no-color-transition="" aria-hidden>↗</span>
           </a> : null}
         {showSecondaryCta ? <a
             href={secondaryHref}
             onClick={onNavClick(secondaryHref)}
-            className={`${CTA_SHAPE} rounded-full border transition duration-300 hover:-translate-y-0.5 hover:opacity-80 ${stacked ? 'w-full px-3 text-[0.64rem]' : ''}`}
+            className={`${CTA_SHAPE} pf-circle-cta border ${stacked ? 'w-full px-3 text-[0.64rem]' : ''}`}
+            data-shape={data.presentation.heroExperienceSplitButtonShape ?? 'pill'}
+            data-pf-no-color-transition=""
             style={{ borderColor: frameColor, color: ink, backgroundColor: 'transparent' }}
           >
-            {t('View my work')}
+            <span className="pf-circle-cta-fill" aria-hidden data-pf-no-color-transition="" style={{ backgroundColor: ink }} />
+            <span>{t('View my work')}</span>
           </a> : null}
       </div>
     );

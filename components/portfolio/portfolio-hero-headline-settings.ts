@@ -1,6 +1,8 @@
 export type PortfolioHeroHeadlineValue = 'specialty' | 'name';
 
 export type PortfolioHeroHeadlineSettings = {
+  /** Full greeting template per banner; an empty entry keeps that design's original text. */
+  heroGreetingOverrides?: Record<string,string>;
   heroHeadlinePrefix: string;
   heroHeadlineValue: PortfolioHeroHeadlineValue;
   /**
@@ -44,6 +46,7 @@ export function mergeHeroHeadlineSettings(
   const valueSource = record.heroHeadlineValue;
 
   return {
+    heroGreetingOverrides: record.heroGreetingOverrides&&typeof record.heroGreetingOverrides==='object'&&!Array.isArray(record.heroGreetingOverrides)?Object.fromEntries(Object.entries(record.heroGreetingOverrides).filter(([key,value])=>key.length<80&&typeof value==='string').map(([key,value])=>[key,(value as string).slice(0,500)])):base.heroGreetingOverrides??{},
     heroHeadlinePrefix: sanitizeHeroHeadlinePrefix(record.heroHeadlinePrefix, base.heroHeadlinePrefix),
     heroHeadlineValue:
       valueSource === 'specialty' || valueSource === 'name' ? valueSource : base.heroHeadlineValue,
@@ -54,4 +57,9 @@ export function mergeHeroHeadlineSettings(
       base.heroHeadlineEmphasisWord
     ),
   };
+}
+export function resolveHeroGreeting(presentation:{heroBannerDesign:string;heroGreetingOverrides?:Record<string,string>},fallback:string,name:string,specialty=''):string{
+ const template=presentation.heroGreetingOverrides?.[presentation.heroBannerDesign]?.trim();
+ if(!template)return fallback;
+ return template.replace(/\{(name|specialty)\}/g,(_,token)=>token==='name'?name:specialty);
 }

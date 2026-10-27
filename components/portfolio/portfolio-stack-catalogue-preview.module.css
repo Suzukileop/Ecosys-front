@@ -1,0 +1,72 @@
+/* Only the miniature iframe uses this class. Public layouts retain their own sizing. */
+.preview :global(.pf-stack-rail) {
+  --pf-stack-rail-mark: 140px !important;
+  gap: 24px !important;
+}
+
+.preview :global(.pf-stack-rail-item) {
+  flex: 1 1 0 !important;
+  min-width: 0 !important;
+  max-width: none !important;
+}
+
+.preview :global(.pf-stack-rail-zoom) > * {
+  width: 124px !important;
+  height: 124px !important;
+}
+
+.preview :global(.pf-stack-rail-name) {
+  font-size: 32px !important;
+  line-height: 1.25 !important;
+}
+
+.preview :global(.pf-stack-rail-index) {
+  font-size: 20px !important;
+}
+
+.preview :global(.pf-stack-tags-list) {
+  max-width: 1100px !important;
+  margin-inline: auto !important;
+  gap: 24px !important;
+  justify-content: center !important;
+}
+
+.preview :global(.pf-stack-tags-chip) {
+  font-size: 36px !important;
+  line-height: 1.25 !important;
+  padding: 18px 26px !important;
+}
+
+.preview :global(.pf-stack-brand-cards-logo) {
+  width: 112px !important;
+  height: 112px !important;
+}
+
+.preview :global(.pf-stack-brand-cards-name) {
+  font-size: 32px !important;
+  line-height: 1.25 !important;
+}
+
+.preview :global(.pf-stack-brand-cards-kicker),
+.preview :global(.pf-stack-brand-cards-index) {
+  font-size: 20px !important;
+}
+
+.preview :global(.pf-stack-stars) {
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 28px !important;
+}
+
+.preview :global(.pf-stack-stars-card) {
+  padding: 30px !important;
+}
+
+.preview :global(.pf-stack-stars-row) {
+  gap: 20px !important;
+  font-size: 32px !important;
+}
+
+.preview :global(.pf-stack-stars-name) {
+  font-size: 32px !important;
+  line-height: 1.3 !important;
+}

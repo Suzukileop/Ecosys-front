@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, useId, type RefObject } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
@@ -81,12 +82,15 @@ function stackRailScrollParent(el: HTMLElement | null): HTMLElement | undefined 
  * that edge — the scrollbar is hidden, this is the only overflow cue.
  */
 function useRailOverflowCue(ref: RefObject<HTMLUListElement | null>, signature: string) {
+  const [edges, setEdges] = useState({ previous: false, next: false });
   useEffect(() => {
     const rail = ref.current;
     if (!rail) return;
     const update = () => {
       const more = rail.scrollWidth - rail.clientWidth - rail.scrollLeft > 4;
       rail.dataset.pfStackRailMore = more ? 'true' : 'false';
+      const previous = rail.scrollLeft > 4;
+      setEdges(old => old.previous === previous && old.next === more ? old : { previous, next: more });
     };
     update();
     rail.addEventListener('scroll', update, { passive: true });
@@ -97,6 +101,7 @@ function useRailOverflowCue(ref: RefObject<HTMLUListElement | null>, signature: 
       observer.disconnect();
     };
   }, [ref, signature]);
+  return edges;
 }
 
 /**
@@ -104,7 +109,10 @@ function useRailOverflowCue(ref: RefObject<HTMLUListElement | null>, signature: 
  * Default CSS is fully visible; GSAP only staggers on view when motion is allowed.
  */
 export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProps) {
+  const t = useT();
+  const railId = useId();
   const railRef = useRef<HTMLUListElement>(null);
+  const layout = presentation.workflowRailLayout ?? 'wrap';
 
   const tilePx = toolsTileSizePx(presentation.tileSize);
   const logoPx = toolsLogoSizePx(presentation.tileSize);
@@ -112,10 +120,11 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
   const tileBg = toolsIconFrameBackground(presentation);
   const logoContrastBg = toolsLogoContrastBackground(presentation);
   const logoColorMode = toolsLogoColorMode(presentation);
-  const framePx = showIconBg ? tilePx : logoPx;
+  const framePx = showIconBg ? logoPx + 20 : logoPx;
   const showLabels = presentation.showLabels !== false;
   const lockedGray = toolsLogosGrayscaleEnabled(presentation);
-  const alignment = resolveToolsDesignContentAlignment('workflow-rail', presentation);
+  const alignment = layout === 'wrap' && presentation.workflowRailAutoCenter === true
+    ? 'center' : resolveToolsDesignContentAlignment('workflow-rail', presentation);
   const labelInk = presentation.labelColor?.trim() || '#171717';
   const railSurface = presentation.cardBackgroundColor?.trim() || 'transparent';
   const railLine = presentation.cardBorderColor?.trim() || labelInk;
@@ -125,7 +134,11 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
     .map((tool) => (typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`))
     .join('|');
 
-  useRailOverflowCue(railRef, `${toolSignature}|${tilePx}`);
+  const edges = useRailOverflowCue(railRef, `${toolSignature}|${tilePx}|${presentation.cardGap}|${layout}|${alignment}`);
+  const move = (direction: number) => {
+    const rail = railRef.current;
+    if (rail) rail.scrollBy({ left: direction * Math.max(1, rail.clientWidth * 0.8), behavior: prefersReducedMotion() ? 'instant' : 'smooth' });
+  };
 
   useLayoutEffect(() => {
     const root = railRef.current;
@@ -175,16 +188,19 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
       window.clearTimeout(refreshB);
       ctx?.revert();
     };
-  }, [toolSignature, framePx, showLabels]);
+  }, [toolSignature, framePx, showLabels, layout]);
 
   if (tools.length === 0) return null;
 
   return (
+    <div className="pf-stack-rail-container">
     <ul
+      id={railId}
       ref={railRef}
       className={`pf-stack-rail ${toolsWorkflowRailGapClass(presentation.cardGap)}`}
       role="list"
       data-pf-stack-rail-align={alignment}
+      data-pf-stack-rail-layout={layout}
       data-pf-stack-rail-more="false"
       data-pf-stack-rail-locked-gray={lockedGray ? 'true' : 'false'}
       data-pf-stack-rail-logo-treatment={logoTreatment}
@@ -193,6 +209,8 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
         // Column width follows the tile size even when the icon frame is off — sizing it
         // from the bare logo (56px) squeezed names into ~75px and split "JavaScript".
         ['--pf-stack-rail-col' as string]: `${tilePx}px`,
+        ['--pf-stack-rail-compact-cell' as string]: `${Math.max(framePx + 16, showLabels ? 96 : framePx + 16)}px`,
+        ['--pf-stack-rail-gap' as string]: `${({ tight: 2, medium: 16, large: 32, xlarge: 56 })[presentation.cardGap ?? 'tight']}px`,
         ['--pf-stack-rail-mark' as string]: `${framePx}px`,
         ['--pf-stack-rail-ink' as string]: labelInk,
         ['--pf-stack-rail-surface' as string]: railSurface,
@@ -240,5 +258,10 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
         );
       })}
     </ul>
+    {layout === 'carousel' && (edges.previous || edges.next) ? <div className="pf-stack-rail-controls" style={{ color: labelInk }}>
+      <button type="button" aria-label={t('Previous')} aria-controls={railId} disabled={!edges.previous} onClick={() => move(-1)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden><path d="m15 5-7 7 7 7"/></svg></button>
+      <button type="button" aria-label={t('Next')} aria-controls={railId} disabled={!edges.next} onClick={() => move(1)}><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" aria-hidden><path d="m9 5 7 7-7 7"/></svg></button>
+    </div> : null}
+    </div>
   );
 }

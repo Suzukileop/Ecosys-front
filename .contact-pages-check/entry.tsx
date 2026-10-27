@@ -1,0 +1,10 @@
+import React from 'react';
+import {createRoot} from 'react-dom/client';
+import {ScrollTrigger} from 'gsap/ScrollTrigger';
+import {ContactDesignSequentialReveal} from '../components/portfolio/portfolio-contact-design-sequential-reveal';
+import {DEFAULT_CONTACT_PRESENTATION} from '../components/portfolio/portfolio-contact-settings';
+import {createContactDesignLayoutResolver} from '../components/portfolio/portfolio-contact-design-layout';
+const root=createRoot(document.getElementById('root')!);
+(window as any).triggerCount=()=>ScrollTrigger.getAll().length;
+(window as any).renderContact=(staticLayout=true,showForm=true)=>{const presentation={...DEFAULT_CONTACT_PRESENTATION,cardDesign:'sequential-reveal' as const,designLayouts:{'sequential-reveal':{elements:{form:{visible:showForm}}}}};root.render(<div style={{padding:24,height:850,overflowY:'auto'}}><ContactDesignSequentialReveal staticLayout={staticLayout} email="creator@example.com" phone="+261 34 00 000 00" locationLabel="Antananarivo" heroImageUrl={null} heroImageAlt="Studio" sectionTitle="Contact" presentation={presentation} layout={createContactDesignLayoutResolver(presentation,'sequential-reveal')} colorMode="light"/></div>);};
+(window as any).renderContact();

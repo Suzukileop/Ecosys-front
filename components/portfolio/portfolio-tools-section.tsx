@@ -1,5 +1,7 @@
 'use client';
+import contentStyles from './portfolio-stack-content.module.css';
 
+import { cardsStyleRootProps } from '@/components/portfolio/portfolio-cards-style';
 import dynamic from 'next/dynamic';
 import {
   useEffect,
@@ -29,7 +31,9 @@ import {
 } from '@/components/portfolio/skill-usage-descriptions';
 import {
   ToolsBrandDirectoryLevelIndicator,
-  ToolsLevelStatBar,
+  ToolsLevelProgressBar,
+  ToolsLevelStarRating,
+  ToolsLevelSignalDots,
   resolveToolsLevelBarColors,
 } from '@/components/portfolio/portfolio-tools-level-indicators';
 import {
@@ -50,6 +54,10 @@ import {
   resolveToolsCardSurfaceColor,
   resolveToolsLevelIndicatorShowCategoryFilter,
   resolveToolsLevelTableGroupBy,
+  resolveToolsLevelIndicatorDisplayStyle,
+  resolveToolsLevelBarStyle,
+  resolveToolsLevelBarSize,
+  toolsLevelBarPercentRem,
   resolveToolsShowLevel,
   isToolsLevelIndicatorDesign,
   toolsDesignSupportsCategoryFilter,
@@ -292,16 +300,6 @@ export function EditorialToolsGallery({ tools, presentation }: ToolsGalleryProps
 
   const displayTools = useMemo(() => {
     if (!supportsCategoryFilter) return tools;
-    // These two designs never print the category: sorting by it with the filter hidden
-    // just looked shuffled. Keep the creator's order until the filter is on screen.
-    const categoryVisible =
-      resolveToolsLevelIndicatorShowCategoryFilter(presentation) && categories.length > 0;
-    if (
-      !categoryVisible &&
-      (presentation.design === 'level-stat-bars' || presentation.design === 'level-progress-rows')
-    ) {
-      return tools;
-    }
     const sorted = [...tools].sort(
       isLevelDesign && resolveToolsLevelTableGroupBy(presentation) === 'level'
         ? compareSkillsByLevelThenName
@@ -354,9 +352,10 @@ export function EditorialToolsGallery({ tools, presentation }: ToolsGalleryProps
 
   return (
     <div
-      className={`${toolsContentAlignWrapperClass(presentation.design, presentation)}${
+      className={`${contentStyles.content} ${toolsContentAlignWrapperClass(presentation.design, presentation)}${
         presentation.design === 'level-table-rows' ? ' text-left' : ''
       }`}
+      {...cardsStyleRootProps(presentation.cardsStyle, presentation.toolsPalette)}
     >
       {showCategoryFilter ? (
         <ToolsLevelCategoryFilterBar
@@ -808,18 +807,19 @@ function ToolLevelStatBarCardItem({
         // The gauge alone (68×3px, no value) was the smallest thing on the tile:
         // larger notches plus the level spelled out underneath.
         <div className="flex w-full flex-col items-center gap-2">
-          <ToolsLevelStatBar
+          {resolveToolsLevelIndicatorDisplayStyle(presentation)==='progress-bar' ? <ToolsLevelProgressBar
             level={level}
             toolName={name}
             fillColor={barColor}
             trackColor={levelTrackColor}
             valueText={levelLabel}
-            notchClassName="h-1"
-            className="mx-auto w-20 max-w-none gap-[3px]"
-          />
-          <span aria-hidden="true" className="pf-tools-stat-level" style={{ color: levelInk }}>
+            barStyle={resolveToolsLevelBarStyle(presentation)}
+            barSize={resolveToolsLevelBarSize(presentation)}
+            className="mx-auto max-w-28"
+          /> : resolveToolsLevelIndicatorDisplayStyle(presentation)==='stars' ? <ToolsLevelStarRating level={level} toolName={name} fillColor={barColor} trackColor={levelTrackColor} className="pf-tools-stat-stars"/> : resolveToolsLevelIndicatorDisplayStyle(presentation)==='dots' ? <ToolsLevelSignalDots level={level} toolName={name} fillColor={barColor} trackColor={levelTrackColor}/> : null}
+          {presentation.levelStatShowLevelName !== false ? <span aria-hidden="true" className="pf-tools-stat-level" style={{ color: levelInk, fontSize: toolsLevelBarPercentRem(resolveToolsLevelBarSize(presentation)) }}>
             {levelLabel}
-          </span>
+          </span> : null}
         </div>
       ) : null}
     </article>

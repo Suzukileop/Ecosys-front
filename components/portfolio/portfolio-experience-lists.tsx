@@ -1,16 +1,31 @@
 'use client';
 
-import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import experienceFocus from './portfolio-experience-focus.module.css';
+import reelPolish from './portfolio-experience-reel-polish.module.css';
+import duotonePolish from './portfolio-experience-duotone-polish.module.css';
+import galleryPolish from './portfolio-experience-gallery-polish.module.css';
+import milestoneDetails from './portfolio-experience-milestone-details.module.css';
+import editorialStatus from './portfolio-experience-editorial-status.module.css';
+import experienceContentStyles from './portfolio-experience-content.module.css';
+import { useExperienceTaskMarkers } from './portfolio-experience-content';
+import experienceCards from './portfolio-experience-cards.module.css';
+import kineticStyles from './portfolio-experience-kinetic.module.css';
+
+import { cardsStyleCss } from '@/components/portfolio/portfolio-cards-style';
+import { usePortfolioHeaderMotionOff, usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { employmentTypeLabel } from '@/lib/experience-employment';
 import gsap from 'gsap';
+import { experienceScrollProgress } from '@/lib/experience-scroll-progress';
+import { experienceCardsSurface } from '@/lib/experience-cards-surface';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import {
   AnimatePresence,
   motion,
   useMotionTemplate,
+  useMotionValue,
   useReducedMotion,
   useScroll,
   useTransform,
@@ -23,7 +38,7 @@ import {
   DEFAULT_MOTION_PROFILE,
   defaultMotionTimingForProfile,
 } from '@/components/portfolio/portfolio-motion-settings';
-import { DEFAULT_EXPERIENCE_PRESENTATION, accentYearsCssVars, experienceYearsStyle, DEFAULT_EXPERIENCE_TITLE_COLOR, DEFAULT_EXPERIENCE_TITLE_COLOR_DARK, DEFAULT_EXPERIENCE_BODY_COLOR, DEFAULT_EXPERIENCE_BODY_COLOR_DARK, DEFAULT_EXPERIENCE_MUTED_COLOR, DEFAULT_EXPERIENCE_MUTED_COLOR_DARK, DEFAULT_EXPERIENCE_YEARS_COLOR, ensureExperienceInkContrast, CENTERED_LEAD_LINE_HEIGHT, CENTERED_LEAD_OPACITY, CENTERED_LEAD_WEIGHT, CENTERED_LEAD_WIDTH, experienceAccentColor, experienceBlockLabelVisible, experienceItemsPerRowGridClass, experienceListShellClass, experiencePeriodRuleStyle, experienceTimelineRailLineStyle, experienceTimelineRailNodeStyle, resolveExperienceColorMode, resolveExperienceTextColor, experienceYearsClass, experienceYearsHighlightStyle, resolveAccentYearsCopy, resolveAccentYearsBadgeColor, accentYearsGridAnchorEnabled, experienceCardsBorderRadiusClass, experienceCardsCardWidthClass, experienceCardsElementSpacingClasses, experienceCardsTitleFontSize, resolveExperienceCardsVerticalGapPx, type PortfolioExperienceCardsBorderRadius, experienceLegacyThumbnailAspectRatio, experienceLegacyThumbnailMaxWidth, experienceLegacyItemGapClass, type PortfolioExperienceLegacyThumbnailHeight, type PortfolioExperienceLegacyThumbnailWidth, type PortfolioExperienceLegacyItemGap, type PortfolioExperienceLegacySide, experienceDuotoneThumbnailAspectRatio, experienceDuotoneThumbnailMaxHeight, experienceDuotoneStickyLeftGapClass, experienceDuotoneStickyEditorialSpacing, experienceDuotoneScrollTitleThumbGapClass, experienceDuotoneScrollEditorialSpacing, experienceDuotoneScrollRoleStackClass, experienceDuotoneStickySectionVh, type PortfolioExperienceDuotoneThumbnailEffect, type PortfolioExperienceDuotoneThumbnailHeight, type PortfolioExperienceDuotoneStickyVerticalGap, type PortfolioExperienceDuotoneRepoCtaMode, normalizeExperienceElementStyles, resolveExperienceBlockLabel, resolveExperienceItemsPerRow, resolveExperienceRepoLinkStyle, resolveCenteredHeaderCopy, resolveExperienceYearsTemplate, resolveSerifLeadCopy, resolveSerifLeadInkColor, splitSerifLeadLines, SERIF_LEAD_LABEL_OPACITY, SERIF_LEAD_LINE_HEIGHT, SERIF_LEAD_TRACKING, SERIF_LEAD_WEIGHT, SERIF_LEAD_WIDTH, type PortfolioExperienceCenteredMaxWidth, type PortfolioExperiencePresentationSettings, type PortfolioExperiencePeriodDesign, type PortfolioExperienceTasksDisplay, type PortfolioExperienceToolsBadgeStyle, type PortfolioExperienceRepoLinkStyle, type PortfolioExperienceReelStatusStyle, type PortfolioExperienceReelScrollMotion, type PortfolioExperienceDuotoneSlideNavStyle, type PortfolioExperienceGalleryThumbnailFit, type PortfolioExperienceGalleryBigTitleStyle, type PortfolioExperienceGalleryBigTitleColor, type PortfolioExperienceItemGap, type PortfolioExperienceLoftThumbnailFit, type PortfolioExperienceLoftThumbnailRadius, type PortfolioExperienceLoftHoverEffect, experienceLoftThumbnailRadiusClass, type PortfolioExperienceLoftColumns } from '@/components/portfolio/portfolio-experience-settings';
+import { DEFAULT_EXPERIENCE_PRESENTATION, DEFAULT_EXPERIENCE_TITLE_COLOR, DEFAULT_EXPERIENCE_TITLE_COLOR_DARK, DEFAULT_EXPERIENCE_BODY_COLOR, DEFAULT_EXPERIENCE_BODY_COLOR_DARK, DEFAULT_EXPERIENCE_MUTED_COLOR, DEFAULT_EXPERIENCE_MUTED_COLOR_DARK, ensureExperienceInkContrast, experienceAccentColor, experienceBlockLabelVisible, experienceItemsPerRowGridClass, experienceListShellClass, experiencePeriodRuleStyle, experienceTimelineRailLineStyle, experienceTimelineRailNodeStyle, resolveExperienceColorMode, resolveExperienceTextColor, accentYearsGridAnchorEnabled, experienceCardsBorderRadiusClass, experienceCardsCardWidthClass, experienceCardsElementSpacingClasses, experienceCardsTitleFontSize, resolveExperienceCardsVerticalGapPx, type PortfolioExperienceCardsBorderRadius, experienceLegacyThumbnailAspectRatio, experienceLegacyThumbnailMaxWidth, experienceLegacyItemGapClass, type PortfolioExperienceLegacyThumbnailHeight, type PortfolioExperienceLegacyThumbnailWidth, type PortfolioExperienceLegacyItemGap, type PortfolioExperienceLegacySide, experienceDuotoneThumbnailAspectRatio, experienceDuotoneThumbnailMaxHeight, experienceDuotoneStickyLeftGapClass, experienceDuotoneStickyEditorialSpacing, experienceDuotoneScrollTitleThumbGapClass, experienceDuotoneScrollEditorialSpacing, experienceDuotoneScrollRoleStackClass, experienceDuotoneStickySectionVh, type PortfolioExperienceDuotoneThumbnailEffect, type PortfolioExperienceDuotoneThumbnailHeight, type PortfolioExperienceDuotoneStickyVerticalGap, type PortfolioExperienceDuotoneRepoCtaMode, normalizeExperienceElementStyles, resolveExperienceBlockLabel, resolveExperienceItemsPerRow, resolveExperienceRepoLinkStyle, resolveExperienceYearsTemplate, resolveSerifLeadCopy, resolveSerifLeadInkColor, splitSerifLeadLines, SERIF_LEAD_LABEL_OPACITY, SERIF_LEAD_LINE_HEIGHT, SERIF_LEAD_TRACKING, SERIF_LEAD_WEIGHT, SERIF_LEAD_WIDTH, type PortfolioExperiencePresentationSettings, type PortfolioExperiencePeriodDesign, type PortfolioExperienceTasksDisplay, type PortfolioExperienceToolsBadgeStyle, type PortfolioExperienceRepoLinkStyle, type PortfolioExperienceReelStatusStyle, type PortfolioExperienceReelScrollMotion, type PortfolioExperienceDuotoneSlideNavStyle, type PortfolioExperienceGalleryThumbnailFit, type PortfolioExperienceGalleryBigTitleStyle, type PortfolioExperienceGalleryBigTitleColor, type PortfolioExperienceItemGap, type PortfolioExperienceLoftThumbnailFit, type PortfolioExperienceLoftThumbnailRadius, type PortfolioExperienceLoftHoverEffect, experienceLoftThumbnailRadiusClass, type PortfolioExperienceLoftColumns } from '@/components/portfolio/portfolio-experience-settings';
 import {
   DEFAULT_EXPERIENCE_PALETTE,
   experienceSecondaryStatusColor,
@@ -36,7 +51,7 @@ import {
   PortfolioLinkButton,
 } from '@/components/portfolio/portfolio-link-buttons';
 import { SERIF, getScrollParent, usePortfolioFinePointerDesktop } from '@/components/portfolio/portfolio-section-primitives';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { useExperienceTranslation as useT } from './portfolio-experience-content';
 
 function splitExperienceText(text: string): { title: string | null; body: string | null } {
   const trimmed = text.trim();
@@ -134,407 +149,9 @@ function resolveExperienceContent(block: ProfileMediaBlock): {
   };
 }
 
-function EditorialExperienceYears({
-  years,
-  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
-}: {
-  years: number;
-  presentation?: PortfolioExperiencePresentationSettings;
-}) {
-  const template = resolveExperienceYearsTemplate(presentation);
-  const marker = '{years}';
-  const markerIndex = template.indexOf(marker);
-  const isEditorial = presentation.experienceDesign === 'editorial';
-  // Milestone: this line sits centered under the section title — one flat color,
-  // lighter weight, bigger size — overridden only for this design.
-  const isMilestone = presentation.experienceDesign === 'milestone';
-  const isDark = presentation.activeColorMode !== 'light';
-  const colorMode = resolveExperienceColorMode(presentation);
-  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
-  const yearsClass = isMilestone
-    ? 'relative mx-auto mb-10 max-w-3xl border-0 bg-transparent p-0 text-center text-xl font-normal leading-relaxed shadow-none sm:text-2xl lg:text-3xl lg:mb-12'
-    : experienceYearsClass(presentation);
-  // Soft surrounding copy → entryBlockLabel / texteFaint (quieter than subtitle / texteMuted).
-  const mutedInk = ensureExperienceInkContrast(
-    resolveExperienceTextColor(styles.blockLabel, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
-  );
-  // Always plain text — never a card / border / shadow around the years line.
-  const yearsStyle: CSSProperties = {
-    ...(isEditorial
-      ? { color: mutedInk }
-      : {
-          ...experienceYearsStyle(presentation),
-          color: ensureExperienceInkContrast(
-            presentation.yearsColor?.trim() || mutedInk,
-            isDark,
-            DEFAULT_EXPERIENCE_YEARS_COLOR,
-            DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
-          ),
-        }),
-    border: 'none',
-    borderWidth: 0,
-    boxShadow: 'none',
-    outline: 'none',
-    backgroundColor: 'transparent',
-    background: 'none',
-    position: 'relative',
-    transform: 'none',
-    willChange: 'auto',
-    padding: 0,
-    marginInline: 0,
-  };
-
-  const highlightStyle = isEditorial
-    ? { backgroundColor: resolveAccentYearsBadgeColor(presentation), color: '#ffffff' }
-    : isMilestone
-      ? { color: yearsStyle.color }
-      : experienceYearsHighlightStyle(presentation);
-
-  if (isEditorial) {
-    const copy = resolveAccentYearsCopy(years, presentation);
-    return (
-      <p className={yearsClass} style={{ ...yearsStyle, ...accentYearsCssVars(presentation) }}>
-        {copy.badge ? (
-          <span className="pf-exp-accent-years-badge" style={highlightStyle}>
-            {copy.badge}
-          </span>
-        ) : null}
-        {copy.lead ? (
-          <>
-            {copy.badge ? ' ' : null}
-            {copy.lead}
-          </>
-        ) : null}
-      </p>
-    );
-  }
-
-  if (markerIndex === -1) {
-    return (
-      <p className={yearsClass} style={yearsStyle}>
-        {template.replaceAll(marker, String(years))}
-      </p>
-    );
-  }
-
-  const before = template.slice(0, markerIndex);
-  const after = template.slice(markerIndex + marker.length);
-  const yearsNode =
-    presentation.yearsBoldYears && !isMilestone ? (
-      <span className="font-bold" style={highlightStyle}>
-        {years}
-      </span>
-    ) : (
-      <span style={highlightStyle}>{years}</span>
-    );
-
-  return (
-    <p className={yearsClass} style={yearsStyle}>
-      {before}
-      {yearsNode}
-      {after}
-    </p>
-  );
-}
-
 /** Shared with Accent years so the lead and the 2022 column share one left edge. */
 const MILESTONE_ENTRY_GRID_CLASS =
   'grid w-full grid-cols-1 sm:grid-cols-[7.5rem_1.5rem_minmax(0,1fr)] sm:items-start sm:gap-x-6 lg:grid-cols-[8.5rem_1.75rem_minmax(0,1fr)] lg:gap-x-8';
-
-/**
- * Experience → Header design for Editorial: years lead with accent highlight.
- * Mounted in a zone above the design-owned header when `headerDesign === 'editorial'`.
- */
-export function ExperienceEditorialHeader({
-  years,
-  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
-}: {
-  years: number;
-  presentation?: PortfolioExperiencePresentationSettings;
-}) {
-  const itemDesign = presentation.experienceDesign;
-  const yearsLead = (
-    <EditorialExperienceYears
-      years={years}
-      presentation={{
-        ...presentation,
-        experienceDesign: 'editorial',
-        yearsAlignment: 'left',
-      }}
-    />
-  );
-
-  return (
-    <div
-      className={experienceListShellClass(
-        presentation.listMaxWidth,
-        presentation.listPlacement
-      )}
-    >
-      {itemDesign === 'milestone' && accentYearsGridAnchorEnabled(presentation) ? (
-        <div className={MILESTONE_ENTRY_GRID_CLASS}>
-          <div className="min-w-0 sm:col-span-3">{yearsLead}</div>
-        </div>
-      ) : (
-        yearsLead
-      )}
-    </div>
-  );
-}
-
-function renderCenteredYearsLead(
-  text: string,
-  width: PortfolioExperienceCenteredMaxWidth = 'balanced'
-): ReactNode {
-  const trimmed = text.trim();
-  if (width === 'wide') return trimmed;
-
-  const fieldTail = trimmed.match(/^(.*?)\s+(in my field\.?)$/i);
-  if (width === 'narrow') {
-    if (fieldTail?.[1] && fieldTail[2]) {
-      const head = fieldTail[1];
-      const handsOn = head.match(/^(.*?)\s+(hands-on experience)$/i);
-      if (handsOn?.[1] && handsOn[2]) {
-        return (
-          <>
-            {handsOn[1]}
-            <br />
-            {handsOn[2]}
-            <br />
-            {fieldTail[2]}
-          </>
-        );
-      }
-      const words = head.split(/\s+/);
-      const cut = Math.max(1, Math.ceil(words.length / 2));
-      return (
-        <>
-          {words.slice(0, cut).join(' ')}
-          <br />
-          {words.slice(cut).join(' ')}
-          <br />
-          {fieldTail[2]}
-        </>
-      );
-    }
-    const words = trimmed.split(/\s+/);
-    if (words.length < 5) return trimmed;
-    const first = Math.ceil(words.length / 3);
-    const second = Math.ceil((words.length * 2) / 3);
-    return (
-      <>
-        {words.slice(0, first).join(' ')}
-        <br />
-        {words.slice(first, second).join(' ')}
-        <br />
-        {words.slice(second).join(' ')}
-      </>
-    );
-  }
-
-  if (fieldTail?.[1] && fieldTail[2]) {
-    return (
-      <>
-        {fieldTail[1]}
-        <br />
-        {fieldTail[2]}
-      </>
-    );
-  }
-  const words = trimmed.split(/\s+/);
-  if (words.length < 6) return trimmed;
-  return (
-    <>
-      {words.slice(0, -3).join(' ')}
-      <br />
-      {words.slice(-3).join(' ')}
-    </>
-  );
-}
-
-/**
- * Experience → Header design for Milestone: centered section title + years line underneath.
- * Mounted in a zone above the design-owned sticky header when `headerDesign === 'milestone'`.
- */
-export function ExperienceMilestoneHeader({
-  sectionTitle,
-  years,
-  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
-}: {
-  sectionTitle: string;
-  sectionSubtitle?: string;
-  years?: number | null;
-  presentation?: PortfolioExperiencePresentationSettings;
-}) {
-  const headerRef = useRef<HTMLElement>(null);
-  const parallaxRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  const leadRef = useRef<HTMLParagraphElement>(null);
-  const introPlayedRef = useRef(false);
-  // Global → Animations → "Header animations" forces the static path, like prefers-reduced-motion.
-  const headerMotionOff = usePortfolioHeaderMotionOff();
-  const reducedMotionPreference = useReducedMotion();
-  const reduceMotion = headerMotionOff ? true : reducedMotionPreference;
-
-  const isDark = presentation.activeColorMode !== 'light';
-  const colorMode = resolveExperienceColorMode(presentation);
-  const styles = normalizeExperienceElementStyles(presentation.elementStyles);
-  const titleColor = ensureExperienceInkContrast(
-    presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
-    isDark,
-    DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
-  );
-  const { title: displayTitle, lead: yearsLead } = resolveCenteredHeaderCopy(
-    years,
-    sectionTitle,
-    presentation
-  );
-  const show = headerElementVisibility(presentation.headerHiddenElements, 'experience-milestone');
-  const showTitle = show('title');
-  const showLead = show('lead');
-  const hasLead = Boolean(yearsLead) && showLead;
-
-  const leadWeight = presentation.centeredLeadWeight ?? 'light';
-  const leadOpacity = presentation.centeredLeadOpacity ?? 'balanced';
-  const scale = presentation.centeredScale ?? 'monumental';
-  const maxWidth = presentation.centeredMaxWidth ?? 'balanced';
-  const lineHeight = presentation.centeredLineHeight ?? 'aery';
-  const align = presentation.centeredAlign ?? 'center';
-  const divider = presentation.centeredDivider ?? 'none';
-  const dividerOpacity = presentation.centeredDividerOpacity ?? 'ghost';
-  const leadAlpha = CENTERED_LEAD_OPACITY[leadOpacity] ?? CENTERED_LEAD_OPACITY.balanced;
-  const accent = experienceAccentColor(presentation.accentColor);
-  const dividerColor =
-    dividerOpacity === 'accent'
-      ? accent
-      : dividerOpacity === 'subtle'
-        ? `color-mix(in srgb, ${titleColor} 15%, transparent)`
-        : `color-mix(in srgb, ${titleColor} 5%, transparent)`;
-
-  useLayoutEffect(() => {
-    if (typeof window === 'undefined') return;
-    const header = headerRef.current;
-    const title = titleRef.current;
-    const parallax = parallaxRef.current;
-    if (!header || !title || !parallax) return;
-
-    gsap.registerPlugin(ScrollTrigger);
-    const reduced = reduceMotion === true;
-    const lead = leadRef.current;
-    const scroller = getScrollParent(header) ?? undefined;
-
-    const ctx = gsap.context(() => {
-      const bindScrollMotion = () => {
-        const fade = gsap.timeline({
-          scrollTrigger: {
-            trigger: header,
-            scroller,
-            start: 'top 40%',
-            end: 'top 8%',
-            scrub: true,
-            invalidateOnRefresh: true,
-          },
-        });
-        fade.fromTo(parallax, { y: 0 }, { y: -44, ease: 'none' }, 0);
-        if (lead) fade.fromTo(lead, { opacity: 1 }, { opacity: 0, ease: 'none' }, 0);
-      };
-
-      if (introPlayedRef.current || reduced) {
-        gsap.set(title, { yPercent: 0 });
-        if (lead) gsap.set(lead, { opacity: 1 });
-        introPlayedRef.current = true;
-        bindScrollMotion();
-        return;
-      }
-
-      introPlayedRef.current = true;
-      gsap.set(title, { yPercent: 110 });
-      if (lead) gsap.set(lead, { opacity: 0 });
-
-      const intro = gsap.timeline({
-        defaults: { overwrite: true },
-        onComplete: bindScrollMotion,
-      });
-      intro.to(title, { yPercent: 0, duration: 0.95, ease: 'power3.out' });
-      if (lead) {
-        intro.to(lead, { opacity: 1, duration: 0.9, ease: 'power2.out' }, 0.32);
-      }
-    }, header);
-
-    const refreshId = window.setTimeout(() => {
-      try {
-        ScrollTrigger.refresh();
-      } catch (error) {
-        // GSAP's ScrollTrigger.refresh() can throw internally on an edge case
-        // (e.g. "Cannot read properties of undefined (reading 'end')") during
-        // its own init-time recompute; uncaught, that crash propagates up
-        // through this deferred setTimeout with no React boundary to catch it
-        // and takes down the whole page. Never let a best-effort refresh do that.
-        console.error('[ScrollTrigger] deferred refresh() failed', error);
-      }
-    }, 90);
-    return () => {
-      window.clearTimeout(refreshId);
-      ctx.revert();
-      if (!header.isConnected) introPlayedRef.current = false;
-    };
-  }, [hasLead, showTitle, reduceMotion]);
-
-  useLayoutEffect(() => {
-    const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 40);
-    return () => window.clearTimeout(refreshId);
-  }, [divider, lineHeight, maxWidth, scale]);
-
-  return (
-    <header
-      ref={headerRef}
-      className="pf-exp-centered-header w-full"
-      data-scale={scale}
-      data-align={align}
-      data-divider={divider}
-      style={
-        {
-          '--pf-exp-centered-lead-weight': String(CENTERED_LEAD_WEIGHT[leadWeight]),
-          '--pf-exp-centered-lead-width': CENTERED_LEAD_WIDTH[maxWidth],
-          '--pf-exp-centered-lead-lh': String(CENTERED_LEAD_LINE_HEIGHT[lineHeight]),
-          '--pf-exp-centered-divider-color': dividerColor,
-        } as CSSProperties
-      }
-    >
-      {showTitle ? (
-        <div ref={parallaxRef} className="pf-exp-centered-parallax">
-          <div className="pf-exp-centered-title-mask">
-            <h2 ref={titleRef} className="pf-exp-centered-title" style={{ color: titleColor }}>
-              {displayTitle}
-            </h2>
-          </div>
-        </div>
-      ) : null}
-      {hasLead ? (
-        <p
-          ref={leadRef}
-          className="pf-exp-centered-lead"
-          style={{
-            color: `color-mix(in srgb, ${titleColor} ${Math.round(leadAlpha * 100)}%, transparent)`,
-          }}
-        >
-          {renderCenteredYearsLead(yearsLead, maxWidth)}
-        </p>
-      ) : null}
-      {divider !== 'none' ? (
-        <div
-          className="pf-exp-centered-divider"
-          data-style={divider}
-          aria-hidden
-        />
-      ) : null}
-    </header>
-  );
-}
 
 /** Shared Award-level task presentations — synced from General → Tasks display
  * across every Experience design. */
@@ -545,8 +162,15 @@ function ExperienceTasksDisplay({
   mutedColor,
   isDark,
   label = '',
+  labelColor,
+  labelSize,
   size = 'md',
   strongIndex = false,
+  // Markers (index numbers, dashes) are always drawn at a readable contrast: the faint variant left
+  // 02 / 03 almost invisible on a light page.
+  legibleMarkers = true,
+  markerIndex,
+  roomy = false,
 }: {
   tasks: string[];
   display?: PortfolioExperienceTasksDisplay;
@@ -554,37 +178,47 @@ function ExperienceTasksDisplay({
   mutedColor: string;
   isDark: boolean;
   label?: string;
+  labelColor?: string;
+  labelSize?: number;
   size?: 'md' | 'lg';
+  /** Duotone: markers (grid index, dash) at >=12px and >=4.5:1 contrast. */
+  legibleMarkers?: boolean;
   /** Cards design only: continuous hairline rail + full-contrast numerals for
    * 'architectural-index', so the numbered list reads as the card's spine. */
   strongIndex?: boolean;
   /** Kept for callers that still pass entry tools. */
   tools?: string[];
+  /** Editorial dash only: draws a mono "01 / 02 …" in this colour instead of the "—". */
+  markerIndex?: string;
+  /** Editorial dash only: more air between two tasks. */
+  roomy?: boolean;
 }) {
-  const t = useT();
-  if (tasks.length === 0) return null;
+  const showMarkers = useExperienceTaskMarkers();
+    if (tasks.length === 0) return null;
 
   const textClass =
     size === 'lg'
       ? 'text-[0.98rem] leading-relaxed sm:text-[1.05rem]'
       : 'text-[0.95rem] leading-relaxed sm:text-[1.02rem]';
   const hoverWash = isDark ? 'rgba(255,255,255,0.045)' : 'rgba(0,0,0,0.035)';
-  const railColor = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
-  const dashIdle = isDark ? 'rgb(113 113 122)' : 'rgb(161 161 170)';
-  const dashHover = isDark ? 'rgb(244 244 245)' : 'rgb(39 39 42)';
-  const activeInk = isDark ? '#ffffff' : bodyColor;
-  const indexInk = isDark
-    ? 'color-mix(in srgb, #ffffff 40%, transparent)'
-    : 'color-mix(in srgb, #171717 40%, transparent)';
+  // Every marker (index, dash, rail) is derived from the text colour the list is really drawn in, not from
+  // the page's dark/light flag: a light-ink list on a light section (or the reverse) left the numbers
+  // white-on-white. `legibleMarkers` keeps the markers at a readable strength.
+  const mix = (percent: number) => `color-mix(in srgb, ${bodyColor} ${percent}%, transparent)`;
+  const railColor = mix(26);
+  const dashIdle = mix(legibleMarkers ? 68 : 45);
+  const dashHover = bodyColor;
+  const activeInk = bodyColor;
+  const indexInk = mix(legibleMarkers ? 72 : 45);
 
   const sectionLabel = label.trim() ? (
     <p
       className={
         size === 'lg'
-          ? 'mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]'
-          : 'mb-2.5 text-[0.7rem] font-semibold uppercase tracking-[0.18em]'
+          ? 'mb-3 text-xs font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]'
+          : 'mb-2.5 text-xs font-semibold uppercase tracking-[0.18em]'
       }
-      style={{ color: mutedColor }}
+      style={{ color: labelColor || mutedColor, fontSize: labelSize ? `${labelSize}px` : undefined }}
     >
       {label}
     </p>
@@ -592,7 +226,7 @@ function ExperienceTasksDisplay({
 
   if (display === 'engineering-grid') {
     return (
-      <div>
+      <div className={showMarkers ? undefined : experienceContentStyles.unmarkedTasks}>
         {sectionLabel}
         <ul className="pf-exp-tasks-grid grid grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-2.5">
           {tasks.map((task, index) => (
@@ -609,7 +243,7 @@ function ExperienceTasksDisplay({
               }
             >
               <span
-                className="pf-exp-task-index mt-0.5 shrink-0 font-mono text-[0.65rem] tracking-[0.08em]"
+                className={`pf-exp-task-index mt-0.5 shrink-0 font-mono tracking-[0.08em] ${legibleMarkers ? 'text-[0.75rem]' : 'text-[0.65rem]'}`}
                 style={{ color: indexInk }}
                 aria-hidden
               >
@@ -623,61 +257,12 @@ function ExperienceTasksDisplay({
     );
   }
 
-  if (display === 'cinematic-timeline') {
-    return (
-      <div>
-        {sectionLabel}
-        <ul
-          data-pf-no-color-transition=""
-          className="pf-exp-tasks-timeline relative space-y-0"
-          style={
-            {
-              ['--exp-task-rail' as string]: railColor,
-              ['--exp-task-active' as string]: activeInk,
-            } as CSSProperties
-          }
-        >
-          {tasks.map((task, index) => (
-            <li
-              key={`${task}-${index}`}
-              data-pf-no-color-transition=""
-              data-exp-task=""
-              className="pf-exp-tasks-timeline-item group/task relative flex gap-4 py-3.5 pl-1 first:pt-0 last:pb-0"
-              style={
-                {
-                  color: bodyColor,
-                  ['--exp-task-active' as string]: activeInk,
-                } as CSSProperties
-              }
-            >
-              <span
-                className="pf-exp-tasks-timeline-dot relative z-[1] mt-2 h-1.5 w-1.5 shrink-0 rounded-full"
-                style={{ backgroundColor: mutedColor }}
-                aria-hidden
-              />
-              <span
-                className="pf-exp-task-index mt-0.5 shrink-0 font-mono text-[0.68rem] tracking-[0.1em]"
-                style={{ color: indexInk }}
-                aria-hidden
-              >
-                {String(index + 1).padStart(2, '0')}
-              </span>
-              <span className={`pf-exp-tasks-timeline-copy ${textClass} min-w-0 transition-colors duration-500`}>
-                {task}
-              </span>
-            </li>
-          ))}
-        </ul>
-      </div>
-    );
-  }
-
   if (display === 'accordion-stack') {
     return (
-      <div>
+      <div className={`${experienceContentStyles.taskMeasure} ${showMarkers ? '' : experienceContentStyles.unmarkedTasks}`}>
         {sectionLabel}
         <ul
-          className="pf-exp-tasks-lined relative space-y-0 pl-4"
+          className="pf-exp-tasks-lined relative space-y-0 before:hidden"
           style={
             {
               ['--exp-task-rail' as string]: railColor,
@@ -690,11 +275,12 @@ function ExperienceTasksDisplay({
               key={`${task}-${index}`}
               data-pf-no-color-transition=""
               data-exp-task=""
-              className="pf-exp-tasks-lined-item group/task flex items-baseline gap-3 py-3.5 first:pt-0 last:pb-0"
-              style={{ color: bodyColor }}
+              // Hairline between rows, as the Lined Stack thumbnail shows (the vertical thread was too faint to read).
+              className="pf-exp-tasks-lined-item group/task flex items-baseline gap-4 border-t py-3.5 first:border-t-0 first:pt-0 last:pb-0"
+              style={{ color: bodyColor, borderColor: railColor }}
             >
               <span
-                className="pf-exp-task-index pf-exp-tasks-lined-index shrink-0 font-mono text-[0.65rem] tracking-[0.1em]"
+                className={`pf-exp-task-index pf-exp-tasks-lined-index shrink-0 font-mono ${legibleMarkers ? 'text-[0.75rem]' : 'text-[0.65rem]'} tracking-[0.1em]`}
                 style={{ color: indexInk }}
                 aria-hidden
               >
@@ -711,7 +297,7 @@ function ExperienceTasksDisplay({
   if (display === 'architectural-index') {
     const indexColor = strongIndex ? activeInk : indexInk;
     return (
-      <div>
+      <div className={showMarkers ? undefined : experienceContentStyles.unmarkedTasks}>
         {sectionLabel}
         <ul
           className={
@@ -757,9 +343,9 @@ function ExperienceTasksDisplay({
 
   /* editorial-dash — default Award list */
   return (
-    <div>
+    <div className={showMarkers ? undefined : experienceContentStyles.unmarkedTasks}>
       {sectionLabel}
-      <ul className={size === 'lg' ? 'space-y-3.5 sm:space-y-4' : 'space-y-3.5'}>
+      <ul className={roomy ? 'space-y-5 sm:space-y-6' : size === 'lg' ? 'space-y-3.5 sm:space-y-4' : 'space-y-3.5'}>
         {tasks.map((task, index) => (
           <li
             key={`${task}-${index}`}
@@ -774,13 +360,24 @@ function ExperienceTasksDisplay({
               } as CSSProperties
             }
           >
-            <span
-              data-pf-no-color-transition=""
-              className="pf-exp-task-dash mt-0.5 shrink-0 font-light"
-              aria-hidden
-            >
-              —
-            </span>
+            {markerIndex ? (
+              <span
+                data-pf-no-color-transition=""
+                aria-hidden
+                className="mt-[0.35em] w-[2.1em] shrink-0 font-mono text-[0.72rem] tabular-nums tracking-[0.08em]"
+                style={{ color: markerIndex }}
+              >
+                {String(index + 1).padStart(2, '0')}
+              </span>
+            ) : (
+              <span
+                data-pf-no-color-transition=""
+                className="pf-exp-task-dash mt-0.5 shrink-0 font-light"
+                aria-hidden
+              >
+                —
+              </span>
+            )}
             <span className={`${textClass} min-w-0`}>{task}</span>
           </li>
         ))}
@@ -812,13 +409,54 @@ function ExperienceToolsDisplay({
    * line — Sticky mobile tier, to avoid a staircase of wrapped tags. Editorial List and
    * Mineral Pills only; Kinetic Marquee already scrolls on its own and Numbered Index's
    * two-column grid doesn't read well as a single scrolling row. */
-  layout?: 'wrap' | 'scroll-x';
+  layout?: 'wrap' | 'scroll-x' | 'column' | 'badges';
 }) {
-  const t = useT();
-  if (tools.length === 0) return null;
+    if (tools.length === 0) return null;
 
-  const activeColor = isDark ? '#ffffff' : ink;
+  // The hover colour is the text ink the list is really drawn in, not a fixed white: on a light page a dark
+  // theme flag made the active tool vanish.
+  const activeColor = ink;
   const scrollX = layout === 'scroll-x';
+
+  if (style === 'editorial-list' && layout === 'badges') {
+    // Small mono chips on a barely-there tint: they read as a block of their own and give the aside some relief.
+    return (
+      <ul data-pf-no-color-transition="" className="flex flex-wrap gap-2">
+        {tools.map((tool, index) => (
+          <li
+            key={`${tool}-${index}`}
+            data-pf-no-color-transition=""
+            className="rounded-full px-3 py-1 font-mono text-[0.72rem] tracking-[0.04em]"
+            style={{
+              color: ink,
+              backgroundColor: `color-mix(in srgb, ${ink} 6%, transparent)`,
+              boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${ink} 12%, transparent)`,
+            }}
+          >
+            {tool}
+          </li>
+        ))}
+      </ul>
+    );
+  }
+
+  if (style === 'editorial-list' && layout === 'column') {
+    // One tool per line, left-aligned: easier to scan than a dotted sentence, and it lines up with the text beside it.
+    return (
+      <ul data-pf-no-color-transition="" className="flex flex-col gap-1.5">
+        {tools.map((tool, index) => (
+          <li
+            key={`${tool}-${index}`}
+            data-pf-no-color-transition=""
+            className={size === 'sm' ? 'text-[0.9rem]' : 'text-[0.98rem]'}
+            style={{ color: muted, fontFamily: REEL_SANS }}
+          >
+            {tool}
+          </li>
+        ))}
+      </ul>
+    );
+  }
 
   if (style === 'editorial-list') {
     return (
@@ -851,55 +489,10 @@ function ExperienceToolsDisplay({
     );
   }
 
-  if (style === 'kinetic-marquee') {
-    const strokeColor = `color-mix(in srgb, ${ink} 14%, ${background})`;
-    // Duration scales with the tool count so the apparent drift speed stays constant
-    // regardless of how many words are looping.
-    const durationSec = Math.max(12, tools.length * 2.4);
-    return (
-      <div
-        data-pf-no-color-transition=""
-        className="pf-exp-tools-marquee relative w-full overflow-hidden"
-        style={{ ['--exp-tools-marquee-duration' as string]: `${durationSec}s` } as CSSProperties}
-      >
-        <span className="sr-only">{tools.join(', ')}</span>
-        <div aria-hidden className="pf-exp-tools-marquee-track flex w-max items-center">
-          {[0, 1].map((copy) => (
-            <div key={copy} className="flex shrink-0 items-center">
-              {tools.map((tool, index) => (
-                <span
-                  key={`${copy}-${tool}-${index}`}
-                  className={`shrink-0 whitespace-nowrap font-bold uppercase ${
-                    size === 'sm'
-                      ? 'text-[2.2rem] sm:text-[2.8rem]'
-                      : 'text-[2.8rem] sm:text-[3.6rem]'
-                  }`}
-                  style={{
-                    color: 'transparent',
-                    WebkitTextStroke: `1px ${strokeColor}`,
-                    letterSpacing: '0.01em',
-                  }}
-                >
-                  {tool}
-                  <span
-                    className="mx-8 inline-block align-middle text-[0.5em]"
-                    style={{ color: strokeColor }}
-                  >
-                    ·
-                  </span>
-                </span>
-              ))}
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
   if (style === 'numbered-index') {
-    const indexInk = isDark
-      ? 'color-mix(in srgb, #ffffff 40%, transparent)'
-      : 'color-mix(in srgb, #171717 40%, transparent)';
+    // Derived from the ink the names are drawn in (not from the dark/light flag, which left white numbers
+    // on a light page): a readable 62% of it.
+    const indexInk = `color-mix(in srgb, ${ink} 62%, transparent)`;
     return (
       <ul
         data-pf-no-color-transition=""
@@ -912,8 +505,8 @@ function ExperienceToolsDisplay({
             className="flex items-baseline gap-2"
           >
             <span
-              className={`shrink-0 font-mono tracking-[0.06em] ${
-                size === 'sm' ? 'text-[0.65rem]' : 'text-[0.7rem]'
+              className={`w-[2.6em] shrink-0 whitespace-nowrap font-mono tabular-nums tracking-[0.04em] ${
+                size === 'sm' ? 'text-[0.72rem]' : 'text-[0.78rem]'
               }`}
               style={{ color: indexInk }}
               aria-hidden
@@ -950,7 +543,7 @@ function ExperienceToolsDisplay({
           data-pf-no-color-transition=""
           className={`pf-exp-tools-pill rounded-full font-medium uppercase tracking-wider ${
             scrollX ? 'shrink-0' : ''
-          } ${size === 'sm' ? 'px-3 py-1 text-[0.62rem]' : 'px-3.5 py-1.5 text-[0.68rem]'}`}
+          } ${size === 'sm' ? 'px-3 py-1 text-[0.75rem]' : 'px-3.5 py-1.5 text-[0.75rem]'}`}
           style={
             {
               color: pillInk,
@@ -990,19 +583,19 @@ function ExperienceEditorialOngoingBadge({
       style={
         isOngoing
           ? accentColor
-            ? { backgroundColor: `color-mix(in srgb, ${accentColor} 14%, transparent)`, color: accentColor }
+            ? { backgroundColor: `color-mix(in srgb, ${accentColor} 14%, transparent)`, color: `color-mix(in srgb, ${accentColor} 72%, ${isDark ? '#fff' : '#000'})` }
             : isDark
               ? { backgroundColor: '#143D28', color: '#6EE7A0' }
               : { backgroundColor: '#E8F5EC', color: '#1B7A3D' }
           : secondaryColor
             ? { backgroundColor: `color-mix(in srgb, ${secondaryColor} 14%, transparent)`, color: secondaryColor }
             : isDark
-              ? { backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.55)' }
-              : { backgroundColor: 'rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.55)' }
+              ? { backgroundColor: 'rgba(255,255,255,0.08)', color: 'rgba(255,255,255,0.72)' }
+              : { backgroundColor: 'rgba(0,0,0,0.06)', color: 'rgba(0,0,0,0.68)' }
       }
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />
-      {isOngoing ? t('Ongoing') : t('Finished')}
+      {isOngoing ? t('Ongoing') : t('Done')}
     </span>
   );
 }
@@ -1015,6 +608,7 @@ function ExperienceEditorialPeriodColumn({
   textColor,
   isLast,
   drawRail = false,
+  statusNode,
 }: {
   period: string | null;
   periodDesign: PortfolioExperiencePeriodDesign;
@@ -1025,18 +619,16 @@ function ExperienceEditorialPeriodColumn({
   isLast: boolean;
   /** Draw the descending rail even on the last/only entry so GSAP can trace it. */
   drawRail?: boolean;
+  statusNode?: ReactNode;
 }) {
-  const label = period || '—';
+  const label = <span className="inline-flex flex-wrap items-center gap-x-3 gap-y-1">{period || '—'}{statusNode}</span>;
   const textClass = 'text-[0.9rem] font-medium tabular-nums tracking-[-0.01em]';
 
   if (periodDesign === 'badge') {
     return (
-      <p
-        className="pt-1 text-[11px] font-semibold uppercase tracking-[0.18em] sm:text-xs"
-        style={{ color: accent, opacity: 0.92 }}
-      >
-        {label}
-      </p>
+      <div className="flex flex-wrap items-center gap-3 sm:flex-col sm:items-start sm:gap-2.5">
+        <p className="pt-1 text-[11px] font-semibold uppercase tracking-[0.18em] sm:text-xs" style={{ color: accent, opacity: 0.92 }}>{label}</p>
+      </div>
     );
   }
 
@@ -1062,9 +654,9 @@ function ExperienceEditorialPeriodColumn({
       // dots stay aligned in a straight vertical line down the page — regardless of how
       // long each entry's period label is. The year now reads to the left of its marker.
       <div className="relative flex justify-end self-stretch">
-        <p className={`${textClass} self-start pt-1 text-right`} style={{ color: textColor }}>
-          {label}
-        </p>
+        <div className="flex min-w-0 flex-col items-end gap-2.5 pt-1 text-right">
+          <p className={textClass} style={{ color: textColor }}>{label}</p>
+        </div>
         <div className="relative ml-2.5 flex w-3 shrink-0 justify-center sm:ml-3">
           <div
             className="relative z-10 mt-1.5 h-2.5 w-2.5 shrink-0 rounded-full border-2 bg-transparent"
@@ -1083,9 +675,9 @@ function ExperienceEditorialPeriodColumn({
   }
 
   return (
-    <p className={textClass} style={{ color: textColor }}>
-      {label}
-    </p>
+    <div className="flex flex-wrap items-center gap-3 sm:flex-col sm:items-start sm:gap-2.5">
+      <p className={textClass} style={{ color: textColor }}>{label}</p>
+    </div>
   );
 }
 
@@ -1140,7 +732,7 @@ function ExperienceEditorialEntry({
   const reduceMotion = useReducedMotion();
   const motionDisabled = reduceMotion === true;
   const secondary = experienceSecondaryStatusColor(presentation);
-  const hairline = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+  const hairline = presentation.experiencePalette?.bordure || `color-mix(in srgb, ${titleColor} 14%, transparent)`;
   const linkVariant = resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'editorial');
   const linkPalette = experienceLinkButtonPalette({
     ink: titleColor,
@@ -1155,6 +747,14 @@ function ExperienceEditorialEntry({
     location?.trim() || '',
     employmentTypeLabel(employmentType),
   ].filter(Boolean);
+  const signatureStatus = presentation.editorialStatusStyle === 'signature' && (status === 'ONGOING' || status === 'FINISHED') ? (
+    <span style={{ color: `color-mix(in srgb, ${status === 'ONGOING' ? accent : secondary} 45%, ${mutedColor})` }}>{status === 'ONGOING' ? t('Ongoing') : t('Done')}</span>
+  ) : null;
+  const editorialMetaLine = signatureStatus ? <>
+    {metaParts.join(' · ')}
+    {metaParts.length > 0 ? <span aria-hidden> · </span> : null}
+    {signatureStatus}
+  </> : metaParts.join(' · ');
   const hasDetails =
     Boolean(description?.trim()) ||
     tasks.length > 0 ||
@@ -1166,8 +766,8 @@ function ExperienceEditorialEntry({
   const showExpandControl = !isAllOpen && hasDetails;
   const usesTimelineRail = periodDesign === 'rail';
   const periodGridClass = usesTimelineRail
-    ? 'sm:grid-cols-[8.5rem_minmax(0,1fr)] lg:grid-cols-[9.5rem_minmax(0,1fr)]'
-    : 'sm:grid-cols-[7.5rem_minmax(0,1fr)] lg:grid-cols-[8.5rem_minmax(0,1fr)]';
+    ? 'sm:grid-cols-[7rem_minmax(0,1fr)] lg:grid-cols-[8rem_minmax(0,1fr)]'
+    : 'sm:grid-cols-[6rem_minmax(0,1fr)] lg:grid-cols-[7rem_minmax(0,1fr)]';
 
   const expandHoverBg = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.06)';
   const stackLabel = resolveExperienceBlockLabel(toolsLabel, 'Stack');
@@ -1180,92 +780,107 @@ function ExperienceEditorialEntry({
   const panelTransition = motionDisabled
     ? { duration: 0 }
     : {
-        height: { duration: 0.38, ease: [0.22, 1, 0.36, 1] as const },
-        opacity: { duration: 0.26, ease: 'easeOut' as const },
+        height: { duration: 0.5, ease: [0.4, 0, 0.2, 1] as const },
+        opacity: { duration: 0.3, delay: 0.08, ease: 'easeOut' as const },
       };
   const toggleExpanded = () => onExpandedChange(!expanded);
 
   const expandControl = showExpandControl ? (
     <button
       type="button"
-      className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg transition-colors duration-200 sm:h-9 sm:w-9"
-      style={{ color: mutedColor }}
+      className="flex shrink-0 items-center justify-center rounded-lg transition-colors duration-200 focus-visible:outline-2 focus-visible:outline-offset-4"
+      style={{ color: accent, width: 'max(44px, calc(3rem * var(--pf-experience-font-scale, 1)))', height: 'max(44px, calc(3rem * var(--pf-experience-font-scale, 1)))', outlineColor: accent }}
       onMouseEnter={(e) => {
         e.currentTarget.style.backgroundColor = expandHoverBg;
-        e.currentTarget.style.color = titleColor;
+        e.currentTarget.style.color = accent;
       }}
       onMouseLeave={(e) => {
         e.currentTarget.style.backgroundColor = 'transparent';
-        e.currentTarget.style.color = mutedColor;
+        e.currentTarget.style.color = accent;
       }}
       aria-label={effectiveExpanded ? t('Collapse role details') : t('Expand role details')}
+      aria-expanded={effectiveExpanded}
       onClick={toggleExpanded}
     >
-      <motion.span
-        className="block text-xl leading-none font-light sm:text-2xl"
+      <motion.svg
+        viewBox="0 0 32 32"
+        fill="none"
+        style={{ width: 'calc(2rem * var(--pf-experience-font-scale, 1))', height: 'calc(2rem * var(--pf-experience-font-scale, 1))' }}
+        data-pf-no-color-transition=""
         aria-hidden
         animate={{ rotate: effectiveExpanded ? 45 : 0 }}
         transition={
           motionDisabled ? { duration: 0 } : { duration: 0.28, ease: [0.22, 1, 0.36, 1] }
         }
       >
-        +
-      </motion.span>
+        <path d="M16 5v22M5 16h22" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      </motion.svg>
     </button>
   ) : null;
 
   const softCopy = `color-mix(in srgb, ${titleColor} 60%, transparent)`;
   const detailLayout = presentation.editorialDetailLayout ?? 'split-actions';
   const splitActions = detailLayout === 'split-actions';
-  const hasStatusBadge = status === 'ONGOING' || status === 'FINISHED';
-  const showDataColumn =
-    splitActions &&
-    effectiveExpanded &&
-    (metaParts.length > 0 || hasStatusBadge || links.length > 0 || showExpandControl);
+  const showDataColumn = false;
 
   const stackBlock =
     tools.length > 0 ? (
       <div className="min-w-0 pt-1">
         {stackHeading ? (
           <p
-            className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
-            style={{ color: `color-mix(in srgb, ${mutedColor} 65%, transparent)` }}
+            className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
+            style={{ color: mutedColor }}
           >
             {stackHeading}
           </p>
         ) : null}
-        <ExperienceToolsDisplay
-          tools={tools}
-          style={presentation.toolsBadgeStyle}
-          ink={titleColor}
-          muted={mutedColor}
-          background={presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR}
-          isDark={isDark}
-        />
+        {!presentation.editorialStackStyle || presentation.editorialStackStyle === 'text' ? (
+          <ExperienceToolsDisplay
+            tools={tools}
+            style="editorial-list"
+            ink={titleColor}
+            muted={mutedColor}
+            background={presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR}
+            isDark={isDark}
+          />
+        ) : (
+          <ul className={editorialStatus.stackTags} data-shape={presentation.editorialStackStyle} style={{ color: bodyColor, '--stack-edge': hairline } as CSSProperties}>
+            {tools.map((tool, index) => <li key={`${index}-${tool}`} data-pf-no-color-transition="">{tool}</li>)}
+          </ul>
+        )}
       </div>
     ) : null;
 
   const repoLinks = links.length > 0 ? (
-    <div className="flex flex-wrap items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2 py-2">
       {links.map((link) => (
+        presentation.editorialButtonShape && presentation.editorialButtonShape !== 'link' ? <KineticRepoLink
+          key={link.id}
+          href={link.url}
+          label={link.label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(link.label.trim()) ? link.label : t('View project')}
+          ink={titleColor}
+          isDark={isDark}
+          shape={presentation.editorialButtonShape}
+          hover={presentation.editorialButtonHover ?? 'wipe'}
+        /> :
         <PortfolioLinkButton
           key={link.id}
           variant={linkVariant}
           href={link.url}
-          label={link.label || t('View repository')}
+          label={link.label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(link.label.trim()) ? link.label : t('View project')}
           palette={linkPalette}
         />
       ))}
     </div>
   ) : null;
 
-  const detailsInner = effectiveExpanded ? (
+  const detailsInner = hasDetails ? (
     splitActions ? (
-      <div className={`${showDataColumn ? 'mt-5 sm:mt-6 lg:mt-0' : 'mt-5 sm:mt-6'} space-y-9 sm:space-y-11`}>
+      <div className="mt-7 space-y-8 sm:mt-9 sm:space-y-10">
         {description ? (
           <p
-            className="pf-exp-lead-reveal pf-exp-ed-copy m-0 max-w-2xl p-0 text-left text-[1rem] leading-[1.8]"
-            style={{ color: softCopy }}
+            className="pf-exp-lead-reveal pf-exp-ed-copy m-0 max-w-[76ch] p-0 text-left text-[1.05rem] leading-[1.7]"
+            style={{ color: mutedColor }}
             data-pf-lead-step="2"
             data-pf-no-color-transition=""
           >
@@ -1280,8 +895,8 @@ function ExperienceEditorialEntry({
           >
             {tasksHeading ? (
               <p
-                className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
-                style={{ color: `color-mix(in srgb, ${mutedColor} 65%, transparent)` }}
+                className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
+                style={{ color: mutedColor }}
               >
                 {tasksHeading}
               </p>
@@ -1290,28 +905,29 @@ function ExperienceEditorialEntry({
               <ExperienceTasksDisplay
                 tasks={tasks}
                 display={presentation.tasksDisplay ?? 'editorial-dash'}
-                bodyColor={softCopy}
-                mutedColor={`color-mix(in srgb, ${titleColor} 40%, transparent)`}
+                bodyColor={bodyColor}
+                mutedColor={mutedColor}
                 isDark={isDark}
                 label=""
                 size="md"
+                legibleMarkers
               />
             </div>
           </div>
         ) : null}
-        {stackBlock}
+        {stackBlock || repoLinks ? <div className="flex max-w-[64rem] flex-col gap-5 border-t pt-5 sm:flex-row sm:items-center sm:justify-between sm:gap-8" style={{ borderColor: hairline }}>{stackBlock}{repoLinks}</div> : null}
       </div>
     ) : (
       <div className="mt-5 space-y-9 sm:mt-6 sm:space-y-11">
-        {metaParts.length > 0 ? (
+        {metaParts.length > 0 || signatureStatus ? (
           <p className="text-[0.9rem]" style={{ color: softCopy }}>
-            {metaParts.join(' · ')}
+            {editorialMetaLine}
           </p>
         ) : null}
         {description ? (
           <p
-            className="pf-exp-lead-reveal pf-exp-ed-copy m-0 max-w-2xl p-0 text-left text-[1rem] leading-[1.8]"
-            style={{ color: softCopy }}
+            className="pf-exp-lead-reveal pf-exp-ed-copy m-0 max-w-[76ch] p-0 text-left text-[1.05rem] leading-[1.7]"
+            style={{ color: mutedColor }}
             data-pf-lead-step="2"
             data-pf-no-color-transition=""
           >
@@ -1326,8 +942,8 @@ function ExperienceEditorialEntry({
           >
             {tasksHeading ? (
               <p
-                className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
-                style={{ color: `color-mix(in srgb, ${mutedColor} 65%, transparent)` }}
+                className="mb-3 text-xs font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
+                style={{ color: mutedColor }}
               >
                 {tasksHeading}
               </p>
@@ -1336,11 +952,12 @@ function ExperienceEditorialEntry({
               <ExperienceTasksDisplay
                 tasks={tasks}
                 display={presentation.tasksDisplay ?? 'editorial-dash'}
-                bodyColor={softCopy}
-                mutedColor={`color-mix(in srgb, ${titleColor} 40%, transparent)`}
+                bodyColor={titleColor}
+                mutedColor={mutedColor}
                 isDark={isDark}
                 label=""
                 size="md"
+                legibleMarkers
               />
             </div>
           </div>
@@ -1361,9 +978,17 @@ function ExperienceEditorialEntry({
           key="experience-editorial-panel"
           initial={motionDisabled ? false : { height: 0, opacity: 0 }}
           animate={{ height: 'auto', opacity: 1 }}
-          exit={motionDisabled ? { opacity: 0 } : { height: 0, opacity: 0 }}
+          exit={motionDisabled ? { height: 0, opacity: 0, transition: { duration: 0 } } : {
+            height: 0,
+            opacity: 0,
+            transition: {
+              height: { duration: 0.4, ease: [0.4, 0, 0.2, 1] },
+              opacity: { duration: 0.16, delay: 0 },
+            },
+          }}
           transition={panelTransition}
           className="overflow-hidden"
+          data-pf-no-color-transition=""
         >
           {detailsInner}
         </motion.div>
@@ -1373,8 +998,8 @@ function ExperienceEditorialEntry({
 
   const titleHeading = title ? (
     <h4
-      className="pf-exp-lead-reveal pf-exp-ed-copy m-0 p-0 text-left font-serif text-[1.35rem] font-bold leading-[1.18] tracking-[-0.02em] sm:text-[1.5rem] lg:text-[1.65rem]"
-      style={{ color: titleColor }}
+      className="pf-exp-lead-reveal pf-exp-ed-copy m-0 max-w-[34ch] p-0 text-left text-[length:calc(clamp(1.6rem,2.5vw,2.5rem)*var(--pf-experience-font-scale,1))] leading-[1.18] tracking-[-0.035em]"
+      style={{ color: titleColor, fontWeight: 500 }}
       data-pf-lead-step="1"
       data-pf-no-color-transition=""
     >
@@ -1382,25 +1007,16 @@ function ExperienceEditorialEntry({
     </h4>
   ) : null;
 
-  const showBadgeBesideTitle = !splitActions || !effectiveExpanded;
   // Collapsed always shows meta under title. Expanded stacked keeps meta in the
   // vertical details. Expanded split moves meta to the data column.
   const titleBlock = (
     <>
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2">
         {titleHeading}
-        {showBadgeBesideTitle ? (
-          <ExperienceEditorialOngoingBadge
-            status={status}
-            isDark={isDark}
-            accentColor={accent}
-            secondaryColor={secondary}
-          />
-        ) : null}
       </div>
-      {!effectiveExpanded && metaParts.length > 0 ? (
-        <p className="mt-2.5 text-[0.9rem]" style={{ color: bodyColor }}>
-          {metaParts.join(' · ')}
+      {(splitActions || !effectiveExpanded) && (metaParts.length > 0 || signatureStatus) ? (
+        <p className="mt-3 text-[0.9rem] leading-relaxed" style={{ color: mutedColor }}>
+          {editorialMetaLine}
         </p>
       ) : null}
     </>
@@ -1442,7 +1058,8 @@ function ExperienceEditorialEntry({
 
   return (
     <article
-      className={`grid grid-cols-1 bg-transparent py-7 sm:py-8 ${periodGridClass} sm:gap-x-8 lg:gap-x-10`}
+      className={`grid grid-cols-1 gap-y-4 bg-transparent py-10 sm:py-14 ${periodGridClass} sm:gap-x-7 lg:gap-x-10`}
+      data-pf-no-color-transition=""
       {...(isLead ? { 'data-pf-exp-lead-card': '' } : {})}
       style={{
         border: 'none',
@@ -1463,7 +1080,7 @@ function ExperienceEditorialEntry({
         drawRail={isLead && usesTimelineRail}
       />
 
-      <div className="min-w-0">
+      <div className={`${editorialStatus.content} min-w-0`} data-status-style={effectiveExpanded ? (presentation.editorialStatusStyle ?? 'watermark') : undefined}>
         <div
           className={
             showDataColumn
@@ -1478,14 +1095,16 @@ function ExperienceEditorialEntry({
               ) : (
                 <button
                   type="button"
-                  className="m-0 min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-left"
+                  className="m-0 min-h-10 min-w-0 flex-1 appearance-none border-0 bg-transparent p-0 text-left"
                   onClick={toggleExpanded}
                   aria-expanded={effectiveExpanded}
                 >
                   {titleBlock}
                 </button>
               )}
-              {(!splitActions || !effectiveExpanded) && showExpandControl ? expandControl : null}
+              <div className="ml-auto flex shrink-0 flex-col items-end gap-3">
+                {showExpandControl ? expandControl : null}
+              </div>
             </div>
           </div>
           {showDataColumn && showExpandControl ? (
@@ -1494,6 +1113,11 @@ function ExperienceEditorialEntry({
             </div>
           ) : null}
           <div className="min-w-0 lg:col-start-1 lg:row-start-2">{detailsPanel}</div>
+          {presentation.editorialStatusStyle !== 'signature' && (status === 'ONGOING' || status === 'FINISHED') ? (
+            <p className={effectiveExpanded ? (presentation.editorialStatusStyle === 'vertical' ? editorialStatus.vertical : editorialStatus.watermark) : editorialStatus.footer} style={{ color: `color-mix(in srgb, ${mutedColor} ${effectiveExpanded ? '12%' : '65%'}, transparent)` }}>
+              {status === 'ONGOING' ? t('Ongoing') : t('Done')}
+            </p>
+          ) : null}
           {dataColumn}
         </div>
       </div>
@@ -1542,20 +1166,23 @@ function EditorialExperienceBlock({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const mutedColor = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const bodyColor = ensureExperienceInkContrast(
     resolveExperienceTextColor(styles.tasks, colorMode) ||
       resolveExperienceTextColor(styles.description, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
 
   return (
@@ -1634,7 +1261,7 @@ export function EditorialExperienceList({
         forceSingleColumn ? 'left' : presentation.listPlacement
       )}
     >
-      <div className={`${gridClass} !gap-0 space-y-0`.trim()}>
+      <div className={`${presentation.editorialFocusMode !== false ? editorialStatus.focusRows : ''} ${gridClass} !gap-0 space-y-0`.trim()} data-focus-blur={presentation.editorialFocusBlur !== false}>
         {blocks.map((block, index) => {
           const entry = (
             <EditorialExperienceBlock
@@ -1770,11 +1397,7 @@ function MilestoneTimelineRail({
         className={`pf-exp-milestone-rail-node${active ? ' is-active' : ''}`}
         style={{
           backgroundColor: active ? nodeActive : nodeIdle,
-          boxShadow: active
-            ? isDark
-              ? '0 0 0 4px rgba(255,255,255,0.08)'
-              : '0 0 0 4px rgba(0,0,0,0.06)'
-            : undefined,
+          boxShadow: 'none',
         }}
       />
       <div
@@ -1839,53 +1462,65 @@ function MilestoneExperienceEntry({
   const t = useT();
   const articleRef = useRef<HTMLElement | null>(null);
   const displayYear = extractMilestoneDisplayYear(period);
+  const reducedMotion = useReducedMotion();
+  const headerMotionOff = usePortfolioHeaderMotionOff();
+  useEffect(() => {
+    const article = articleRef.current;
+    if (!article || reducedMotion || headerMotionOff || article.closest('[data-milestone-motion="none"]')) return;
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry.isIntersecting) {
+        article.dataset.milestoneReveal = 'visible';
+        observer.disconnect();
+      }
+    }, { root: getScrollParent(article), rootMargin: '0px 0px -5% 0px', threshold: 0 });
+    article.dataset.milestoneReveal = 'pending';
+    observer.observe(article);
+    return () => { observer.disconnect(); delete article.dataset.milestoneReveal; };
+  }, [reducedMotion, headerMotionOff]);
   const secondary = experienceSecondaryStatusColor(presentation);
-  const stackLabel = resolveExperienceBlockLabel(toolsLabel, 'Stack');
+  // The "Stack" / "Responsibilities" headings follow the per-label switches in General (blank = hidden).
+  const stackLabel = experienceBlockLabelVisible(presentation, 'tools')
+    ? resolveExperienceBlockLabel(toolsLabel, 'Stack')
+    : '';
+  const tasksLabel = experienceBlockLabelVisible(presentation, 'tasks')
+    ? resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities')
+    : '';
   const metaParts = [
     organization?.trim() || '',
     location?.trim() || '',
     employmentTypeLabel(employmentType),
   ].filter(Boolean);
-  const cardStyle: CSSProperties = isDark
-    ? {
-        borderColor: 'rgba(255,255,255,0.1)',
-        backgroundColor: 'rgba(255,255,255,0.04)',
-      }
-    : {
-        borderColor: 'rgba(0,0,0,0.08)',
-        backgroundColor: 'rgba(0,0,0,0.025)',
-      };
-  const softBodyColor = `color-mix(in srgb, ${bodyColor} 68%, transparent)`;
-  const softTaskMuted = `color-mix(in srgb, ${mutedColor} 75%, transparent)`;
+  const cardStyle: CSSProperties = {
+    borderColor: presentation.experiencePalette?.bordure || `color-mix(in srgb, ${titleColor} 14%, transparent)`,
+    backgroundColor: `color-mix(in srgb, ${titleColor} 2.5%, transparent)`,
+  };
+  // Description = context (the secondary colour, full strength: a 68% fade of the body colour was too faint);
+  // tasks = the content to read (the strong ink), so the two no longer share one shade.
+  const softBodyColor = mutedColor;
+  const taskInk = bodyColor;
+  const softTaskMuted = `color-mix(in srgb, ${mutedColor} 92%, transparent)`;
   const softMetaColor = `color-mix(in srgb, ${mutedColor} 88%, transparent)`;
-  const linkVariant = resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'milestone');
-  const linkPalette = experienceLinkButtonPalette({
-    ink: titleColor,
-    muted: mutedColor,
-    accent,
-    background: presentation.sectionBackgroundColor?.trim(),
-    isDark,
-  });
+  const labelColor = presentation.milestoneLabelColor === 'primary' ? accent : presentation.milestoneLabelColor === 'secondary' ? secondary : presentation.milestoneLabelColor === 'strong' ? titleColor : mutedColor;
+  const labelSize = presentation.milestoneLabelSize ?? 12;
   return (
     <article
       ref={articleRef}
-      className={`${MILESTONE_ENTRY_GRID_CLASS} gap-4 ${isLast ? 'pb-2' : 'pb-12 sm:pb-16'}`}
+      className={`${milestoneDetails.entry} ${MILESTONE_ENTRY_GRID_CLASS} gap-4 ${isLast ? 'pb-2' : 'pb-12 sm:pb-16'}`}
+      style={{ '--milestone-ink': titleColor, '--milestone-accent': accent } as CSSProperties}
       {...(index === 0 ? { 'data-pf-exp-lead-card': '' } : {})}
     >
       {/* Top padding mirrors the card so 2022 sits on the title’s first line. */}
       <div
-        className={`flex items-start gap-3 pt-5 sm:flex sm:flex-col sm:pt-6 lg:pt-7 ${
-          accentYearsGridAnchorEnabled(presentation) ? 'sm:items-start' : 'sm:items-end'
-        }`}
+        className={`${milestoneDetails.year} flex items-start gap-3 pt-5 sm:flex-col sm:items-end sm:pt-6 lg:pt-7`}
       >
         <div
-          className={`min-w-0 w-full text-left ${
-            accentYearsGridAnchorEnabled(presentation) ? '' : 'sm:pr-1 sm:text-right'
-          }`}
+          className="min-w-0 w-full text-left sm:text-right"
         >
           <p
-            className="font-semibold tabular-nums leading-none tracking-[-0.035em] text-[clamp(2.35rem,5.5vw,3.35rem)]"
-            style={{ color: titleColor, opacity: 0.96 }}
+            // Display sizes are written as one calc() class: the shared "#experience .text-*" overrides only cover
+             // body text (< 1.5rem), so the year never followed the Text size setting.
+             className="tabular-nums leading-none tracking-[-0.04em] text-[length:calc(clamp(2.25rem,4.2vw,3.5rem)*var(--pf-experience-font-scale,1))]"
+            style={{ color: titleColor, fontWeight: 400 }}
           >
             {displayYear}
           </p>
@@ -1895,6 +1530,12 @@ function MilestoneExperienceEntry({
               style={{ color: softMetaColor }}
             >
               {period}
+            </p>
+          ) : null}
+          {status === 'ONGOING' || status === 'FINISHED' ? (
+            <p className="mt-3 inline-flex items-center gap-2 text-[0.75rem] leading-relaxed" style={{ color: `color-mix(in srgb, ${status === 'ONGOING' ? accent : secondary} 70%, ${bodyColor})` }}>
+              <span aria-hidden className={`${milestoneDetails.statusDot} h-1.5 w-1.5 shrink-0 rounded-full bg-current`} />
+              {status === 'ONGOING' ? t('Ongoing') : t('Done')}
             </p>
           ) : null}
         </div>
@@ -1908,55 +1549,55 @@ function MilestoneExperienceEntry({
       />
 
       <div
-        className="min-w-0 max-w-3xl rounded-[1.35rem] border px-5 py-5 sm:rounded-[1.5rem] sm:px-7 sm:py-6 lg:px-8 lg:py-7"
+        className={`${milestoneDetails.card} min-w-0 rounded-xl border px-5 py-6 sm:rounded-2xl sm:px-8 sm:py-8 lg:px-10 lg:py-10`}
         style={cardStyle}
       >
-        <div className="flex flex-col lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(10rem,13rem)] lg:items-start lg:gap-x-8 xl:gap-x-10">
+        <div className={`flex min-w-0 flex-col ${description && tasks.length > 0 ? 'xl:grid xl:grid-cols-[minmax(0,1.1fr)_minmax(0,1fr)] xl:grid-rows-[auto_auto_auto_1fr_auto] xl:items-start xl:gap-x-12' : ''}`}>
           {title ? (
             <h4
-              className="pf-exp-lead-reveal pf-exp-ms-copy m-0 p-0 text-left text-[1.45rem] font-semibold leading-[1.12] tracking-[-0.035em] sm:text-[1.75rem] lg:col-start-1 lg:row-start-1 lg:text-[2rem]"
-              style={{ color: titleColor }}
+              className="pf-exp-lead-reveal pf-exp-ms-copy m-0 max-w-[36ch] p-0 text-left text-[length:calc(clamp(1.6rem,2.6vw,2.65rem)*var(--pf-experience-font-scale,1))] leading-[1.14] tracking-[-0.035em] xl:col-start-1 xl:row-start-1"
+              style={{ color: titleColor, fontWeight: 500 }}
               data-pf-lead-step="1"
               data-pf-no-color-transition=""
             >
-              {title}
+              <span className="sr-only">{title}</span>
+              <span aria-hidden="true">
+                {title.split(/(\s+)/).map((word, wordIndex, words) => /^\s+$/.test(word) ? word : (
+                  <span key={wordIndex} className={milestoneDetails.rollWord}>
+                    {Array.from(word).map((character, characterIndex) => (
+                      <span key={characterIndex} className={milestoneDetails.rollCharacter} style={{ '--roll-delay': `${Math.min((words.slice(0, wordIndex).join('').length + characterIndex) * 9, 320)}ms` } as CSSProperties}>
+                        <span className={milestoneDetails.rollTrack} data-pf-no-color-transition="">
+                          <span>{character}</span>
+                          <span className={milestoneDetails.rollCopy}>{character}</span>
+                        </span>
+                      </span>
+                    ))}
+                  </span>
+                ))}
+              </span>
             </h4>
           ) : null}
 
-          {metaParts.length > 0 || status === 'ONGOING' || status === 'FINISHED' ? (
+          {metaParts.length > 0 ? (
             <aside
-              className={`pf-exp-lead-reveal pf-exp-ms-meta flex flex-wrap items-center gap-x-3 gap-y-2 ${
-                title ? 'mt-3.5' : ''
-              } lg:col-start-2 ${
-                description
-                  ? 'lg:row-start-2 lg:mt-6 lg:pt-[0.4rem]'
-                  : 'lg:row-start-1 lg:mt-0 lg:self-center'
-              } lg:flex-col lg:items-end lg:justify-start lg:self-start`}
+              className={`pf-exp-lead-reveal pf-exp-ms-meta flex flex-wrap items-center gap-x-4 gap-y-3 xl:col-start-1 xl:row-start-2 ${title ? 'mt-4' : ''}`}
               data-pf-lead-step="3"
               data-pf-no-color-transition=""
             >
               {metaParts.length > 0 ? (
                 <p
-                  className="text-[0.8125rem] font-medium lg:text-right sm:text-sm"
+                  className="text-[0.8125rem] leading-relaxed sm:text-sm"
                   style={{ color: softMetaColor }}
                 >
                   {metaParts.join(' · ')}
                 </p>
               ) : null}
-              <ExperienceEditorialOngoingBadge
-                status={status}
-                isDark={isDark}
-                accentColor={accent}
-                secondaryColor={secondary}
-              />
             </aside>
           ) : null}
 
           {description ? (
             <p
-              className={`pf-exp-lead-reveal pf-exp-ms-copy m-0 max-w-2xl p-0 text-left text-[0.98rem] leading-[1.8] sm:text-[1.05rem] ${
-                title ? 'mt-5 sm:mt-6' : ''
-              } lg:col-start-1 lg:row-start-2`}
+              className={`pf-exp-lead-reveal pf-exp-ms-copy m-0 max-w-[72ch] p-0 text-left text-[1rem] leading-[1.7] sm:text-[1.05rem] ${title || metaParts.length ? 'mt-7 sm:mt-8' : ''}`}
               style={{ color: softBodyColor }}
               data-pf-lead-step="2"
               data-pf-no-color-transition=""
@@ -1965,62 +1606,64 @@ function MilestoneExperienceEntry({
             </p>
           ) : null}
 
-          <div className="lg:col-start-1 lg:row-start-3">
+          <div className="contents">
             {tasks.length > 0 ? (
               <div
-                className="pf-exp-lead-reveal mt-7 sm:mt-8 [&_ul]:space-y-3.5 sm:[&_ul]:space-y-4"
+                className={`pf-exp-lead-reveal mt-7 max-w-[68ch] sm:mt-8 [&_ul]:space-y-4 sm:[&_ul]:space-y-5 ${description ? 'xl:col-start-2 xl:row-start-3 xl:row-span-2 xl:self-start xl:mt-8 xl:pb-2' : ''}`}
                 data-pf-lead-step="4"
                 data-pf-no-color-transition=""
               >
                 <ExperienceTasksDisplay
                   tasks={tasks}
                   display={presentation.tasksDisplay ?? 'editorial-dash'}
-                  bodyColor={softBodyColor}
+                  bodyColor={taskInk}
                   mutedColor={softTaskMuted}
                   isDark={isDark}
-                  label={resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities')}
-                  size="lg"
+                  label={tasksLabel}
+                  labelColor={labelColor}
+                  labelSize={labelSize}
+                  size="md"
+                  legibleMarkers
                 />
               </div>
             ) : null}
 
+            {tools.length > 0 || links.length > 0 ? <div className={`mt-8 flex min-w-0 flex-col gap-5 border-t pt-6 sm:mt-9 sm:flex-row sm:items-end sm:justify-between sm:gap-8 ${description && tasks.length > 0 ? 'xl:contents' : ''}`} style={{ borderColor: cardStyle.borderColor }}>
             {tools.length > 0 ? (
               <div
-                className="mt-8 border-t pt-6 sm:mt-9 sm:pt-7"
+                className={`min-w-0 flex-1 ${description && tasks.length > 0 ? 'xl:col-start-1 xl:row-start-4 xl:mt-8 xl:border-t xl:pt-6' : ''}`}
                 style={{ borderColor: cardStyle.borderColor }}
               >
                 {stackLabel ? (
                   <p
-                    className="mb-3.5 text-[0.68rem] font-bold uppercase tracking-[0.18em]"
-                    style={{ color: softMetaColor }}
+                    className="mb-3.5 text-xs font-bold uppercase tracking-[0.16em]"
+                    style={{ color: labelColor, fontSize: `${labelSize}px`, textTransform: 'none', letterSpacing: '.02em', fontWeight: 500 }}
                   >
                     {stackLabel}
                   </p>
                 ) : null}
-                <ExperienceToolsDisplay
-                  tools={tools}
-                  style={presentation.toolsBadgeStyle}
-                  ink={titleColor}
-                  muted={mutedColor}
-                  background={presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR}
-                  isDark={isDark}
-                />
+                {presentation.milestoneStackStyle === 'text' ? <ExperienceToolsDisplay tools={tools} style="editorial-list" ink={titleColor} muted={bodyColor} background={presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR} isDark={isDark} /> : <ul className={milestoneDetails.tags} data-shape={presentation.milestoneStackStyle ?? 'rectangle'} style={{ color: bodyColor }}>
+                  {tools.map((tool) => <li key={tool}>{tool}</li>)}
+                </ul>}
               </div>
             ) : null}
 
             {links.length > 0 ? (
-              <div className="mt-7 flex flex-col items-start gap-2.5 sm:mt-8">
+              <div className={`flex shrink-0 flex-col items-start gap-2 sm:items-end [&_a]:inline-flex [&_a]:min-h-10 [&_a]:items-center ${description && tasks.length > 0 ? 'xl:col-start-2 xl:row-start-5 xl:mt-7 xl:items-start xl:border-t xl:pt-5' : ''}`} style={{ borderColor: cardStyle.borderColor }}>
                 {links.map((link) => (
-                  <PortfolioLinkButton
+                  <KineticRepoLink
                     key={link.id}
-                    variant={linkVariant}
+                    shape={presentation.milestoneButtonShape ?? 'link'}
+                    hover={presentation.milestoneButtonHover ?? 'wipe'}
                     href={link.url}
-                    label={link.label || t('View repository')}
-                    palette={linkPalette}
+                    label={link.label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(link.label.trim()) ? link.label : t('View project')}
+                    ink={titleColor}
+                    isDark={isDark}
                   />
                 ))}
               </div>
             ) : null}
+            </div> : null}
           </div>
         </div>
       </div>
@@ -2061,20 +1704,23 @@ function MilestoneExperienceBlock({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const mutedColor = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const bodyColor = ensureExperienceInkContrast(
     resolveExperienceTextColor(styles.tasks, colorMode) ||
       resolveExperienceTextColor(styles.description, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
 
   return (
@@ -2115,13 +1761,6 @@ export function MilestoneExperienceList({
 }) {
   if (blocks.length === 0) return null;
 
-  const flatMotionTiming = {
-    ...defaultMotionTimingForProfile(motionProfile),
-    hoverLift: 0,
-    hoverShadowSize: 0,
-    hoverShadowOpacity: 0,
-  };
-
   return (
     <div
       className={experienceListShellClass(
@@ -2129,7 +1768,7 @@ export function MilestoneExperienceList({
         forceSingleColumn ? 'left' : presentation.listPlacement
       )}
     >
-      <div className="space-y-0">
+      <div className="space-y-0" data-milestone-motion={motionProfile}>
         {blocks.map((block, index) => {
           const entry = (
             <MilestoneExperienceBlock
@@ -2139,24 +1778,7 @@ export function MilestoneExperienceList({
               presentation={presentation}
             />
           );
-          if (index === 0) {
-            return (
-              <div key={block.id} className="h-full">
-                {entry}
-              </div>
-            );
-          }
-          return (
-            <PortfolioMotionItem
-              key={block.id}
-              profile={motionProfile}
-              index={index}
-              className="h-full"
-              timing={flatMotionTiming}
-            >
-              {entry}
-            </PortfolioMotionItem>
-          );
+          return <div key={block.id} className="h-full">{entry}</div>;
         })}
       </div>
     </div>
@@ -2168,11 +1790,13 @@ function TableExperienceStatusCell({
   titleColor,
   mutedColor,
   secondaryColor,
+  accent,
 }: {
   status: ExperienceBlockStatus | null;
   titleColor: string;
   mutedColor: string;
   secondaryColor: string;
+  accent: string;
 }) {
   const t = useT();
   if (status !== 'ONGOING' && status !== 'FINISHED') {
@@ -2181,15 +1805,15 @@ function TableExperienceStatusCell({
   const isOngoing = status === 'ONGOING';
   return (
     <span
-      className="inline-flex items-center gap-2.5 text-[0.98rem] font-medium sm:text-[1.05rem]"
-      style={{ color: isOngoing ? titleColor : secondaryColor }}
+      className="inline-flex items-center gap-2 text-[0.8125rem] leading-relaxed"
+      style={{ color: `color-mix(in srgb, ${isOngoing ? accent : secondaryColor} 70%, ${titleColor})`, fontWeight: 400 }}
     >
       <span
-        className="h-2 w-2 shrink-0 rounded-full"
-        style={{ backgroundColor: isOngoing ? titleColor : secondaryColor }}
+        className="h-1.5 w-1.5 shrink-0 rounded-full"
+        style={{ backgroundColor: 'currentColor' }}
         aria-hidden
       />
-      {isOngoing ? t('Ongoing') : t('Completed')}
+      {isOngoing ? t('Ongoing') : t('Done')}
     </span>
   );
 }
@@ -2209,15 +1833,15 @@ function TableExperienceRow({
   secondaryColor,
   titleColor,
   mutedColor,
+  bodyColor,
   isDark,
   expanded,
   onExpandedChange,
   hairlineColor,
   tasksDisplay = 'editorial-dash',
-  toolsBadgeStyle = 'mineral-pills',
+  presentation = DEFAULT_EXPERIENCE_PRESENTATION,
   striped = false,
   rowIndex = 0,
-  repoLinkButtonStyle = 'icon',
   background,
 }: {
   period: string | null;
@@ -2240,6 +1864,7 @@ function TableExperienceRow({
   onExpandedChange: (expanded: boolean) => void;
   hairlineColor: string;
   tasksDisplay?: PortfolioExperienceTasksDisplay;
+  presentation?: PortfolioExperiencePresentationSettings;
   toolsBadgeStyle?: PortfolioExperienceToolsBadgeStyle;
   striped?: boolean;
   rowIndex?: number;
@@ -2277,37 +1902,41 @@ function TableExperienceRow({
 
   return (
     <div
+      data-table-row=""
+      data-pf-no-color-transition=""
+      className={experienceFocus.tableRow}
       style={{
         borderBottom: `1px solid ${hairlineColor}`,
         backgroundColor: stripeBackground,
+        paddingInline: striped ? '1rem' : undefined,
       }}
     >
       <button
         type="button"
-        className="grid w-full grid-cols-1 gap-3 py-7 text-left sm:grid-cols-[8.5rem_minmax(0,1.4fr)_minmax(0,0.9fr)_8.5rem_2rem] sm:items-start sm:gap-x-5 sm:py-8 lg:grid-cols-[9.5rem_minmax(0,1.5fr)_minmax(0,1fr)_9rem_2.25rem] lg:gap-x-6"
+        className={`${experienceFocus.tableHeader} relative grid w-full grid-cols-1 gap-3 py-7 text-left sm:grid-cols-[6rem_minmax(0,1.8fr)_minmax(0,1fr)_6rem_1.5rem] sm:items-start sm:gap-x-4 sm:py-8 lg:grid-cols-[8rem_minmax(0,1.8fr)_minmax(0,1fr)_7rem_2rem] lg:gap-x-6 focus-visible:outline-2 focus-visible:outline-offset-4`}
         onClick={toggle}
         aria-expanded={hasDetails ? expanded : undefined}
         disabled={!hasDetails}
       >
         <p
-          className="text-[1rem] tabular-nums leading-snug sm:pt-1 sm:text-[1.05rem]"
+          className={`${experienceFocus.tablePeriod} text-[1rem] tabular-nums leading-snug sm:pt-1 sm:text-[1.05rem]`}
           style={{ color: mutedColor }}
         >
           {period || '—'}
         </p>
 
-        <div className="min-w-0">
+        <div className={`${experienceFocus.tableTitle} min-w-0 pr-8 sm:pr-0`}>
           {title ? (
             <p
-              className="text-[1.2rem] font-semibold leading-[1.2] tracking-[-0.02em] sm:text-[1.4rem] lg:text-[1.55rem]"
-              style={{ color: titleColor }}
+              className="text-[length:calc(clamp(1.25rem,1.7vw,1.85rem)*var(--pf-experience-font-scale,1))] leading-[1.22] tracking-[-0.025em]"
+              style={{ color: titleColor, fontWeight: 500 }}
             >
               {title}
             </p>
           ) : null}
         </div>
 
-        <div className="min-w-0 sm:pt-1">
+        <div className={`${experienceFocus.tableOrg} min-w-0 sm:pt-1`}>
           {organization ? (
             <p
               className="text-[1.02rem] font-medium leading-snug sm:text-[1.08rem]"
@@ -2326,25 +1955,28 @@ function TableExperienceRow({
           ) : null}
         </div>
 
-        <div className="sm:pt-1">
+        <div className={`${experienceFocus.tableStatus} sm:pt-1`}>
           <TableExperienceStatusCell
             status={status}
             titleColor={titleColor}
             mutedColor={mutedColor}
             secondaryColor={secondaryColor}
+            accent={accent}
           />
         </div>
 
-        <div className="hidden items-start justify-end pt-1 sm:flex" aria-hidden>
+        <div className={`${experienceFocus.tableToggle} absolute right-0 top-7 flex items-start justify-end sm:static sm:top-auto sm:pt-1`} aria-hidden>
           {hasDetails ? (
-            <motion.span
-              className="block text-lg leading-none sm:text-xl"
-              style={{ color: mutedColor }}
-              animate={{ rotate: expanded ? 180 : 0 }}
+            <motion.svg
+              viewBox="0 0 24 24"
+              fill="none"
+              style={{ color: accent, width: 'calc(1.5rem * var(--pf-experience-font-scale, 1))', height: 'calc(1.5rem * var(--pf-experience-font-scale, 1))' }}
+              data-pf-no-color-transition=""
+              animate={{ rotate: expanded ? 45 : 0 }}
               transition={motionDisabled ? { duration: 0 } : { duration: 0.22 }}
             >
-              ▾
-            </motion.span>
+              <path d="M12 4v16M4 12h16" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+            </motion.svg>
           ) : null}
         </div>
       </button>
@@ -2353,70 +1985,64 @@ function TableExperienceRow({
         {expanded && hasDetails ? (
           <motion.div
             key="table-experience-panel"
+            data-pf-no-color-transition=""
             initial={motionDisabled ? false : { height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={motionDisabled ? { opacity: 0 } : { height: 0, opacity: 0 }}
             transition={panelTransition}
-            className="overflow-hidden"
+            className={`${experienceFocus.tableDetails} overflow-hidden`}
           >
-            <div className="pb-10 sm:grid sm:grid-cols-[8.5rem_minmax(0,1fr)] sm:gap-x-5 sm:pb-11 lg:grid-cols-[9.5rem_minmax(0,1fr)] lg:gap-x-6">
+            <div className="pb-10 sm:grid sm:grid-cols-[6rem_minmax(0,1fr)] sm:gap-x-4 sm:pb-11 lg:grid-cols-[8rem_minmax(0,1fr)] lg:gap-x-6">
               <div className="hidden sm:block" aria-hidden />
-              <div className="max-w-2xl space-y-9 sm:space-y-11">
+              <div className={`min-w-0 space-y-8 sm:space-y-10 ${description && tasks.length > 0 ? 'xl:grid xl:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] xl:gap-x-12 xl:gap-y-9 xl:space-y-0' : ''}`}>
                 {description ? (
                   <p
-                    className="text-[0.98rem] leading-[1.8] sm:text-[1.05rem]"
-                    style={{
-                      color: `color-mix(in srgb, ${titleColor} 58%, transparent)`,
-                    }}
+                    className="m-0 max-w-[72ch] text-[1rem] leading-[1.7] sm:text-[1.05rem]"
+                    style={{ color: mutedColor }}
                   >
                     {description}
                   </p>
                 ) : null}
 
                 {tasks.length > 0 ? (
-                  <div className="[&_ul]:space-y-5 sm:[&_ul]:space-y-6 [&_.pf-exp-tasks-timeline]:space-y-1 [&_.pf-exp-tasks-grid]:gap-3">
+                  <div className="min-w-0 max-w-[64ch] [&_ul]:space-y-4 sm:[&_ul]:space-y-5 [&_.pf-exp-tasks-timeline]:space-y-1 [&_.pf-exp-tasks-grid]:gap-3">
                     <ExperienceTasksDisplay
                       tasks={tasks}
                       display={tasksDisplay}
-                      bodyColor={`color-mix(in srgb, ${titleColor} 58%, transparent)`}
-                      mutedColor={`color-mix(in srgb, ${titleColor} 42%, transparent)`}
+                      bodyColor={bodyColor}
+                      mutedColor={mutedColor}
                       isDark={isDark}
                       label=""
-                      size="lg"
+                      size="md"
+                      legibleMarkers
                     />
                   </div>
                 ) : null}
 
                 {tools.length > 0 ? (
-                  <div className="pt-1">
-                    <ExperienceToolsDisplay
+                  <div className="min-w-0 border-t pt-5" style={{ borderColor: hairlineColor }}>
+                    {presentation.tableStackStyle && presentation.tableStackStyle !== 'text' ? <ul className={editorialStatus.stackTags} data-shape={presentation.tableStackStyle} style={{ color: bodyColor, '--stack-edge': hairlineColor } as CSSProperties}>{tools.map((tool, index) => <li key={`${index}-${tool}`} data-pf-no-color-transition="">{tool}</li>)}</ul> : <ExperienceToolsDisplay
                       tools={tools}
-                      style={toolsBadgeStyle}
+                      style="editorial-list"
                       ink={titleColor}
                       muted={mutedColor}
                       background={background || DEFAULT_SECTION_BACKGROUND_COLOR}
                       isDark={isDark}
-                    />
+                    />}
                   </div>
                 ) : null}
 
                 {links.length > 0 ? (
-                  <div className="flex flex-col items-start gap-2.5 pt-1">
+                  <div className={`flex flex-wrap items-start gap-4 border-t pt-5 [&_a]:min-h-11 ${description && tasks.length > 0 ? 'xl:justify-end' : ''}`} style={{ borderColor: hairlineColor }}>
                     {links.map((link) => (
-                      <PortfolioLinkButton
+                      <KineticRepoLink
                         key={link.id}
-                        variant={repoLinkButtonStyle}
+                        shape={presentation.tableButtonShape ?? 'link'}
+                        hover={presentation.tableButtonHover ?? 'wipe'}
                         href={link.url}
-                        label={link.label || t('View repository')}
-                        palette={experienceLinkButtonPalette({
-                          ink: titleColor,
-                          muted: mutedColor,
-                          accent,
-                          background,
-                          border: hairlineColor,
-                          isDark,
-                        })}
-                        onClick={(event) => event.stopPropagation()}
+                        label={link.label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(link.label.trim()) ? link.label : t('View project')}
+                        ink={titleColor}
+                        isDark={isDark}
                       />
                     ))}
                   </div>
@@ -2468,24 +2094,28 @@ function TableExperienceBlock({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const mutedColor = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const bodyColor = ensureExperienceInkContrast(
     resolveExperienceTextColor(styles.tasks, colorMode) ||
       resolveExperienceTextColor(styles.description, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
 
   return (
     <TableExperienceRow
+      presentation={presentation}
       secondaryColor={secondary}
       period={presentation.showPeriod ? period : null}
       title={presentation.showTitle ? title : null}
@@ -2542,7 +2172,8 @@ export function TableExperienceHeader({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const ink = resolveSerifLeadInkColor(presentation, titleColor);
   const { label, title } = resolveSerifLeadCopy(years, sectionTitle, presentation);
@@ -2734,13 +2365,15 @@ export function CardsExperienceHeader({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const mutedColor = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
 
   const showYears = presentation.showYears && years != null && years > 0;
@@ -2794,6 +2427,7 @@ export function TableExperienceList({
   motionProfile?: PortfolioGlobalMotionProfile;
   forceSingleColumn?: boolean;
 }) {
+  const t = useT();
   const [openBlockId, setOpenBlockId] = useState<string | null>(() => blocks[0]?.id ?? null);
   const isDark = presentation.activeColorMode !== 'light';
   const colorMode = resolveExperienceColorMode(presentation);
@@ -2802,7 +2436,8 @@ export function TableExperienceList({
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const hairlineColor = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
 
@@ -2834,21 +2469,27 @@ export function TableExperienceList({
       )}
     >
       <div
-        className="hidden border-b sm:grid sm:grid-cols-[8.5rem_minmax(0,1.4fr)_minmax(0,0.9fr)_8.5rem_2rem] sm:gap-x-5 sm:pb-3.5 lg:grid-cols-[9.5rem_minmax(0,1.5fr)_minmax(0,1fr)_9rem_2.25rem] lg:gap-x-6"
-        style={{ borderColor: hairlineColor }}
+        className="hidden border-b sm:grid sm:grid-cols-[6rem_minmax(0,1.8fr)_minmax(0,1fr)_6rem_1.5rem] sm:gap-x-4 sm:pb-3.5 lg:grid-cols-[8rem_minmax(0,1.8fr)_minmax(0,1fr)_7rem_2rem] lg:gap-x-6"
+        style={{ borderColor: hairlineColor, paddingInline: presentation.tableStripedRows ? '1rem' : undefined }}
       >
-        {['Period', 'Role', 'Organization', 'Status', ''].map((label) => (
+        {([
+          [presentation.tablePeriodLabel, 'Period'],
+          [presentation.tableRoleLabel, 'Role'],
+          [presentation.tableOrganizationLabel, 'Organization'],
+          [presentation.tableStatusLabel, 'Status'],
+          ['', ''],
+        ] as const).map(([customLabel, label]) => (
           <p
             key={label || 'chevron'}
             className="text-[0.72rem] font-semibold uppercase tracking-[0.18em] sm:text-[0.78rem]"
             style={{ color: mutedColor }}
           >
-            {label}
+            {customLabel?.trim() || t(label)}
           </p>
         ))}
       </div>
 
-      <div>
+      <div className={presentation.tableFocusMode !== false ? experienceFocus.tableRows : undefined} data-focus-blur={presentation.tableFocusBlur !== false}>
         {blocks.map((block, index) => (
           <PortfolioMotionItem
             key={block.id}
@@ -2927,7 +2568,7 @@ function CardsRepoLink({
       {...anchorProps}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className="group/repo inline-flex items-center gap-2.5 text-[0.82rem] font-medium tracking-[0.02em] outline-hidden focus-visible:opacity-70"
+      className="group/repo inline-flex items-center min-h-10 gap-2.5 text-sm font-medium tracking-[0.02em] outline-hidden focus-visible:opacity-70"
       style={{ color: ink }}
       data-pf-no-color-transition=""
     >
@@ -3010,32 +2651,32 @@ function CardsExperienceEntry({
   const descRef = useRef<HTMLParagraphElement | null>(null);
   const tasksListRef = useRef<HTMLDivElement | null>(null);
 
-  const secondary = experienceSecondaryStatusColor(presentation);
+  const sectionBackground = presentation.sectionBackgroundColor?.trim() || presentation.experiencePalette?.fond || (isDark ? '#101010' : '#ffffff');
+  const sectionBg = experienceCardsSurface(presentation.experiencePalette?.[presentation.cardsFrameColor ?? 'neutre'] || (isDark ? '#171717' : '#ffffff'), sectionBackground, presentation.cardsFrameOpacity ?? 100);
+  const secondary = ensureExperienceInkContrast(experienceSecondaryStatusColor(presentation), isDark, '#000000', '#ffffff', sectionBg);
   const metaParts = [
     organization?.trim() || '',
     location?.trim() || '',
     employmentTypeLabel(employmentType),
   ].filter(Boolean);
-  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Finished') : null;
-  const statusColor = status === 'ONGOING' ? accent : secondary;
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Done') : null;
+  const statusColor = `color-mix(in srgb, ${status === 'ONGOING' ? accent : secondary} 70%, ${bodyColor})`;
   // Period, status and org/role fold into one micro-typographic label line above
   // the title instead of a floating badge — each part keeps its own ink so the
   // status word still reads as a signal, not just more grey text.
   const labelParts: { text: string; color: string }[] = [];
   if (period) labelParts.push({ text: period, color: mutedColor });
   if (statusLabel) labelParts.push({ text: statusLabel, color: statusColor });
-  metaParts.forEach((part) => labelParts.push({ text: part, color: mutedColor }));
 
-  const sectionBg = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
   // Just opaque enough for the stacking cascade to cleanly cover the card underneath —
   // no border, no inner panel. Content floats straight on this near-flat backing.
-  const cardStyle: CSSProperties = isDark
-    ? { backgroundColor: `color-mix(in srgb, ${sectionBg} 97%, white 3%)` }
-    : { backgroundColor: '#ffffff' };
+  const cardStyle: CSSProperties = { backgroundColor: sectionBg, boxShadow: presentation.cardsFrameShadow === true ? '0 10px 24px -8px rgba(0, 0, 0, 0.18)' : 'none' };
   const spacing = experienceCardsElementSpacingClasses(presentation.cardsElementSpacing);
   const radiusClass = experienceCardsBorderRadiusClass(presentation.cardsBorderRadius);
-  const linkVariant = resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'cards');
-  const hasContent = Boolean(description) || tasks.length > 0 || tools.length > 0;
+  const sharedCardCss = cardsStyleCss(presentation.cardsStyle, presentation.experiencePalette);
+  const labelColor = ensureExperienceInkContrast(presentation.cardsLabelColor === 'primary' ? accent : presentation.cardsLabelColor === 'secondary' ? secondary : presentation.cardsLabelColor === 'strong' ? titleColor : mutedColor, isDark, '#000000', '#ffffff', sectionBg);
+  const labelSize = presentation.cardsLabelSize ?? 12;
+  const hasContent = Boolean(description) || tasks.length > 0;
 
   // Entrance, once per card: the title slides up out of its mask, the description
   // fades/slides in right after, then the task list cascades in at a tight stagger.
@@ -3123,14 +2764,15 @@ function CardsExperienceEntry({
     <article
       ref={articleRef}
       data-entrance-ready="false"
-      className={`pf-exp-cards-stack-card flex min-w-0 flex-col ${spacing.cardPad} ${radiusClass}`}
-      style={{ ...cardStyle, zIndex: stackIndex + 1 }}
+      data-pf-no-color-transition=""
+      className={`pf-exp-cards-stack-card ${experienceCards.card} flex min-w-0 flex-col ${spacing.cardPad} ${radiusClass}`}
+      style={{ ...cardStyle, ...sharedCardCss, zIndex: stackIndex + 1, '--experience-card-rule': presentation.experiencePalette?.bordure || `color-mix(in srgb, ${titleColor} 14%, transparent)` } as CSSProperties}
     >
       <div className="pf-exp-cards-stack-header">
         {labelParts.length > 0 ? (
           <p
-            className="mb-4 flex flex-wrap items-center gap-x-2.5 text-[0.62rem] font-semibold uppercase sm:mb-5 sm:text-[0.66rem]"
-            style={{ letterSpacing: '0.18em', opacity: 0.65 }}
+            className="mb-5 flex flex-wrap items-center gap-x-2.5 gap-y-2 text-[0.8125rem] sm:mb-6"
+            style={{ letterSpacing: '0.04em' }}
           >
             {labelParts.map((part, index) => (
               <span key={`${part.text}-${index}`} className="flex items-center gap-x-2.5">
@@ -3139,17 +2781,20 @@ function CardsExperienceEntry({
                     &middot;
                   </span>
                 ) : null}
-                <span style={{ color: part.color }}>{part.text}</span>
+                <span className="inline-flex items-center gap-1.5" style={{ color: part.color }}>
+                  {part.text === statusLabel ? <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-current" /> : null}
+                  {part.text}
+                </span>
               </span>
             ))}
           </p>
         ) : null}
         {title ? (
           <h4
-            className="overflow-hidden"
+            className="max-w-[30ch] overflow-hidden break-words font-medium tracking-[-0.035em]"
             style={{
               fontSize: experienceCardsTitleFontSize(presentation.cardsTitleSize),
-              lineHeight: 0.95,
+              lineHeight: 1.08,
               fontFamily: SERIF,
             }}
           >
@@ -3158,20 +2803,22 @@ function CardsExperienceEntry({
             </span>
           </h4>
         ) : null}
+        {metaParts.length > 0 ? (
+          <p className="mt-4 max-w-[65ch] text-[0.875rem] leading-relaxed" style={{ color: mutedColor, fontWeight: 400 }}>{metaParts.join(' · ')}</p>
+        ) : null}
       </div>
 
       {hasContent ? (
-        <div className="mt-14 flex flex-col gap-9 sm:mt-20 sm:gap-10 lg:mt-24">
+        <div className={`${spacing.sectionGap} ${experienceCards.content}`} data-split={Boolean(description) && tasks.length > 0}>
           {description ? (
             <p
               ref={descRef}
-              className="max-w-2xl"
+              className="min-w-0 max-w-[65ch] break-words"
               style={{
                 color: bodyColor,
-                opacity: 0.6,
-                fontSize: '0.98rem',
+                fontSize: '1rem',
                 lineHeight: 1.7,
-                fontWeight: 300,
+                fontWeight: 400,
               }}
             >
               {description}
@@ -3179,60 +2826,66 @@ function CardsExperienceEntry({
           ) : null}
 
           {tasks.length > 0 ? (
-            <div ref={tasksListRef} className="pf-exp-cards-tasks">
+            <div ref={tasksListRef} className="pf-exp-cards-tasks min-w-0 break-words">
               <ExperienceTasksDisplay
                 tasks={tasks}
                 display={presentation.tasksDisplay ?? 'editorial-dash'}
                 bodyColor={bodyColor}
                 mutedColor={mutedColor}
                 isDark={isDark}
-                label=""
-                size="lg"
+                label={experienceBlockLabelVisible(presentation, 'tasks') ? resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities') : ''}
+                size="md"
+                legibleMarkers
                 strongIndex={(presentation.tasksDisplay ?? 'editorial-dash') === 'architectural-index'}
+                labelColor={labelColor}
+                labelSize={labelSize}
               />
             </div>
           ) : null}
 
+        </div>
+      ) : null}
+
+      {tools.length > 0 || links.length > 0 ? (
+        <div className={`${spacing.linksGap} ${experienceCards.footer}`}>
           {tools.length > 0 ? (
-            <ExperienceToolsDisplay
+            <div className="min-w-0">
+            {experienceBlockLabelVisible(presentation, 'tools') ? <p className="mb-3" style={{ color: labelColor, fontSize: `${labelSize}px`, fontWeight: 500 }}>{resolveExperienceBlockLabel(presentation.toolsLabel, 'Stack')}</p> : null}
+            {presentation.cardsStackStyle && presentation.cardsStackStyle !== 'text' ? <ul className={editorialStatus.stackTags} data-shape={presentation.cardsStackStyle} style={{ color: bodyColor, '--stack-edge': `color-mix(in srgb, ${titleColor} 15%, transparent)` } as CSSProperties}>{tools.map((tool, index) => <li key={`${index}-${tool}`} data-pf-no-color-transition="">{tool}</li>)}</ul> : <ExperienceToolsDisplay
               tools={tools}
-              style={presentation.toolsBadgeStyle}
+              style="editorial-list"
               ink={titleColor}
               muted={mutedColor}
               background={sectionBg}
               isDark={isDark}
               size="sm"
-            />
+            />}
+            </div>
           ) : null}
-        </div>
-      ) : null}
-
       {links.length > 0 ? (
-        <div className={`${spacing.linksGap} flex flex-col items-start gap-3`}>
+        <div className="flex flex-wrap items-center gap-x-6 gap-y-3">
           {links.map((link) =>
-            linkVariant === 'cards' ? (
+            !presentation.cardsButtonShape || presentation.cardsButtonShape === 'link' ? (
               <CardsRepoLink
                 key={link.id}
                 href={link.url}
-                label={link.label || t('View repository')}
+                label={link.label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(link.label.trim()) ? link.label : t('View project')}
                 ink={titleColor}
               />
             ) : (
-              <PortfolioLinkButton
+              <KineticRepoLink
                 key={link.id}
-                variant={linkVariant}
+                shape={presentation.cardsButtonShape}
+                hover={presentation.cardsButtonHover ?? 'roll'}
                 href={link.url}
-                label={link.label || t('View repository')}
-                palette={experienceLinkButtonPalette({
-                  ink: titleColor,
-                  muted: mutedColor,
-                  accent,
-                  background: sectionBg,
-                  border: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
-                })}
+                label={link.label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(link.label.trim()) ? link.label : t('View project')}
+                ink={titleColor}
+                isDark={isDark}
               />
             )
           )}
+        </div>
+      ) : null}
         </div>
       ) : null}
     </article>
@@ -3270,22 +2923,26 @@ function CardsExperienceBlock({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const mutedColor = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const bodyColor = ensureExperienceInkContrast(
     resolveExperienceTextColor(styles.tasks, colorMode) ||
       resolveExperienceTextColor(styles.description, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
 
+  const frameSurface = experienceCardsSurface(presentation.experiencePalette?.[presentation.cardsFrameColor ?? 'neutre'] || (isDark ? '#171717' : '#ffffff'), presentation.sectionBackgroundColor || presentation.experiencePalette?.fond || (isDark ? '#101010' : '#ffffff'), presentation.cardsFrameOpacity ?? 100);
   return (
     <CardsExperienceEntry
       period={presentation.showPeriod ? period : null}
@@ -3298,10 +2955,10 @@ function CardsExperienceBlock({
       links={presentation.showProof ? links : []}
       location={presentation.showMeta ? location : null}
       employmentType={presentation.showMeta ? employmentType : null}
-      accent={accent}
-      titleColor={titleColor}
-      mutedColor={mutedColor}
-      bodyColor={bodyColor}
+      accent={ensureExperienceInkContrast(accent, isDark, '#000000', '#ffffff', frameSurface)}
+      titleColor={ensureExperienceInkContrast(titleColor, isDark, '#000000', '#ffffff', frameSurface)}
+      mutedColor={ensureExperienceInkContrast(mutedColor, isDark, '#000000', '#ffffff', frameSurface)}
+      bodyColor={ensureExperienceInkContrast(bodyColor, isDark, '#000000', '#ffffff', frameSurface)}
       isDark={isDark}
       presentation={presentation}
       stackIndex={stackIndex}
@@ -3365,6 +3022,53 @@ export function CardsExperienceList({
 }) {
   const reduceMotion = useReducedMotion();
   const stackRef = useRef<HTMLDivElement | null>(null);
+  useEffect(() => {
+    const stack = stackRef.current;
+    if (!stack || reduceMotion) return;
+    const cards = Array.from(stack.querySelectorAll<HTMLElement>('.pf-exp-cards-stack-card'));
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const scroller = getScrollParent(stack);
+      const viewTop = scroller?.getBoundingClientRect().top ?? 0;
+      const viewHeight = scroller?.clientHeight ?? window.innerHeight;
+      let central = -1;
+      let best = Infinity;
+      cards.forEach((card, index) => {
+        const box = card.getBoundingClientRect();
+        const distance = Math.abs(box.top + box.height / 2 - viewTop - viewHeight / 2) / Math.max(1, (viewHeight + box.height) / 2);
+        if (box.bottom > viewTop && box.top < viewTop + viewHeight && distance <= best) { best = distance; central = index; }
+      });
+      const viewBox = scroller?.getBoundingClientRect();
+      const centerX = viewBox ? viewBox.left + viewBox.width / 2 : window.innerWidth / 2;
+      const frontCard = document.elementFromPoint(centerX, viewTop + viewHeight / 2)?.closest<HTMLElement>('.pf-exp-cards-stack-card');
+      const frontIndex = frontCard ? cards.indexOf(frontCard) : -1;
+      const keyboardIndex = cards.findIndex(card => card.querySelector(':focus-visible'));
+      if (frontIndex >= 0) central = frontIndex;
+      if (keyboardIndex >= 0) central = keyboardIndex;
+      cards.forEach((card, index) => {
+        card.style.removeProperty('--cards-position-opacity');
+        card.style.setProperty('--cards-position-blur', index === central ? '0px' : '0.8px');
+        card.dataset.cardsCentral = String(index === central);
+      });
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    const observer = new ResizeObserver(schedule);
+    cards.forEach(card => observer.observe(card));
+    window.addEventListener('scroll', schedule, { passive: true, capture: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    stack.addEventListener('focusin', schedule);
+    stack.addEventListener('focusout', schedule);
+    update();
+    return () => {
+      cancelAnimationFrame(frame); observer.disconnect();
+      window.removeEventListener('scroll', schedule, true);
+      window.removeEventListener('resize', schedule);
+      stack.removeEventListener('focusin', schedule);
+      stack.removeEventListener('focusout', schedule);
+      cards.forEach(card => { card.style.removeProperty('--cards-position-blur'); delete card.dataset.cardsCentral; });
+    };
+  }, [blocks, reduceMotion, presentation.cardsStackEffect]);
   const cascadeEnabled = presentation.cardsStackEffect !== 'static';
   // Reactive (not a one-time matchMedia snapshot) so resizing/rotating across the
   // breakpoint tears down/recreates the scroll listener instead of leaving it stuck
@@ -3384,7 +3088,7 @@ export function CardsExperienceList({
   // Declared (and so runs) before the recede effect below, so that effect's
   // very first measurement already sees equalized heights.
   useLayoutEffect(() => {
-    if (typeof window === 'undefined' || presentation.cardsEqualHeight !== true) return undefined;
+    if (typeof window === 'undefined' || !isDesktopWidth || (!cascadeEnabled && presentation.cardsEqualHeight !== true)) return undefined;
     const stack = stackRef.current;
     if (!stack) return undefined;
     const cards = Array.from(
@@ -3393,6 +3097,7 @@ export function CardsExperienceList({
     if (cards.length < 2) return undefined;
 
     let ticking = false;
+    let resizeFrame = 0;
     const equalize = () => {
       ticking = false;
       // Reset first so a shorter card's real content height is what gets
@@ -3400,7 +3105,8 @@ export function CardsExperienceList({
       cards.forEach((card) => {
         card.style.minHeight = '';
       });
-      const tallest = Math.max(...cards.map((card) => card.getBoundingClientRect().height));
+      // Layout height excludes the scale applied by the stacking animation.
+      const tallest = Math.max(...cards.map((card) => card.offsetHeight));
       cards.forEach((card) => {
         card.style.minHeight = `${Math.ceil(tallest)}px`;
       });
@@ -3411,7 +3117,7 @@ export function CardsExperienceList({
     const onResize = () => {
       if (ticking) return;
       ticking = true;
-      window.requestAnimationFrame(equalize);
+      resizeFrame = window.requestAnimationFrame(equalize);
     };
 
     equalize();
@@ -3422,9 +3128,13 @@ export function CardsExperienceList({
       if (!cancelled) equalize();
     });
     window.addEventListener('resize', onResize);
+    const contentObserver = new ResizeObserver(onResize);
+    cards.forEach(card => Array.from(card.children).forEach(child => contentObserver.observe(child)));
 
     return () => {
       cancelled = true;
+      window.cancelAnimationFrame(resizeFrame);
+      contentObserver.disconnect();
       window.removeEventListener('resize', onResize);
       cards.forEach((card) => {
         card.style.minHeight = '';
@@ -3432,11 +3142,20 @@ export function CardsExperienceList({
     };
   }, [
     blocks,
+    isDesktopWidth,
+    cascadeEnabled,
     presentation.cardsEqualHeight,
     presentation.cardsCardWidth,
     presentation.cardsElementSpacing,
     presentation.cardsTasksGap,
     presentation.cardsTitleSize,
+    presentation.cardsStackStyle,
+    presentation.cardsButtonShape,
+    presentation.cardsLabelSize,
+    presentation.tasksLabel,
+    presentation.toolsLabel,
+    presentation.blockLabelVisibility,
+    presentation.showBlockLabels,
     presentation.tasksDisplay,
     presentation.toolsBadgeStyle,
     presentation.showTitle,
@@ -3510,8 +3229,8 @@ export function CardsExperienceList({
         // has finished appearing, so its reveal visibly races the next card's
         // cover instead of the two happening one after the other.
         if (card.getAttribute('data-entrance-ready') !== 'true') depth = 0;
-        const scale = 1 - depth * CARDS_STACK_SCALE_STEP;
-        const sink = depth * CARDS_STACK_SINK_PX;
+        const scale = Math.max(0.97, 1 - depth * CARDS_STACK_SCALE_STEP);
+        const sink = Math.min(12, depth * CARDS_STACK_SINK_PX);
         card.style.transform = `scale(${scale}) translateY(-${sink}px)`;
       });
     };
@@ -3600,13 +3319,13 @@ function ReelStatusIndicator({
   const t = useT();
   const isFinished = status === 'FINISHED';
   const color = isFinished ? secondaryColor : accent;
-  const label = isFinished ? t('Completed') : t('Ongoing');
+  const label = isFinished ? t('Done') : t('Ongoing');
 
   if (presentationStyle === 'minimal') {
     return (
-      <div className="mt-7 flex items-center gap-2.5">
+      <div className="flex w-fit items-center gap-2.5">
         <span
-          className="h-2 w-2 shrink-0 animate-pulse rounded-full"
+          className={`h-2 w-2 shrink-0 rounded-full ${isFinished ? '' : 'motion-safe:animate-pulse'}`}
           style={{ backgroundColor: color }}
           aria-hidden
         />
@@ -3622,7 +3341,7 @@ function ReelStatusIndicator({
 
   if (presentationStyle === 'bar') {
     return (
-      <div className="mt-7 flex items-center gap-3">
+      <div className="flex w-fit items-center gap-3">
         <span
           className="h-[2px] w-8 shrink-0 rounded-full"
           style={{
@@ -3630,7 +3349,7 @@ function ReelStatusIndicator({
           }}
           aria-hidden
         />
-        <span className="text-[0.85rem] font-medium" style={{ color: bodyColor, fontFamily: REEL_SANS }}>
+        <span className="text-[0.8125rem] font-medium" style={{ color: `color-mix(in srgb, ${color} 70%, ${bodyColor})`, fontFamily: REEL_SANS }}>
           {label}
         </span>
       </div>
@@ -3639,9 +3358,9 @@ function ReelStatusIndicator({
 
   if (presentationStyle === 'square') {
     return (
-      <div className="mt-7 flex items-center gap-2.5">
+      <div className="flex w-fit items-center gap-2.5">
         <span className="h-[0.55rem] w-[0.55rem] shrink-0" style={{ backgroundColor: color }} aria-hidden />
-        <span className="text-[0.85rem] font-bold" style={{ color: bodyColor, fontFamily: REEL_SANS }}>
+        <span className="text-[0.8125rem] font-medium" style={{ color: `color-mix(in srgb, ${color} 70%, ${bodyColor})`, fontFamily: REEL_SANS }}>
           {label}
         </span>
       </div>
@@ -3651,7 +3370,7 @@ function ReelStatusIndicator({
   if (presentationStyle === 'plain') {
     return (
       <p
-        className={`mt-7 text-[0.95rem] ${isFinished ? 'font-normal' : 'font-bold'}`}
+        className="w-fit text-[0.8125rem] font-medium"
         style={{ color, fontFamily: REEL_SANS }}
       >
         {label}
@@ -3662,7 +3381,7 @@ function ReelStatusIndicator({
   // 'badge' — pill chip with a checkmark (Completed) or dot (Ongoing) icon.
   return (
     <div
-      className="mt-7 inline-flex items-center gap-2 rounded-full border px-3.5 py-[0.45rem]"
+      className="inline-flex w-fit items-center gap-2 rounded-full border px-3.5 py-[0.45rem]"
       style={{
         borderColor: hairline,
         backgroundColor: `color-mix(in srgb, ${color} 14%, transparent)`,
@@ -3691,18 +3410,20 @@ function ReelStatusIndicator({
 /** Scroll-driven warp on the faint index watermark — enters / settles / exits distorted. */
 function ReelIndexWatermark({
   index,
+  statusLabel,
   titleColor,
   sectionRef,
   enabled,
 }: {
   index: number;
+  statusLabel?: string;
   titleColor: string;
   sectionRef: RefObject<HTMLElement | null>;
   enabled: boolean;
 }) {
   const reduceMotion = useReducedMotion();
   const digits = String(index + 1).padStart(2, '0').split('');
-  const ink = `color-mix(in srgb, ${titleColor} 5%, transparent)`;
+  const ink = `color-mix(in srgb, ${titleColor} 22%, transparent)`;
   const animate = enabled && !reduceMotion;
 
   const { scrollYProgress } = useScroll({
@@ -3726,27 +3447,28 @@ function ReelIndexWatermark({
 
   if (!animate) {
     return (
-      <div className="relative h-0">
+      <div className={reelPolish.indexGroup}>
         <span
           aria-hidden
-          className="pointer-events-none absolute bottom-[1.5rem] right-[6vw] select-none text-[6rem] leading-none sm:bottom-[1.75rem] sm:text-[8.5rem]"
-          style={{ color: ink, fontFamily: REEL_SERIF, fontWeight: 450 }}
+          className={reelPolish.indexType}
+          style={{ color: ink, fontFamily: REEL_SERIF, fontWeight: 400 }}
         >
-          {digits.join('')}
+          {statusLabel ? <span className={reelPolish.indexStatus} style={{ color: `color-mix(in srgb, ${titleColor} 38%, transparent)` }}>{statusLabel}</span> : null}
+          <span>{digits.join('')}</span>
         </span>
       </div>
     );
   }
 
   return (
-    <div className="relative h-0">
+    <div className={reelPolish.indexGroup}>
       <motion.span
         aria-hidden
-        className="pointer-events-none absolute bottom-[1.5rem] right-[6vw] flex select-none text-[6rem] leading-none will-change-transform sm:bottom-[1.75rem] sm:text-[8.5rem]"
+        className={reelPolish.indexType}
         style={{
           color: ink,
           fontFamily: REEL_SERIF,
-          fontWeight: 450,
+          fontWeight: 400,
           skewX,
           scaleX,
           scaleY,
@@ -3758,10 +3480,13 @@ function ReelIndexWatermark({
           transformOrigin: '100% 100%',
         }}
       >
+        {statusLabel ? <span className={reelPolish.indexStatus} style={{ color: `color-mix(in srgb, ${titleColor} 38%, transparent)` }}>{statusLabel}</span> : null}
+        <span className="inline-flex">
         <motion.span style={{ display: 'inline-block' }}>{digits[0]}</motion.span>
         <motion.span style={{ display: 'inline-block', y: digit1Y, skewX: digit1Skew }}>
           {digits[1]}
         </motion.span>
+        </span>
       </motion.span>
     </div>
   );
@@ -3873,7 +3598,6 @@ function ReelDetailCardBody({
   tools,
   repoLink,
   flags,
-  accent,
   titleColor,
   mutedColor,
   bodyColor,
@@ -3895,15 +3619,23 @@ function ReelDetailCardBody({
   leadSteps?: boolean;
 }) {
   const t = useT();
+  const presentation = flags.reelPresentation ?? DEFAULT_EXPERIENCE_PRESENTATION;
   const leadStep = (step: number) => (leadSteps ? { 'data-pf-lead-step': String(step) } : {});
   const hasCopy = Boolean(description) || tasks.length > 0;
+  // Defaults: description = secondary colour, tasks = strong ink. A colour the creator picked for the body
+  // text (anything but the stock body colours) is kept for both, as before.
+  const bodyIsStock = [DEFAULT_EXPERIENCE_BODY_COLOR, DEFAULT_EXPERIENCE_BODY_COLOR_DARK].some(
+    (stock) => bodyColor.trim().toLowerCase() === stock.trim().toLowerCase()
+  );
+  const descriptionInk = bodyIsStock ? mutedColor : bodyColor;
+  const taskInk = bodyIsStock ? titleColor : bodyColor;
 
   return (
     <>
       {description ? (
         <p
-          className={`${leadSteps ? 'pf-exp-lead-reveal ' : ''}m-0 p-0 text-left text-[1.05rem] leading-[1.85]`}
-          style={{ color: bodyColor, fontFamily: REEL_SANS }}
+          className={`${leadSteps ? 'pf-exp-lead-reveal ' : ''}m-0 max-w-[72ch] p-0 text-left text-[1.0625rem] leading-[1.7]`}
+          style={{ color: descriptionInk, fontFamily: REEL_SANS, fontWeight: 400 }}
           data-pf-no-color-transition=""
           {...leadStep(2)}
         >
@@ -3912,49 +3644,50 @@ function ReelDetailCardBody({
       ) : null}
 
       {tasks.length > 0 ? (
-        <div className={description ? 'mt-9' : undefined} data-pf-no-color-transition="" {...leadStep(4)}>
+        <div className={`${reelPolish.tasks} ${description ? 'mt-9' : ''}`} data-pf-no-color-transition="" {...leadStep(4)}>
           <ExperienceTasksDisplay
             tasks={tasks}
             display={flags.tasksDisplay}
-            bodyColor={bodyColor}
+            bodyColor={taskInk}
             mutedColor={mutedColor}
             isDark={flags.isDark}
-            label=""
-            size="lg"
+            label={experienceBlockLabelVisible(presentation, 'tasks') ? resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities') : ''}
+            size="md"
+            legibleMarkers
           />
         </div>
       ) : null}
 
+      {tools.length > 0 || repoLink ? (
+        <div className={`pf-reel-detail-footer ${hasCopy ? 'mt-10 border-t pt-6' : ''}`} style={{ borderColor: hairline }}>
       {tools.length > 0 ? (
-        <div className={hasCopy ? 'mt-12 border-t pt-8' : undefined} style={{ borderColor: hairline }}>
-          <ExperienceToolsDisplay
+        <div className={`${reelPolish.tools} min-w-0`}>
+          {experienceBlockLabelVisible(presentation, 'tools') ? <p className="mb-3 text-xs" style={{color:mutedColor}}>{resolveExperienceBlockLabel(presentation.toolsLabel,'Stack')}</p> : null}
+          {presentation.reelStackStyle && presentation.reelStackStyle !== 'text' ? <ul className={editorialStatus.stackTags} data-shape={presentation.reelStackStyle} style={{color:bodyColor,'--stack-edge':hairline} as CSSProperties}>{tools.map((tool,index)=><li key={`${index}-${tool}`} data-pf-no-color-transition="">{tool}</li>)}</ul> : <ExperienceToolsDisplay
             tools={tools}
-            style={flags.toolsBadgeStyle}
+            style="editorial-list"
             ink={titleColor}
             muted={mutedColor}
             background={background}
             isDark={flags.isDark}
-          />
+          />}
         </div>
       ) : null}
 
       {repoLink ? (
         <div
-          className={`flex justify-end ${tools.length > 0 ? 'mt-8' : hasCopy ? 'mt-12 border-t pt-8' : ''}`}
-          style={tools.length > 0 ? undefined : { borderColor: hairline }}
+          className="flex shrink-0 items-center"
         >
-          <PortfolioLinkButton
-            variant={flags.repoLinkButtonStyle}
+          <KineticRepoLink
+            shape={presentation.reelButtonShape ?? 'link'}
+            hover={presentation.reelButtonHover ?? 'wipe'}
             href={repoLink.url}
-            label={repoLink.label || t('View repository')}
-            palette={experienceLinkButtonPalette({
-              ink: titleColor,
-              muted: mutedColor,
-              accent,
-              background,
-              border: hairline,
-            })}
+            label={repoLink.label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(repoLink.label.trim()) ? repoLink.label : t('View project')}
+            ink={titleColor}
+            isDark={flags.isDark}
           />
+        </div>
+      ) : null}
         </div>
       ) : null}
     </>
@@ -3970,7 +3703,6 @@ function ReelExperienceEntry({
   mutedColor,
   bodyColor,
   hairline,
-  statusStyle,
   scrollMotion,
   background,
   flags,
@@ -3989,6 +3721,7 @@ function ReelExperienceEntry({
   /** General → Content shown + Details settings, same contract as the other designs. */
   flags: DuotoneContentFlags;
 }) {
+  const t = useT();
   const sectionRef = useRef<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion();
   const fadeReveal = scrollMotion === 'fade-reveal' && !reduceMotion;
@@ -4005,16 +3738,17 @@ function ReelExperienceEntry({
   const metaLine = reelMetaLine(content, flags);
 
   const hasStatus = flags.showMeta && (status === 'ONGOING' || status === 'FINISHED');
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : t('Done');
   const repoLink = flags.showProof ? (links[0] ?? null) : null;
-  const cardBackground = `color-mix(in srgb, ${titleColor} 4%, transparent)`;
+  const cardBackground = `color-mix(in srgb, ${titleColor} 2%, transparent)`;
 
   const SectionTag = fadeReveal ? motion.section : 'section';
 
   return (
     <SectionTag
       ref={sectionRef}
-      className="relative flex w-full flex-col justify-center px-[6vw] py-[6vh]"
-      style={{ minHeight: '100vh' }}
+      className={`${reelPolish.section} relative flex w-full flex-col justify-center px-[6vw] pb-16 pt-28 sm:pb-20 sm:pt-32`}
+      style={{ minHeight: '100svh' }}
       {...(index === 0 ? { 'data-pf-exp-lead-card': '' } : {})}
       {...(fadeReveal
         ? {
@@ -4025,13 +3759,26 @@ function ReelExperienceEntry({
           }
         : {})}
     >
+      <div className={reelPolish.topRow}>
+      {period || metaLine ? (
+        <ReelRevealItem enabled={fadeReveal} className={reelPolish.topMeta}>
+          {period ? (
+            <p className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[0.875rem] font-medium tabular-nums" style={{ color: titleColor, fontFamily: REEL_SANS }}>
+              {period}
+            </p>
+          ) : null}
+          {metaLine ? <p className="text-[0.875rem]" style={{ color: mutedColor, fontFamily: REEL_SANS, fontWeight: 400 }}>{metaLine}</p> : null}
+        </ReelRevealItem>
+      ) : null}
+
       <ReelIndexWatermark
         index={index}
+        statusLabel={hasStatus ? statusLabel : undefined}
         titleColor={titleColor}
         sectionRef={sectionRef}
         enabled={indexDistort}
       />
-
+      </div>
       <ReelRevealItem enabled={fadeReveal}>
         <div className="h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
       </ReelRevealItem>
@@ -4040,49 +3787,21 @@ function ReelExperienceEntry({
         <ReelRevealItem enabled={fadeReveal} className="pf-reel-bento-lead">
           {title ? (
             <h3
-              className="pf-exp-lead-reveal max-w-[15ch] text-[clamp(2.1rem,4.4vw,3.4rem)] max-[800px]:text-[1.9rem]"
+              className="pf-exp-lead-reveal max-w-[22ch] break-words text-[clamp(2rem,3.5vw,3.5rem)]"
               style={{
                 fontFamily: REEL_SERIF,
-                fontWeight: 450,
-                lineHeight: 1.05,
-                letterSpacing: '-0.015em',
+                fontWeight: 500,
+                color: titleColor,
+                lineHeight: 1.1,
+                letterSpacing: '-0.03em',
               }}
               data-pf-lead-step="1"
               data-pf-no-color-transition=""
             >
-              {reelTwoToneTitle(title, titleColor, mutedColor)}
+              {title}
             </h3>
           ) : null}
 
-          {period || hasStatus || metaLine ? (
-            <div className="flex flex-col gap-3">
-              {period ? (
-                <p
-                  className="text-[1.4rem] font-semibold"
-                  style={{ color: titleColor, fontFamily: REEL_SANS }}
-                >
-                  {period}
-                </p>
-              ) : null}
-
-              {hasStatus ? (
-                <ReelStatusIndicator
-                  status={status as 'ONGOING' | 'FINISHED'}
-                  presentationStyle={statusStyle}
-                  accent={accent}
-                  secondaryColor={secondaryColor}
-                  bodyColor={bodyColor}
-                  hairline={hairline}
-                />
-              ) : null}
-
-              {metaLine ? (
-                <p className="text-[0.92rem]" style={{ color: mutedColor, fontFamily: REEL_SANS }}>
-                  {metaLine}
-                </p>
-              ) : null}
-            </div>
-          ) : null}
         </ReelRevealItem>
 
         {/* Hidden rather than unmounted when empty: a reveal item mounted after its section
@@ -4414,11 +4133,11 @@ function ReelStickyVerticalExperience({
         {/* Title frame locked for the whole sticky run — hairlines never reflow with copy. */}
         <div className="pf-reel-sticky-v-title-frame">
           <div className="h-px w-full shrink-0" style={{ backgroundColor: hairline }} aria-hidden />
-          <div className="pf-reel-sticky-v-title-slot">
+          <div className={`pf-reel-sticky-v-title-slot ${reelPolish.titleSlot}`}>
             {title ? (
               <h3
                 ref={titleRef}
-                className="whitespace-nowrap text-[clamp(2.2rem,5.2vw,4.5rem)] max-[800px]:text-[1.85rem]"
+                className="max-w-full break-words text-balance text-[clamp(2.2rem,5.2vw,4.5rem)] max-[800px]:text-[1.85rem]"
                 style={{
                   fontFamily: REEL_SERIF,
                   fontWeight: 450,
@@ -4440,7 +4159,7 @@ function ReelStickyVerticalExperience({
                   <div className="flex flex-col gap-3">
                     {period ? (
                       <p
-                        className="text-[1.4rem] font-semibold"
+                        className="text-[1rem] font-medium tabular-nums"
                         style={{ color: titleColor, fontFamily: REEL_SANS }}
                       >
                         {period}
@@ -4516,42 +4235,28 @@ export function ReelExperienceList({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const mutedColor = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const bodyColor = ensureExperienceInkContrast(
     resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const hairline = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
   const statusStyle = presentation.reelStatusStyle ?? 'badge';
-  const scrollMotion = presentation.reelScrollMotion ?? 'fade-reveal';
-  const flags = experienceContentFlags(presentation, isDark, 'reel');
-
-  if (scrollMotion === 'sticky-vertical') {
-    return (
-      <ReelStickyVerticalExperience
-        blocks={blocks}
-        accent={accent}
-        secondaryColor={secondary}
-        titleColor={titleColor}
-        mutedColor={mutedColor}
-        bodyColor={bodyColor}
-        hairline={hairline}
-        background={background}
-        statusStyle={statusStyle}
-        flags={flags}
-      />
-    );
-  }
+  const scrollMotion = 'index-distort';
+  const flags = { ...experienceContentFlags(presentation, isDark, 'reel'), reelPresentation: presentation };
 
   return (
     <div className="relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2">
@@ -4578,11 +4283,13 @@ export function ReelExperienceList({
 
 /** Duotone thumbnail Consult pill — same liquid-inertia follow as LegacyStatusCursor. */
 function DuotoneConsultCursor({
+  label,
   anchor,
   containerRef,
   onDismiss,
   isDark,
 }: {
+  label?: string;
   anchor: { x: number; y: number } | null;
   containerRef: RefObject<HTMLDivElement | null>;
   onDismiss: () => void;
@@ -4665,7 +4372,7 @@ function DuotoneConsultCursor({
           boxShadow: '0 10px 28px -12px rgba(0,0,0,0.45)',
         }}
       >
-        <span>{t('Consult')}</span>
+        <span>{label?.trim() || t('Consult')}</span>
         <svg
           viewBox="0 0 24 24"
           className="h-3 w-3 shrink-0 opacity-80"
@@ -4683,6 +4390,7 @@ function DuotoneConsultCursor({
 }
 
 function DuotoneLeftPanel({
+  duotonePresentation,
   block,
   ink,
   muted,
@@ -4703,13 +4411,13 @@ function DuotoneLeftPanel({
   inView = false,
   /** Scroll mode: render only the title, only the thumb, or the full stacked panel. */
   scrollPart = 'all',
-  repoCtaMode = 'footer',
   consultHref,
   isDark = true,
   active,
   lane = 'active',
   titleScale = 'default',
 }: {
+  duotonePresentation?: PortfolioExperiencePresentationSettings;
   block: ProfileMediaBlock;
   ink: string;
   muted: string;
@@ -4753,7 +4461,44 @@ function DuotoneLeftPanel({
   titleScale?: 'default' | 'compact';
 }) {
   const t = useT();
-  const { period, title, organization, status, location, employmentType } = resolveExperienceContent(block);
+  const focusRef = useRef<HTMLDivElement | null>(null);
+  const reduceFocusMotion = useReducedMotion();
+  const setPanelRef = useCallback((element: HTMLDivElement | null) => {
+    focusRef.current = element;
+    registerRef?.(element);
+  }, [registerRef]);
+  useEffect(() => {
+    const element = focusRef.current;
+    if (!element || active !== undefined || scrollPart !== 'all' || reduceFocusMotion) return;
+    const scrollParent = getScrollParent(element);
+    const scrollTarget = scrollParent ?? window;
+    let frame = 0;
+    const update = () => {
+      frame = 0;
+      const rect = element.getBoundingClientRect();
+      const viewport = scrollParent instanceof HTMLElement ? scrollParent.getBoundingClientRect() : { top: 0, height: window.innerHeight };
+      const distance = Math.abs(rect.top + rect.height / 2 - viewport.top - viewport.height / 2);
+      const range = Math.max(1, (viewport.height + rect.height) / 2);
+      const progress = Math.max(0, Math.min(1, (distance / range - .2) / .8));
+      const eased = progress * progress * (3 - 2 * progress);
+      element.style.setProperty('--duotone-focus-light', (1 - .68 * eased).toFixed(3));
+    };
+    const schedule = () => { if (!frame) frame = requestAnimationFrame(update); };
+    update();
+    scrollTarget.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    const observer = new ResizeObserver(schedule);
+    observer.observe(element);
+    return () => {
+      cancelAnimationFrame(frame);
+      scrollTarget.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      observer.disconnect();
+      element.style.removeProperty('--duotone-focus-light');
+    };
+  }, [active, scrollPart, reduceFocusMotion]);
+  const { period, title, organization, status, location, employmentType, links } = resolveExperienceContent(block);
+  const thumbnailHref = duotonePresentation?.showProof !== false ? consultHref || links[0]?.url : null;
 
   const metaLine = [
     showOrganization ? organization : null,
@@ -4763,17 +4508,17 @@ function DuotoneLeftPanel({
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
 
-  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Finished') : null;
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Done') : null;
   const displayPeriod = showPeriod ? period : null;
   const displayMetaLine = metaLine;
   const displayStatusLabel = showMeta ? statusLabel : null;
   const metaContent = displayPeriod || displayMetaLine || displayStatusLabel;
   const mediaUrl =
-    premium && showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
+    showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
   const showTitleBlock = scrollPart !== 'thumb' && showTitle && Boolean(title);
-  const showThumbBlock = scrollPart !== 'title' && premium && Boolean(mediaUrl);
+  const showThumbBlock = scrollPart !== 'title' && Boolean(mediaUrl);
   const enableConsultCursor =
-    Boolean(consultHref) && repoCtaMode === 'thumb-cursor' && showThumbBlock;
+    Boolean(thumbnailHref) && showThumbBlock;
   const [cursorAnchor, setCursorAnchor] = useState<{ x: number; y: number } | null>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const dismissCursor = useCallback(() => setCursorAnchor(null), []);
@@ -4788,30 +4533,45 @@ function DuotoneLeftPanel({
       ? `${experienceDuotoneStickySectionVh(stickyVerticalGap)}vh`
       : undefined;
 
-  const titleNode = showTitleBlock ? (
+  const titleHeading = showTitleBlock ? (
     <h3
       data-pf-no-color-transition=""
-      className="pf-duotone-left-title"
+      className="pf-duotone-left-title max-w-[24ch] break-words"
       style={{
         color: ink,
         fontFamily: REEL_SERIF,
-        fontWeight: premium ? 400 : 640,
+        fontWeight: 450,
         // Compact (sticky mobile tier): a touch looser than the desktop 0.95 — the giant
         // title now wraps to 2-3 lines on a phone, and 0.95 reads cramped once it wraps.
-        lineHeight: premium ? (titleScale === 'compact' ? 1.08 : 0.95) : 1.08,
-        letterSpacing: '-0.02em',
+        lineHeight: 1.1,
+        letterSpacing: '-0.03em',
         // Compact's own clamp (not just a smaller desktop floor): 6vw of a 375px phone is
         // ~1.4rem, well under the desktop clamp's 3rem floor, which is why that floor used
         // to win on every phone regardless of screen width.
+        // Display size, scaled by the General "Text size" like the rest of the row (the shared
+        // "#experience .text-*" overrides never reach an inline style).
         fontSize: premium
           ? titleScale === 'compact'
-            ? 'clamp(2.1rem, 9vw, 3rem)'
-            : 'clamp(3rem, 6vw, 5.5rem)'
-          : 'clamp(2rem, 3vw, 3.1rem)',
+            ? 'calc(clamp(1.9rem, 8vw, 2.5rem) * var(--pf-experience-font-scale, 1))'
+            : 'calc(clamp(2.25rem, 3.7vw, 3.25rem) * var(--pf-experience-font-scale, 1))'
+          : 'calc(clamp(1.75rem, 2.6vw, 2.6rem) * var(--pf-experience-font-scale, 1))',
       }}
     >
       {title}
     </h3>
+  ) : null;
+
+  const titleNode = titleHeading || (duotonePresentation && metaContent && scrollPart !== 'thumb') ? (
+    <div className="min-w-0 w-full">
+      {duotonePresentation && metaContent && scrollPart !== 'thumb' ? (
+        <div className={`${duotonePolish.titleMeta} ${duotonePolish.bracketMeta}`} style={{ color: muted, fontFamily: REEL_SANS, marginBottom: titleHeading ? 20 : 0 }}>
+          {displayPeriod ? <span className={duotonePolish.titlePeriod} style={{ color: ink }}>{displayPeriod}</span> : null}
+          {displayMetaLine ? <span>{displayMetaLine}</span> : null}
+          {displayStatusLabel ? <span className={duotonePolish.titleStatus} style={{ color: `color-mix(in srgb, ${status === 'FINISHED' ? secondary : accent} 70%, ${ink})` }}>{displayStatusLabel}</span> : null}
+        </div>
+      ) : null}
+      {titleHeading}
+    </div>
   ) : null;
 
   const thumbNode = showThumbBlock ? (
@@ -4837,7 +4597,7 @@ function DuotoneLeftPanel({
         {/* Zoom on this wrapper — same opt-out pattern as sticky settle / Legacy —
             ProductThumbnailMedia's <img> cannot carry data-pf-no-color-transition. */}
         <div data-pf-no-color-transition="" className="pf-duotone-thumb-zoom">
-          <ProductThumbnailMedia
+          <ProductThumbnailMedia crisp
             url={mediaUrl}
             alt={title || t('Experience')}
             fit="cover"
@@ -4856,13 +4616,13 @@ function DuotoneLeftPanel({
           />
         ) : null}
       </div>
-      {enableConsultCursor && consultHref ? (
+      {enableConsultCursor && thumbnailHref ? (
         <a
-          href={consultHref}
+          href={thumbnailHref}
           target="_blank"
           rel="noreferrer"
           className="absolute inset-0 z-[2]"
-          aria-label={t('Consult')}
+          aria-label={duotonePresentation?.duotoneButtonLabel?.trim() || t('Consult')}
         />
       ) : null}
     </div>
@@ -4870,6 +4630,7 @@ function DuotoneLeftPanel({
 
   const consultCursorNode = enableConsultCursor ? (
     <DuotoneConsultCursor
+      label={duotonePresentation?.duotoneButtonLabel}
       anchor={cursorAnchor}
       containerRef={thumbRef}
       onDismiss={dismissCursor}
@@ -4887,7 +4648,7 @@ function DuotoneLeftPanel({
         data-active={active ? 'true' : 'false'}
         data-lane={lane}
         data-in-view={active ? 'true' : 'false'}
-        className={`pf-duotone-right-panel pf-duotone-left-panel absolute inset-0 flex flex-col justify-center overflow-hidden ${premiumGapClass}`}
+        className={`${duotonePolish.lead} pf-duotone-right-panel pf-duotone-left-panel absolute inset-0 flex flex-col justify-center overflow-hidden ${premiumGapClass}`}
         aria-hidden={active === false}
       >
         {titleNode ? (
@@ -4908,7 +4669,7 @@ function DuotoneLeftPanel({
   if (scrollPart === 'title') {
     return titleNode ? (
       <div
-        ref={registerRef}
+        ref={setPanelRef}
         data-pf-no-color-transition=""
         className="pf-duotone-left-panel w-full"
       >
@@ -4934,10 +4695,10 @@ function DuotoneLeftPanel({
 
   return (
     <div
-      ref={registerRef}
+      ref={setPanelRef}
       data-pf-no-color-transition=""
       data-in-view={premium && inView ? 'true' : 'false'}
-      className={`pf-duotone-left-panel relative flex w-full flex-col justify-center overflow-hidden max-[800px]:min-h-0 ${
+      className={`${duotonePolish.lead} ${duotonePolish.scrollFocus} pf-duotone-left-panel relative flex w-full flex-col justify-center overflow-hidden max-[800px]:min-h-0 ${
         naturalHeight || panelMinHeight ? '' : 'min-h-screen'
       } ${premiumGapClass}`}
       style={panelMinHeight ? { minHeight: panelMinHeight } : undefined}
@@ -4949,14 +4710,14 @@ function DuotoneLeftPanel({
       {thumbNode}
       {consultCursorNode}
 
-      {!premium ? (
-        <div className="my-4 h-px w-full shrink-0" style={{ backgroundColor: border }} aria-hidden />
+      {!premium && !duotonePresentation ? (
+        <div className="my-7 h-px w-full shrink-0" style={{ backgroundColor: border }} aria-hidden />
       ) : null}
 
       {/* Premium (sticky mode): period / org / status move into the right-hand card instead,
           laid out in one horizontal row — see DuotoneRightPanel. */}
-      {!premium && metaContent ? (
-        <div className="space-y-2">
+      {!premium && !duotonePresentation && metaContent ? (
+        <div className="order-first mb-8 space-y-3">
           {displayPeriod ? (
             <p className="text-[0.95rem]" style={{ color: muted, fontFamily: REEL_SANS }}>
               {displayPeriod}
@@ -4969,8 +4730,8 @@ function DuotoneLeftPanel({
           ) : null}
           {displayStatusLabel ? (
             <p
-              className="text-[0.95rem] font-bold"
-              style={{ color: status === 'FINISHED' ? secondary : ink, fontFamily: REEL_SANS }}
+              className="text-[0.875rem] font-medium"
+              style={{ color: `color-mix(in srgb, ${status === 'FINISHED' ? secondary : accent} 70%, ${ink})`, fontFamily: REEL_SANS }}
             >
               {displayStatusLabel}
             </p>
@@ -4982,6 +4743,7 @@ function DuotoneLeftPanel({
 }
 
 function DuotoneRightPanel({
+  duotonePresentation,
   block,
   ink,
   muted,
@@ -4996,22 +4758,19 @@ function DuotoneRightPanel({
   enhanced = false,
   bare = false,
   tasksDisplay = 'editorial-dash',
-  toolsBadgeStyle = 'mineral-pills',
   showDescription = true,
   showTasks = true,
   showTools = true,
-  showProof = true,
   showPeriod = true,
   showOrganization = true,
   showMeta = true,
-  repoLinkButtonStyle = 'icon',
   premium = false,
   wideMeasure = false,
   toolsLayout = 'wrap',
   stickyVerticalGap,
   flushTop = false,
-  hideRepoButton = false,
 }: {
+  duotonePresentation?: PortfolioExperiencePresentationSettings;
   block: ProfileMediaBlock;
   ink: string;
   muted: string;
@@ -5066,9 +4825,8 @@ function DuotoneRightPanel({
   hideRepoButton?: boolean;
 }) {
   const t = useT();
-  const { description, tasks, tools, links, period, organization, status, location, employmentType } =
+  const { description, tasks, tools, period, organization, status, location, employmentType } =
     resolveExperienceContent(block);
-  const repoLink = showProof && !hideRepoButton ? links[0] ?? null : null;
   const displayDescription = showDescription ? description : null;
   const displayTasks = showTasks ? tasks : [];
   const displayTools = showTools ? tools : [];
@@ -5079,14 +4837,21 @@ function DuotoneRightPanel({
   ]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
-  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Finished') : null;
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Done') : null;
   const displayPeriod = showPeriod ? period : null;
   const displayMetaLine = metaLine;
   const displayStatusLabel = showMeta ? statusLabel : null;
-  const hasMetaRow = premium && Boolean(displayPeriod || displayMetaLine || displayStatusLabel);
+  const hasMetaRow = !duotonePresentation && Boolean(displayPeriod || displayMetaLine || displayStatusLabel);
+  const presentation = duotonePresentation ?? DEFAULT_EXPERIENCE_PRESENTATION;
+  const labelColor = presentation.kineticTasksLabelColor === 'primary' ? accent : presentation.kineticTasksLabelColor === 'secondary' ? secondary : presentation.kineticTasksLabelColor === 'strong' ? ink : muted;
+  const labelSize = presentation.kineticTasksLabelSize ?? 12;
+  const stackNode = displayTools.length > 0 ? <div className={duotonePolish.tools}>
+    {experienceBlockLabelVisible(presentation, 'tools') ? <p className="mb-3" style={{ color: labelColor, fontSize: labelSize, fontWeight: 500 }}>{resolveExperienceBlockLabel(presentation.toolsLabel, 'Stack')}</p> : null}
+    {(presentation.duotoneStackStyle ?? 'text') !== 'text' ? <ul className={editorialStatus.stackTags} data-shape={presentation.duotoneStackStyle} style={{ color: muted, '--stack-edge': border } as CSSProperties}>{displayTools.map((tool, index)=><li key={`${index}-${tool}`}>{tool}</li>)}</ul> : <ExperienceToolsDisplay tools={displayTools} style="editorial-list" ink={ink} muted={muted} background={background} isDark={isDark} size="md" layout={toolsLayout} />}
+  </div> : null;
   // Card surface a shade off the page background — the tools badges derive their own tone
   // from the same ink/background tokens inside ExperienceToolsDisplay.
-  const cardBg = `color-mix(in srgb, ${ink} 4%, ${background})`;
+  const cardBg = `color-mix(in srgb, ${ink} 2%, ${background})`;
   const stickySpacing = flushTop
     ? experienceDuotoneScrollEditorialSpacing(stickyVerticalGap ?? 'md')
     : experienceDuotoneStickyEditorialSpacing(stickyVerticalGap ?? 'md');
@@ -5098,18 +4863,19 @@ function DuotoneRightPanel({
   return (
     <div
       data-pf-no-color-transition=""
+      data-duotone-info=""
       data-active={active === undefined ? undefined : active ? 'true' : 'false'}
       data-lane={active === undefined ? undefined : lane}
       className={
         active === undefined
-          ? `flex w-full flex-col justify-center ${className}`
+          ? `flex min-w-0 w-full flex-col justify-center ${className}`
           // No extra left padding here on top of the column gap — that used to stack with
           // the flex gap below and blow the middle gutter out past Scroll mode's. The gap
           // between the two columns comes from the row's own gap-* only, same as Scroll.
           // Pushed below dead-center on purpose: the left title/thumb column keeps its own
           // anchor, so this offset breaks the two columns' rectilinear alignment into a
           // diagonal cascade instead of a static side-by-side corridor.
-          : 'pf-duotone-right-panel absolute inset-0 flex flex-col justify-center translate-y-8 lg:translate-y-12 xl:translate-y-16'
+          : 'pf-duotone-right-panel absolute inset-0 flex flex-col justify-center'
       }
       aria-hidden={active === false}
     >
@@ -5122,7 +4888,7 @@ function DuotoneRightPanel({
                 // one column-gap away from the title column, and adding a pl on top of that
                 // gap was stacking with it, blowing the middle gutter out past Scroll mode's.
                 `w-full ${flushTop ? 'p-0' : 'pt-10 pr-10 pb-10 max-[800px]:p-6'}`
-              : `w-full rounded-[14px] border p-10 max-[800px]:p-6 ${
+              : `min-w-0 w-full rounded-[16px] border p-10 max-[800px]:px-5 max-[800px]:py-7 ${
                   enhanced ? 'transition-shadow duration-300' : ''
                 }`
         }
@@ -5149,41 +4915,8 @@ function DuotoneRightPanel({
 
           return (
             <>
-              {hasMetaRow ? (
-                <div {...layerProps(0, 'mb-8')}>
-                  <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
-                    {displayPeriod ? (
-                      <span className="text-[0.85rem]" style={{ color: muted, fontFamily: REEL_SANS }}>
-                        {displayPeriod}
-                      </span>
-                    ) : null}
-                    {displayMetaLine ? (
-                      <span className="text-[0.85rem]" style={{ color: muted, fontFamily: REEL_SANS }}>
-                        {displayMetaLine}
-                      </span>
-                    ) : null}
-                    {displayStatusLabel ? (
-                      <span
-                        className="inline-flex items-center gap-1.5 text-[0.85rem] font-bold"
-                        style={{
-                          color: status === 'FINISHED' ? secondary : ink,
-                          fontFamily: REEL_SANS,
-                        }}
-                      >
-                        <span
-                          className="h-1.5 w-1.5 shrink-0 rounded-full"
-                          style={{ backgroundColor: status === 'FINISHED' ? secondary : ink }}
-                          aria-hidden
-                        />
-                        {displayStatusLabel}
-                      </span>
-                    ) : null}
-                  </div>
-                </div>
-              ) : null}
-
               {displayDescription ? (
-                <div {...layerProps(1)}>
+                <div {...layerProps(0, duotonePolish.description)}>
                   <p
                     // Scroll/sticky two-column desktop (premium, narrow): a wide-ish measure
                     // and a much taller line-height air out the central gutter and read as
@@ -5192,12 +4925,12 @@ function DuotoneRightPanel({
                     // instead. Slide/mobile-plain: the original denser paragraph.
                     className={
                       wideMeasure
-                        ? 'max-w-2xl text-[1.02rem] leading-[1.9]'
+                        ? 'max-w-[72ch] break-words text-[1.0625rem] leading-[1.7]'
                         : premium
-                          ? 'max-w-[58ch] text-[1.02rem] leading-[2.15]'
-                          : 'text-[1.02rem] leading-[1.85]'
+                          ? 'max-w-[68ch] break-words text-[1.0625rem] leading-[1.7]'
+                          : 'max-w-[72ch] break-words text-[1.0625rem] leading-[1.7]'
                     }
-                    style={{ color: ink, fontFamily: REEL_SANS }}
+                    style={{ color: muted, fontFamily: REEL_SANS, fontSize: 'calc(1.0625rem * var(--pf-experience-font-scale, 1))', fontWeight: 400, lineHeight: 1.7 }}
                   >
                     {displayDescription}
                   </p>
@@ -5205,16 +4938,18 @@ function DuotoneRightPanel({
               ) : null}
 
               {displayTasks.length > 0 ? (
-                <div {...layerProps(2, premium ? (displayDescription ? tasksMtClass : '') : 'mt-9')}>
+                <div data-task-alignment={presentation.duotoneTaskAlignment ?? 'offset'} data-after-description={displayDescription ? 'true' : undefined} {...layerProps(2, `${duotonePolish.tasks} ${displayDescription ? (premium ? tasksMtClass : 'mt-9') : ''}`)}>
                   <ExperienceTasksDisplay
                     tasks={displayTasks}
                     display={tasksDisplay}
-                    bodyColor={premium ? ink : ink}
-                    mutedColor={`color-mix(in srgb, ${accent} 78%, ${muted} 22%)`}
+                    bodyColor={ink}
+                    mutedColor={muted}
                     isDark={isDark}
-                    label=""
-                    size="lg"
-                    tools={premium ? displayTools : undefined}
+                    label={experienceBlockLabelVisible(presentation, 'tasks') ? resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities') : ''}
+                    labelColor={labelColor}
+                    labelSize={labelSize}
+                    size="md"
+                    legibleMarkers
                   />
                 </div>
               ) : null}
@@ -5223,66 +4958,35 @@ function DuotoneRightPanel({
         })()}
 
         {premium ? (
-          displayTools.length > 0 || repoLink ? (
+          displayTools.length > 0 ? (
             <div
               data-pf-no-color-transition=""
               data-layer={active !== undefined ? '3' : undefined}
               className={`${active !== undefined ? 'pf-duotone-story-layer ' : ''}pf-duotone-chrome ${stackMtClass} flex flex-col ${stackGapClass} border-t ${stackPtClass}`}
-              style={{ borderColor: `color-mix(in srgb, ${muted} 12%, transparent)` }}
+              style={{ borderColor: border }}
             >
-              <ExperienceToolsDisplay
-                tools={displayTools}
-                style={toolsBadgeStyle}
-                ink={ink}
-                muted={muted}
-                background={background}
-                isDark={isDark}
-                size="md"
-                layout={toolsLayout}
-              />
-              {repoLink ? (
-                <div className="self-start">
-                  <PortfolioLinkButton
-                    variant={repoLinkButtonStyle}
-                    href={repoLink.url}
-                    label={repoLink.label || t('View repository')}
-                    palette={{ background: cardBg, ink, muted, accent, border }}
-                    radiusClass="rounded-[14px]"
-                  />
-                </div>
-              ) : null}
+              {stackNode}
             </div>
           ) : null
         ) : (
           <>
             {displayTools.length > 0 ? (
               <div className="mt-9">
-                <ExperienceToolsDisplay
-                  tools={displayTools}
-                  style={toolsBadgeStyle}
-                  ink={ink}
-                  muted={muted}
-                  background={background}
-                  isDark={isDark}
-                  size="md"
-                  layout={toolsLayout}
-                />
+                {stackNode}
               </div>
             ) : null}
 
-            {repoLink ? (
-              <div className="mt-9">
-                <PortfolioLinkButton
-                  variant={repoLinkButtonStyle}
-                  href={repoLink.url}
-                  label={repoLink.label || t('View repository')}
-                  palette={{ background: cardBg, ink, muted, accent, border }}
-                  radiusClass="rounded-[14px]"
-                />
-              </div>
-            ) : null}
           </>
         )}
+        {hasMetaRow ? (
+          <div data-pf-no-color-transition="" data-layer={active !== undefined ? '3' : undefined} className={`${duotonePolish.metaFooter} ${active !== undefined ? 'pf-duotone-story-layer ' : ''}${displayDescription || displayTasks.length > 0 || displayTools.length > 0 ? 'mt-10' : ''}`}>
+            <div className={duotonePolish.titleMeta} style={{ color: muted, fontFamily: REEL_SANS }}>
+              {displayPeriod ? <span className={duotonePolish.titlePeriod} style={{ color: ink }}>{displayPeriod}</span> : null}
+              {displayMetaLine ? <span>{displayMetaLine}</span> : null}
+              {displayStatusLabel ? <span className={duotonePolish.titleStatus} style={{ color: `color-mix(in srgb, ${status === 'FINISHED' ? secondary : accent} 70%, ${ink})` }}>{displayStatusLabel}</span> : null}
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -5291,6 +4995,9 @@ function DuotoneRightPanel({
 /** Duotone design: chevron used by the Slide scroll mode's prev/next controls. */
 /** General → Content settings this design now respects, resolved once and passed down. */
 type DuotoneContentFlags = {
+  galleryPresentation?: PortfolioExperiencePresentationSettings;
+  duotonePresentation?: PortfolioExperiencePresentationSettings;
+  reelPresentation?: PortfolioExperiencePresentationSettings;
   showTitle: boolean;
   showPeriod: boolean;
   showOrganization: boolean;
@@ -5785,12 +5492,8 @@ function DuotoneStickyExperience({
 
   if (blocks.length === 0) return null;
 
-  // Sticky-only defaults: a rail-and-index task list and a dotted editorial tools line read
-  // as a deliberate timeline next to a pinned title. Swapped in only when the shared General
-  // settings still sit at their own global defaults — same override precedent Cards uses for
-  // tasksDisplay — so an explicit user choice elsewhere is never second-guessed.
-  const tasksDisplay: PortfolioExperienceTasksDisplay =
-    flags.tasksDisplay === 'editorial-dash' ? 'accordion-stack' : flags.tasksDisplay;
+  // Honor the selected task layout in every responsive Sticky tier.
+  const tasksDisplay = flags.tasksDisplay;
   const toolsBadgeStyle: PortfolioExperienceToolsBadgeStyle =
     flags.toolsBadgeStyle === 'mineral-pills' ? 'editorial-list' : flags.toolsBadgeStyle;
 
@@ -6012,13 +5715,15 @@ export function DuotoneExperienceList({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const muted = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
   // Reference color for the card/chip tints below — always a real value.
@@ -6032,6 +5737,7 @@ export function DuotoneExperienceList({
 
   // General → Content settings this design now respects, same as Cards/Editorial/Reel.
   const flags: DuotoneContentFlags = {
+    duotonePresentation: presentation,
     showTitle: presentation.showTitle !== false,
     showPeriod: presentation.showPeriod !== false,
     showOrganization: presentation.showOrganization !== false,
@@ -6059,7 +5765,7 @@ export function DuotoneExperienceList({
   const thumbnailHeight = presentation.duotoneThumbnailHeight ?? 'md';
   const stickySwapSides = presentation.duotoneStickySwapSides === true;
   const stickyVerticalGap = presentation.duotoneStickyVerticalGap ?? 'md';
-  const repoCtaMode = presentation.duotoneRepoCtaMode ?? 'footer';
+  const repoCtaMode = 'thumb-cursor' as const;
 
   return (
     // No full-bleed escape hatch here: content stays within the page's own gutter / max-width,
@@ -6165,8 +5871,40 @@ export function DuotoneExperienceList({
 }
 
 /** Gallery design — Framer/Webflow-style airy thumbnail grid, with a click-to-open detail modal. */
+function ShowcaseExperienceStatus({ status, accent, secondary, ink }: {
+  status: ExperienceBlockStatus | null;
+  accent: string;
+  secondary: string;
+  ink: string;
+}) {
+  const t = useT();
+  if (status !== 'ONGOING' && status !== 'FINISHED') return null;
+  const color = status === 'ONGOING' ? accent : secondary;
+  return (
+    <span className="inline-flex shrink-0 items-center gap-1.5 text-[0.75rem] leading-normal" style={{ color: `color-mix(in srgb, ${color} 70%, ${ink})`, fontWeight: 400 }}>
+      <span aria-hidden className="h-1 w-1 shrink-0 rounded-full" style={{ backgroundColor: color }} />
+      {status === 'ONGOING' ? t('Ongoing') : t('Done')}
+    </span>
+  );
+}
+
+function showcaseExperienceProofLabel(label: string | undefined, fallback: string) {
+  return label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(label.trim()) ? label : fallback;
+}
+
 /** Shared detail content — description, tasks, tools, repo link — reused by all three Gallery
  * "Detail view" modes (Modal / Drawer / Inline) so they never drift out of sync. */
+function GalleryStack({ tools, presentation, ink, muted, accent, secondary, border, background, isDark }: {
+  tools: string[]; presentation: PortfolioExperiencePresentationSettings; ink: string; muted: string; accent: string; secondary: string; border: string; background: string; isDark: boolean;
+}) {
+  if (!tools.length) return null;
+  const labelInk = presentation.kineticTasksLabelColor === 'primary' ? accent : presentation.kineticTasksLabelColor === 'secondary' ? secondary : presentation.kineticTasksLabelColor === 'strong' ? ink : muted;
+  return <div className={galleryPolish.stack}>
+    {experienceBlockLabelVisible(presentation, 'tools') ? <p className="mb-3" style={{ color: labelInk, fontSize: presentation.kineticTasksLabelSize ?? 12, fontWeight: 500 }}>{resolveExperienceBlockLabel(presentation.toolsLabel, 'Stack')}</p> : null}
+    {(presentation.galleryStackStyle ?? 'text') === 'text' ? <ExperienceToolsDisplay tools={tools} style="editorial-list" ink={ink} muted={muted} background={background} isDark={isDark} size="sm" /> : <ul className={editorialStatus.stackTags} data-shape={presentation.galleryStackStyle} style={{ color: muted, '--stack-edge': border } as CSSProperties}>{tools.map((tool,index)=><li key={`${index}-${tool}`}>{tool}</li>)}</ul>}
+  </div>;
+}
+
 function GalleryDetailContent({
   block,
   ink,
@@ -6192,6 +5930,8 @@ function GalleryDetailContent({
   compact?: boolean;
 }) {
   const t = useT();
+  const presentation = flags.galleryPresentation ?? DEFAULT_EXPERIENCE_PRESENTATION;
+  const labelInk = presentation.kineticTasksLabelColor === 'primary' ? accent : presentation.kineticTasksLabelColor === 'secondary' ? secondary : presentation.kineticTasksLabelColor === 'strong' ? ink : muted;
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
   const metaLine = [
@@ -6210,80 +5950,66 @@ function GalleryDetailContent({
     .join('  ·  ');
 
   return (
-    <>
-      {showBadge ? (
-        <div className={compact ? 'mb-4' : 'mb-5'}>
-          <ExperienceEditorialOngoingBadge
-            status={status}
-            isDark={isDark}
-            accentColor={accent}
-            secondaryColor={secondary}
-          />
-        </div>
-      ) : null}
+    <div className={galleryPolish.detail}>
+      {combinedMeta || showBadge ? <div className={galleryPolish.detailMeta} style={{color:muted}}>
+        {combinedMeta ? <span>{combinedMeta}</span> : null}
+        {showBadge ? <ShowcaseExperienceStatus status={status} accent={accent} secondary={secondary} ink={ink} /> : null}
+      </div> : null}
       {flags.showTitle && title ? (
         <h3
           className={
             compact
-              ? 'mt-2 text-[1.15rem] font-semibold leading-tight'
-              : 'mt-3 text-[1.6rem] font-semibold leading-tight'
+              ? 'mt-2 text-[1.25rem] leading-[1.2] tracking-[-0.025em]'
+              : 'mt-3 text-[1.75rem] leading-[1.2] tracking-[-0.025em]'
           }
-          style={{ color: ink }}
+          style={{ color: ink, fontWeight: 500, fontSize: 'calc(clamp(1.5rem, 2.5vw, 2.125rem) * var(--pf-experience-font-scale, 1))', lineHeight: 1.15, letterSpacing: '-.03em' }}
         >
           {title}
         </h3>
       ) : null}
-      {combinedMeta ? (
-        <p className={compact ? 'mt-1.5 text-[0.85rem]' : 'mt-2 text-[0.95rem]'} style={{ color: muted }}>
-          {combinedMeta}
-        </p>
-      ) : null}
 
       {flags.showDescription && description ? (
-        <p className={compact ? 'mt-4 text-[0.92rem] leading-relaxed' : 'mt-7 text-[1rem] leading-relaxed'} style={{ color: muted }}>
+        <p className={galleryPolish.description} style={{ color: muted }}>
           {description}
         </p>
       ) : null}
 
       {displayTasks.length > 0 ? (
-        <div className={compact ? 'mt-5' : 'mt-8'}>
+        <div className={galleryPolish.tasks}>
           <ExperienceTasksDisplay
             tasks={displayTasks}
             display={flags.tasksDisplay}
             bodyColor={ink}
-            mutedColor={accent}
+            mutedColor={muted}
             isDark={isDark}
-            label=""
+            label={experienceBlockLabelVisible(presentation, 'tasks') ? resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities') : ''}
+            labelColor={labelInk}
+            labelSize={presentation.kineticTasksLabelSize ?? 12}
             size="md"
+            legibleMarkers
           />
         </div>
       ) : null}
 
       {displayTools.length > 0 ? (
-        <div className={compact ? 'mt-5' : 'mt-8'}>
-          <ExperienceToolsDisplay
-            tools={displayTools}
-            style={flags.toolsBadgeStyle}
-            ink={ink}
-            muted={muted}
-            background={cardBg}
-            isDark={isDark}
-            size={compact ? 'sm' : 'md'}
-          />
+        <div className={galleryPolish.detailStack} style={{borderColor:border}}>
+          <GalleryStack tools={displayTools} presentation={presentation} ink={ink} muted={muted} accent={accent} secondary={secondary} border={border} background={cardBg} isDark={isDark} />
         </div>
       ) : null}
 
       {repoLink ? (
         <div className={compact ? 'mt-7' : 'mt-10'}>
-          <PortfolioLinkButton
-            variant={flags.repoLinkButtonStyle}
+          <KineticRepoLink
+            shape={presentation.galleryButtonShape ?? 'link'}
+            hover={presentation.galleryButtonHover ?? 'wipe'}
             href={repoLink.url}
-            label={repoLink.label || t('View repository')}
-            palette={{ background: cardBg, ink, muted, accent, border }}
+            label={presentation.galleryButtonLabel?.trim() || showcaseExperienceProofLabel(repoLink.label, t('View project'))}
+            ink={ink}
+            isDark={isDark}
           />
         </div>
       ) : null}
-    </>
+    </div>
   );
 }
 
@@ -6315,6 +6041,9 @@ function GalleryExperienceCard({
   onOpen: () => void;
 }) {
   const t = useT();
+  const presentation = flags.galleryPresentation ?? DEFAULT_EXPERIENCE_PRESENTATION;
+  const detailsEnabled = presentation.galleryDetailsEnabled !== false;
+  const CardTag = detailsEnabled ? 'button' : 'article';
   const { period, title, organization, status, tools, location, employmentType } =
     resolveExperienceContent(block);
   const metaLine = [
@@ -6333,11 +6062,10 @@ function GalleryExperienceCard({
   const veilColor = isDark ? 'rgba(0,0,0,0.34)' : 'rgba(0,0,0,0.16)';
 
   return (
-    <button
-      type="button"
-      onClick={onOpen}
+    <CardTag
+      {...(detailsEnabled ? { type: 'button' as const, onClick: onOpen, 'aria-haspopup': 'dialog' as const } : {})}
       data-pf-no-color-transition=""
-      className={`pf-loft-hover-${hoverEffect} flex h-full w-full flex-col overflow-hidden border text-left ${experienceCardsBorderRadiusClass(thumbnailRadius)}`}
+      className={`${galleryPolish.card} ${detailsEnabled ? `pf-loft-hover-${hoverEffect}` : ''} flex w-full flex-col overflow-hidden text-left focus-visible:outline-2 focus-visible:outline-offset-4 ${experienceCardsBorderRadiusClass(thumbnailRadius)}`}
       style={
         {
           borderColor: border,
@@ -6370,7 +6098,7 @@ function GalleryExperienceCard({
                   aria-hidden
                 />
                 <div className="absolute inset-0 p-4">
-                  <ProductThumbnailMedia
+                  <ProductThumbnailMedia crisp
                     url={mediaUrl}
                     alt={title || t('Experience')}
                     fit="contain"
@@ -6379,7 +6107,7 @@ function GalleryExperienceCard({
                 </div>
               </>
             ) : mediaUrl ? (
-              <ProductThumbnailMedia
+              <ProductThumbnailMedia crisp
                 url={mediaUrl}
                 alt={title || t('Experience')}
                 fit="cover"
@@ -6411,7 +6139,7 @@ function GalleryExperienceCard({
             </>
           ) : null}
 
-          {hoverEffect === 'magnetic' ? (
+          {detailsEnabled && hoverEffect === 'magnetic' ? (
             <div
               data-pf-no-color-transition=""
               className="pf-loft-magnetic-cue pointer-events-none absolute inset-0 flex items-center justify-center"
@@ -6419,10 +6147,10 @@ function GalleryExperienceCard({
             >
               <span
                 data-pf-no-color-transition=""
-                className="pf-loft-magnetic-pill rounded-full px-3.5 py-1.5 font-mono text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+                className="pf-loft-magnetic-pill rounded-full px-3.5 py-1.5 font-mono text-[0.75rem] font-medium uppercase tracking-[0.14em]"
                 style={{
                   color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
-                  backgroundColor: isDark ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.4)',
+                  backgroundColor: isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.8)',
                 }}
               >
                 {t('[ View case ↗ ]')}
@@ -6432,49 +6160,35 @@ function GalleryExperienceCard({
         </div>
       ) : null}
 
-      <div className="flex flex-1 flex-col gap-2.5 p-5">
-        <div className="flex items-start justify-between gap-3">
-          {flags.showTitle && title ? (
-            <h3 className="pf-loft-card-title min-w-0 text-[1.1rem] font-semibold leading-snug" style={{ color: titleColor }}>
-              {title}
-            </h3>
-          ) : null}
-          <ExperienceEditorialOngoingBadge
-            status={flags.showMeta ? status : null}
-            isDark={isDark}
-            accentColor={accent}
-            secondaryColor={secondaryColor}
-          />
-        </div>
+      <div className={galleryPolish.cardCopy}>
+        {(flags.showPeriod && period) || (flags.showMeta && status) ? (
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
+            {flags.showPeriod && period ? <p className="text-[0.8125rem] tabular-nums" style={{ color: mutedColor }}>{period}</p> : null}
+            <ShowcaseExperienceStatus status={flags.showMeta ? status : null} accent={accent} secondary={secondaryColor} ink={titleColor} />
+          </div>
+        ) : null}
+        {flags.showTitle && title ? (
+          <h3 className="pf-loft-card-title min-w-0" style={{ color: titleColor, fontWeight: 500, fontSize: 'calc(clamp(1.25rem, 1.6vw, 1.625rem) * var(--pf-experience-font-scale, 1))', lineHeight: 1.2, letterSpacing: '-.025em' }}>
+            {title}
+          </h3>
+        ) : null}
         {metaLine ? (
           <p className="text-[0.88rem]" style={{ color: mutedColor }}>
             {metaLine}
           </p>
         ) : null}
-        {flags.showPeriod && period ? (
-          <p className="text-[0.82rem]" style={{ color: mutedColor }}>
-            {period}
-          </p>
-        ) : null}
         {visibleTools.length > 0 ? (
-          <div className="mt-auto pt-2">
-            <ExperienceToolsDisplay
-              tools={visibleTools}
-              style={flags.toolsBadgeStyle}
-              ink={titleColor}
-              muted={mutedColor}
-              background={cardBg}
-              isDark={isDark}
-              size="sm"
-            />
+          <div className="mt-3 border-t pt-4" style={{ borderColor: border }}>
+            <GalleryStack tools={visibleTools} presentation={presentation} ink={titleColor} muted={mutedColor} accent={accent} secondary={secondaryColor} border={border} background={cardBg} isDark={isDark} />
           </div>
         ) : null}
       </div>
-    </button>
+    </CardTag>
   );
 }
 
 function GalleryExperienceModal({
+  textStyle,
   block,
   ink,
   muted,
@@ -6492,6 +6206,7 @@ function GalleryExperienceModal({
   canPrev,
   canNext,
 }: {
+  textStyle?: CSSProperties;
   block: ProfileMediaBlock;
   ink: string;
   muted: string;
@@ -6510,6 +6225,7 @@ function GalleryExperienceModal({
   canNext: boolean;
 }) {
   const t = useT();
+  const dialogRef = useRef<HTMLDivElement>(null);
   const [entered, setEntered] = useState(false);
   useEffect(() => {
     const id = window.requestAnimationFrame(() => setEntered(true));
@@ -6517,7 +6233,17 @@ function GalleryExperienceModal({
   }, []);
 
   useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    dialogRef.current?.querySelector<HTMLButtonElement>('button')?.focus({ preventScroll: true });
     const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Tab') {
+        const controls = Array.from(dialogRef.current?.querySelectorAll<HTMLElement>('button, a[href], [tabindex="0"]') ?? []).filter(element => !element.hasAttribute('disabled'));
+        const first = controls[0];
+        const last = controls[controls.length - 1];
+        if (event.shiftKey && document.activeElement === first) { event.preventDefault(); last?.focus(); }
+        else if (!event.shiftKey && document.activeElement === last) { event.preventDefault(); first?.focus(); }
+        return;
+      }
       if (event.key === 'Escape') onClose();
       else if (event.key === 'ArrowLeft' && canPrev) onPrev();
       else if (event.key === 'ArrowRight' && canNext) onNext();
@@ -6528,6 +6254,7 @@ function GalleryExperienceModal({
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
+      previousFocus?.focus({ preventScroll: true });
     };
   }, [onClose, onPrev, onNext, canPrev, canNext]);
 
@@ -6550,8 +6277,10 @@ function GalleryExperienceModal({
       role="presentation"
     >
       <div
-        className={`relative flex max-h-[88vh] w-full max-w-7xl flex-col overflow-hidden ${experienceCardsBorderRadiusClass(thumbnailRadius)} ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform,translate,scale,rotate] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex-row`}
+        ref={dialogRef}
+        className={`${galleryPolish.modal} relative flex max-h-[88vh] w-full max-w-7xl flex-col overflow-hidden ${experienceCardsBorderRadiusClass(thumbnailRadius)} ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform,translate,scale,rotate] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex-row`}
         style={{
+          ...textStyle,
           borderColor: isDark ? border : 'transparent',
           backgroundColor: cardBg,
           opacity: entered ? 1 : 0,
@@ -6560,17 +6289,18 @@ function GalleryExperienceModal({
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
+        tabIndex={-1}
         aria-label={title ?? t('Experience details')}
       >
         <button
           type="button"
           onClick={onClose}
           aria-label={t('Close')}
-          className="absolute right-4 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full opacity-60 transition hover:opacity-100"
+          className="absolute right-3 top-3 z-10 flex h-10 w-10 items-center justify-center rounded-full opacity-90 transition hover:opacity-100 focus-visible:opacity-100"
           data-pf-no-color-transition=""
-          style={{ backgroundColor: `color-mix(in srgb, ${ink} 6%, transparent)`, color: ink }}
+          style={{ backgroundColor: `color-mix(in srgb, ${cardBg} 82%, transparent)`, color: ink }}
         >
-          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
             <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
@@ -6586,7 +6316,7 @@ function GalleryExperienceModal({
               aria-hidden
             />
             <div className="absolute inset-0 p-5">
-              <ProductThumbnailMedia
+              <ProductThumbnailMedia crisp
                 url={mediaUrl}
                 alt={title || t('Experience')}
                 fit="contain"
@@ -6599,7 +6329,7 @@ function GalleryExperienceModal({
             className="relative h-56 w-full shrink-0 overflow-hidden sm:h-auto sm:w-[56%]"
             style={{ backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
           >
-            <ProductThumbnailMedia
+            <ProductThumbnailMedia crisp
               url={mediaUrl}
               alt={title || t('Experience')}
               fit="cover"
@@ -6608,7 +6338,7 @@ function GalleryExperienceModal({
           </div>
         ) : null}
 
-        <div className="flex min-w-0 flex-1 flex-col overflow-y-auto p-7 pr-8 sm:p-9 sm:pr-10">
+        <div className={`${galleryPolish.modalCopy} flex min-h-0 min-w-0 flex-1 flex-col overflow-y-auto p-7 pr-8 sm:p-9 sm:pr-10`}>
           <GalleryDetailContent
             block={block}
             ink={ink}
@@ -6814,6 +6544,11 @@ export function GalleryExperienceList({
   forceSingleColumn?: boolean;
 }) {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const galleryRoot = useRef<HTMLDivElement>(null);
+  const [modalTextStyle, setModalTextStyle] = useState<CSSProperties>({});
+  const closeGallery = useCallback(() => setOpenIndex(null), []);
+  const previousGallery = useCallback(() => setOpenIndex(current => current !== null && current > 0 ? current - 1 : current), []);
+  const nextGallery = useCallback(() => setOpenIndex(current => current !== null && current < blocks.length - 1 ? current + 1 : current), [blocks.length]);
 
   if (blocks.length === 0) return null;
 
@@ -6826,13 +6561,15 @@ export function GalleryExperienceList({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const muted = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
@@ -6854,6 +6591,8 @@ export function GalleryExperienceList({
   };
 
   const columns = presentation.galleryColumns ?? 3;
+  const galleryFlags = { ...flags, galleryPresentation: presentation };
+  const detailsEnabled = presentation.galleryDetailsEnabled !== false;
   const thumbnailFit = presentation.galleryThumbnailFit ?? 'cover';
   const thumbnailRadius = presentation.galleryThumbnailRadius ?? 'md';
   const hoverEffect = presentation.galleryHoverEffect ?? 'curtain';
@@ -6873,14 +6612,15 @@ export function GalleryExperienceList({
   return (
     <>
       <div
+        ref={galleryRoot}
         className={experienceListShellClass(
           forceSingleColumn ? 'full' : presentation.listMaxWidth,
           forceSingleColumn ? 'left' : presentation.listPlacement
         )}
       >
-        <div className={gridClass}>
+        <div className={`${galleryPolish.grid} ${gridClass}`} data-staggered={!forceSingleColumn && presentation.galleryStaggered !== false ? 'true' : undefined} data-columns={columns}>
           {blocks.map((block, index) => (
-            <div key={block.id} className="h-full">
+            <div key={block.id} className={galleryPolish.entry}>
               <GalleryExperienceCard
                 block={block}
                 accent={accent}
@@ -6889,19 +6629,27 @@ export function GalleryExperienceList({
                 mutedColor={muted}
                 border={border}
                 isDark={isDark}
-                flags={flags}
+                flags={galleryFlags}
                 thumbnailFit={thumbnailFit}
                 thumbnailRadius={thumbnailRadius}
                 hoverEffect={hoverEffect}
-                onOpen={() => setOpenIndex(index)}
+                onOpen={() => {
+                  if (!detailsEnabled) return;
+                  if (galleryRoot.current) {
+                    const typography = getComputedStyle(galleryRoot.current);
+                    setModalTextStyle({ fontFamily: typography.fontFamily, '--pf-experience-font-scale': typography.getPropertyValue('--pf-experience-font-scale').trim() || '1' } as CSSProperties);
+                  }
+                  setOpenIndex(index);
+                }}
               />
             </div>
           ))}
         </div>
       </div>
 
-      {openIndex !== null ? (
+      {detailsEnabled && openIndex !== null && blocks[openIndex] ? (
         <GalleryExperienceModal
+          textStyle={modalTextStyle}
           block={blocks[openIndex]}
           ink={ink}
           muted={muted}
@@ -6910,14 +6658,12 @@ export function GalleryExperienceList({
           border={border}
           background={background}
           isDark={isDark}
-          flags={flags}
+          flags={galleryFlags}
           thumbnailFit={thumbnailFit}
           thumbnailRadius={thumbnailRadius}
-          onClose={() => setOpenIndex(null)}
-          onPrev={() => setOpenIndex((current) => (current !== null && current > 0 ? current - 1 : current))}
-          onNext={() =>
-            setOpenIndex((current) => (current !== null && current < blocks.length - 1 ? current + 1 : current))
-          }
+          onClose={closeGallery}
+          onPrev={previousGallery}
+          onNext={nextGallery}
           canPrev={openIndex > 0}
           canNext={openIndex < blocks.length - 1}
         />
@@ -6954,8 +6700,8 @@ function LoftCardMedia({
           style={{ backgroundColor: isDark ? 'rgba(0,0,0,0.32)' : 'rgba(255,255,255,0.28)' }}
           aria-hidden
         />
-        <div className="absolute inset-0 p-6">
-          <ProductThumbnailMedia
+        <div className="absolute inset-0 p-4 sm:p-5 xl:p-6">
+          <ProductThumbnailMedia crisp
             url={mediaUrl}
             alt={title || t('Experience')}
             fit="contain"
@@ -6966,7 +6712,7 @@ function LoftCardMedia({
     );
   }
   if (mediaUrl) {
-    return <ProductThumbnailMedia url={mediaUrl} alt={title || t('Experience')} fit="cover" className="h-full w-full" />;
+    return <ProductThumbnailMedia crisp url={mediaUrl} alt={title || t('Experience')} fit="cover" className="h-full w-full" />;
   }
   return (
     <div
@@ -7014,12 +6760,13 @@ function LoftCard({
       type="button"
       onClick={onOpen}
       data-pf-no-color-transition=""
-      className={`pf-loft-card pf-loft-hover-${hoverEffect} flex w-full flex-col text-left`}
+      className={`pf-loft-card pf-loft-hover-${hoverEffect} flex w-full flex-col text-left focus-visible:outline-2 focus-visible:outline-offset-4`}
       style={
         {
           ['--loft-glow' as string]: `color-mix(in srgb, ${accent} 32%, transparent)`,
           ['--loft-rim' as string]: rimColor,
           ['--loft-veil' as string]: veilColor,
+          outlineColor: accent,
         } as CSSProperties
       }
     >
@@ -7063,7 +6810,7 @@ function LoftCard({
             >
               <span
                 data-pf-no-color-transition=""
-                className="pf-loft-magnetic-pill rounded-full px-3.5 py-1.5 font-mono text-[0.68rem] font-medium uppercase tracking-[0.14em]"
+                className="pf-loft-magnetic-pill rounded-full px-3.5 py-1.5 font-mono text-[0.75rem] font-medium uppercase tracking-[0.14em]"
                 style={{
                   color: isDark ? 'rgba(255,255,255,0.92)' : 'rgba(0,0,0,0.88)',
                   backgroundColor: isDark ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.4)',
@@ -7078,8 +6825,8 @@ function LoftCard({
       {flags.showTitle && title ? (
         <p
           data-pf-no-color-transition=""
-          className="pf-loft-card-title mt-4 text-left text-[0.98rem] font-semibold leading-snug"
-          style={{ color: ink }}
+          className="pf-loft-card-title mt-4 min-h-[2.6em] line-clamp-2 text-left text-[1.0625rem] leading-[1.3] tracking-[-0.015em]"
+          style={{ color: ink, fontWeight: 500 }}
         >
           {title}
         </p>
@@ -7098,35 +6845,72 @@ function LoftExperienceModal({
   muted,
   secondary,
   bodyColor,
+  taskInk,
   accent,
   border,
   background,
   isDark,
   flags,
   onClose,
+  onStep,
+  position,
 }: {
   block: ProfileMediaBlock;
   ink: string;
   muted: string;
   secondary: string;
   bodyColor: string;
+  taskInk: string;
   accent: string;
   border: string;
   background: string;
   isDark: boolean;
   flags: DuotoneContentFlags;
   onClose: () => void;
+  /** Previous / next entry (-1 / +1); absent when there is only one. */
+  onStep?: (direction: -1 | 1) => void;
+  position?: { index: number; total: number };
 }) {
   const t = useT();
   const [entered, setEntered] = useState(false);
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const dialogRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     const id = window.requestAnimationFrame(() => setEntered(true));
     return () => window.cancelAnimationFrame(id);
   }, []);
 
   useEffect(() => {
+    // Keyboard: focus enters the dialog, Tab stays inside it, and focus returns to the card on close.
+    const opener = document.activeElement as HTMLElement | null;
+    closeRef.current?.focus();
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') onClose();
+      if (event.key === 'Escape') {
+        onClose();
+        return;
+      }
+      if (event.key === 'ArrowLeft' && onStep) {
+        onStep(-1);
+        return;
+      }
+      if (event.key === 'ArrowRight' && onStep) {
+        onStep(1);
+        return;
+      }
+      if (event.key !== 'Tab' || !dialogRef.current) return;
+      const focusable = dialogRef.current.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusable.length === 0) return;
+      const first = focusable[0]!;
+      const last = focusable[focusable.length - 1]!;
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
     };
     document.addEventListener('keydown', onKeyDown);
     const previousOverflow = document.body.style.overflow;
@@ -7134,8 +6918,9 @@ function LoftExperienceModal({
     return () => {
       document.removeEventListener('keydown', onKeyDown);
       document.body.style.overflow = previousOverflow;
+      opener?.focus?.();
     };
-  }, [onClose]);
+  }, [onClose, onStep]);
 
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
@@ -7160,18 +6945,18 @@ function LoftExperienceModal({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[150] flex items-center justify-center py-3 backdrop-blur-md transition-opacity duration-300 ease-out sm:py-6"
+      className="fixed inset-0 z-[150] flex items-center justify-center py-0 transition-opacity duration-300 ease-out sm:py-6 sm:backdrop-blur-md"
       style={{ backgroundColor: overlayBg, opacity: entered ? 1 : 0 }}
       onClick={onClose}
       role="presentation"
     >
       <div
-        className={`relative flex h-full w-full flex-col overflow-hidden rounded-none ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform,translate,scale,rotate] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]`}
+        ref={dialogRef}
+        className={`relative flex h-full max-h-[100dvh] w-full flex-col overflow-hidden rounded-none sm:max-h-[94dvh] ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform,translate,scale,rotate] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]`}
         style={{
           borderColor: isDark ? border : 'transparent',
           backgroundColor: cardBg,
-          maxHeight: '94vh',
-          opacity: entered ? 1 : 0,
+                    opacity: entered ? 1 : 0,
           transform: entered ? 'scale(1)' : 'scale(0.96)',
         }}
         onClick={(event) => event.stopPropagation()}
@@ -7180,22 +6965,49 @@ function LoftExperienceModal({
         aria-label={title ?? t('Experience details')}
       >
         <button
+          ref={closeRef}
           type="button"
           onClick={onClose}
           aria-label={t('Close')}
-          className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full opacity-70 transition hover:opacity-100 sm:right-6 sm:top-6"
+          className="absolute right-3 top-3 z-10 flex h-11 w-11 items-center justify-center rounded-full opacity-90 transition hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 sm:right-6 sm:top-6"
           data-pf-no-color-transition=""
           style={{ backgroundColor: `color-mix(in srgb, ${ink} 8%, transparent)`, color: ink }}
         >
-          <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
+          <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
             <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
           </svg>
         </button>
 
-        <div className="min-h-0 flex-1 overflow-y-auto">
-          <div className="mx-auto grid min-h-full w-full grid-cols-1 items-center gap-10 px-6 py-10 sm:gap-12 sm:px-10 sm:py-12 lg:grid-cols-12 lg:gap-14 lg:px-14 lg:py-16 xl:gap-16 xl:px-16">
+        {onStep && position ? (
+          <div
+            className="absolute left-3 top-3 z-10 flex items-center gap-1 sm:left-6 sm:top-6"
+            style={{ color: ink }}
+          >
+            {([-1, 1] as const).map((direction) => (
+              <button
+                key={direction}
+                type="button"
+                onClick={() => onStep(direction)}
+                aria-label={direction === -1 ? t('Previous') : t('Next')}
+                className="flex h-11 w-11 items-center justify-center rounded-full opacity-90 transition hover:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{ backgroundColor: `color-mix(in srgb, ${ink} 8%, transparent)` }}
+                data-pf-no-color-transition=""
+              >
+                <svg viewBox="0 0 24 24" className="h-5 w-5" fill="none" stroke="currentColor" strokeWidth={1.6} aria-hidden>
+                  <path strokeLinecap="round" strokeLinejoin="round" d={direction === -1 ? 'M15 6l-6 6 6 6' : 'M9 6l6 6-6 6'} />
+                </svg>
+              </button>
+            ))}
+            <span className="ml-1 text-xs tabular-nums opacity-70" aria-live="polite">
+              {position.index + 1} / {position.total}
+            </span>
+          </div>
+        ) : null}
+
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+          <div className="mx-auto grid min-h-full w-full grid-cols-1 items-center gap-10 px-6 pb-10 pt-16 sm:gap-12 sm:px-10 sm:py-12 lg:grid-cols-12 lg:gap-14 lg:px-14 lg:py-16 xl:gap-16 xl:px-16">
             {flags.showEntryMedia ? (
-              <div className="relative w-full lg:col-span-6">
+              <div className="relative mx-auto w-full max-w-[34rem] md:max-w-none lg:sticky lg:top-16 lg:col-span-6 lg:self-start">
                 <div
                   className="pf-loft-modal-thumb relative w-full overflow-hidden rounded-2xl"
                   style={{
@@ -7205,7 +7017,7 @@ function LoftExperienceModal({
                 >
                   <div className="pf-loft-modal-thumb-media h-full w-full">
                     {mediaUrl ? (
-                      <ProductThumbnailMedia
+                      <ProductThumbnailMedia crisp
                         url={mediaUrl}
                         alt={title || t('Experience')}
                         fit="cover"
@@ -7232,12 +7044,7 @@ function LoftExperienceModal({
             >
               {showStatus ? (
                 <div className="mb-5 sm:mb-6">
-                  <ExperienceEditorialOngoingBadge
-                    status={status}
-                    isDark={isDark}
-                    accentColor={accent}
-                    secondaryColor={secondary}
-                  />
+                  <ShowcaseExperienceStatus status={status} accent={accent} secondary={secondary} ink={ink} />
                 </div>
               ) : null}
 
@@ -7252,7 +7059,7 @@ function LoftExperienceModal({
 
               {combinedMeta ? (
                 <p
-                  className={`text-[0.92rem] tracking-[0.02em] sm:text-[1rem] ${flags.showTitle && title ? 'mt-5 sm:mt-6' : ''}`}
+                  className={`text-[0.95rem] tracking-[0.02em] sm:text-[1rem] ${flags.showTitle && title ? 'mt-5 sm:mt-6' : ''}`}
                   style={{ color: muted }}
                 >
                   {combinedMeta}
@@ -7279,18 +7086,19 @@ function LoftExperienceModal({
                   <ExperienceTasksDisplay
                     tasks={displayTasks}
                     display={flags.tasksDisplay}
-                    bodyColor={bodyColor}
+                    bodyColor={taskInk}
                     mutedColor={muted}
                     isDark={isDark}
                     label=""
                     size="lg"
+                    legibleMarkers
                     tools={displayTools}
                   />
                 </div>
               ) : null}
 
               {displayTools.length > 0 || repoLink ? (
-                <div className="mt-10 flex flex-wrap items-center gap-x-6 gap-y-4 sm:mt-12">
+                <div className="mt-8 flex flex-col items-start gap-6 border-t pt-6 sm:mt-10" style={{ borderColor: border }}>
                   {displayTools.length > 0 ? (
                     <div className="min-w-0 flex-1">
                       <ExperienceToolsDisplay
@@ -7309,7 +7117,7 @@ function LoftExperienceModal({
                       <PortfolioLinkButton
                         variant={flags.repoLinkButtonStyle}
                         href={repoLink.url}
-                        label={repoLink.label || t('View repository')}
+                        label={showcaseExperienceProofLabel(repoLink.label, t('View project'))}
                         palette={{ background: cardBg, ink, muted, accent, border }}
                       />
                     </div>
@@ -7348,19 +7156,35 @@ export function LoftExperienceList({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const muted = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
+  // Description = context (its own style colour); tasks = strong ink unless the 'tasks' style was customised.
   const bodyColor = ensureExperienceInkContrast(
-    resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
+    resolveExperienceTextColor(styles.description, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
+  );
+  const tasksAreDefault =
+    (styles.tasks.color || '').trim().toLowerCase() === DEFAULT_EXPERIENCE_BODY_COLOR &&
+    (styles.tasks.colorDark || '').trim().toLowerCase() === DEFAULT_EXPERIENCE_BODY_COLOR_DARK.toLowerCase();
+  const taskInk = tasksAreDefault
+    ? ink
+    : ensureExperienceInkContrast(
+        resolveExperienceTextColor(styles.tasks, colorMode),
+        isDark,
+        DEFAULT_EXPERIENCE_BODY_COLOR,
+        DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
@@ -7387,8 +7211,8 @@ export function LoftExperienceList({
   const columns = presentation.loftColumns ?? 3;
   const columnsClass: Record<PortfolioExperienceLoftColumns, string> = {
     2: 'xl:grid-cols-2',
-    3: 'xl:grid-cols-3',
-    4: 'xl:grid-cols-4',
+    3: 'lg:grid-cols-3',
+    4: 'lg:grid-cols-3 2xl:grid-cols-4',
   };
   const gap = presentation.loftGap ?? 'md';
   const gapClass: Record<PortfolioExperienceItemGap, string> = {
@@ -7437,12 +7261,19 @@ export function LoftExperienceList({
           muted={muted}
           secondary={secondary}
           bodyColor={bodyColor}
+          taskInk={taskInk}
           accent={accent}
           border={border}
           background={background}
           isDark={isDark}
           flags={flags}
           onClose={() => setOpenIndex(null)}
+          onStep={
+            blocks.length > 1
+              ? (direction) => setOpenIndex((current) => (current === null ? current : (current + direction + blocks.length) % blocks.length))
+              : undefined
+          }
+          position={{ index: openIndex, total: blocks.length }}
         />
       ) : null}
     </>
@@ -7458,6 +7289,7 @@ function PressExperienceRow({
   ink,
   muted,
   bodyColor,
+  taskInk,
   accent,
   background,
   flags,
@@ -7467,6 +7299,7 @@ function PressExperienceRow({
   ink: string;
   muted: string;
   bodyColor: string;
+  taskInk: string;
   accent: string;
   background: string;
   flags: DuotoneContentFlags;
@@ -7488,11 +7321,11 @@ function PressExperienceRow({
   const thumbnail = (
     <div
       data-pf-no-color-transition=""
-      className={`pf-press-thumb relative aspect-square w-72 shrink-0 overflow-hidden sm:w-80 lg:w-96 ${thumbnailRadiusClass}`}
+      className={`pf-press-thumb relative aspect-[4/3] w-full shrink-0 overflow-hidden sm:aspect-square sm:w-80 lg:w-96 ${thumbnailRadiusClass}`}
       style={{ backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
     >
       {mediaUrl ? (
-        <ProductThumbnailMedia
+        <ProductThumbnailMedia crisp
           url={mediaUrl}
           alt={title || t('Experience')}
           fit="cover"
@@ -7500,7 +7333,7 @@ function PressExperienceRow({
         />
       ) : (
         <div
-          className="flex h-full w-full items-center justify-center text-[4.75rem] font-semibold"
+          className="flex h-full w-full items-center justify-center text-[clamp(3rem,18cqw,4.75rem)] font-semibold"
           style={{ color: `color-mix(in srgb, ${accent} 55%, transparent)` }}
           aria-hidden
         >
@@ -7517,9 +7350,15 @@ function PressExperienceRow({
         target="_blank"
         rel="noopener noreferrer"
         aria-label={repoLink.label || title || t('Open link')}
-        className={`block shrink-0 ${thumbnailRadiusClass}`}
+        className={`relative block w-full shrink-0 focus-visible:outline-2 focus-visible:outline-offset-4 sm:w-auto ${thumbnailRadiusClass}`}
       >
         {thumbnail}
+        <span
+          aria-hidden
+          className="pointer-events-none absolute right-3 top-3 grid h-11 w-11 place-items-center rounded-full bg-black/55 text-lg text-white"
+        >
+          ↗
+        </span>
       </a>
     ) : (
       thumbnail
@@ -7527,7 +7366,10 @@ function PressExperienceRow({
   ) : null;
 
   return (
-    <div className="pf-press-row flex items-stretch gap-5 sm:gap-7">
+    <div
+      className={`pf-press-row flex flex-col items-stretch gap-5 border-t pt-8 first:border-t-0 first:pt-0 sm:flex-row sm:gap-7 sm:border-t-0 sm:pt-0 ${media ? '' : 'pf-press-open'}`}
+      style={{ borderColor: 'color-mix(in srgb, currentColor 12%, transparent)' }}
+    >
       {media}
 
       <div className="flex min-w-0 flex-1 flex-col pt-0.5">
@@ -7535,14 +7377,14 @@ function PressExperienceRow({
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             {label ? (
               <span
-                className="text-[0.72rem] font-bold uppercase tracking-[0.08em]"
-                style={{ color: ink }}
+                className="text-xs uppercase tracking-[0.06em] sm:text-[0.8125rem]"
+                style={{ color: muted, fontWeight: 500 }}
               >
                 {label}
               </span>
             ) : null}
             {date ? (
-              <span className="text-[0.72rem] uppercase tracking-[0.04em]" style={{ color: muted }}>
+              <span className="text-xs uppercase tracking-[0.04em] tabular-nums sm:text-[0.8rem]" style={{ color: muted }}>
                 {date}
               </span>
             ) : null}
@@ -7550,8 +7392,8 @@ function PressExperienceRow({
         ) : null}
         {flags.showTitle && title ? (
           <p
-            className="mt-3 text-[1.15rem] font-semibold leading-snug sm:text-[1.3rem]"
-            style={{ color: ink }}
+            className="mt-3 text-balance text-[1.25rem] leading-[1.25] tracking-[-0.025em] [overflow-wrap:anywhere] sm:text-[1.5rem]"
+            style={{ color: ink, fontWeight: 500 }}
           >
             {title}
           </p>
@@ -7562,7 +7404,7 @@ function PressExperienceRow({
             <div className="overflow-hidden">
               {displayDescription ? (
                 <p
-                  className="mt-8 max-w-xl text-[0.95rem] leading-relaxed"
+                  className="mt-5 max-w-[65ch] text-[1rem] leading-[1.65]"
                   style={{ color: bodyColor }}
                 >
                   {displayDescription}
@@ -7570,16 +7412,17 @@ function PressExperienceRow({
               ) : null}
 
               {displayTasks.length > 0 ? (
-                <div className="mt-8">
+                <div className="mt-5">
                   <ExperienceTasksDisplay
                     tasks={displayTasks}
                     display={flags.tasksDisplay}
-                    bodyColor={bodyColor}
+                    bodyColor={taskInk}
                     mutedColor={muted}
                     isDark={flags.isDark}
                     label=""
                     size="md"
                     tools={displayTools}
+                    legibleMarkers
                   />
                 </div>
               ) : null}
@@ -7588,7 +7431,7 @@ function PressExperienceRow({
         ) : null}
 
         {displayTools.length > 0 ? (
-          <div data-pf-no-color-transition="" className="pf-press-stack mt-auto hidden pt-8 lg:block">
+          <div data-pf-no-color-transition="" className="pf-press-stack mt-auto pt-6 lg:block">
             <ExperienceToolsDisplay
               tools={displayTools}
               style={flags.toolsBadgeStyle}
@@ -7607,7 +7450,7 @@ function PressExperienceRow({
             <PortfolioLinkButton
               variant={flags.repoLinkButtonStyle}
               href={repoLink.url}
-              label={repoLink.label || t('View repository')}
+              label={showcaseExperienceProofLabel(repoLink.label, t('View project'))}
               palette={experienceLinkButtonPalette({
                 ink,
                 muted,
@@ -7643,19 +7486,35 @@ export function PressExperienceList({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const muted = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
+  // Description = context (its own style colour); tasks = strong ink unless the 'tasks' style was customised.
   const bodyColor = ensureExperienceInkContrast(
-    resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
+    resolveExperienceTextColor(styles.description, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
+  );
+  const tasksAreDefault =
+    (styles.tasks.color || '').trim().toLowerCase() === DEFAULT_EXPERIENCE_BODY_COLOR &&
+    (styles.tasks.colorDark || '').trim().toLowerCase() === DEFAULT_EXPERIENCE_BODY_COLOR_DARK.toLowerCase();
+  const taskInk = tasksAreDefault
+    ? ink
+    : ensureExperienceInkContrast(
+        resolveExperienceTextColor(styles.tasks, colorMode),
+        isDark,
+        DEFAULT_EXPERIENCE_BODY_COLOR,
+        DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
@@ -7695,6 +7554,7 @@ export function PressExperienceList({
               ink={ink}
               muted={muted}
               bodyColor={bodyColor}
+              taskInk={taskInk}
               accent={accent}
               background={background}
               flags={flags}
@@ -7712,14 +7572,16 @@ function LegacyPillBadge({ text, accent }: { text: string; accent: string }) {
   if (!text.trim()) return null;
   return (
     <span
-      className="inline-flex items-center rounded-full border px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-widest"
+      className="inline-flex max-w-full items-center rounded-full border px-4 py-1.5 font-mono text-xs font-bold uppercase tracking-widest"
       style={{
         borderColor: `color-mix(in srgb, ${accent} 28%, transparent)`,
         backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`,
-        color: accent,
+        color: `color-mix(in srgb, ${accent} 70%, var(--pf-palette-texte-fort, currentColor))`,
       }}
     >
-      [ {text} ]
+      <span aria-hidden>[&nbsp;</span>
+      <span className="truncate">{text}</span>
+      <span aria-hidden>&nbsp;]</span>
     </span>
   );
 }
@@ -7828,9 +7690,10 @@ function LegacyStatusCursor({
           backgroundColor: isFinished ? 'rgba(255,255,255,0.92)' : 'rgba(8,8,10,0.92)',
           border: `1px solid ${isFinished ? 'rgba(255,255,255,0.6)' : 'rgba(255,255,255,0.14)'}`,
           color: isFinished ? '#161616' : '#ffffff',
-          fontSize: '0.72rem',
+          fontSize: '0.75rem',
           letterSpacing: '0.14em',
           fontFamily: REEL_SANS,
+          boxShadow: '0 4px 18px rgba(0,0,0,0.25)',
         }}
       >
         {!isFinished ? (
@@ -7899,9 +7762,9 @@ function LegacyExperienceCard({
   const displayStatus = flags.showMeta ? status : null;
   const displayPeriod = flags.showPeriod ? period : null;
   const statusLabel =
-    displayStatus === 'ONGOING' ? t('Ongoing') : displayStatus === 'FINISHED' ? t('Completed') : null;
+    displayStatus === 'ONGOING' ? t('Ongoing') : displayStatus === 'FINISHED' ? t('Done') : null;
   const statusColor = status === 'ONGOING' ? accent : secondary;
-  const showFooter = Boolean(statusLabel || displayPeriod || badgeText);
+  const showFooter = Boolean(statusLabel || displayPeriod);
   // A native CSS `cursor: url(...)` can't lag behind the pointer — it's a static image the
   // OS/browser snaps to the mouse position instantly, with no way to hook a requestAnimationFrame
   // loop into it. The floaty, liquid-inertia pointer Awwwards sites do needs a real DOM element
@@ -7920,7 +7783,7 @@ function LegacyExperienceCard({
           hermetic split down the middle. */}
       <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-2 lg:gap-14">
         {flags.showEntryMedia ? (
-          <div className={`group relative ${reverse ? 'lg:order-2' : ''}`}>
+          <div className={`group relative isolate ${reverse ? 'lg:order-2' : ''}`}>
             {/* Soft ambient bleed: extends past the thumbnail's own edges into the gutter,
                 so the boundary between the two columns reads as a glow, not a hard line. */}
             <div
@@ -7933,20 +7796,23 @@ function LegacyExperienceCard({
             />
             <div
               ref={thumbRef}
-              className={`relative w-full overflow-hidden ${experienceCardsBorderRadiusClass(
+              className={`pf-legacy-thumb relative w-full overflow-hidden ${experienceCardsBorderRadiusClass(
                 thumbnailRadius
               )}`}
               style={{
-                aspectRatio: experienceLegacyThumbnailAspectRatio(thumbnailHeight),
-                maxWidth: experienceLegacyThumbnailMaxWidth(thumbnailWidth),
+                ['--pf-lg-ar' as string]: experienceLegacyThumbnailAspectRatio(thumbnailHeight),
+                ['--pf-lg-mw' as string]: experienceLegacyThumbnailMaxWidth(thumbnailWidth),
                 marginLeft: 'auto',
                 marginRight: 'auto',
                 backgroundColor: `color-mix(in srgb, ${accent} 10%, transparent)`,
-                cursor: statusCursorLabel ? 'none' : undefined,
               }}
               onMouseEnter={
                 statusCursorLabel
-                  ? (event) => setCursorAnchor({ x: event.clientX, y: event.clientY })
+                  ? (event) => {
+                      // The trailing pill is a mouse affordance: skip it on touch and coarse pointers.
+                      if (!window.matchMedia('(hover: hover) and (pointer: fine)').matches) return;
+                      setCursorAnchor({ x: event.clientX, y: event.clientY });
+                    }
                   : undefined
               }
               onMouseLeave={statusCursorLabel ? dismissCursor : undefined}
@@ -7959,12 +7825,12 @@ function LegacyExperienceCard({
                 // transition-property down to color-only and killing the transform
                 // animation entirely — the "zoom" was really just an instant jump.
                 <div className="pf-legacy-thumb-zoom h-full w-full" data-pf-no-color-transition="">
-                  <ProductThumbnailMedia url={mediaUrl} alt={title || t('Experience')} fit="cover" className="h-full w-full" />
+                  <ProductThumbnailMedia crisp url={mediaUrl} alt={title || t('Experience')} fit="cover" className="h-full w-full" />
                 </div>
               ) : (
                 <div
                   className="flex h-full w-full items-center justify-center font-semibold"
-                  style={{ fontSize: '5rem', color: `color-mix(in srgb, ${accent} 55%, transparent)` }}
+                  style={{ fontSize: 'clamp(3rem, 12vw, 5rem)', color: `color-mix(in srgb, ${accent} 55%, transparent)` }}
                   aria-hidden
                 >
                   {initial}
@@ -7984,7 +7850,7 @@ function LegacyExperienceCard({
           />
         ) : null}
 
-        <div className={`min-w-0 ${reverse ? 'lg:order-1' : ''}`}>
+        <div className={`min-w-0 ${!flags.showEntryMedia ? 'lg:col-span-2 lg:max-w-3xl' : ''} ${reverse ? 'lg:order-1' : ''}`}>
           {badgeText ? (
             <div className="mb-5">
               <LegacyPillBadge text={badgeText} accent={accent} />
@@ -7993,19 +7859,19 @@ function LegacyExperienceCard({
 
           {flags.showTitle && title ? (
             <h3
-              className="font-normal tracking-tight"
-              style={{ color: ink, fontSize: 'clamp(3rem, 6vw, 4.5rem)', lineHeight: 1.05 }}
+              className="text-balance break-words font-normal tracking-tight"
+              style={{ color: ink, fontSize: 'clamp(2rem, 1.2rem + 3.4vw, 4.5rem)', lineHeight: 1.05 }}
             >
               {title}
             </h3>
           ) : null}
 
           {(flags.showDescription && description) || stackTools.length > 0 || hoverTasks.length > 0 || repoLink ? (
-            <div className="mt-12 space-y-12 sm:space-y-16">
+            <div className="mt-6 space-y-7 sm:mt-8 sm:space-y-9">
               {flags.showDescription && description ? (
                 // Wider measure + looser leading: shorter, airier block instead of a dense
                 // uniform slab, and it fills more of the space toward the middle.
-                <p className="max-w-xl text-lg leading-loose" style={{ color: faint, opacity: 0.82 }}>
+                <p className="max-w-[65ch] text-base leading-[1.65] sm:text-[1.0625rem]" style={{ color: muted }}>
                   {description}
                 </p>
               ) : null}
@@ -8043,7 +7909,7 @@ function LegacyExperienceCard({
                         <span className="pf-legacy-task-dash shrink-0" aria-hidden>
                           —
                         </span>
-                        <span className="text-[0.98rem] leading-snug" style={{ color: faint }}>
+                        <span className="text-base leading-snug" style={{ color: ink }}>
                           {task}
                         </span>
                       </div>
@@ -8055,11 +7921,11 @@ function LegacyExperienceCard({
               {repoLink ? (
                 // Extra breathing room on top of the shared space-y rhythm — reads as a
                 // separate action, not just another content block stacked under the tags.
-                <div className="pt-4 sm:pt-6">
+                <div className="pt-1 sm:pt-2">
                   <PortfolioLinkButton
                     variant={flags.repoLinkButtonStyle}
                     href={repoLink.url}
-                    label={repoLink.label || t('View repository')}
+                    label={showcaseExperienceProofLabel(repoLink.label, t('View project'))}
                     palette={experienceLinkButtonPalette({
                       ink,
                       muted,
@@ -8081,7 +7947,7 @@ function LegacyExperienceCard({
           style={{ borderColor: border }}
         >
           {statusLabel ? (
-            <span className="inline-flex items-center gap-2 text-[0.85rem]" style={{ color: muted }}>
+            <span className="inline-flex items-center gap-2 text-[0.8125rem]" style={{ color: `color-mix(in srgb, ${statusColor} 70%, ${ink})` }}>
               <span
                 className="h-1.5 w-1.5 shrink-0 rounded-full"
                 style={{ backgroundColor: statusColor }}
@@ -8092,16 +7958,14 @@ function LegacyExperienceCard({
           ) : (
             <span aria-hidden />
           )}
-          {displayPeriod || badgeText ? (
-            <span className="inline-flex items-center gap-2.5 text-[0.85rem]" style={{ color: muted }}>
+          {displayPeriod ? (
+            <span className="inline-flex min-w-0 flex-wrap items-center gap-x-2.5 gap-y-1 text-[0.85rem]" style={{ color: muted }}>
               <span
                 className="inline-block h-[7px] w-[7px] shrink-0 rotate-45"
                 style={{ backgroundColor: accent }}
                 aria-hidden
               />
               {displayPeriod}
-              {displayPeriod && badgeText ? <span aria-hidden>|</span> : null}
-              {badgeText}
             </span>
           ) : null}
         </div>
@@ -8131,20 +7995,23 @@ export function LegacyExperienceList({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const muted = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   // texteFaint — the quietest tier, one step below muted — for the description specifically.
   const faint = ensureExperienceInkContrast(
     resolveExperienceTextColor(styles.blockLabel, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const border = isDark ? 'rgba(255,255,255,0.14)' : 'rgba(0,0,0,0.12)';
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
@@ -8180,7 +8047,7 @@ export function LegacyExperienceList({
         forceSingleColumn ? 'left' : presentation.listPlacement
       )}
     >
-      <div>
+      <div className="overflow-x-clip">
         {blocks.map((block, index) => (
           <LegacyExperienceCard
             key={block.id}
@@ -8232,16 +8099,140 @@ function experienceContentFlags(
 }
 
 
+/** Literal class strings (Tailwind keeps them): row padding, title gap, grid gap, description gap, tasks gap. */
+const KINETIC_SPACING_CLASSES = {
+  tight: { row: 'py-8 sm:py-12', title: 'mt-2.5 sm:mt-3', grid: 'mt-5 gap-6 sm:mt-7 sm:gap-10', description: 'mt-0', tasks: 'mt-5' },
+  standard: { row: 'py-14 sm:py-20', title: 'mt-3 sm:mt-4', grid: 'mt-7 gap-8 sm:mt-12 sm:gap-12', description: 'mt-0', tasks: 'mt-7' },
+  relaxed: { row: 'py-20 sm:py-32', title: 'mt-4 sm:mt-6', grid: 'mt-9 gap-10 sm:mt-12 sm:gap-14', description: 'mt-0', tasks: 'mt-9' },
+  airy: { row: 'py-28 sm:py-44', title: 'mt-6 sm:mt-8', grid: 'mt-12 gap-12 sm:mt-14 sm:gap-14', description: 'mt-0', tasks: 'mt-11' },
+} as const;
+
+/**
+ * Kinetic split's repository link: a mono caption whose label rolls up on hover, beside a ring that
+ * floods with the ink while its arrow straightens from 45° to pointing right. Pure CSS; the animated
+ * layers carry data-pf-no-color-transition so the theme's colour-only transition rule leaves them alone.
+ */
+/** The colour that reads on top of `ink` (the arrow once the ring floods): white on a dark ink, near-black on a light one. */
+function inverseOfInk(ink: string, isDark: boolean): string {
+  const hex = ink.trim().match(/^#([0-9a-f]{3}|[0-9a-f]{6})$/i)?.[1];
+  if (!hex) return isDark ? '#0a0a0a' : '#ffffff';
+  const full = hex.length === 3 ? hex.replace(/./g, (c) => c + c) : hex;
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance > 0.5 ? '#0a0a0a' : '#ffffff';
+}
+
+function KineticRepoLink({
+  href,
+  label,
+  ink,
+  isDark,
+  shape,
+  hover,
+}: {
+  href: string;
+  label: string;
+  ink: string;
+  isDark: boolean;
+  shape: 'link' | 'rectangle' | 'pill';
+  hover: 'wipe' | 'roll';
+}) {
+  // Not the section background: it is often transparent, which left the arrow invisible on the flooded ring.
+  const arrowOnFill = inverseOfInk(ink, isDark);
+  if (shape === 'link') return <PortfolioLinkButton href={href} label={label} variant="table" palette={experienceLinkButtonPalette({ ink, muted: ink, accent: ink, background: arrowOnFill, isDark })} />;
+  const ease = 'ease-[cubic-bezier(0.76,0,0.24,1)]';
+  return (
+    <a
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      data-pf-no-color-transition=""
+      className={`${kineticStyles.projectLink} group/repo inline-flex items-center justify-between gap-8 border px-6 py-4 text-[0.75rem] focus-visible:outline-2 focus-visible:outline-offset-4`}
+      data-shape={shape}
+      data-hover={hover}
+      style={
+        {
+          color: ink,
+          borderColor: `color-mix(in srgb, ${ink} 30%, transparent)`,
+          outlineColor: ink,
+          '--repo-ink': ink,
+          '--repo-bg': arrowOnFill,
+          // Inline: the experience typography wrapper resets uppercase / letter-spacing / weight utilities.
+          textTransform: 'uppercase',
+          letterSpacing: '0.1em',
+          fontWeight: 500,
+        } as CSSProperties
+      }
+    >
+      <span className="relative inline-block overflow-hidden align-bottom">
+        <span
+          data-pf-no-color-transition=""
+          className="block"
+        >
+          {label}
+        </span>
+        <span
+          aria-hidden
+          data-pf-no-color-transition=""
+          className={kineticStyles.labelCopy}
+        >
+          {label}
+        </span>
+      </span>
+      {/* The ring is empty at rest; on hover its fill grows from the bottom edge. The fill is the ring's own
+          background (size 0 → 100%) rather than a translated child, so nothing can show before the hover. */}
+      <span
+        data-pf-no-color-transition=""
+        className="relative inline-flex size-5 shrink-0 items-center justify-center"
+        style={{
+          borderColor: ink,
+          backgroundImage: 'none',
+          backgroundRepeat: 'no-repeat',
+          backgroundPosition: 'bottom',
+        }}
+      >
+        <svg
+          viewBox="0 0 16 16"
+          aria-hidden
+          data-pf-no-color-transition=""
+          className={`h-4 w-4 -rotate-45 transition-transform duration-300 ${ease} text-[color:var(--repo-ink)] group-hover/repo:-translate-y-0.5 group-hover/repo:translate-x-0.5 motion-reduce:transition-none`}
+          fill="none"
+        >
+          <path d="M2.5 8h11M9 3.5 13.5 8 9 12.5" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" />
+        </svg>
+      </span>
+    </a>
+  );
+}
+
+const KINETIC_TITLE_WEIGHTS: Record<string, number> = {
+  'font-normal': 400,
+  'font-medium': 500,
+  'font-semibold': 600,
+  'font-bold': 700,
+};
+
 function KineticExperienceRow({
   block,
   ink,
   muted,
   bodyColor,
-  accent,
   border,
-  background,
+  background: _background,
   flags,
+  titleWeightClass,
+  spacing,
   isLast,
+  stackLabel,
+  stackStyle,
+  tasksLabel,
+  tasksLabelColor,
+  tasksLabelSize,
+  statusStyle,
+  statusColor,
+  buttonShape,
+  buttonHover,
+  scrollMotion,
 }: {
   block: ProfileMediaBlock;
   ink: string;
@@ -8251,100 +8242,206 @@ function KineticExperienceRow({
   border: string;
   background: string;
   flags: DuotoneContentFlags;
+  titleWeightClass: string;
+  spacing: (typeof KINETIC_SPACING_CLASSES)[keyof typeof KINETIC_SPACING_CLASSES];
   isLast: boolean;
+  /** The creator's own "Stack" caption (General → Stack label); empty hides it. */
+  stackLabel: string;
+  stackStyle: 'text' | 'pill' | 'rectangle';
+  tasksLabel: string;
+  tasksLabelColor?: string;
+  tasksLabelSize?: number;
+  statusStyle: 'watermark' | 'signature' | 'vertical';
+  statusColor: string;
+  buttonShape: 'link' | 'rectangle' | 'pill';
+  buttonHover: 'wipe' | 'roll';
+  scrollMotion: boolean;
 }) {
   const t = useT();
+  const reducedMotion = useReducedMotion();
+  const motionOff = usePortfolioMotionOff();
+  const animate = !reducedMotion && !motionOff && scrollMotion;
+  const scrollAnchor = useRef<HTMLDivElement | null>(null);
+  const rowOpacity = useMotionValue(1);
+  const rowX = useMotionValue(0);
+  useEffect(() => {
+    const anchor = scrollAnchor.current;
+    if (!anchor || !animate) { rowOpacity.set(1); rowX.set(0); return; }
+    const initialScroller = getScrollParent(anchor);
+    let frame = 0;
+    let currentOpacity = rowOpacity.get();
+    let currentX = rowX.get();
+    let lastTime = 0;
+    let initialized = false;
+    const update = () => {
+      frame = 0;
+      const scroller = getScrollParent(anchor);
+      const rect = anchor.getBoundingClientRect();
+      const viewportHeight = scroller?.clientHeight ?? window.innerHeight;
+      const top = rect.top - (scroller?.getBoundingClientRect().top ?? 0);
+      const focused = anchor.querySelector(':focus-visible');
+      const progress = focused ? { opacity: 1, x: 0 } : experienceScrollProgress(top, rect.height, viewportHeight, window.matchMedia('(max-width: 639px)').matches);
+      progress.x = 0;
+      const now = performance.now();
+      const elapsed = lastTime ? Math.min(now - lastTime, 64) : 16;
+      lastTime = now;
+      // Short exponential catch-up keeps wheel/touch input fluid without detaching it from scroll.
+      const blend = 1 - Math.exp(-elapsed / 45);
+      if (!initialized || focused) {
+        currentOpacity = progress.opacity;
+        currentX = progress.x;
+        initialized = true;
+      } else {
+        currentOpacity += (progress.opacity - currentOpacity) * blend;
+        currentX += (progress.x - currentX) * blend;
+      }
+      const settled = Math.abs(progress.opacity - currentOpacity) < 0.001 && Math.abs(progress.x - currentX) < 0.05;
+      rowOpacity.set(settled ? progress.opacity : currentOpacity);
+      rowX.set(settled ? progress.x : currentX);
+      if (!settled) frame = window.requestAnimationFrame(update);
+    };
+    const schedule = () => { if (!frame) frame = window.requestAnimationFrame(update); };
+    const observer = new ResizeObserver(schedule);
+    observer.observe(anchor);
+    if (initialScroller) observer.observe(initialScroller);
+    window.addEventListener('scroll', schedule, { passive: true, capture: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    anchor.addEventListener('focusin', schedule);
+    anchor.addEventListener('focusout', schedule);
+    update();
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      window.removeEventListener('scroll', schedule, true);
+      window.removeEventListener('resize', schedule);
+      anchor.removeEventListener('focusin', schedule);
+      anchor.removeEventListener('focusout', schedule);
+    };
+  }, [animate, rowOpacity, rowX]);
   const { period, title, organization, description, status, tasks, tools, links } = resolveExperienceContent(block);
   const repoLink = flags.showProof ? (links[0] ?? null) : null;
   const displayTasks = flags.showTasks ? tasks.slice(0, 4) : [];
   const displayTools = flags.showTools ? tools : [];
   const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Done') : null;
+  const metaLine = [
+    flags.showOrganization && organization ? organization : null,
+    flags.showPeriod && period ? period : null,
+  ].filter((part): part is string => Boolean(part));
 
   return (
-    <article
-      className="relative py-12 sm:py-16 first:pt-0 last:pb-0"
-      style={{ borderBottom: isLast ? undefined : `1px solid ${border}` }}
+    <div ref={scrollAnchor} className={kineticStyles.scrollAnchor}>
+    <motion.article
+      initial={false}
+      data-pf-no-color-transition=""
+      className={`${kineticStyles.row} relative w-full ${spacing.row}`}
+      data-status-style={flags.showMeta && statusLabel ? statusStyle : undefined}
+      style={{
+        borderBottom: isLast ? undefined : `1px solid ${border}`,
+        opacity: rowOpacity,
+        x: rowX,
+      }}
     >
-      <div className="flex items-baseline justify-between gap-6">
-        {flags.showPeriod && period ? (
-          <p className="font-mono text-[0.68rem] uppercase tracking-[0.22em]" style={{ color: muted }}>
-            {period}
+      {/* Keep context and status together in one wrapping metadata line. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-3">
+        {metaLine.length > 0 ? (
+          <p className="font-mono text-[length:calc(0.8125rem*var(--pf-experience-font-scale,1))] uppercase tracking-[0.14em]" style={{ color: muted }}>
+            {metaLine.map((part, index) => (
+              <span key={part}>
+                {index > 0 ? (
+                  <span aria-hidden className="mx-2.5 opacity-50">
+                    ·
+                  </span>
+                ) : null}
+                {part}
+              </span>
+            ))}
           </p>
-        ) : (
-          <span />
-        )}
-        {flags.showMeta && statusLabel ? (
-          <p className="font-mono text-[0.68rem] uppercase tracking-[0.22em]" style={{ color: accent }}>
-            {statusLabel}
-          </p>
+        ) : null}
+        {flags.showMeta && statusLabel && statusStyle === 'signature' ? (
+          <p className={kineticStyles.status} data-presentation="signature" style={{ '--kinetic-status-color': statusColor, '--kinetic-status-ink': ink } as CSSProperties}>{statusLabel}</p>
         ) : null}
       </div>
       {flags.showTitle && title ? (
         <h3
-          className="mt-8 max-w-[12ch] text-[clamp(3.1rem,12vw,8.75rem)] font-semibold leading-[0.84] tracking-[-0.07em]"
-          style={{ color: ink }}
+          // Display, but a title: it leads the row without swallowing it (was up to 140px at 0.84 leading).
+          // One class so the Text size setting scales it with the rest of the row.
+          className={`${spacing.title} max-w-[25ch] lg:max-w-[32ch] text-balance text-[length:calc(clamp(2.1rem,4.2vw,3.75rem)*var(--pf-experience-font-scale,1))] leading-[1.08] tracking-[-0.04em]`}
+          // Inline: the experience typography wrapper sets every h3 to weight 500 in unlayered CSS, which beats the
+          // Tailwind `font-*` utilities — only an inline weight makes "Title weight" visible.
+          style={{ color: ink, fontWeight: KINETIC_TITLE_WEIGHTS[titleWeightClass] ?? 500 }}
         >
-          {title}
+          <span className="sr-only">{title}</span>
+          <span aria-hidden>{title.split(/\s+/).map((word, index) => (
+            <span key={`${index}-${word}`} className="inline-block overflow-hidden align-top pb-[0.08em] -mb-[0.08em]">
+              <span className="inline-block">{word}</span>
+              {index < title.split(/\s+/).length - 1 ? '\u00a0' : null}
+            </span>
+          ))}</span>
         </h3>
       ) : null}
-      <div className="mt-10 grid grid-cols-1 gap-10 sm:mt-14 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] sm:items-end">
-        <div>
-          {flags.showOrganization && organization ? (
-            <p className="text-[0.95rem]" style={{ color: muted }}>
-              {organization}
-            </p>
-          ) : null}
+      {flags.showMeta && statusLabel && statusStyle !== 'signature' ? (
+        <p className={kineticStyles.status} data-presentation={statusStyle} style={{ '--kinetic-status-color': statusColor, '--kinetic-status-ink': ink } as CSSProperties}>{statusLabel}</p>
+      ) : null}
+      <div className={`grid grid-cols-1 ${spacing.grid} lg:grid-cols-[minmax(0,1.65fr)_minmax(14rem,1fr)] lg:gap-x-[clamp(2rem,5vw,5rem)] lg:items-start`}>
+        <div className="lg:contents">
           {flags.showDescription && description ? (
-            <p className="mt-5 max-w-sm text-[0.95rem] leading-relaxed" style={{ color: bodyColor }}>
+            // The description is context: the softer secondary colour, so the task list below it reads first.
+            // Use more of the available desktop column while keeping a readable measure.
+            <p className={`${spacing.description} lg:col-start-1 max-w-[60ch] lg:max-w-[76ch] text-[length:calc(clamp(1.0625rem,1.1vw,1.125rem)*var(--pf-experience-font-scale,1))] leading-[1.65]`} style={{ color: bodyColor, fontWeight: 400 }}>
               {description}
             </p>
           ) : null}
           {displayTasks.length > 0 ? (
-            <div className="mt-8 max-w-sm">
+            <div className={`${spacing.tasks} lg:mt-0 lg:col-start-1 max-w-[58ch] lg:max-w-[80ch]`}>
               <ExperienceTasksDisplay
                 tasks={displayTasks}
                 display={flags.tasksDisplay}
                 bodyColor={bodyColor}
                 mutedColor={muted}
                 isDark={flags.isDark}
-                label=""
+                label={tasksLabel}
+                labelColor={tasksLabelColor}
+                labelSize={tasksLabelSize}
                 size="md"
+                legibleMarkers
+                roomy
               />
             </div>
           ) : null}
         </div>
-        <div className="flex flex-col items-start gap-8 sm:items-end">
+        {/* Share the task row so both columns begin on the same horizontal rule. */}
+        {displayTools.length > 0 || repoLink ? <aside className={`flex min-w-0 flex-col items-start gap-6 border-t pt-4 lg:col-start-2 ${flags.showDescription && description && displayTasks.length > 0 ? 'lg:row-start-2' : 'lg:row-start-1'}`} style={{ borderColor: border }}>
           {displayTools.length > 0 ? (
-            <div className="max-w-xs">
-              <ExperienceToolsDisplay
-                tools={displayTools}
-                style={flags.toolsBadgeStyle}
-                ink={ink}
-                muted={muted}
-                background={background}
-                isDark={flags.isDark}
-                size="sm"
-              />
+            <div className="w-full">
+              {stackLabel ? (
+                <p
+                  className="mb-3 text-[0.7rem]"
+                  style={{ color: tasksLabelColor || muted, fontSize: tasksLabelSize ? `${tasksLabelSize}px` : undefined, textTransform: 'none', letterSpacing: '0.02em', fontWeight: 500 }}
+                >
+                  {stackLabel}
+                </p>
+              ) : null}
+              {stackStyle === 'text' ? <ExperienceToolsDisplay tools={displayTools} style="editorial-list" ink={ink} muted={bodyColor} background={_background} isDark={flags.isDark} /> : <ul className={kineticStyles.tags} data-shape={stackStyle} style={{ color: bodyColor, borderColor: border }}>
+                {displayTools.map((tool) => <li key={tool}>{tool}</li>)}
+              </ul>}
             </div>
-          ) : null}
+          ) : (
+            <span aria-hidden />
+          )}
           {repoLink ? (
-            <PortfolioLinkButton
-              variant={flags.repoLinkButtonStyle}
+            <KineticRepoLink
               href={repoLink.url}
-              label={repoLink.label || t('View repository')}
-              palette={experienceLinkButtonPalette({
-                ink,
-                muted,
-                accent,
-                border,
-                background,
-                isDark: flags.isDark,
-              })}
+              shape={buttonShape}
+              hover={buttonHover}
+              label={repoLink.label && !/^(vue|voir|view)\s+(repository|repo)$/i.test(repoLink.label.trim()) ? repoLink.label : t('View project')}
+              ink={ink}
+              isDark={flags.isDark}
             />
           ) : null}
-        </div>
+        </aside> : null}
       </div>
-    </article>
+    </motion.article>
+    </div>
   );
 }
 
@@ -8368,23 +8465,34 @@ export function KineticExperienceList({
     presentation.titleColor?.trim() || resolveExperienceTextColor(styles.title, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_TITLE_COLOR,
-    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
+    DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const muted = ensureExperienceInkContrast(
     presentation.subtitleColor?.trim() || resolveExperienceTextColor(styles.meta, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_MUTED_COLOR,
-    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
+    DEFAULT_EXPERIENCE_MUTED_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
   const bodyColor = ensureExperienceInkContrast(
     resolveExperienceTextColor(styles.tasks, colorMode) || resolveExperienceTextColor(styles.description, colorMode),
     isDark,
     DEFAULT_EXPERIENCE_BODY_COLOR,
-    DEFAULT_EXPERIENCE_BODY_COLOR_DARK
+    DEFAULT_EXPERIENCE_BODY_COLOR_DARK,
+    presentation.sectionBackgroundColor || presentation.experiencePalette?.fond
   );
-  const border = isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)';
+  const border = presentation.experiencePalette?.bordure || `color-mix(in srgb, ${ink} 16%, transparent)`;
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
   const flags = experienceContentFlags(presentation, isDark, 'legacy');
+  const titleWeightClass =
+    presentation.kineticTitleWeight === 'regular'
+      ? 'font-normal'
+      : presentation.kineticTitleWeight === 'medium'
+        ? 'font-medium'
+        : presentation.kineticTitleWeight === 'bold'
+          ? 'font-bold'
+          : 'font-semibold';
 
   return (
     <div
@@ -8397,6 +8505,7 @@ export function KineticExperienceList({
         <KineticExperienceRow
           key={block.id}
           block={block}
+          scrollMotion={presentation.kineticScrollMotion !== false}
           ink={ink}
           muted={muted}
           bodyColor={bodyColor}
@@ -8404,7 +8513,20 @@ export function KineticExperienceList({
           border={border}
           background={background}
           flags={flags}
+          titleWeightClass={titleWeightClass}
+          spacing={KINETIC_SPACING_CLASSES[presentation.kineticSpacing ?? 'standard']}
           isLast={index === blocks.length - 1}
+          stackStyle={presentation.kineticStackStyle ?? 'rectangle'}
+          tasksLabel={experienceBlockLabelVisible(presentation, 'tasks') ? resolveExperienceBlockLabel(presentation.tasksLabel, 'Responsibilities') : ''}
+          tasksLabelColor={presentation.kineticTasksLabelColor === 'primary' ? accent : presentation.kineticTasksLabelColor === 'secondary' ? experienceSecondaryStatusColor(presentation) : presentation.kineticTasksLabelColor === 'strong' ? ink : muted}
+          tasksLabelSize={presentation.kineticTasksLabelSize ?? 12}
+          statusStyle={presentation.kineticStatusStyle ?? 'watermark'}
+          buttonShape={presentation.kineticButtonShape ?? 'rectangle'}
+          buttonHover={presentation.kineticButtonHover ?? 'wipe'}
+          statusColor={block.status === 'ONGOING' ? accent : experienceSecondaryStatusColor(presentation)}
+          stackLabel={
+            experienceBlockLabelVisible(presentation, 'tools') ? resolveExperienceBlockLabel(presentation.toolsLabel, 'Stack') : ''
+          }
         />
       ))}
     </div>

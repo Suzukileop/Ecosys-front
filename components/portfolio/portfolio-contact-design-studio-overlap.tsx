@@ -1,4 +1,5 @@
 'use client';
+import { portfolioEditorialGutterNegativeX } from '@/components/portfolio/portfolio-editorial-layout';
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -170,14 +171,14 @@ export function ContactDesignStudioOverlap({
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
+      className={`relative overflow-hidden ${portfolioEditorialGutterNegativeX(contentGutter)}`}
       data-pf-no-color-transition=""
     >
       <div
         className={`grid w-full grid-cols-1 gap-y-14 py-16 sm:py-20 ${showPortrait ? 'md:grid-cols-2' : 'md:grid-cols-1'} md:grid-rows-[auto_1fr_auto] md:items-stretch md:gap-x-16 md:py-0 ${portfolioEditorialGutterX(contentGutter)}`}
       >
         <h2
-          className={`order-1 m-0 select-none font-sans text-[clamp(3rem,10vw,6.5rem)] font-black leading-[0.88] tracking-[-0.03em] md:order-1 md:col-start-1 md:row-start-1 md:pt-20`}
+          className={`order-1 m-0 select-none font-sans text-[calc(clamp(3rem,10vw,6.5rem)*var(--pf-contact-font-scale,1))] font-black leading-[0.88] tracking-[-0.03em] md:order-1 md:col-start-1 md:row-start-1 md:pt-20`}
           style={{ color: ink }}
         >
           {title}
@@ -202,7 +203,7 @@ export function ContactDesignStudioOverlap({
                 className="flex h-full w-full items-center justify-center"
                 style={{ backgroundColor: placeholderBg }}
               >
-                <span className="font-sans text-6xl font-semibold" style={{ color: muted }} aria-hidden>
+                <span className="font-sans text-[calc(3.75rem*var(--pf-contact-font-scale,1))] font-semibold" style={{ color: muted }} aria-hidden>
                   {initials || '—'}
                 </span>
               </div>
@@ -228,7 +229,7 @@ export function ContactDesignStudioOverlap({
                     href={`mailto:${trimmedEmail}`}
                     data-studio-link
                     data-pf-no-color-transition=""
-                    className={`${itemClass} break-all text-[clamp(1.1rem,2.4vw,1.5rem)] font-medium`}
+                    className={`${itemClass} break-all text-[calc(clamp(1.1rem,2.4vw,1.5rem)*var(--pf-contact-font-scale,1))] font-medium`}
                     style={{ color: muted }}
                   >
                     {trimmedEmail}
@@ -239,7 +240,7 @@ export function ContactDesignStudioOverlap({
                     href={`tel:${trimmedPhone.replace(/\s+/g, '')}`}
                     data-studio-link
                     data-pf-no-color-transition=""
-                    className={`${itemClass} text-[clamp(1.1rem,2.4vw,1.5rem)] font-medium`}
+                    className={`${itemClass} text-[calc(clamp(1.1rem,2.4vw,1.5rem)*var(--pf-contact-font-scale,1))] font-medium`}
                     style={{ color: muted }}
                   >
                     {trimmedPhone}
@@ -260,7 +261,7 @@ export function ContactDesignStudioOverlap({
                 </p>
               ) : null}
               <p
-                className={`max-w-xs ${itemClass} text-[clamp(1.05rem,2vw,1.3rem)] font-medium leading-snug`}
+                className={`max-w-xs ${itemClass} text-[calc(clamp(1.05rem,2vw,1.3rem)*var(--pf-contact-font-scale,1))] font-medium leading-snug`}
                 style={{ color: muted }}
               >
                 {trimmedLocation}

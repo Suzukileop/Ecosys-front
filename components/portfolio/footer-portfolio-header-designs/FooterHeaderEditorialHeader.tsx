@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import {
   DEFAULT_FOOTER_PRESENTATION,
   type PortfolioFooterPresentationSettings,
@@ -54,6 +54,30 @@ export function FooterHeaderEditorialHeader({
   const titleText = (presentation.headerEditorialTitleText || DEFAULT_TITLE_TEXT).trim();
   const subtitleText = (presentation.headerEditorialSubtitleText || '').trim();
   const titleInk = footerHeaderPaletteTokenColor(presentation.headerEditorialTitleColor ?? 'texteFort');
+  const titleRef = useRef<HTMLHeadingElement>(null);
+  const showTitle = show('title');
+  useLayoutEffect(() => {
+    const title = titleRef.current;
+    if (!title || align !== 'left') return;
+    const context = document.createElement('canvas').getContext('2d');
+    if (!context) return;
+    let disposed = false;
+    const alignInk = () => {
+      if (disposed) return;
+      const style = getComputedStyle(title);
+      context.font = `${style.fontStyle} ${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
+      const firstGlyph = titleText.trim().toLocaleUpperCase().charAt(0);
+      // Canvas reports the ink edge relative to the glyph's advance box. A negative
+      // value is the invisible left side-bearing, especially noticeable on a large L.
+      const inkLeft = context.measureText(firstGlyph).actualBoundingBoxLeft;
+      title.style.marginInlineStart = `${Number.isFinite(inkLeft) ? Math.min(0, inkLeft) : 0}px`;
+    };
+    alignInk();
+    const observer = new ResizeObserver(alignInk);
+    observer.observe(title);
+    void document.fonts.ready.then(alignInk);
+    return () => { disposed = true; observer.disconnect(); title.style.removeProperty('margin-inline-start'); };
+  }, [align, titleText, presentation.headerTitleSize, presentation.headerTitleWeight, showTitle]);
 
   return (
     <header
@@ -68,13 +92,14 @@ export function FooterHeaderEditorialHeader({
       data-footer-header="editorial"
     >
       <div
-        className={`pf-footer-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${
-          align === 'center' ? 'items-center sm:flex-col sm:items-center' : align === 'right' ? 'items-end sm:flex-row-reverse' : ''
+        className={`pf-footer-header-editorial-stage flex flex-col gap-6 ${
+          align === 'center' ? 'items-center' : align === 'right' ? 'items-end' : 'sm:flex-row sm:items-end sm:justify-between'
         }`}
       >
         <div className="min-w-0 max-w-4xl">
           {show('title') ? (
             <h2
+              ref={titleRef}
               className={`mb-0 ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'xl']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'bold']} uppercase tracking-[-0.02em] lg:leading-[0.92]`}
               style={{ color: titleInk }}
             >

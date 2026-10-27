@@ -1,0 +1,23 @@
+.content { min-width:0; width:100%; }
+.content :where(h2,h3,h4) {
+  font-weight:500;
+  letter-spacing:-.02em;
+  overflow-wrap:anywhere;
+}
+.content :where(p) { letter-spacing:0; }
+.content :where(p,span,div,li)[class~='uppercase'] {
+  text-transform:none;
+  letter-spacing:.02em;
+}
+.content :where(p,span,div,li)[class~='font-mono'] {
+  font-family:inherit;
+  letter-spacing:.02em;
+}
+.content :where(p,li)[class~='font-semibold'] { font-weight:400; }
+.header { min-width:0; }
+.header :where(h1,h2) {
+  letter-spacing:-.025em;
+  text-wrap:balance;
+  overflow-wrap:anywhere;
+}
+.header :where(p) { letter-spacing:0; line-height:1.65; }

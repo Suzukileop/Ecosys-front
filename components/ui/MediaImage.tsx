@@ -8,6 +8,7 @@ import {
   storageWidthUrl,
 } from '@/lib/media-image-url';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
+import { decodeLoadedImage } from '@/lib/decode-loaded-image';
 
 type SizingProps =
   /** Fixed rendered width in CSS px (thumbnails, avatars): 1x/2x `srcSet`. */
@@ -56,6 +57,7 @@ export function MediaImage({
   className = '',
   onLoad,
   onError,
+  style,
   ...rest
 }: MediaImageProps) {
   const resolved = resolveMediaSrc(src);
@@ -72,8 +74,11 @@ export function MediaImage({
       ? { ...mediaImageResponsive(resolved, widths), sizes }
       : { src: mediaImageSrc(resolved, width ?? 256), srcSet: mediaImageSrcSet(resolved, width ?? 256) };
 
-  const markLoaded = () =>
-    setStatus((prev) => (prev.src === resolved && !prev.loaded ? { ...prev, loaded: true } : prev));
+  const markLoaded = async (image: HTMLImageElement) => {
+    if (await decodeLoadedImage(image)) {
+      setStatus((prev) => (prev.src === resolved && !prev.loaded ? { ...prev, loaded: true } : prev));
+    }
+  };
 
   return (
     // eslint-disable-next-line @next/next/no-img-element
@@ -82,14 +87,14 @@ export function MediaImage({
       {...sources}
       ref={(img) => {
         /* Cached images can finish before React attaches `onLoad`. */
-        if (img?.complete && img.naturalWidth > 0) markLoaded();
+        if (img?.complete && img.naturalWidth > 0) void markLoaded(img);
       }}
       alt={alt}
       loading={priority ? 'eager' : 'lazy'}
       fetchPriority={priority ? 'high' : 'auto'}
       decoding="async"
       onLoad={(event) => {
-        markLoaded();
+        void markLoaded(event.currentTarget);
         onLoad?.(event);
       }}
       onError={(event) => {
@@ -97,6 +102,7 @@ export function MediaImage({
         onError?.(event);
       }}
       className={`${status.loaded ? 'media-reveal' : 'opacity-0'} ${className}`.trim()}
+      style={{ ...style, opacity: status.loaded ? style?.opacity : 0 }}
     />
   );
 }

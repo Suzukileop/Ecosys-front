@@ -5,7 +5,9 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useMemo, useRef, useSyncExternalStore, type CSSProperties } from 'react';
 import type { ProfileServiceItem } from '@/types/profile';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
-import { pickContrastInk } from '@/components/portfolio/portfolio-services-pricing-shared';
+import { contrastRatio, mixHex, pickContrastInk, readableInk } from '@/components/portfolio/portfolio-services-pricing-shared';
+import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { DEFAULT_SERVICES_PALETTE, mergeServicesPalette } from '@/components/portfolio/portfolio-services-palette-settings';
 import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
 import {
   ServicesOrderButton,
@@ -71,9 +73,17 @@ const WIDTH_CLASS: Record<PortfolioServicesCascadeCardWidth, string> = {
 
 /** Desktop min-height — via `lg:items-stretch` it also drives the media's height. */
 const HEIGHT_CLASS: Record<PortfolioServicesCascadeCardHeight, string> = {
-  compact: 'lg:min-h-[26rem]',
-  standard: 'lg:min-h-[32rem]',
-  tall: 'lg:min-h-[40rem]',
+  compact: 'lg:min-h-[20rem] lg:p-8',
+  standard: 'lg:min-h-[32rem] lg:p-12',
+  tall: 'lg:min-h-[44rem] lg:p-14',
+};
+
+/** Vertical rhythm inside the text column. The content alone is often taller than the min-height, so the
+ *  height option also has to tighten (Compact) or loosen (Tall) the gaps, or it would change nothing. */
+const SPACING: Record<PortfolioServicesCascadeCardHeight, { title: string; desc: string; tasks: string; tasksGap: string; foot: string }> = {
+  compact: { title: 'mt-4 sm:mt-5', desc: 'mt-3', tasks: 'mt-4', tasksGap: 'gap-1', foot: 'pt-5' },
+  standard: { title: 'mt-7 sm:mt-9', desc: 'mt-6', tasks: 'mt-8', tasksGap: 'gap-2.5', foot: 'pt-10' },
+  tall: { title: 'mt-10 sm:mt-14', desc: 'mt-9', tasks: 'mt-12', tasksGap: 'gap-4', foot: 'pt-16' },
 };
 
 /** Card corner radius when Corner radius is on Default (= the class's rounded-[1.75rem]). */
@@ -109,6 +119,7 @@ function CascadeServiceCard({
   settings,
   presentation,
   cardBg,
+  cardInk,
   isLight,
   accent,
 }: {
@@ -118,6 +129,8 @@ function CascadeServiceCard({
   settings: PortfolioServicesCascadeSettings;
   presentation: PortfolioServicesPresentationSettings;
   cardBg: string;
+  /** Readable ink for a palette-coloured card; `null` keeps the design's own light / dark ink. */
+  cardInk: string | null;
   isLight: boolean;
   accent: string;
 }) {
@@ -138,15 +151,21 @@ function CascadeServiceCard({
   const ctaLabel = resolveServicesCtaLabel(presentation);
   // Zig-zag: media right on the 1st card, left on the 2nd…
   const mediaLeft = settings.mediaSide === 'zigzag' ? index % 2 === 1 : settings.mediaSide === 'left';
-  const ink = isLight ? '#0a0a0a' : '#fafafa';
-  const bulletColor = pricingStyle.bulletColor ?? accent;
+  const spacing = SPACING[settings.cardHeight] ?? SPACING.standard;
+  // A palette-coloured card drives its own ink (and everything that hangs off light / dark).
+  const lightCard = cardInk ? cardInk === '#0a0a0a' : isLight;
+  const ink = cardInk ?? (isLight ? '#0a0a0a' : '#fafafa');
+  const inverse = cardInk ? readableInk(ink) : isLight ? '#fafafa' : '#0a0a0a';
+  // The accent keeps marking the bullets unless it would melt into the card.
+  const markAccent = cardInk && contrastRatio(accent, cardBg) < 3 ? ink : accent;
+  const bulletColor = pricingStyle.bulletColor ?? markAccent;
   // Shared Border / Border color (pricingStyle); Default keeps the faint 1px ring.
   const ringWidth = pricingStyle.borderWidthPx ?? 1;
   const ringColor =
     pricingStyle.borderColor ??
     (pricingStyle.borderWidthPx == null
-      ? isLight ? 'rgba(10,10,10,0.06)' : 'rgba(255,255,255,0.06)'
-      : isLight ? 'rgba(10,10,10,0.16)' : 'rgba(255,255,255,0.18)');
+      ? lightCard ? 'rgba(10,10,10,0.06)' : 'rgba(255,255,255,0.06)'
+      : lightCard ? 'rgba(10,10,10,0.3)' : 'rgba(255,255,255,0.36)');
   const ring = ringWidth > 0 ? `, inset 0 0 0 ${ringWidth}px ${ringColor}` : '';
   const fallbackGradient = `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 45%, #0a0a0a) 100%)`;
 
@@ -218,7 +237,7 @@ function CascadeServiceCard({
       data-cc-card=""
       data-entrance-ready="false"
       data-pf-no-color-transition=""
-      className={`relative flex min-w-0 flex-col-reverse gap-8 overflow-hidden rounded-[1.75rem] p-6 sm:p-9 lg:items-stretch lg:gap-14 lg:p-12 ${
+      className={`relative flex min-w-0 flex-col-reverse gap-8 overflow-hidden rounded-[1.75rem] p-6 sm:p-9 lg:items-stretch lg:gap-14 ${
         mediaLeft ? 'lg:flex-row-reverse' : 'lg:flex-row'
       } ${HEIGHT_CLASS[settings.cardHeight]}`}
       style={{
@@ -227,14 +246,14 @@ function CascadeServiceCard({
         // Shared Corner radius (pricingStyle); Default keeps the class's 1.75rem.
         borderRadius: pricingStyle.cardRadiusPx ?? undefined,
         transformOrigin: 'top center',
-        boxShadow: `${isLight ? '0 18px 40px -18px rgba(15,23,42,0.22)' : '0 18px 40px -16px rgba(0,0,0,0.6)'}${ring}`,
+        boxShadow: `${lightCard ? '0 18px 40px -18px rgba(15,23,42,0.22)' : '0 18px 40px -16px rgba(0,0,0,0.6)'}${ring}`,
       }}
     >
       <div className="flex min-w-0 flex-1 flex-col">
         {settings.showNumbering || specialty ? (
         <div data-cc-rise="" className="flex items-center justify-between gap-4">
           <p
-            className="flex flex-wrap items-center gap-x-2.5 text-[0.66rem] font-semibold uppercase opacity-60"
+            className="flex flex-wrap items-center gap-x-2.5 text-[0.8rem] font-semibold uppercase opacity-75"
             style={{ letterSpacing: '0.18em' }}
           >
             {settings.showNumbering ? (
@@ -254,7 +273,7 @@ function CascadeServiceCard({
 
         {show.title ? (
         <h3
-          className={`overflow-hidden pb-[0.08em] leading-[1] tracking-[-0.02em] ${settings.showNumbering || specialty ? 'mt-7 sm:mt-9' : ''}`}
+          className={`overflow-hidden pb-[0.08em] leading-[1] tracking-[-0.02em] ${settings.showNumbering || specialty ? spacing.title : ''}`}
           style={{
             fontFamily: "'Playfair Display', serif",
             fontSize: `calc(clamp(1.95rem, 1.2rem + 2.3vw, 3.15rem) * var(--pf-services-font-scale, 1))`,
@@ -270,15 +289,15 @@ function CascadeServiceCard({
         {description ? (
           <p
             data-cc-rise=""
-            className="mt-6 max-w-xl font-light leading-[1.7] opacity-65"
-            style={{ fontSize: FONT(0.98) }}
+            className={`${spacing.desc} max-w-xl font-normal leading-[1.7] opacity-80`}
+            style={{ fontSize: FONT(1) }}
           >
             {description}
           </p>
         ) : null}
 
         {tasks.length > 0 ? (
-          <ul className="mt-8 flex flex-col gap-2.5">
+          <ul className={`${spacing.tasks} flex flex-col ${spacing.tasksGap}`}>
             {tasks.map((task, taskIndex) =>
               pricingStyle.style.listBullet !== 'auto' ? (
                 <ServicesBulletItem
@@ -288,7 +307,7 @@ function CascadeServiceCard({
                   markerColor={bulletColor}
                   dataAttrs={{ 'data-cc-rise': '' }}
                   style={{ fontSize: FONT(0.92) }}
-                  textStyle={{ opacity: 0.85 }}
+                  textStyle={{ opacity: 0.95 }}
                 >
                   {task}
                 </ServicesBulletItem>
@@ -302,32 +321,32 @@ function CascadeServiceCard({
                 <span aria-hidden style={{ color: bulletColor, opacity: 0.8 }}>
                   &mdash;
                 </span>
-                <span className="opacity-85">{task}</span>
+                <span className="opacity-95">{task}</span>
               </li>
               )
             )}
           </ul>
         ) : null}
 
-        <div className="mt-auto flex flex-wrap items-end justify-between gap-x-8 gap-y-5 pt-10">
+        <div className={`mt-auto flex flex-wrap items-end justify-between gap-x-8 gap-y-5 ${spacing.foot}`}>
           <div data-cc-rise="" className="flex flex-col gap-1">
             {priceParts ? (
               <p className="font-semibold tracking-tight" style={{ fontSize: FONT(1.4) }}>
                 {priceParts.isFrom && priceParts.kind === 'amount' ? (
-                  <span className="mr-1.5 font-normal opacity-60" style={{ fontSize: FONT(0.8) }}>
+                  <span className="mr-1.5 font-normal opacity-75" style={{ fontSize: FONT(0.85) }}>
                     {t('From')}
                   </span>
                 ) : null}
                 {priceParts.text}
                 {priceSuffix ? (
-                  <span className="ml-1.5 font-normal opacity-60" style={{ fontSize: FONT(0.8) }}>
+                  <span className="ml-1.5 font-normal opacity-75" style={{ fontSize: FONT(0.85) }}>
                     {priceSuffix}
                   </span>
                 ) : null}
               </p>
             ) : null}
             {delivery ? (
-              <p className="text-[0.66rem] font-medium uppercase opacity-55" style={{ letterSpacing: '0.16em' }}>
+              <p className="text-[0.8rem] font-medium uppercase opacity-75" style={{ letterSpacing: '0.14em' }}>
                 {delivery}
               </p>
             ) : null}
@@ -338,13 +357,13 @@ function CascadeServiceCard({
               pricingStyle={pricingStyle}
               label={ctaLabel}
               ink={ink}
-              surface={isLight ? '#fafafa' : '#0a0a0a'}
-              className="group/cta inline-flex items-center gap-3 rounded-full py-2 pl-5 pr-2 text-[0.85rem] font-medium transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
-              style={{ backgroundColor: ink, color: isLight ? '#fafafa' : '#0a0a0a' }}
+              surface={inverse}
+              className="group/cta inline-flex items-center gap-3 rounded-full py-2 pl-5 pr-2 text-[0.95rem] font-medium transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
+              style={{ backgroundColor: ink, color: inverse }}
               autoContent={
                 <>
                   {ctaLabel}
-                  <span
+                  <span data-pf-no-color-transition=""
                     aria-hidden
                     className="flex h-8 w-8 items-center justify-center rounded-full transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/cta:rotate-45"
                     style={{ backgroundColor: accent, color: pickContrastInk(accent) }}
@@ -415,7 +434,20 @@ export function ServicesCascadeSection({
   const accent = presentation.ctaColor || presentation.cardAccentColor || '#f97316';
   const sectionBg = presentation.sectionBackgroundColor?.trim() || '#0a0a0a';
   // Dark canvas: the section's own colour, slightly raised — not an unrelated black box.
-  const cardBg = isLight ? '#ffffff' : `color-mix(in srgb, ${sectionBg} 94%, white 6%)`;
+  const autoCardBg = isLight ? '#ffffff' : `color-mix(in srgb, ${sectionBg} 94%, white 6%)`;
+  // Card colour: a palette token mixed over the design's own card, so the card stays opaque (a covering
+  // card must never show the one under it) and its ink is picked from the colour it really ends up as.
+  const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, presentation.servicesPalette);
+  const baseCard = isLight ? '#ffffff' : mixHex(sectionBg, '#ffffff', 0.94);
+  const cardBg =
+    settings.cardFill === 'auto'
+      ? autoCardBg
+      : mixHex(
+          resolveHeroPaletteColor(palette, settings.cardFill),
+          baseCard,
+          Math.min(100, Math.max(10, settings.cardFillOpacity ?? 100)) / 100
+        );
+  const cardInk = settings.cardFill === 'auto' ? null : readableInk(cardBg);
 
 
   // Equal height: sticky siblings are not a grid, so there is no stretch to lean on — measure.
@@ -523,6 +555,7 @@ export function ServicesCascadeSection({
               settings={settings}
               presentation={presentation}
               cardBg={cardBg}
+              cardInk={cardInk}
               isLight={isLight}
               accent={accent}
             />

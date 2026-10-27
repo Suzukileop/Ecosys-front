@@ -1,3 +1,9 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import {
+  DEFAULT_CARDS_STYLE,
+  mergeCardsStyle,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -122,6 +128,9 @@ export type PortfolioToolsLevelIndicatorDisplayStyle =
   | 'progress-bar';
 
 export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSettings & {
+  sectionLayout?: 'stacked' | 'aside-left' | 'aside-right';
+  asideTitleSticky?: boolean;
+  asideTitlePlacement?: 'top' | 'center';
   design: PortfolioToolsDesign;
   titlePreset: PortfolioToolsTitlePreset;
   titleCustom: string;
@@ -261,6 +270,8 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   descriptionColor: string;
   cardBackgroundColor: string;
   cardBorderColor: string;
+  /** Shared Design → Cards block; `auto` keeps each design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   chipBackgroundColor: string;
   chipTextColor: string;
   levelAccentColor: string;
@@ -280,6 +291,8 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   workflowRailContentAlignment: PortfolioToolsContentAlignment;
   /** `workflow-rail` only — vivid keeps brand colours crisp; soft lowers their visual weight. */
   workflowRailLogoTreatment?: 'vivid' | 'soft';
+  workflowRailLayout?: 'wrap' | 'carousel';
+  workflowRailAutoCenter?: boolean;
   /** `brand-directory` only — how the level is rendered on each row. Default percentage. */
   brandDirectoryLevelStyle: PortfolioToolsBrandDirectoryLevelStyle;
   /** `brand-cards` only — columns on `lg+`. Default 1. */
@@ -316,6 +329,8 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   levelBentoGridMode: PortfolioToolsLevelBentoGridMode;
   /** Level-indicator designs — text label, stars, dots, or progress bar (no level text). */
   levelIndicatorDisplayStyle: PortfolioToolsLevelIndicatorDisplayStyle;
+  /** Keep the visual gauge while optionally hiding its level name in stat cards. */
+  levelStatShowLevelName?: boolean;
   /** `brand-row` only — columns on `lg+` (and `sm+` when 2–3). Default 3. */
   brandRowColumnsPerRow: PortfolioToolsBrandGridColumnsPerRow;
   /** `brand-row` only. Default center. */
@@ -354,6 +369,9 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  textSize?: 'small' | 'medium' | 'large' | 'xlarge';
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
 };
 
 export type PortfolioToolsSectionSettings = PortfolioSectionCopy & PortfolioToolsPresentationSettings;
@@ -1079,6 +1097,9 @@ export function migrateContentAlignmentToHeader<
 
 export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
+  sectionLayout: 'stacked',
+  asideTitleSticky: true,
+  asideTitlePlacement: 'center',
   design: 'workflow-rail',
   titlePreset: 'workflow-tools',
   titleCustom: '',
@@ -1177,6 +1198,7 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   descriptionColor: '#737373',
   cardBackgroundColor: '#ffffff',
   cardBorderColor: '#e5e5e5',
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   chipBackgroundColor: '#f4f4f5',
   chipTextColor: '#525252',
   levelAccentColor: '#ea580c',
@@ -1188,6 +1210,7 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   levelBarStyle: 'rectangle',
   levelBarSize: 'small',
   workflowRailContentAlignment: 'left',
+  workflowRailLayout: 'wrap',
   brandDirectoryLevelStyle: 'percentage',
   brandCardsColumnsPerRow: 1,
   brandCardsContentAlignment: 'left',
@@ -1226,6 +1249,7 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   toolsColorBindings: { ...DEFAULT_TOOLS_COLOR_BINDINGS },
   activeColorMode: 'light',
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
 };
 
 Object.assign(DEFAULT_TOOLS_PRESENTATION, applyToolsPaletteToSettings(DEFAULT_TOOLS_PRESENTATION));
@@ -1551,15 +1575,15 @@ export function toolsBrandRowCellPadClass(gap: PortfolioToolsCardGap | undefined
   if (gap === 'medium') return 'gap-3 px-5 py-6 sm:gap-4 sm:px-6 sm:py-7';
   if (gap === 'large') return 'gap-4 px-6 py-7 sm:gap-4 sm:px-7 sm:py-8';
   if (gap === 'xlarge') return 'gap-4 px-7 py-8 sm:gap-5 sm:px-8 sm:py-10';
-  return 'gap-3 px-4 py-5 sm:gap-3.5 sm:px-5 sm:py-6';
+  return 'gap-2 px-2 py-2';
 }
 
 /** Grid gutter for `brand-row` framed cells. */
 export function toolsBrandRowGridGapClass(gap: PortfolioToolsCardGap | undefined): string {
-  if (gap === 'medium') return 'gap-3 sm:gap-4';
-  if (gap === 'large') return 'gap-4 sm:gap-5';
-  if (gap === 'xlarge') return 'gap-5 sm:gap-6';
-  return 'gap-2 sm:gap-3';
+  if (gap === 'medium') return 'gap-4';
+  if (gap === 'large') return 'gap-8';
+  if (gap === 'xlarge') return 'gap-14';
+  return 'gap-0.5';
 }
 
 /** Gap between `brand-float` tiles. */
@@ -2086,6 +2110,7 @@ export function mergeToolsPresentation(
     descriptionColor: sanitizeHex(record.descriptionColor, base.descriptionColor ?? '#737373'),
     cardBackgroundColor: sanitizeHex(record.cardBackgroundColor, base.cardBackgroundColor ?? '#ffffff'),
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor ?? '#e5e5e5'),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     chipBackgroundColor: sanitizeHex(record.chipBackgroundColor, base.chipBackgroundColor ?? '#f4f4f5'),
     chipTextColor: sanitizeHex(record.chipTextColor, base.chipTextColor ?? '#525252'),
     levelAccentColor: sanitizeHex(record.levelAccentColor, base.levelAccentColor ?? '#ea580c'),
@@ -2122,6 +2147,8 @@ export function mergeToolsPresentation(
       ['tight', 'small', 'medium', 'large', 'xlarge'] as const,
       base.levelBarSize ?? 'small'
     ),
+    workflowRailAutoCenter: typeof record.workflowRailAutoCenter === 'boolean' ? record.workflowRailAutoCenter : base.workflowRailAutoCenter ?? false,
+    workflowRailLayout: pick(record.workflowRailLayout, ['wrap', 'carousel'] as const, base.workflowRailLayout ?? 'wrap'),
     workflowRailContentAlignment: pick(
       record.workflowRailContentAlignment,
       ['left', 'center', 'right'] as const,
@@ -2222,6 +2249,7 @@ export function mergeToolsPresentation(
       base.levelBentoGridMode ?? 'equal'
     ),
     levelIndicatorDisplayStyle: mergeLevelIndicatorDisplayStyle(record, design, base),
+    levelStatShowLevelName: typeof record.levelStatShowLevelName === 'boolean' ? record.levelStatShowLevelName : base.levelStatShowLevelName ?? true,
     brandRowColumnsPerRow: parseBrandGridColumnsPerRow(
       record.brandRowColumnsPerRow,
       base.brandRowColumnsPerRow ?? 3
@@ -2264,6 +2292,9 @@ export function mergeToolsPresentation(
       ['framed', 'plain'] as const,
       base.brandFloatCardStyle ?? 'framed'
     ),
+    sectionLayout: record.sectionLayout === 'stacked' || record.sectionLayout === 'aside-left' || record.sectionLayout === 'aside-right' ? record.sectionLayout : base.sectionLayout ?? 'stacked',
+    asideTitleSticky: typeof record.asideTitleSticky === 'boolean' ? record.asideTitleSticky : base.asideTitleSticky ?? true,
+    asideTitlePlacement: record.asideTitlePlacement === 'top' || record.asideTitlePlacement === 'center' ? record.asideTitlePlacement : base.asideTitlePlacement ?? 'center',
     showLabels: typeof record.showLabels === 'boolean' ? record.showLabels : base.showLabels,
     showDescription:
       typeof record.showDescription === 'boolean'
@@ -2292,6 +2323,9 @@ export function mergeToolsPresentation(
         ? record.activeColorMode
         : base.activeColorMode,
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    textSize: record.textSize === 'small' || record.textSize === 'medium' || record.textSize === 'large' || record.textSize === 'xlarge'
+      ? record.textSize : base.textSize ?? 'medium',
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
   };
 
   if (next.useHeroPalette !== false) {

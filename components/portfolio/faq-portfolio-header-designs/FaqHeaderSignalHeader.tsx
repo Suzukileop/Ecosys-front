@@ -1,5 +1,6 @@
 'use client';
 
+import { faqHeaderRoleStyle, faqHeaderTextOverride } from '@/components/portfolio/portfolio-faq-header-layout';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
@@ -74,8 +75,8 @@ export function FaqHeaderSignalHeader({
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
-  const titleText = title.trim();
-  const subtitleText = subtitle?.trim() || '';
+  const titleText = faqHeaderTextOverride(presentation, 'title') || title.trim();
+  const subtitleText = faqHeaderTextOverride(presentation, 'subtitle') || subtitle?.trim() || '';
   const words = splitWords(titleText);
   const layout = createFaqHeaderLayoutResolver(presentation, 'signal');
   const showPill = layout.isVisible('pill');
@@ -188,7 +189,7 @@ export function FaqHeaderSignalHeader({
         {showTitle ? (
           <h2
             className={`mb-0 max-w-3xl ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
-            style={faqTitleColorStyle(presentation.titleColor)}
+            style={{ ...faqTitleColorStyle(presentation.titleColor), ...faqHeaderRoleStyle(presentation, 'title') }}
           >
             {words.map((word, index) => (
               <span key={`${word}-${index}`} className="mr-[0.28em] inline-block overflow-hidden align-bottom last:mr-0">
@@ -202,7 +203,7 @@ export function FaqHeaderSignalHeader({
             className={`pf-faq-header-signal-sub mb-0 shrink-0 ${
               subtitleBelow ? 'max-w-xl' : 'max-w-xs pf-faq-header-signal-sub--side'
             } ${faqHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
-            style={faqSubtitleColorStyle(presentation.subtitleColor)}
+            style={{ ...faqSubtitleColorStyle(presentation.subtitleColor), ...faqHeaderRoleStyle(presentation, 'subtitle') }}
           >
             {subtitleText}
           </p>

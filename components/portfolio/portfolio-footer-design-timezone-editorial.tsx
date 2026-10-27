@@ -201,7 +201,7 @@ export function FooterDesignTimezoneEditorial({
 
   const isLight = colorMode === 'light';
   const ink = isLight ? '#050505' : '#fafafa';
-  const watermarkInk = isLight ? 'rgba(5,5,5,0.045)' : 'rgba(250,250,250,0.05)';
+  const watermarkInk = isLight ? 'rgba(5,5,5,0.06)' : 'rgba(250,250,250,0.07)';
   const placeholderBg = isLight ? '#ededed' : '#141414';
 
   useLayoutEffect(() => {
@@ -321,7 +321,7 @@ export function FooterDesignTimezoneEditorial({
       ) : null}
 
       <div
-        className={`relative z-[1] grid w-full grid-cols-1 gap-16 py-20 sm:py-28 lg:grid-cols-[1fr_auto] lg:gap-24 lg:py-32 ${portfolioEditorialGutterX(contentGutter)}`}
+        className={`relative z-[1] grid w-full grid-cols-1 gap-10 pb-32 pt-20 sm:pb-44 sm:pt-28 md:grid-cols-[1fr_auto] lg:gap-24 lg:pb-56 lg:pt-32 ${portfolioEditorialGutterX(contentGutter)}`}
       >
         {/* LEFT — wide column: contact pill (no default eyebrow/headline/description
             anymore — that role is now the shared Header mechanism's job, e.g. its own
@@ -330,11 +330,11 @@ export function FooterDesignTimezoneEditorial({
           {hasContact ? (
             <div
               data-pf-no-color-transition=""
-              className="mt-2 flex w-fit items-center gap-6"
+              className="flex w-fit max-w-full items-center gap-4 sm:gap-6"
             >
               {showAvatar ? (
                 <div
-                  className="h-14 w-14 shrink-0 overflow-hidden rounded-lg"
+                  className="h-14 w-14 shrink-0 overflow-hidden rounded-lg lg:h-20 lg:w-20"
                   style={{ backgroundColor: placeholderBg, transition: COLOR_TRANSITION }}
                   aria-hidden
                 >
@@ -356,24 +356,27 @@ export function FooterDesignTimezoneEditorial({
                   )}
                 </div>
               ) : null}
-              <div className="flex flex-col gap-0.5" style={{ color: ink, transition: COLOR_TRANSITION }}>
+              <div className="flex min-w-0 flex-col gap-0.5" style={{ color: ink, transition: COLOR_TRANSITION }}>
                 {trimmedEmail ? (
-                  <span
-                    className="font-medium"
+                  <a
+                    href={`mailto:${trimmedEmail}`}
+                    className="inline-flex min-h-11 min-w-0 items-center font-semibold [overflow-wrap:anywhere] hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
                     style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   >
                     {trimmedEmail}
-                  </span>
+                  </a>
                 ) : null}
                 {phoneDisplay ? (
-                  <span
+                  <a
+                    href={`tel:${phoneDisplay.replace(/\s+/g, '')}`}
+                    className="inline-flex min-h-11 items-center tabular-nums hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
                     style={{
-                      opacity: 0.72,
+                      opacity: 0.8,
                       fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
                     }}
                   >
                     {phoneDisplay}
-                  </span>
+                  </a>
                 ) : null}
               </div>
             </div>
@@ -382,7 +385,7 @@ export function FooterDesignTimezoneEditorial({
           {trimmedCopyright ? (
             <p
               data-pf-no-color-transition=""
-              className="mt-20 font-medium tracking-wide"
+              className="mt-6 font-medium tracking-wide lg:mt-20"
               style={{
                 color: ink,
                 transition: COLOR_TRANSITION,
@@ -399,9 +402,9 @@ export function FooterDesignTimezoneEditorial({
             shared Header mechanism's job, e.g. its own "Timezone" design). Center
             column is left empty on purpose (see the grid's `1fr_auto` template) for
             editorial breathing room. */}
-        <div className="flex min-w-0 flex-col items-start lg:items-end lg:text-right">
+        <div className="flex min-w-0 flex-col items-start md:items-end md:text-right">
           {links.length > 0 ? (
-            <ul className="flex flex-col gap-4 lg:items-end">
+            <ul className="flex flex-col gap-1 md:items-end">
               {links.map((link) => (
                 <li key={link.id}>
                   <a
@@ -410,7 +413,7 @@ export function FooterDesignTimezoneEditorial({
                     rel="noreferrer"
                     data-tze-link
                     data-pf-no-color-transition=""
-                    className="inline-flex items-center gap-2 font-medium uppercase tracking-[0.1em]"
+                    className="inline-flex min-h-11 items-center gap-2 rounded-sm font-medium uppercase tracking-[0.1em] hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
                     style={{
                       color: ink,
                       transition: COLOR_TRANSITION,

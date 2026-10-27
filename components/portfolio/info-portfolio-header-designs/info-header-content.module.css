@@ -1,0 +1,18 @@
+.header { min-width:0; }
+.header :where(h1,h2) {
+  letter-spacing:-.025em;
+  overflow-wrap:anywhere;
+  text-wrap:balance;
+}
+.header :where(p) {
+  letter-spacing:0;
+  line-height:1.65;
+}
+.header :where(p,span,div)[class~='uppercase'] {
+  text-transform:none;
+  letter-spacing:.02em;
+}
+.header :where(p,span,div)[class~='font-mono'] {
+  font-family:inherit;
+  letter-spacing:.02em;
+}

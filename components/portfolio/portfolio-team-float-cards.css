@@ -1,0 +1,6 @@
+.team-float-card a { min-width: 44px; min-height: 44px; }
+@media (prefers-reduced-motion: reduce) {
+  .team-float-gallery [data-pf-no-color-transition] { transition: none !important; }
+  .team-float-card [style*="rotateX"],
+  .team-float-card [style*="translate3d"] { transform: none !important; }
+}

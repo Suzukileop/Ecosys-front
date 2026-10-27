@@ -3,12 +3,13 @@
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useLayoutEffect, useMemo, useRef, type MouseEvent } from 'react';
+import { useLayoutEffect, useMemo, useRef, type MouseEvent, type ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
   resolveHeroAvailabilityValue,
   resolveHeroSpecialtyValue,
   resolveHeroTwoWordDisplayName,
+  type PortfolioHeroPortraitShape,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   DEFAULT_HERO_PALETTE,
@@ -59,6 +60,20 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
 
   const bio = useMemo(() => resolveIntroCopy(data.description), [data.description]);
   const imageBw = data.presentation.heroImageGrayscale === true;
+  const showImageBorder = data.presentation.heroImageBorder !== false;
+  // Portrait identity's own shape is the rectangle: "design default" means the same.
+  const portraitShape =
+    data.presentation.heroPortraitShape && data.presentation.heroPortraitShape !== 'auto'
+      ? data.presentation.heroPortraitShape
+      : 'rectangle';
+  const shapeRadius =
+    portraitShape === 'arch'
+      ? '9999px 9999px 0 0'
+      : portraitShape === 'circle'
+        ? '50%'
+        : portraitShape === 'asymmetric'
+          ? '4.5rem 0.4rem 4.5rem 0.4rem'
+          : undefined;
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
     data.presentation.availabilityLabel,
@@ -298,7 +313,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                 </p>
               </div>
             ) : (
-              <p
+              <p data-hero-bio
                 className="m-0 max-w-full text-left font-sans font-semibold tracking-[-0.02em]"
                 style={{
                   color: ink,
@@ -310,7 +325,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
               </p>
             )}
             <div aria-hidden />
-            <p
+            <p data-hero-availability
               className="m-0 flex items-center gap-3 justify-self-start whitespace-nowrap font-sans font-normal tracking-[-0.01em]"
               style={{
                 color: muted,
@@ -346,11 +361,14 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
               gridTemplateColumns: 'minmax(18rem, 42%) minmax(1.5rem, 4%) minmax(0, 1fr)',
             }}
           >
+            <OffsetOutline enabled={portraitShape === 'offset'} principal={principal}>
             <div
               className="pf-identity-photo-mask relative aspect-[4/5] w-[min(100%,30rem)] max-h-[min(62vh,36rem)] shrink-0 justify-self-start overflow-hidden"
               style={{
                 backgroundColor: neutre,
-                border: `1px solid color-mix(in srgb, ${bordure} 86%, transparent)`,
+                borderRadius: shapeRadius,
+                aspectRatio: portraitShape === 'circle' ? '1 / 1' : undefined,
+                border: showImageBorder ? `1px solid color-mix(in srgb, ${bordure} 86%, transparent)` : undefined,
                 boxShadow: `0 1.5rem 5rem color-mix(in srgb, ${fond} 72%, transparent)`,
               }}
             >
@@ -359,11 +377,15 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                 initials={initials}
                 muted={muted}
                 imageBw={imageBw}
+                showBorder={showImageBorder}
+                shape={portraitShape}
+                fond={fond}
                 bordure={bordure}
                 principal={principal}
                 className="pf-identity-photo-inner absolute inset-0 h-full w-full"
               />
             </div>
+            </OffsetOutline>
 
             <div aria-hidden />
 
@@ -374,7 +396,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                 style={{ backgroundColor: principal }}
               />
               {swapBioName ? (
-                <p
+                <p data-hero-bio
                   className="pf-identity-entry-name m-0 max-w-full text-left font-sans font-semibold tracking-[-0.02em]"
                   style={{
                     color: ink,
@@ -486,14 +508,14 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
             </p>
           </div>
         ) : (
-          <p
+          <p data-hero-bio
             className="m-0 text-left font-sans font-semibold tracking-[-0.02em]"
             style={{ color: ink, fontSize: 'clamp(1.2rem, 5.2vw, 1.75rem)', lineHeight: 1.16 }}
           >
             {bio}
           </p>
         )}
-        <p
+        <p data-hero-availability
           className="mt-5 flex items-center gap-2.5 font-sans text-[0.95rem] font-normal leading-snug"
           style={{ color: muted }}
         >
@@ -510,7 +532,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
         />
         <div className="min-w-0">
           {swapBioName ? (
-            <p
+            <p data-hero-bio
               className="m-0 text-left font-sans font-semibold tracking-[-0.02em]"
               style={{ color: ink, fontSize: 'clamp(1.2rem, 5.2vw, 1.75rem)', lineHeight: 1.16 }}
             >
@@ -570,13 +592,20 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
           className={`pf-identity-photo-mask relative w-full overflow-hidden ${
             showBottomBand ? 'mt-8 mb-2' : 'mt-8'
           }`}
-          style={{ aspectRatio: '3 / 3.4', backgroundColor: neutre }}
+          style={{
+            aspectRatio: portraitShape === 'circle' ? '1 / 1' : '3 / 3.4',
+            borderRadius: portraitShape === 'circle' ? '50%' : undefined,
+            backgroundColor: neutre,
+          }}
         >
           <IdentityPortrait
             avatarUrl={avatarUrl}
             initials={initials}
             muted={muted}
             imageBw={imageBw}
+            showBorder={showImageBorder}
+            shape={portraitShape}
+            fond={fond}
             bordure={bordure}
             principal={principal}
             className="pf-identity-photo-inner h-full w-full"
@@ -587,11 +616,43 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
   );
 }
 
+/**
+ * "Offset frame" portrait: a fine accent outline set back behind the photo. It sits outside the photo box
+ * because the entry reveal clips everything that overflows it.
+ */
+function OffsetOutline({
+  enabled,
+  principal,
+  children,
+}: {
+  enabled: boolean;
+  principal: string;
+  children: ReactNode;
+}) {
+  if (!enabled) return <>{children}</>;
+  return (
+    <div className="relative w-[min(100%,30rem)] justify-self-start">
+      <span
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          transform: 'translate(0.9rem, 0.9rem)',
+          border: `1.5px solid color-mix(in srgb, ${principal} 85%, transparent)`,
+        }}
+      />
+      {children}
+    </div>
+  );
+}
+
 function IdentityPortrait({
   avatarUrl,
   initials,
   muted,
   imageBw,
+  showBorder,
+  shape,
+  fond,
   bordure,
   principal,
   className,
@@ -600,12 +661,18 @@ function IdentityPortrait({
   initials: string;
   muted: string;
   imageBw: boolean;
+  showBorder: boolean;
+  shape: PortfolioHeroPortraitShape;
+  fond: string;
   bordure: string;
   principal: string;
   className: string;
 }) {
   return (
-    <div className={`relative ${className}`.trim()}>
+    <div
+      className={`relative ${className}`.trim()}
+      style={{ borderRadius: shape === 'circle' ? '50%' : undefined, overflow: shape === 'circle' ? 'hidden' : undefined }}
+    >
       {avatarUrl ? (
         <Image
           src={avatarUrl}
@@ -633,15 +700,26 @@ function IdentityPortrait({
         aria-hidden
         className="pointer-events-none absolute inset-0"
         style={{
-          boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${bordure} 58%, transparent)`,
+          borderRadius: shape === 'circle' ? '50%' : undefined,
+          // Accent decorations live inside the photo: the entry reveal clips everything outside the box.
+          border:
+            shape === 'frame'
+              ? `1.5px solid color-mix(in srgb, ${principal} 80%, transparent)`
+              : undefined,
+          inset: shape === 'frame' ? '0.9rem' : undefined,
+          boxShadow: shape === 'circle'
+            ? `inset 0 0 0 0.45rem color-mix(in srgb, ${fond} 92%, transparent), inset 0 0 0 calc(0.45rem + 1.5px) color-mix(in srgb, ${principal} 80%, transparent)`
+            : showBorder ? `inset 0 0 0 1px color-mix(in srgb, ${bordure} 58%, transparent)` : undefined,
           background: `linear-gradient(180deg, transparent 62%, color-mix(in srgb, ${principal} 12%, transparent) 100%)`,
         }}
       />
-      <span
-        aria-hidden
-        className="pointer-events-none absolute bottom-0 left-0 h-1 w-[28%]"
-        style={{ backgroundColor: principal }}
-      />
+      {shape === 'circle' ? null : (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute bottom-0 left-0 h-1 w-[28%]"
+          style={{ backgroundColor: principal }}
+        />
+      )}
     </div>
   );
 }

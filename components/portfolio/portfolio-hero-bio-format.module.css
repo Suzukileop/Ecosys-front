@@ -1,0 +1,13 @@
+.root[data-bio-bold='false'] :global([data-hero-bio]),
+.root[data-bio-bold='false'] :global([data-hero-bio]) * { font-weight:400 !important; }
+.root[data-bio-italic='false'] :global([data-hero-bio]),
+.root[data-bio-italic='false'] :global([data-hero-bio]) * { font-style:normal !important; }
+/* Casing is applied to the source biography, never imposed by a layout class. */
+.root :global([data-hero-bio]),
+.root :global([data-hero-bio]) * { text-transform:none !important; }
+.root[data-bio-bold='true'] :global([data-hero-bio]),
+.root[data-bio-bold='true'] :global([data-hero-bio]) * { font-weight:700 !important; }
+.root[data-bio-italic='true'] :global([data-hero-bio]),
+.root[data-bio-italic='true'] :global([data-hero-bio]) * { font-style:italic !important; }
+.root[data-bio-spacing='true'] :global([data-hero-bio]),
+.root[data-bio-spacing='true'] :global([data-hero-bio]) * { line-height:var(--hero-bio-line-height) !important; }

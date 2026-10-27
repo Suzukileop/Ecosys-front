@@ -3,6 +3,30 @@ import {
   normalizePortfolioHeroBannerDesign,
   type PortfolioHeroBannerDesign,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
+import { mergePortfolioSettings, type PortfolioSettings } from './portfolio-settings-types';
+
+/** Cache only appearance, never profile content, for the next loading screen. */
+export function writeHeroLoadingSettingsHint(keys: Array<string | null | undefined>, settings: PortfolioSettings) {
+  if (typeof window === 'undefined') return;
+  for (const key of keys) {
+    if (!key?.trim()) continue;
+    try {
+      sessionStorage.setItem(`pf-hero-loading:${key.trim()}`, JSON.stringify({global:settings.global,hero:settings.hero,stack:settings.stack,tools:settings.tools,info:settings.info}));
+      const override=settings.hero.colorModeOverride;
+      const mode=override==='light'||override==='dark'?override:settings.global.colorMode;
+      const safe=key.trim().replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,64);
+      document.cookie=`pf_hm_${safe}=${mode}; path=/; max-age=31536000; samesite=lax`;
+    } catch { /* storage unavailable */ }
+  }
+}
+
+export function readHeroLoadingSettingsHint(key: string): PortfolioSettings | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const raw=sessionStorage.getItem(`pf-hero-loading:${key}`);
+    return raw ? mergePortfolioSettings(JSON.parse(raw)) : null;
+  } catch { return null; }
+}
 
 const HINT_PREFIX = 'pf-hero-banner:';
 const COOKIE_PREFIX = 'pf_hb_';

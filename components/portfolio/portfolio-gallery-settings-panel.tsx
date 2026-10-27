@@ -1,7 +1,17 @@
 'use client';
+import {DesignCatalogueCard} from './portfolio-design-catalogue-card';
+import {StackPreviewSkeleton} from './portfolio-stack-preview-skeleton';
+import {StackHeaderSkeleton} from './portfolio-stack-header-skeleton';
+import {useThumbnailTheme} from './portfolio-thumbnail-theme';
+import {GalleryFramedThumbnail} from '@/components/portfolio/portfolio-gallery-framed-thumbnail';
 
+import { SectionPaletteFamilyControl } from '@/components/portfolio/portfolio-section-palette-family';
+import { TextSizeSlider } from '@/components/portfolio/portfolio-text-size-slider';
+import { ColorSwatchRow } from '@/components/portfolio/portfolio-color-swatch-row';
+import { CardsStyleControls } from '@/components/portfolio/portfolio-cards-style-controls';
+import { DEFAULT_CARDS_STYLE } from '@/components/portfolio/portfolio-cards-style';
 import { useState, type ReactNode } from 'react';
-import { usePortfolioDesignPreviewSource } from '@/components/portfolio/PortfolioDesignLivePreview';
+import { PortfolioDesignLivePreview, usePortfolioDesignPreviewSource } from '@/components/portfolio/PortfolioDesignLivePreview';
 import { MediaImage } from '@/components/ui/MediaImage';
 import type { ProfileGalleryItem } from '@/types/profile';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
@@ -47,7 +57,8 @@ import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
+import { NpBackRow, NpCollapsibleSection, NpPanelShell, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /* ---------------------------------------------------------------------- */
 /* Sub-sections — the same four tabs, in the same order, with the same     */
@@ -93,23 +104,8 @@ function GalleryGroupLabel({ children }: { children: string }) {
 /** Same animated switch as the Footer/Services/Contact panels — shared settings-UI chrome. */
 function GallerySwitchTrack({ checked }: { checked: boolean }) {
   return (
-    <span
-      className="relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-      style={{
-        backgroundColor: checked
-          ? 'var(--pf-palette-texte-fort, #171717)'
-          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 22%, var(--pf-palette-fond, #ffffff))',
-      }}
-    >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{
-          left: checked ? '1.125rem' : '0.125rem',
-          backgroundColor: checked
-            ? 'var(--pf-palette-fond, #ffffff)'
-            : 'var(--pf-palette-texte-fort, #171717)',
-        }}
-      />
+    <span className="np-switch" aria-checked={checked} aria-hidden data-switch-track="">
+      <span className="np-switch-knob" />
     </span>
   );
 }
@@ -158,7 +154,7 @@ function GalleryOptionGrid<T extends string>({
   hideLabel?: boolean;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
+    const rows = useSettingsRows();
   return (
     <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
@@ -223,7 +219,7 @@ function GalleryRange({
         value={value}
         aria-label={label}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-2.5 h-2 w-full cursor-pointer accent-neutral-900"
+        className="np-range mt-2" style={{ ['--np-fill' as string]: `${max > min ? ((value - min) / (max - min)) * 100 : 0}%` }}
       />
     </div>
   );
@@ -278,38 +274,20 @@ function GalleryBackgroundColorField({
   onChange: GalleryPatch;
   label: string;
 }) {
-  const t = useT();
-  const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, gallery.galleryPalette);
+    const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, gallery.galleryPalette);
   const bindings = mergeGalleryColorBindings(gallery.galleryColorBindings);
   const token = bindings.sectionBackground;
-  const resolved = resolveHeroPaletteColor(palette, token);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <GallerySectionLabel>{label}</GallerySectionLabel>
-        <span
-          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-[color:var(--pf-palette-bordure)]"
-          style={{ backgroundColor: resolved }}
-          title={resolved}
-          aria-hidden
-        />
-      </div>
-      <select
-        value={token}
-        onChange={(event) =>
-          onChange(patchGalleryColorBinding(gallery, 'sectionBackground', event.target.value as HeroPaletteTokenId))
-        }
-        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-hidden"
-        aria-label={t('{label} palette token', { label })}
-      >
-        {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {t(option.label)}
-          </option>
-        ))}
-      </select>
-    </div>
+    return (
+    <ColorSwatchRow
+      label={label}
+      options={PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+        color: resolveHeroPaletteColor(palette, option.value),
+      }))}
+      value={token}
+      onChange={(next) => onChange(patchGalleryColorBinding(gallery, 'sectionBackground', next as HeroPaletteTokenId))}
+    />
   );
 }
 
@@ -390,114 +368,8 @@ function _GalleryDesignSummaryRow({
   );
 }
 
-function GalleryMiniStage({ children }: { children: ReactNode }) {
-  return (
-    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
-      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
-      {children}
-    </svg>
-  );
-}
-
 /** One abstract mini-wireframe per gallery layout — every option gets one, no exceptions
  *  (the thumbnail convention the Footer/Work/Services pickers already follow). */
-function GalleryDesignWireframe({ design }: { design: PortfolioGalleryDesign }) {
-  switch (design) {
-    case 'contact-sheet':
-      return <GalleryMiniStage>{[8, 43, 78].flatMap((x) => [10, 39].map((y) => <g key={`${x}-${y}`}>
-        <rect className="pf-stack-mini-ink" x={x} y={y} width="30" height="21" rx="1" />
-        <rect className="pf-stack-mini-mute" x={x} y={y + 24} width="19" height="2" />
-      </g>))}</GalleryMiniStage>;
-    case 'visual-index':
-      return <GalleryMiniStage>
-        <rect className="pf-stack-mini-ink" x="8" y="10" width="67" height="45" rx="1" />
-        <rect className="pf-stack-mini-mute" x="8" y="59" width="40" height="3" />
-        {[10, 28, 46].map((y) => <g key={y}>
-          <rect className="pf-stack-mini-mute" x="82" y={y} width="14" height="12" rx="1" />
-          <rect className="pf-stack-mini-ink" x="100" y={y + 3} width="12" height="2" />
-          <rect className="pf-stack-mini-mute" x="100" y={y + 8} width="9" height="2" />
-        </g>)}
-      </GalleryMiniStage>;
-    case 'framed-grid':
-      return (
-        <GalleryMiniStage>
-          {/* Irregular masonry columns, deliberately unequal heights — the redesign's whole
-              point (rule 1b: show the look, not a uniform grid that no longer exists). */}
-          <rect className="pf-stack-mini-ink" x="8" y="8" width="32" height="34" rx="2.5" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="8" y="46" width="32" height="18" rx="2.5" opacity={0.5} />
-          <rect className="pf-stack-mini-ink" x="44" y="8" width="32" height="20" rx="2.5" opacity={0.6} />
-          <rect className="pf-stack-mini-ink" x="44" y="32" width="32" height="32" rx="2.5" opacity={0.4} />
-          <rect className="pf-stack-mini-ink" x="80" y="8" width="32" height="26" rx="2.5" opacity={0.45} />
-          <rect className="pf-stack-mini-ink" x="80" y="38" width="32" height="26" rx="2.5" opacity={0.28} />
-        </GalleryMiniStage>
-      );
-    case 'floating-canvas':
-      return (
-        <GalleryMiniStage>
-          {/* Dispersed lanes, unequal formats, nothing sharing a baseline — plus the accent pill
-              sunk into the big card's bottom edge, which is the design's signature. */}
-          <rect className="pf-stack-mini-ink" x="8" y="6" width="34" height="38" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-accent" x="15" y="41" width="20" height="6" rx="3" />
-          <rect className="pf-stack-mini-ink" x="50" y="20" width="34" height="30" rx="3" opacity={0.5} />
-          <rect className="pf-stack-mini-ink" x="58" y="56" width="26" height="10" rx="2.5" opacity={0.3} />
-          <rect className="pf-stack-mini-ink" x="90" y="10" width="22" height="26" rx="2.5" opacity={0.42} />
-          <rect className="pf-stack-mini-ink" x="94" y="44" width="18" height="20" rx="2.5" opacity={0.26} />
-        </GalleryMiniStage>
-      );
-    case 'caption-carousel':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="12" width="34" height="30" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-mute" x="8" y="46" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="48" y="12" width="34" height="30" rx="3" opacity={0.55} />
-          <rect className="pf-stack-mini-mute" x="48" y="46" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="88" y="12" width="30" height="30" rx="3" opacity={0.3} />
-          <circle className="pf-stack-mini-ring" cx="52" cy="61" r="4" strokeWidth={1.2} />
-          <circle className="pf-stack-mini-ring" cx="66" cy="61" r="4" strokeWidth={1.2} />
-        </GalleryMiniStage>
-      );
-    case 'cinema-strip':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="18" width="54" height="34" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="68" y="18" width="54" height="34" rx="3" opacity={0.45} />
-          <circle className="pf-stack-mini-ring" cx="14" cy="35" r="5" strokeWidth={1.2} />
-          <circle className="pf-stack-mini-ring" cx="106" cy="35" r="5" strokeWidth={1.2} />
-        </GalleryMiniStage>
-      );
-    case 'hero-mosaic':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="10" width="104" height="30" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="8" y="44" width="32" height="20" rx="2.5" opacity={0.5} />
-          <rect className="pf-stack-mini-ink" x="44" y="44" width="32" height="20" rx="2.5" opacity={0.38} />
-          <rect className="pf-stack-mini-ink" x="80" y="44" width="32" height="20" rx="2.5" opacity={0.26} />
-        </GalleryMiniStage>
-      );
-    case 'tall-row':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="8" width="42" height="56" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="56" y="26" width="18" height="38" rx="2.5" opacity={0.5} />
-          <rect className="pf-stack-mini-ink" x="78" y="26" width="18" height="38" rx="2.5" opacity={0.38} />
-          <rect className="pf-stack-mini-ink" x="100" y="26" width="12" height="38" rx="2.5" opacity={0.26} />
-        </GalleryMiniStage>
-      );
-    case 'editorial-split':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="10" width="66" height="26" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="80" y="10" width="32" height="26" rx="3" opacity={0.45} />
-          <rect className="pf-stack-mini-ink" x="8" y="40" width="32" height="24" rx="3" opacity={0.38} />
-          <rect className="pf-stack-mini-ink" x="46" y="40" width="66" height="24" rx="3" opacity={0.6} />
-        </GalleryMiniStage>
-      );
-    default: {
-      const exhaustive: never = design;
-      return exhaustive;
-    }
-  }
-}
 
 function GalleryDesignChoiceGrid({
   value,
@@ -518,171 +390,62 @@ function GalleryDesignChoiceGrid({
   if (showGrid) {
     return (
       <div className="np-stack">
-        <NpBackRow title={t('Gallery design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
+        <div className="flex flex-col gap-7" aria-label={t('Choose a design')}>
           {PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => (
-            <NpOptionCard
-              key={option.value}
-              selected={option.value === value}
-              title={t(option.label)}
-              illustration={<GalleryDesignWireframe design={option.value} />}
-              onClick={() => {
-                onChange(option.value);
-                setShowGrid(false);
-              }}
-            />
+            <div key={option.value} className="group relative">
+              <button type="button" aria-pressed={value === option.value}
+                onClick={() => onChange(option.value)}
+                className="w-full overflow-hidden rounded-xl border p-1.5 text-left transition-colors hover:bg-neutral-500/5 focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{borderColor:value === option.value ? 'var(--pf-palette-principal,#f97316)' : 'color-mix(in srgb,currentColor 18%,transparent)'}}>
+                <GalleryFramedThumbnail design={option.value}/>
+                <span className="block py-3 pl-2 pr-36 text-sm font-medium">{t(option.label)}</span>
+              </button>
+              <button type="button" aria-label={`${t('Settings')} — ${t(option.label)}`} title={t('Settings')}
+                onClick={() => { onChange(option.value); setShowGrid(false); }}
+                className="absolute bottom-1.5 right-3 flex min-h-11 items-center gap-2 rounded-sm px-1 text-xs font-medium text-[var(--np-muted,#a1a1aa)] opacity-0 transition-opacity hover:text-[var(--np-text,#fafafa)] group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 [@media(hover:none)]:opacity-100">
+                <span>{t('Customize')}</span>
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
+              </button>
+            </div>
           ))}
-        </NpOptionCardGroup>
+        </div>
       </div>
     );
   }
 
   return (
-    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<GalleryDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
+    <NpBackRow title={t(selected.label)} onBack={() => setShowGrid(true)} />
   );
 }
 
 /** One wireframe per Header design — the shared 8-design GSAP header mounted above the
  *  Gallery section, independent of the gallery's own layout `design`. */
-function GalleryHeaderWireframe({ design }: { design: PortfolioGalleryHeaderDesign }) {
-  const t = useT();
-  switch (design) {
-    case 'editorial':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-accent" x="8" y="14" width="18" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="8" y="24" width="86" height="12" rx="2" />
-          <rect className="pf-stack-mini-mute" x="8" y="44" width="50" height="3" rx="1.5" />
-        </GalleryMiniStage>
-      );
-    case 'marquee':
-      return (
-        <GalleryMiniStage>
-          <text
-            x="60"
-            y="42"
-            fontSize={22}
-            fontWeight={800}
-            textAnchor="middle"
-            opacity={0.14}
-            className="pf-stack-mini-ink"
-          >
-            {t('GALLERY')}
-          </text>
-          <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="11" rx="2" />
-        </GalleryMiniStage>
-      );
-    case 'index':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-mute" x="8" y="14" width="104" height="1.5" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="22" height="18" rx="2" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="40" y="26" width="1.5" height="18" />
-          <rect className="pf-stack-mini-ink" x="50" y="28" width="60" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="50" y="40" width="36" height="2.5" rx="1.25" />
-        </GalleryMiniStage>
-      );
-    case 'accent-count':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-accent" x="8" y="14" width="30" height="9" rx="4.5" />
-          <rect className="pf-stack-mini-mute" x="8" y="30" width="46" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="8" y="39" width="70" height="9" rx="2" />
-        </GalleryMiniStage>
-      );
-    case 'serif-lead':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-mute" x="8" y="14" width="24" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="100" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="40" width="70" height="10" rx="2" opacity={0.5} />
-        </GalleryMiniStage>
-      );
-    case 'billboard':
-      return (
-        <GalleryMiniStage>
-          <text
-            x="60"
-            y="38"
-            fontSize={25}
-            fontWeight={900}
-            textAnchor="middle"
-            opacity={0.1}
-            className="pf-stack-mini-ink"
-          >
-            {t('GALLERY')}
-          </text>
-          <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="9" rx="2" />
-          <rect className="pf-stack-mini-mute" x="18" y="44" width="40" height="3" rx="1.5" />
-        </GalleryMiniStage>
-      );
-    case 'masthead':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="12" width="90" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="70" height="10" rx="2" opacity={0.6} />
-          <rect className="pf-stack-mini-ink" x="8" y="40" width="80" height="10" rx="2" opacity={0.3} />
-        </GalleryMiniStage>
-      );
-    case 'split-heading':
-      return (
-        <GalleryMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="58" height="11" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="41" width="36" height="11" rx="2" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="86" y="16" width="26" height="3" rx="1.5" />
-        </GalleryMiniStage>
-      );
-    default: {
-      const exhaustive: never = design;
-      return exhaustive;
-    }
-  }
+function GalleryHeaderWireframe({design}:{design:PortfolioGalleryHeaderDesign}){
+ return <StackPreviewSkeleton section="gallery"><StackHeaderSkeleton design={design} compact word="GALLERY" title="Instants choisis" lead="Nos" count="04"/></StackPreviewSkeleton>;
 }
 
-function GalleryHeaderDesignGrid({
-  value,
-  onChange,
-  open: showGrid,
-  onOpenChange: setShowGrid,
-}: {
-  value: PortfolioGalleryHeaderDesign;
-  onChange: (value: PortfolioGalleryHeaderDesign) => void;
-  /** Whether the catalog of designs is open (owned by the panel so it can hide the settings below). */
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selected =
-    PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS[0];
-
-  if (showGrid) {
-    return (
-      <div className="np-stack">
-        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
-          {PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.map((option) => (
-            <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-              <NpOptionCard
-                selected={option.value === value}
-                title={t(option.label)}
-                illustration={<GalleryHeaderWireframe design={option.value} />}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            </PortfolioHeaderDesignOption>
-          ))}
-        </NpOptionCardGroup>
-      </div>
-    );
-  }
-
-  return (
-    <NpPickerRow label={t('Header design')} value={t(selected.label)} thumbnail={<GalleryHeaderWireframe design={value} />} onClick={() => setShowGrid(true)} />
-  );
+function GalleryHeaderDesignGrid({value,onChange,open:showGrid,onOpenChange:setShowGrid}:{value:PortfolioGalleryHeaderDesign;onChange:(value:PortfolioGalleryHeaderDesign)=>void;open:boolean;onOpenChange:(open:boolean)=>void}){
+ const t=useT();
+ const previewSource=usePortfolioDesignPreviewSource();
+ const theme=useThumbnailTheme('gallery');
+ const selected=PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.find(option=>option.value===value)??PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS[0];
+ if(!showGrid)return <NpBackRow title={t(selected.label)} onBack={()=>setShowGrid(true)}/>;
+ return <div className="flex flex-col gap-8" aria-label={t('Choose a header')}>
+  {PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.map(option=>{
+   if(option.value==='none')return <button
+    key={option.value}
+    type="button"
+    aria-pressed={value===option.value}
+    onClick={()=>onChange(option.value)}
+    className="flex min-h-12 w-full items-center rounded-xl border px-4 text-left text-sm font-medium transition-colors hover:bg-neutral-500/5 focus-visible:outline-2 focus-visible:outline-offset-2"
+    style={{borderColor:value===option.value?'var(--pf-palette-principal,#f97316)':'color-mix(in srgb,currentColor 18%,transparent)'}}
+   >{t(option.label)}</button>;
+   const skeleton=<GalleryHeaderWireframe design={option.value}/>;
+   return <PortfolioHeaderDesignOption key={option.value} design={option.value}><DesignCatalogueCard label={t(option.label)} selected={value===option.value} previewBackground={theme.background} onSelect={()=>onChange(option.value)} onCustomize={()=>{if(value!==option.value)onChange(option.value);setShowGrid(false);}}><span className="relative block aspect-[3/1] w-full" style={{backgroundColor:theme.background}}>{previewSource?<PortfolioDesignLivePreview src={withDesignPreview(previewSource.portfolioPath,{section:'galleryHeader',design:option.value})+'&previewRevision=gallery-header-compact-v3'} settings={previewSource.settings} fill loadMargin="48px 0px" skeleton={skeleton} animateSkeleton={false} backgroundColor={theme.background}/>:skeleton}</span></DesignCatalogueCard></PortfolioHeaderDesignOption>;
+  })}
+ </div>;
 }
+
 
 /** The Footer's settings band — one titled card under a design picker. */
 function GallerySettingsBand({
@@ -701,7 +464,7 @@ function GallerySettingsBand({
 }) {
   return (
     <section className={`pf-exp-layout-settings${flush ? ' pf-exp-layout-settings--flush' : ''}`} aria-labelledby={id}>
-      <h3 id={id} className="pf-exp-layout-settings-title">
+      <h3 id={id} className="sr-only">
         {title}
       </h3>
       <div key={motionKey} className="pf-exp-layout-settings-body space-y-7">
@@ -713,10 +476,9 @@ function GallerySettingsBand({
 
 function GalleryBandGroup({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="space-y-4">
-      <GalleryGroupLabel>{title}</GalleryGroupLabel>
-      {children}
-    </div>
+    <NpCollapsibleSection title={title}>
+      <div className="space-y-5">{children}</div>
+    </NpCollapsibleSection>
   );
 }
 
@@ -783,9 +545,11 @@ function GalleryLayoutSettingsBand({
   const isFloatingCanvas = gallery.design === 'floating-canvas';
 
   if (gallery.design === 'visual-index') {
-    return <GallerySettingsBand id="gallery-layout-settings-title" title={t('Layout settings')} motionKey={gallery.design}>
+    return <GallerySettingsBand flush id="gallery-layout-settings-title" title={t('Layout settings')} motionKey={gallery.design}>
+      <GalleryBandGroup title={t('Thumbnails')}>
       <NpToggleRow title={t('Smart thumbnail fit')} description={t('Fit every thumbnail to the main image height on desktop, without scrolling.')}
         checked={gallery.visualIndexSmartFit !== false} onChange={(visualIndexSmartFit) => onChange({ visualIndexSmartFit })} />
+      </GalleryBandGroup>
     </GallerySettingsBand>;
   }
 
@@ -798,7 +562,7 @@ function GalleryLayoutSettingsBand({
   }
 
   return (
-    <GallerySettingsBand id="gallery-layout-settings-title" title={t('Layout settings')} motionKey={gallery.design}>
+    <GallerySettingsBand flush id="gallery-layout-settings-title" title={t('Layout settings')} motionKey={gallery.design}>
 <SettingsRowsScope title={t('Layout options')}>
       {isHeroMosaic ? (
         <GalleryBandGroup title={t('Hover')}>
@@ -958,7 +722,7 @@ function GalleryMediaOrder({ gallery, onChange }: { gallery: PortfolioGallerySec
             onDragStart={(event) => { event.dataTransfer.setData('application/x-gallery-media', item.id); event.dataTransfer.effectAllowed = 'move'; }}
             onDragOver={(event) => { if (event.dataTransfer.types.includes('application/x-gallery-media')) event.preventDefault(); }}
             onDrop={(event) => { event.preventDefault(); move(items.findIndex((media) => media.id === event.dataTransfer.getData('application/x-gallery-media')), index); }}
-            className="flex items-center gap-3 rounded-lg border border-[color:var(--np-border)] p-2">
+            className="flex items-center gap-3 rounded-lg bg-[var(--np-card)] p-2 transition-colors hover:bg-[var(--np-well)] focus-within:bg-[var(--np-well)]">
             <span aria-hidden="true" className="text-xs tabular-nums text-[color:var(--np-muted)]">{index + 1}</span>
             <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-[color:var(--np-surface)]">
               {item.mediaType === 'VIDEO' ? <span className="flex h-full items-center justify-center text-xs">▶</span> : <MediaImage src={item.mediaUrl} width={48} className="h-full w-full object-cover" />}
@@ -989,12 +753,21 @@ export function GallerySettingsPanel({
   chrome?: NpPanelChrome;
 }) {
   const t = useT();
-  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
-  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
+  const backgroundTheme = useThumbnailTheme('gallery');
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(true);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(true);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<GallerySubSection>('general');
   const subSection = normalizeGallerySubSection(controlledSubSection ?? uncontrolledSubSection);
+  const [previousSubSection, setPreviousSubSection] = useState(subSection);
+  if (previousSubSection !== subSection) {
+    setPreviousSubSection(subSection);
+    if (subSection === 'design') setDesignCatalogOpen(true);
+    if (subSection === 'header') setHeaderCatalogOpen(true);
+  }
   const setSubSection = (value: GallerySubSection) => {
     const next = normalizeGallerySubSection(value);
+    if (next === 'design') setDesignCatalogOpen(true);
+    if (next === 'header') setHeaderCatalogOpen(true);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
@@ -1005,6 +778,9 @@ export function GallerySettingsPanel({
 
       {subSection === 'general' ? (
         <div className="np-stack"><NpToggleRow card title={t('Show Gallery section')} description={gallery.enabled !== false ? undefined : t('Visitors go straight to the next section.')} checked={gallery.enabled !== false} onChange={(enabled) => onChange({ enabled })} /><div className="np-dimmable" data-disabled={gallery.enabled !== false ? 'false' : 'true'} inert={gallery.enabled === false}>
+          <div className="pb-6">
+            <SectionColorModeControl label={t('Color mode')} hideLabel value={gallery.colorModeOverride} onChange={colorModeOverride => onChange({ colorModeOverride })} />
+          </div>
           <NpCollapsibleSection title={t('Content shown')}>
               <NpToggleRow
                 title={t('Media titles')}
@@ -1016,14 +792,12 @@ export function GallerySettingsPanel({
                 checked={gallery.lightboxEnabled}
                 onChange={(lightboxEnabled) => onChange({ lightboxEnabled })}
               />
-              {/* Cinema strip never zooms on hover (its frames scroll as a film strip). */}
-              {gallery.design === 'cinema-strip' ? null : (
                 <NpToggleRow
                   title={t('Hover zoom')}
                   checked={gallery.hoverZoom}
                   onChange={(hoverZoom) => onChange({ hoverZoom })}
                 />
-              )}
+
           </NpCollapsibleSection>
           <GalleryMediaOrder gallery={gallery} onChange={onChange} />
         </div></div>
@@ -1039,41 +813,40 @@ export function GallerySettingsPanel({
             value={gallery.design}
             onChange={(design) => onChange({ design })}
           />
-          {designCatalogOpen ? null : <NpCollapsibleSection title={t('Layout options')}><GalleryLayoutSettingsBand gallery={gallery} onChange={onChange} /></NpCollapsibleSection>}
+          {designCatalogOpen ? null : <GalleryLayoutSettingsBand gallery={gallery} onChange={onChange} />}
+          {designCatalogOpen ? null : (
+            <CardsStyleControls
+              value={gallery.cardsStyle ?? DEFAULT_CARDS_STYLE}
+              onChange={(cardsStyle) => onChange({ cardsStyle })}
+              palette={gallery.galleryPalette}
+            />
+          )}
           {designCatalogOpen ? null : (
           <NpCollapsibleSection title={t('Style')}>
 
-          <SectionColorModeControl
-            label={t('Color mode')}
-            value={gallery.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
 
-          <GalleryOptionGrid
-            label={t('Text size')}
-            options={PORTFOLIO_GALLERY_PREMIUM_FONT_SIZE_OPTIONS}
-            value={gallery.premiumFontSize ?? 'medium'}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
+          <TextSizeSlider label={t('Text size')} options={PORTFOLIO_GALLERY_PREMIUM_FONT_SIZE_OPTIONS} value={gallery.premiumFontSize ?? 'medium'} onChange={(premiumFontSize) => onChange({ premiumFontSize })} />
           </NpCollapsibleSection>
           )}
         </div>
       ) : null}
 
       {subSection === 'background' && gallery.enabled !== false ? (
-        <div className="np-stack"><NpCollapsibleSection title={t('Background')}>
+        <div className="np-stack"><NpCollapsibleSection title={t('Palette')}>
+            <SectionPaletteFamilyControl
+              value={gallery.paletteFamily ?? 'global'}
+              onChange={(paletteFamily) => onChange({ paletteFamily })}
+              mode={backgroundTheme.mode}
+            />
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={gallery}
             onChange={onChange}
-            renderColorField={({ label, value, onChange: onColorChange }) => {
-              // Only the solid fill has a palette binding (`sectionBackground`) — gradient and
-              // split colors are stored as plain hex, so they stay on the manual picker.
-              if (label === 'Color' && gallery.useHeroPalette !== false) {
-                return <GalleryBackgroundColorField gallery={gallery} onChange={onChange} label={label} />;
-              }
-              return <GalleryManualColorField label={label} value={value} onChange={onColorChange} />;
-            }}
+            renderColorField={({ label }) => <ColorSwatchRow label={label}
+              options={([['fond', 'Background'], ['neutre', 'Surface'], ['principal', 'Primary'], ['secondaire', 'Secondary'], ['texteFort', 'Strong text']] as const).map(([token, text]) => ({ value: token, label: t(text), color: backgroundTheme.palette[token] }))}
+              value={mergeGalleryColorBindings(gallery.galleryColorBindings).sectionBackground}
+              onChange={token => onChange({ useHeroPalette: true, ...patchGalleryColorBinding({ ...gallery, galleryPalette: backgroundTheme.palette }, 'sectionBackground', token as HeroPaletteTokenId) })} />}
           />
         </NpCollapsibleSection></div>
       ) : null}
@@ -1088,7 +861,7 @@ export function GallerySettingsPanel({
           />
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
-          {headerCatalogOpen ? null : (
+          {headerCatalogOpen || gallery.headerDesign === 'none' ? null : (
             <NpCollapsibleSection title={t('Header settings')}>
               <GalleryHeaderDesignFields gallery={gallery} onChange={onChange} />
             </NpCollapsibleSection>

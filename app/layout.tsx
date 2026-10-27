@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import '@/lib/fonts/app-fonts';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
@@ -9,7 +10,6 @@ import { localeDir } from '@/lib/i18n/config';
 import { I18nProvider } from '@/lib/i18n/I18nProvider';
 import { getLocale, getMessages, getT } from '@/lib/i18n/server';
 import { cookies } from 'next/headers';
-import Script from 'next/script';
 import { dictionaryScriptUrl, registerDictionary } from '@/lib/i18n/dictionary-store';
 import { dictionaryVersion } from '@/lib/i18n/dictionary-version';
 
@@ -41,7 +41,7 @@ export async function generateMetadata(): Promise<Metadata> {
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const locale = await getLocale();
   const messages = await getMessages(locale);
-  /* Server render reads it from the registry; the browser gets it from the cached script below. */
+  /* Server render reads the registry; the browser gate loads the preloaded, cached dictionary. */
   registerDictionary(locale, messages);
   const dictVersion = dictionaryVersion(locale, messages);
   /* HttpOnly, so only the server can see it: tells the client whether a session is worth restoring. */
@@ -49,18 +49,20 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={locale} dir={localeDir(locale)} suppressHydrationWarning>
       <head>
-        <Script src={dictionaryScriptUrl(locale, dictVersion)} strategy="beforeInteractive" />
+        <link rel="preload" as="script" href={dictionaryScriptUrl(locale, dictVersion)} />
         {/* Must stay last in <head>: it renders only on the server (null in the browser), and any
             element after it would be matched against its <script> during hydration. */}
         <ThemeInitScript code={initThemeScript} />
       </head>
       <body spellCheck={false} className="font-sans antialiased">
         <ChunkLoadRecovery />
-        <I18nProvider locale={locale} version={dictVersion}>
-          <ThemeProvider>
-            <AuthProvider initialHasSession={hasSession}>{children}</AuthProvider>
-          </ThemeProvider>
-        </I18nProvider>
+        <Suspense fallback={null}>
+          <I18nProvider locale={locale} version={dictVersion}>
+            <ThemeProvider>
+              <AuthProvider initialHasSession={hasSession}>{children}</AuthProvider>
+            </ThemeProvider>
+          </I18nProvider>
+        </Suspense>
       </body>
     </html>
   );

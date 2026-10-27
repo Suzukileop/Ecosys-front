@@ -53,6 +53,7 @@ export function FaqHeaderMastheadHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
+  const alignRight = presentation.headerDesignAlignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = faqHeaderPaletteTokenColor(presentation.headerMastheadHeadlineColor ?? 'principal');
@@ -224,11 +225,11 @@ export function FaqHeaderMastheadHeader({
       data-faq-header="masthead"
     >
       {styledLines.length > 0 ? (
-        <div className={`flex flex-col gap-1 sm:gap-2 ${centered ? 'items-center' : 'items-start'}`}>
+        <div className={`flex flex-col gap-1 sm:gap-2 ${centered ? 'items-center' : alignRight ? 'items-end' : 'items-start'}`}>
           {styledLines.map((words, lineIndex) => (
             <div key={lineIndex} className="overflow-hidden" data-faq-header-line>
               <h2
-                className={`${HEADLINE_SIZE_CLASS[presentation.headerMastheadHeadlineSize ?? 'md']} uppercase leading-[1.08] tracking-[-0.02em] ${centered ? 'text-center' : 'text-left'}`}
+                className={`${HEADLINE_SIZE_CLASS[presentation.headerMastheadHeadlineSize ?? 'md']} uppercase leading-[1.08] tracking-[-0.02em] ${centered ? 'text-center' : alignRight ? 'text-right' : 'text-left'}`}
                 style={{ color: ink }}
               >
                 {words.map((word, wordIndex) => (

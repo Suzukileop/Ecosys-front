@@ -1,0 +1,19 @@
+.team-polaroid-card { min-width: 0; box-shadow: 0 2px 5px rgb(0 0 0 / .07), 0 8px 18px -9px rgb(0 0 0 / .16); transition: transform 500ms cubic-bezier(.22, 1, .36, 1), translate 500ms ease, box-shadow 500ms ease; }
+.team-polaroid .team-polaroid-name { margin: 0; font-size: calc(clamp(1.125rem, 1.5vw, 1.5rem) * var(--pf-team-font-scale, 1)); font-weight: 500; line-height: 1.25; letter-spacing: -.02em; overflow-wrap: anywhere; text-wrap: pretty; }
+.team-polaroid-role { margin: 8px 0 0; font-size: calc(.875rem * var(--pf-team-font-scale, 1)); font-weight: 400; line-height: 1.55; overflow-wrap: anywhere; }
+.team-polaroid-caption::before { content: ''; display: block; width: 22px; height: 2px; background: var(--pf-palette-principal, currentColor); margin-bottom: 12px; }
+.team-polaroid-socials { margin-top: 14px; }
+.team-polaroid-socials a { min-width: 44px; min-height: 44px; }
+.team-polaroid-toggle { min-height: 44px; font-size: 14px; font-weight: 500; line-height: 1.5; letter-spacing: 0; text-transform: none; }
+.team-polaroid [role='region'] { scroll-padding-inline: 4px; }
+.team-polaroid [role='region']:focus-visible, .team-polaroid a:focus-visible, .team-polaroid-toggle:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  .team-polaroid-card:hover, .team-polaroid-card:focus-within { z-index: 2; transform: rotate(0deg) scale(1.015); box-shadow: 0 3px 7px rgb(0 0 0 / .08), 0 12px 24px -10px rgb(0 0 0 / .2); }
+}
+@media (max-width: 639px) { .team-polaroid .team-polaroid-card { transform: none; } }
+.team-polaroid-card:focus-within [data-polaroid-tone='hover'] { filter: none; }
+@media (hover: none) { .team-polaroid-card [data-polaroid-tone='hover'] { filter: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .team-polaroid [data-pf-no-color-transition] { transition: none !important; }
+  .team-polaroid .team-polaroid-card, .team-polaroid .team-polaroid-card:hover, .team-polaroid .team-polaroid-card:focus-within { transform: none; translate: none; }
+}

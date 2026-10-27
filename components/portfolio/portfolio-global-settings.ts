@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import {DEFAULT_SMOOTH_SCROLL,normalizeScrollValue} from './portfolio-smooth-scroll-settings';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
   DEFAULT_HERO_PALETTE,
@@ -258,6 +259,9 @@ export type PortfolioGlobalSettings = {
   splitContentBottomExtraPx: number;
   /** Master switch for every animation on the public portfolio (Global → Animations). */
   motionEnabled: boolean;
+  smoothScrollEnabled: boolean;
+  smoothScrollSoftness: number;
+  smoothScrollWheelSpeed: number;
   /**
    * Animation switch for section headers only (Global → Animations). Off = every Header design
    * renders static; the rest of the page keeps animating. Ignored (already static) when
@@ -548,6 +552,7 @@ export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   splitContentBottomSpacing: 'compact',
   splitContentBottomExtraPx: 0,
   motionEnabled: true,
+  ...DEFAULT_SMOOTH_SCROLL,
   headerMotionEnabled: true,
   motionProfile: DEFAULT_MOTION_PROFILE,
   motionTiming: { ...DEFAULT_MOTION_TIMING },
@@ -1766,6 +1771,9 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
     ),
     motionEnabled:
       typeof record.motionEnabled === 'boolean' ? record.motionEnabled : (base.motionEnabled ?? true),
+    smoothScrollEnabled:typeof record.smoothScrollEnabled==='boolean'?record.smoothScrollEnabled:base.smoothScrollEnabled??false,
+    smoothScrollSoftness:normalizeScrollValue(record.smoothScrollSoftness,base.smoothScrollSoftness??50,0,100),
+    smoothScrollWheelSpeed:normalizeScrollValue(record.smoothScrollWheelSpeed,base.smoothScrollWheelSpeed??100,25,200),
     headerMotionEnabled:
       typeof record.headerMotionEnabled === 'boolean'
         ? record.headerMotionEnabled

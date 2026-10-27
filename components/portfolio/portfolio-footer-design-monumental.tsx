@@ -38,7 +38,7 @@ function prefersReducedMotion(): boolean {
  * rather than importing across the "bypass" full-bleed boundary.
  */
 /** Same ceiling as this watermark's own static fallback (`clamp(4.5rem, 17vw, 15rem)`). */
-const MAX_FONT_SIZE_PX = 240;
+const MAX_FONT_SIZE_PX = 200;
 
 function useFitWidthTextSize(
   containerRef: RefObject<HTMLElement | null>,
@@ -167,7 +167,7 @@ function MonumentalField({
       <label
         ref={labelRef}
         htmlFor={id}
-        className="pointer-events-none absolute left-0 top-3 origin-left text-base text-neutral-500"
+        className="pointer-events-none absolute left-0 top-3 origin-left text-base text-[color:var(--pf-mon-muted)]"
       >
         {label}
       </label>
@@ -181,7 +181,7 @@ function MonumentalField({
           onFocus={() => setFocused(true)}
           onBlur={() => setFocused(false)}
           onChange={(event) => onChange(event.target.value)}
-          className={`${sharedClassName} resize-none`}
+          className={`${sharedClassName} min-h-24 resize-none [field-sizing:content]`}
         />
       ) : (
         <input
@@ -268,15 +268,15 @@ function MonumentalSubmit({ pending, sent, label }: { pending: boolean; sent: bo
         type="submit"
         disabled={pending}
         onPointerEnter={sweepArrow}
-        className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--pf-mon-ink)] transition disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-11 items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--pf-mon-ink)] transition hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[color:var(--pf-mon-ink)] disabled:cursor-not-allowed disabled:opacity-50"
         data-pf-no-color-transition=""
       >
-        <span className="text-neutral-600">[</span>
+        <span className="text-[color:var(--pf-mon-muted)]">[</span>
         <span>{sent ? t('Message sent') : pending ? t('Sending…') : label}</span>
         <span ref={arrowRef} aria-hidden>
           →
         </span>
-        <span className="text-neutral-600">]</span>
+        <span className="text-[color:var(--pf-mon-muted)]">]</span>
       </button>
     </div>
   );
@@ -289,19 +289,19 @@ function MonumentalSubmit({ pending, sent, label }: { pending: boolean; sent: bo
 const MONUMENTAL_INK = {
   dark: {
     ink: '#ffffff',
-    muted: '#737373',
+    muted: '#a3a3a3',
     hair: 'rgba(255, 255, 255, 0.2)',
     hairStrong: 'rgba(255, 255, 255, 0.4)',
     hoverFill: 'rgba(255, 255, 255, 0.05)',
-    watermark: 'rgba(255, 255, 255, 0.05)',
+    watermark: 'rgba(255, 255, 255, 0.08)',
   },
   light: {
     ink: '#0a0a0a',
-    muted: '#6b6b6b',
+    muted: '#595959',
     hair: 'rgba(10, 10, 10, 0.16)',
     hairStrong: 'rgba(10, 10, 10, 0.4)',
     hoverFill: 'rgba(10, 10, 10, 0.04)',
-    watermark: 'rgba(10, 10, 10, 0.05)',
+    watermark: 'rgba(10, 10, 10, 0.07)',
   },
 } as const;
 
@@ -475,11 +475,11 @@ export function FooterDesignMonumental({
         </div>
       ) : null}
 
-      <div className={`relative z-[1] grid w-full grid-cols-1 gap-16 py-20 sm:py-28 lg:grid-cols-[1.5fr_0.85fr_0.85fr] lg:gap-10 lg:py-32 ${portfolioEditorialGutterX(contentGutter)}`}>
+      <div className={`relative z-[1] grid w-full grid-cols-1 gap-12 pb-[clamp(8rem,22vw,16rem)] pt-20 sm:pt-28 md:grid-cols-2 lg:grid-cols-[1.5fr_0.85fr_0.85fr] lg:gap-10 lg:pt-32 ${portfolioEditorialGutterX(contentGutter)}`}>
         <div className="flex min-w-0 flex-col justify-between gap-14">
           <div>
             {headlineLines.length > 0 ? (
-              <p className="mb-12 font-serif text-[clamp(2.25rem,5.4vw,4.5rem)] font-medium leading-[0.98] tracking-[-0.02em] text-[color:var(--pf-mon-ink)]">
+              <p className="mb-12 font-serif text-balance break-words text-[clamp(2.25rem,5.4vw,4.5rem)] font-medium leading-[1.02] tracking-[-0.02em] text-[color:var(--pf-mon-ink)]">
                 {headlineLines.map((line, index) => (
                   <span key={index} className="block">
                     {line}
@@ -519,7 +519,7 @@ export function FooterDesignMonumental({
               />
 
               {error ? (
-                <p className="text-xs font-medium text-red-400" role="alert">
+                <p className="text-sm font-medium text-red-400" role="alert">
                   {error}
                 </p>
               ) : null}
@@ -530,7 +530,7 @@ export function FooterDesignMonumental({
 
           {copyrightLabel ? (
             <p
-              className="font-medium tracking-wide text-neutral-600"
+              className="font-medium tracking-wide text-[color:var(--pf-mon-muted)]"
               style={{ fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))' }}
             >
               {copyrightLabel}
@@ -543,7 +543,7 @@ export function FooterDesignMonumental({
         <div className="flex min-w-0 flex-col justify-end gap-14">
           {locationValue ? (
             <p
-              className="max-w-[16rem] text-neutral-500"
+              className="max-w-[16rem] text-[color:var(--pf-mon-muted)]"
               style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
             >
               {locationValue}
@@ -570,12 +570,13 @@ export function FooterDesignMonumental({
               </div>
             ) : null}
 
-            <nav aria-label={t('Footer')} className="flex flex-col gap-4 lg:items-end">
+            <nav aria-label={t('Footer')} className="flex flex-col gap-1 lg:items-end">
               {navLinks.map((link) => (
                 <a
                   key={link.id}
                   href={link.url}
-                  className="w-fit font-medium uppercase tracking-[0.14em] text-[color:var(--pf-mon-muted)] transition hover:text-[color:var(--pf-mon-ink)] lg:text-right"
+                  {...(/^https?:\/\//i.test(link.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
+                  className="inline-flex min-h-11 w-fit items-center font-medium uppercase tracking-[0.14em] text-[color:var(--pf-mon-muted)] transition hover:text-[color:var(--pf-mon-ink)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[color:var(--pf-mon-ink)] lg:text-right"
                   style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {link.label}
@@ -587,7 +588,7 @@ export function FooterDesignMonumental({
           {phoneDisplay ? (
             <a
               href={`tel:${phone!.replace(/\s+/g, '')}`}
-              className="text-neutral-500 transition hover:text-[color:var(--pf-mon-ink)]"
+              className="inline-flex min-h-11 items-center text-[color:var(--pf-mon-muted)] transition hover:text-[color:var(--pf-mon-ink)] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-[color:var(--pf-mon-ink)]"
               style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
             >
               {phoneDisplay}

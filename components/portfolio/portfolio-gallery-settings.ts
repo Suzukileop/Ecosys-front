@@ -1,3 +1,10 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import {
+  DEFAULT_CARDS_STYLE,
+  cardsRadiusPx,
+  mergeCardsStyle,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
@@ -37,7 +44,6 @@ export type PortfolioGalleryDesign =
   | 'contact-sheet'
   | 'framed-grid'
   | 'floating-canvas'
-  | 'cinema-strip'
   | 'editorial-split'
   | 'caption-carousel'
   | 'hero-mosaic'
@@ -153,6 +159,8 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   /** Vertical (row) gap — defaults to `gap` when not set or -1. */
   verticalGap: number;
   radius: number;
+  /** Shared Design → Cards block; `auto` keeps the design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   padding: number;
   titlePlacement: PortfolioGalleryTitlePlacement;
   /** Tall-row: item titles always on the photo, or only on hover with a dim veil. */
@@ -206,6 +214,8 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   useHeroPalette: boolean;
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
   galleryPalette?: PortfolioHeroPalette;
   galleryColorBindings?: PortfolioGalleryColorBindings;
   maxWidth: PortfolioGalleryMaxWidth;
@@ -357,7 +367,6 @@ export const PORTFOLIO_GALLERY_DESIGN_OPTIONS: {
   { value: 'framed-grid', label: msg('Framed grid'), description: msg('Irregular masonry columns with scroll parallax and a hover-only title.') },
   { value: 'floating-canvas', label: msg('Floating canvas'), description: msg('Dispersed cards at irregular sizes, floating at their own speeds, each titled on its bottom edge.') },
   { value: 'caption-carousel', label: msg('Caption cards'), description: msg('Image-and-title cards, horizontal scroll with arrows.') },
-  { value: 'cinema-strip', label: msg('Cinema strip'), description: msg('Wide horizontal scroll with navigation arrows.') },
   { value: 'hero-mosaic', label: msg('Hero mosaic'), description: msg('Featured image with a mosaic that adapts to the media count; cursor depth and focus on hover.') },
   { value: 'tall-row', label: msg('Tall + row'), description: msg('A taller first image on the left, three shorter ones on the right.') },
   { value: 'editorial-split', label: msg('Editorial split'), description: msg('Alternating wide and compact compositions.') },
@@ -429,6 +438,7 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   gap: 24,
   verticalGap: -1,
   radius: 16,
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   padding: 0,
   titlePlacement: 'under',
   // The design puts the title at the top of the card and reveals it on hover; `always` is the
@@ -465,6 +475,7 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   overlayOpacity: 46,
   useHeroPalette: true,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
   maxWidth: 'full',
   placement: 'center',
   showCarouselNav: true,
@@ -614,11 +625,11 @@ export const PORTFOLIO_GALLERY_FLOATING_CANVAS_BADGE_OPTIONS: {
 ];
 
 export function galleryDesignUsesCarouselNav(design: PortfolioGalleryDesign): boolean {
-  return design === 'cinema-strip' || design === 'caption-carousel' || design === 'tall-row';
+  return design === 'caption-carousel' || design === 'tall-row';
 }
 
 export function galleryDesignUsesCaptionCardWidth(design: PortfolioGalleryDesign): boolean {
-  return design === 'cinema-strip' || design === 'caption-carousel';
+  return design === 'caption-carousel';
 }
 
 function pickString<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -638,11 +649,13 @@ export function mergeGalleryPresentation(
   base: PortfolioGalleryPresentationSettings,
   patch: unknown
 ): PortfolioGalleryPresentationSettings {
-  if (!patch || typeof patch !== 'object') return { ...base };
+  // Migrate the retired design without altering stored media or the creator's other settings.
+  const fallbackDesign = (base.design as string) === 'cinema-strip' ? 'caption-carousel' : base.design;
+  if (!patch || typeof patch !== 'object') return { ...base, design: fallbackDesign };
   const record = patch as Record<string, unknown>;
   return {
     ...mergeSectionBackground(base, patch),
-    design: pickString(record.design, PORTFOLIO_GALLERY_DESIGNS, base.design),
+    design: record.design === 'cinema-strip' ? 'caption-carousel' : pickString(record.design, PORTFOLIO_GALLERY_DESIGNS, fallbackDesign),
     visualIndexSmartFit: typeof record.visualIndexSmartFit === 'boolean' ? record.visualIndexSmartFit : (base.visualIndexSmartFit ?? true),
     mediaOrder: Array.isArray(record.mediaOrder)
       ? [...new Set(record.mediaOrder.filter((id): id is string => typeof id === 'string' && id.length > 0))]
@@ -651,6 +664,7 @@ export function mergeGalleryPresentation(
     gap: clamp(record.gap, 0, 64, base.gap),
     verticalGap: clamp(record.verticalGap, -1, 64, base.verticalGap),
     radius: clamp(record.radius, 0, 48, base.radius),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     padding: clamp(record.padding, 0, 96, base.padding),
     titlePlacement: pickString(record.titlePlacement, ['under', 'overlay', 'hidden'], base.titlePlacement),
     tallRowTitleReveal: pickString(record.tallRowTitleReveal, ['always', 'hover'], base.tallRowTitleReveal),
@@ -723,6 +737,7 @@ export function mergeGalleryPresentation(
     overlayOpacity: clamp(record.overlayOpacity, 0, 90, base.overlayOpacity),
     useHeroPalette: typeof record.useHeroPalette === 'boolean' ? record.useHeroPalette : base.useHeroPalette,
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
     galleryPalette:
       record.galleryPalette && typeof record.galleryPalette === 'object'
         ? (record.galleryPalette as PortfolioHeroPalette)
@@ -1158,4 +1173,12 @@ export function galleryEffectiveVerticalGap(presentation: Pick<PortfolioGalleryP
 export function galleryAspectStyle(aspect: PortfolioGalleryAspect): CSSProperties {
   const ratio = aspect === 'square' ? '1 / 1' : aspect === 'portrait' ? '4 / 5' : aspect === 'cinema' ? '16 / 7' : aspect === 'landscape' ? '4 / 3' : undefined;
   return ratio ? { aspectRatio: ratio } : {};
+}
+
+/** Presentation with the shared Cards corner radius applied, so every design reads one `radius`. */
+export function galleryWithCardsRadius(
+  presentation: PortfolioGalleryPresentationSettings
+): PortfolioGalleryPresentationSettings {
+  const radius = cardsRadiusPx(presentation.cardsStyle);
+  return radius === null ? presentation : { ...presentation, radius };
 }

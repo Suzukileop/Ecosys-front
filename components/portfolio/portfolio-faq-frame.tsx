@@ -1,4 +1,7 @@
-import type { CSSProperties, ReactNode } from 'react';
+'use client';
+
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from 'react';
+import type { PortfolioFaqMarker } from '@/components/portfolio/portfolio-faq-marker';
 
 /**
  * FAQ → General → Frame — one opt-in outer frame shared by every FAQ design.
@@ -49,6 +52,11 @@ export const DEFAULT_FAQ_FRAME: PortfolioFaqFrameSettings = {
   shadow: 'none',
   blur: false,
 };
+
+/** Designs that already draw their own cards: an outer frame is blocked for them (panel hides it, render ignores it). */
+export function faqDesignAllowsFrame(design: string | undefined): boolean {
+  return design !== 'bento-dual' && design !== 'prism-cards';
+}
 
 export const FAQ_FRAME_BORDER_WIDTHS: PortfolioFaqFrameBorderWidth[] = ['none', 'hairline', 'thin', 'bold'];
 export const FAQ_FRAME_BORDER_COLORS: PortfolioFaqFrameBorderColor[] = ['bordure', 'texteFort', 'texteMuted', 'principal', 'secondaire'];
@@ -142,6 +150,143 @@ function faqFrameWrapperStyle(frame: PortfolioFaqFrameSettings): CSSProperties |
   };
 }
 
+/* ------------------------------------------------------------------------------------------------ *
+ * Contrast adaptation. A frame fill can turn the surface behind the FAQ into the opposite tone of the
+ * page (a light "Text" fill over a dark page): the designs' own light ink then vanishes. The wrapper
+ * measures the surface it really paints and, when the current ink would not read on it, re-points the
+ * palette inks for everything inside the frame to whichever of light / dark reads best.
+ * ------------------------------------------------------------------------------------------------ */
+
+type Rgba = [number, number, number, number];
+
+/** Parses what getComputedStyle returns for a colour: rgb()/rgba() and color(srgb …) (color-mix results). */
+function parseCssColor(value: string): Rgba | null {
+  const v = value.trim();
+  let m = v.match(/^rgba?\(\s*([\d.]+)[ ,]+([\d.]+)[ ,]+([\d.]+)(?:\s*[,/]\s*([\d.%]+))?\s*\)$/i);
+  if (m) {
+    const a = m[4] === undefined ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4]);
+    return [parseFloat(m[1]), parseFloat(m[2]), parseFloat(m[3]), a];
+  }
+  m = v.match(/^color\(srgb\s+([\d.]+)\s+([\d.]+)\s+([\d.]+)(?:\s*\/\s*([\d.%]+))?\s*\)$/i);
+  if (m) {
+    const a = m[4] === undefined ? 1 : m[4].endsWith('%') ? parseFloat(m[4]) / 100 : parseFloat(m[4]);
+    return [parseFloat(m[1]) * 255, parseFloat(m[2]) * 255, parseFloat(m[3]) * 255, a];
+  }
+  return null;
+}
+
+function luminance([r, g, b]: Rgba): number {
+  const lin = [r, g, b].map((c) => {
+    const x = c / 255;
+    return x <= 0.03928 ? x / 12.92 : ((x + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * lin[0] + 0.7152 * lin[1] + 0.0722 * lin[2];
+}
+
+function contrast(a: Rgba, b: Rgba): number {
+  const la = luminance(a);
+  const lb = luminance(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+}
+
+function over(top: Rgba, bottom: Rgba): Rgba {
+  const a = top[3];
+  return [top[0] * a + bottom[0] * (1 - a), top[1] * a + bottom[1] * (1 - a), top[2] * a + bottom[2] * (1 - a), 1];
+}
+
+const INK_LIGHT: Rgba = [245, 245, 245, 1];
+const INK_DARK: Rgba = [10, 10, 10, 1];
+const rgb = (c: Rgba, alpha = 1) => `rgba(${Math.round(c[0])}, ${Math.round(c[1])}, ${Math.round(c[2])}, ${alpha})`;
+
+const ADAPTED_VARS = [
+  '--pf-palette-texte-fort',
+  '--pf-palette-texte-muted',
+  '--pf-palette-texte-faint',
+  '--pf-palette-bordure',
+  '--pf-faq-q-color',
+  '--pf-faq-a-color',
+  '--pf-faq-title-ink',
+  '--pf-faq-subtitle-ink',
+] as const;
+
+/** Keeps every ink inside an enabled, filled frame readable against the surface the frame really paints. */
+function useFaqFrameContrast(
+  frameRef: React.RefObject<HTMLDivElement | null>,
+  innerRef: React.RefObject<HTMLDivElement | null>,
+  frame: PortfolioFaqFrameSettings,
+  textColors: CSSProperties | undefined
+) {
+  const textKey = JSON.stringify(textColors ?? {});
+  useLayoutEffect(() => {
+    // `frameEl` paints the fill from the UNTOUCHED palette tokens; the adapted inks are set on `el`, the box
+    // inside it. Setting them on the frame itself would re-colour its own fill (it reads the same tokens) and
+    // flip the very surface being measured.
+    const frameEl = frameRef.current;
+    const el = innerRef.current;
+    if (!frameEl || !el || !frame.enabled || frame.fill === 'none') return undefined;
+
+    const resolve = (css: string): Rgba | null => {
+      const probe = document.createElement('span');
+      probe.style.color = css;
+      probe.style.display = 'none';
+      frameEl.appendChild(probe);
+      const value = getComputedStyle(probe).color;
+      probe.remove();
+      return parseCssColor(value);
+    };
+    const clear = () => ADAPTED_VARS.forEach((name) => el.style.removeProperty(name));
+
+    const adapt = () => {
+      clear();
+      const base = resolve(FAQ_FRAME_TOKEN_VAR.fond);
+      const fill = resolve(FAQ_FRAME_TOKEN_VAR[frame.fill as Exclude<PortfolioFaqFrameFill, 'none'>]);
+      const ink = resolve(FAQ_FRAME_TOKEN_VAR.texteFort);
+      if (!base || !fill || !ink) return;
+      const surface = over([fill[0], fill[1], fill[2], fill[3] * (frame.fillOpacity / 100)], over(base, [255, 255, 255, 1]));
+      const readsNow = contrast(ink, surface) >= 4.5;
+      const tone = contrast(INK_LIGHT, surface) >= contrast(INK_DARK, surface) ? INK_LIGHT : INK_DARK;
+      if (!readsNow) {
+        // Re-point the palette inks for everything inside the frame (headers read these directly).
+        el.style.setProperty('--pf-palette-texte-fort', rgb(tone));
+        el.style.setProperty('--pf-palette-texte-muted', rgb(tone, 0.68));
+        el.style.setProperty('--pf-palette-texte-faint', rgb(tone, 0.5));
+        el.style.setProperty('--pf-palette-bordure', rgb(tone, 0.2));
+        // Headers that take a free hex colour read these instead of the palette.
+        el.style.setProperty('--pf-faq-title-ink', rgb(tone));
+        el.style.setProperty('--pf-faq-subtitle-ink', rgb(tone, 0.72));
+      }
+      // Question / answer inks: an explicit choice is kept only while it reads; otherwise the readable tone.
+      const guard = (name: '--pf-faq-q-color' | '--pf-faq-a-color', fallbackAlpha: number) => {
+        const chosen = (textColors as Record<string, string> | undefined)?.[name];
+        const resolved = chosen ? resolve(chosen) : null;
+        if (resolved && contrast(over(resolved, surface), surface) >= 3.2) return;
+        if (!chosen && readsNow) return;
+        el.style.setProperty(name, rgb(tone, fallbackAlpha));
+      };
+      guard('--pf-faq-q-color', 1);
+      guard('--pf-faq-a-color', 0.82);
+    };
+
+    adapt();
+    // A colour-mode or palette change repaints the tokens: re-measure.
+    let raf = 0;
+    const again = () => {
+      cancelAnimationFrame(raf);
+      raf = requestAnimationFrame(adapt);
+    };
+    const observer = new MutationObserver(again);
+    observer.observe(document.documentElement, { attributes: true });
+    const root = frameEl.closest('.pf-theme-root');
+    if (root) observer.observe(root, { attributes: true });
+    return () => {
+      cancelAnimationFrame(raf);
+      observer.disconnect();
+      clear();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- frame fields + text colours are the real inputs
+  }, [frame.enabled, frame.fill, frame.fillOpacity, textKey]);
+}
+
 /**
  * Wraps the active FAQ design (header included) in the creator's frame — a no-op when off.
  * `textColors` (General → Text colors, see `faqTextColorVars`) are custom properties every
@@ -151,32 +296,76 @@ function faqFrameWrapperStyle(frame: PortfolioFaqFrameSettings): CSSProperties |
 export function FaqDesignFrame({
   frame,
   textColors,
+  marker = 'auto',
   children,
 }: {
   frame: PortfolioFaqFrameSettings;
   textColors?: CSSProperties;
+  /** List marker kind (`auto` = each design's own); read by globals.css through `data-pf-faq-marker`. */
+  marker?: PortfolioFaqMarker;
   children: ReactNode;
 }) {
   const style = faqFrameWrapperStyle(frame);
+  const frameRef = useRef<HTMLDivElement>(null);
+  const innerRef = useRef<HTMLDivElement>(null);
+  useFaqFrameContrast(frameRef, innerRef, frame, textColors);
   // Lets a design with its own vivid surface behind the text (Prism Cards' open card) step
   // back to a neutral one once the creator has picked palette text colors.
   const customText = textColors ? '' : undefined;
   if (!style) {
-    if (!textColors) return <>{children}</>;
+    if (!textColors && marker === 'auto') return <>{children}</>;
     return (
-      <div data-pf-faq-text-custom={customText} style={{ display: 'contents', ...textColors }}>
+      <div
+        data-pf-faq-text-custom={customText}
+        data-pf-faq-marker={marker === 'auto' ? undefined : marker}
+        style={{ display: 'contents', ...textColors }}
+      >
         {children}
       </div>
     );
   }
   return (
     <div
+      ref={frameRef}
       className="pf-faq-frame"
       data-pf-faq-frame-blur={frame.blur ? 'true' : undefined}
       data-pf-faq-text-custom={customText}
+      data-pf-faq-marker={marker === 'auto' ? undefined : marker}
       style={{ ...style, ...textColors }}
     >
-      {children}
+      {/* Carries the contrast-adapted inks (custom properties inherit through `display: contents`). */}
+      <div ref={innerRef} style={{ display: 'contents' }}>
+        {children}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Places the FAQ header beside (left) or above the design. Used when the creator's position differs from the design's
+ * native one (the design then renders without its own header slot). Side-by-side only from a wide container
+ * (> 1024px, same threshold as Kinetic split's own rule); tablet and phone always stack the header on top, which
+ * is why the position is only a desktop preference. Keyed to the box's own width, not the viewport, so the Studio
+ * preview pane and page gutters are accounted for.
+ */
+export function FaqHeaderPlacement({
+  position,
+  header,
+  children,
+}: {
+  position: 'top' | 'left' | null;
+  header: ReactNode;
+  children: ReactNode;
+}) {
+  if (!position || !header) return <>{children}</>;
+  return (
+    // The outer box is the query container; the grid is its child, because a container query can only style
+    // what is inside the container, never the container itself.
+    <div className="pf-faq-placement">
+      <div className="pf-faq-placement-grid" data-position={position}>
+        <div className="pf-faq-placement-head">{header}</div>
+        <div className="pf-faq-placement-body">{children}</div>
+      </div>
     </div>
   );
 }

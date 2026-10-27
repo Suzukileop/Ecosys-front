@@ -1,0 +1,17 @@
+.root { container-type: inline-size; min-width: 0; }
+.layout { display: grid; align-items: start; gap: 36px; }
+.copy { order: 1; min-width: 0; }
+.media { order: 2; min-width: 0; }
+.single { width: 100%; aspect-ratio: 4 / 3; max-height: 520px; overflow: hidden; border-radius: 12px; }
+.pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.pair img { width: 100%; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 8px; }
+.pair img:nth-child(2) { margin-top: 32px; }
+.closing { max-width: 72rem; }
+.closing:empty { display: none; }
+@media (max-width: 1023px) { .root { width: 100% !important; } }
+@container (min-width: 900px) {
+  .layout[data-split='true'] { grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 48px; align-items: center; }
+  .layout[data-media-left='true'] > .media { order: 1; }
+  .layout[data-media-left='true'] > .copy { order: 2; }
+  .single { aspect-ratio: 4 / 5; }
+}

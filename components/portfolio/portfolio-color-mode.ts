@@ -1,3 +1,4 @@
+import {sectionFamilyPalette} from './portfolio-section-palette-family';
 import {
   applyHeroPaletteToPresentation,
   computeLightPalette,
@@ -206,7 +207,7 @@ export function applyActivePortfolioPalette(settings: PortfolioSettings): Portfo
   const darkPalette = resolveActivePortfolioPalette({ ...settings.global, colorMode: 'dark' });
   const pairFor = (override: PortfolioSectionColorMode | undefined) =>
     resolveSectionPalette(override, { auto: palette, light: lightPalette, dark: darkPalette });
-  const heroPalette = pairFor(settings.hero.colorModeOverride);
+  const heroPalette = sectionFamilyPalette(settings.hero.paletteFamily,settings.hero.colorModeOverride==='auto'||!settings.hero.colorModeOverride?(settings.global.colorMode??'dark'):settings.hero.colorModeOverride)??pairFor(settings.hero.colorModeOverride);
   const heroBase = {
     ...settings.hero,
     useHeroPalette: true,

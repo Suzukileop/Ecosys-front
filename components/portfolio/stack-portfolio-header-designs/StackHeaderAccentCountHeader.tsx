@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { Fragment, useLayoutEffect, useRef, type ReactNode } from 'react';
 import { DEFAULT_STACK_PRESENTATION, type PortfolioStackPresentationSettings } from '@/components/portfolio/portfolio-stack-settings';
 import {
   STACK_HEADER_MARGIN_BOTTOM_REM,
@@ -10,6 +12,24 @@ import {
 } from '@/components/portfolio/portfolio-stack-header-settings';
 import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
+
+/** Nearest scrollable ancestor — the Studio preview scrolls inside a nested container, not `window`. */
+function scrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if ((overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') && node.scrollHeight > node.clientHeight + 1) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
+/** Badge wipe states (clip-path), round so the pill keeps its shape while it opens. */
+const CLIP_OPEN = 'inset(0% 0% 0% 0% round 999px)';
+const CLIP_FROM_LEFT = 'inset(0% 100% 0% 0% round 999px)';
+const CLIP_FROM_RIGHT = 'inset(0% 0% 0% 100% round 999px)';
 
 const DEFAULT_BADGE_TEXT = '{count}+ technologies';
 const DEFAULT_LEAD_TEXT = 'A curated set of tools I rely on.';
@@ -45,9 +65,13 @@ const ALIGN_MARGIN: Record<'left' | 'center' | 'right', { marginInlineStart: str
  * Accent count — a badge (item count) inline with a lead sentence, one
  * flowing line. Badge and lead each have their own color; the line shares
  * one size, and "weight" governs the lead's boldness (the badge stays a
- * fixed bold pill). Same entrance/scroll motion as the other headers in
- * this set — badge scales in first, then the lead fades up; the whole line
- * recedes on scroll.
+ * fixed bold pill).
+ *
+ * Motion — its own grammar, unlike Editorial's masked rise or Index's count-up: the badge WIPES open like a
+ * highlighter stroke, then the sentence comes into focus word by word (each word un-blurs and settles). It
+ * replays on every pass and is direction-aware: scrolling down, the stroke opens from the left and the words
+ * resolve from the first; scrolling back up, the stroke opens from the right and the words resolve from the
+ * last. Leaving, the words lose focus and drift out the way the page moves, then the stroke wipes away.
  */
 export function StackHeaderAccentCountHeader({
   presentation: presentationProp,
@@ -73,113 +97,104 @@ export function StackHeaderAccentCountHeader({
 
   const sectionRef = useRef<HTMLDivElement>(null);
 
-  const getInitialBadgeStyle = () =>
-    animationEnabled ? { opacity: 0, transform: 'scale(0.7)' } : { opacity: 1, transform: 'scale(1)' };
-  const getInitialLeadStyle = () =>
-    animationEnabled ? { opacity: 0, transform: 'translateY(10px)' } : { opacity: 1, transform: 'translateY(0)' };
-
-  // ========== ANIMATION: Entry — badge scales in, then the lead fades up ==========
-  useEffect(() => {
-    if (typeof window === 'undefined' || !animationEnabled) return;
-
+  useLayoutEffect(() => {
     const section = sectionRef.current;
-    if (!section) return;
+    if (!section || !animationEnabled) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-    let hasAnimated = false;
-    const timers: ReturnType<typeof setTimeout>[] = [];
+    gsap.registerPlugin(ScrollTrigger);
+    const badge = section.querySelector<HTMLElement>('[data-stack-header-badge]');
+    const words = [...section.querySelectorAll<HTMLElement>('[data-stack-header-word]')];
 
-    const triggerAnimation = () => {
-      if (hasAnimated) return;
-      hasAnimated = true;
+    let ctx: gsap.Context | undefined;
+    try {
+      ctx = gsap.context(() => {
+        // Hidden until the line first reaches the viewport (set before paint: no flash).
+        if (badge) gsap.set(badge, { clipPath: CLIP_FROM_LEFT });
+        if (words.length) gsap.set(words, { opacity: 0, filter: 'blur(10px)', y: 12 });
 
-      const badge = section.querySelector<HTMLElement>('[data-stack-header-badge]');
-      const leadEl = section.querySelector<HTMLElement>('[data-stack-header-lead]');
-
-      if (badge) {
-        timers.push(
-          setTimeout(() => {
-            badge.style.transition = 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1)';
-            badge.style.opacity = '1';
-            badge.style.transform = 'scale(1)';
-          }, 80)
-        );
-      }
-      if (leadEl) {
-        timers.push(
-          setTimeout(() => {
-            leadEl.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
-            leadEl.style.opacity = '1';
-            leadEl.style.transform = 'translateY(0)';
-          }, 260)
-        );
-      }
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            triggerAnimation();
-            observer.disconnect();
+        // dir 1: arriving from below (scrolling down); -1: arriving from above (scrolling up).
+        const enter = (dir: 1 | -1) => {
+          if (badge) {
+            gsap.fromTo(
+              badge,
+              { clipPath: dir === 1 ? CLIP_FROM_LEFT : CLIP_FROM_RIGHT },
+              { clipPath: CLIP_OPEN, duration: 0.85, ease: 'expo.out', overwrite: true }
+            );
           }
+          if (words.length) {
+            gsap.fromTo(
+              words,
+              { opacity: 0, filter: 'blur(10px)', y: 12 * dir },
+              {
+                opacity: 1,
+                filter: 'blur(0px)',
+                y: 0,
+                duration: 0.75,
+                ease: 'power3.out',
+                stagger: { each: 0.045, from: dir === 1 ? 'start' : 'end' },
+                delay: badge ? 0.22 : 0,
+                overwrite: true,
+              }
+            );
+          }
+        };
+        // dir 1: out through the top; -1: out through the bottom. Faster than the entrance, words first.
+        const leave = (dir: 1 | -1) => {
+          if (words.length) {
+            gsap.to(words, {
+              opacity: 0,
+              filter: 'blur(8px)',
+              y: -10 * dir,
+              duration: 0.42,
+              ease: 'power2.in',
+              stagger: { each: 0.02, from: dir === 1 ? 'start' : 'end' },
+              overwrite: true,
+            });
+          }
+          if (badge) {
+            gsap.to(badge, {
+              clipPath: dir === 1 ? CLIP_FROM_RIGHT : CLIP_FROM_LEFT,
+              duration: 0.5,
+              ease: 'expo.in',
+              delay: 0.12,
+              overwrite: true,
+            });
+          }
+        };
+
+        ScrollTrigger.create({
+          trigger: section,
+          scroller: scrollParent(section),
+          start: 'top 85%',
+          end: 'bottom 25%',
+          onEnter: () => enter(1),
+          onLeave: () => leave(1),
+          onEnterBack: () => enter(-1),
+          onLeaveBack: () => leave(-1),
         });
-      },
-      { threshold: 0.15, rootMargin: '50px' }
-    );
-    observer.observe(section);
+      }, section);
+    } catch (error) {
+      // Never leave the line invisible because the trigger failed to initialise.
+      console.error('[StackHeaderAccentCountHeader] motion setup failed', error);
+      ctx?.revert();
+    }
+
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        console.error('[StackHeaderAccentCountHeader] deferred refresh() failed', error);
+      }
+    }, 90);
 
     return () => {
-      observer.disconnect();
-      timers.forEach((t) => clearTimeout(t));
+      window.clearTimeout(refreshId);
+      ctx?.revert();
     };
   }, [animationEnabled, badgeText, lead]);
 
-  // ========== ANIMATION: Scroll — whole line recedes ==========
-  useEffect(() => {
-    if (typeof window === 'undefined' || !animationEnabled) return;
-
-    const mediaQuery = window.matchMedia('(min-width: 768px)');
-    if (!mediaQuery.matches) return;
-
-    const section = sectionRef.current;
-    if (!section) return;
-
-    const handleScroll = () => {
-      const rect = section.getBoundingClientRect();
-      const viewportHeight = window.innerHeight;
-      if (rect.top > viewportHeight || rect.bottom < 0) return;
-
-      // Trigger point sits a little above center — the recede shouldn't
-      // start while the header is still comfortably in view.
-      const triggerOffset = rect.top - viewportHeight * 0.32;
-      const relativeScroll = Math.max(0, -triggerOffset);
-      const fade = Math.max(0, 1 - relativeScroll / 300);
-      section.style.opacity = String(fade);
-      section.style.transform = `translateY(${-relativeScroll * 0.08}px)`;
-    };
-
-    let ticking = false;
-    const throttledScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    section.style.transition = 'transform 0.08s linear, opacity 0.12s linear';
-    section.style.willChange = 'transform, opacity';
-
-    window.addEventListener('scroll', throttledScroll, { passive: true });
-    handleScroll();
-
-    return () => {
-      window.removeEventListener('scroll', throttledScroll);
-      section.style.willChange = '';
-    };
-  }, [animationEnabled]);
+  const leadWords = lead ? lead.split(/\s+/).filter(Boolean) : [];
 
   return (
     <div
@@ -205,7 +220,6 @@ export function StackHeaderAccentCountHeader({
               borderRadius: '20px',
               backgroundColor: badgeColor,
               lineHeight: 'inherit',
-              ...getInitialBadgeStyle(),
             }}
           >
             {badgeText}
@@ -215,10 +229,19 @@ export function StackHeaderAccentCountHeader({
           <span
             data-stack-header-lead
             className={`inline ${LEAD_WEIGHT_CLASS[presentation.headerAccentCountWeight ?? 'regular']}`}
-            style={{ color: leadColor, ...getInitialLeadStyle() }}
+            style={{ color: leadColor }}
           >
             {badgeText ? ' ' : null}
-            {lead}
+            {/* One inline-block per word so each can come into focus on its own; the spaces stay real text,
+                so the sentence still wraps like a sentence. */}
+            {leadWords.map((word, index) => (
+              <Fragment key={`${word}-${index}`}>
+                {index > 0 ? ' ' : null}
+                <span data-stack-header-word="" className="inline-block">
+                  {word}
+                </span>
+              </Fragment>
+            ))}
           </span>
         ) : null}
       </p>

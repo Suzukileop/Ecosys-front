@@ -6,15 +6,16 @@ import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import {
   DEFAULT_FAQ_PRESENTATION,
   faqHeaderFontClass,
-  faqTitleColorStyle,
-  faqSubtitleColorStyle,
   type PortfolioFaqPresentationSettings,
 } from '@/components/portfolio/portfolio-faq-settings';
 import {
   FAQ_HEADER_MARGIN_BOTTOM_REM,
+  faqHeaderPaletteTokenColor,
   type PortfolioFaqHeaderTitleSize,
+  type PortfolioFaqHeaderTitleWeight,
   type PortfolioFaqHeaderEditorialTitleWeight,
 } from '@/components/portfolio/portfolio-faq-header-settings';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 import { createFaqHeaderLayoutResolver } from '@/components/portfolio/portfolio-faq-header-layout';
 import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
@@ -60,6 +61,18 @@ const TITLE_WEIGHT_CLASS: Record<PortfolioFaqHeaderEditorialTitleWeight, string>
   extrabold: '!font-bold',
 };
 
+/** Kicker — small uppercase label; "regular" keeps the prior semibold default. */
+const LABEL_SIZE: Record<PortfolioFaqHeaderTitleSize, string> = { sm: '0.625rem', md: '0.68rem', lg: '0.8rem', xl: '0.92rem' };
+const LABEL_WEIGHT: Record<PortfolioFaqHeaderTitleWeight, number> = { light: 500, regular: 600, semibold: 700, bold: 800 };
+/** Subtitle — "regular" keeps the prior text-sm / sm:text-base default. */
+const SUBTITLE_SIZE: Record<PortfolioFaqHeaderTitleSize, string> = {
+  sm: '0.8125rem',
+  md: 'clamp(0.875rem, 0.35vw + 0.8rem, 1rem)',
+  lg: 'clamp(1rem, 0.4vw + 0.92rem, 1.125rem)',
+  xl: 'clamp(1.125rem, 0.5vw + 1rem, 1.3rem)',
+};
+const SUBTITLE_WEIGHT: Record<PortfolioFaqHeaderTitleWeight, number> = { light: 300, regular: 400, semibold: 500, bold: 600 };
+
 /**
  * Editorial — kicker + masked line-reveal title + subtitle, with a subtle
  * scroll-scrubbed recede on the whole block. The premium GSAP treatment.
@@ -77,17 +90,23 @@ export function FaqHeaderEditorialHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
+  const alignRight = presentation.headerDesignAlignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
-  const titleText = title.trim();
-  const subtitleText = subtitle?.trim() || '';
-  const titleInk = faqTitleColorStyle(presentation.titleColor).color as string;
+  /* Each text is the design's own setting; empty falls back to the section-level value. */
+  const titleText = presentation.headerEditorialTitleText?.trim() || title.trim();
+  const subtitleText = presentation.headerEditorialSubtitleText?.trim() || subtitle?.trim() || '';
+  const labelInk = faqHeaderPaletteTokenColor(presentation.headerEditorialLabelColor ?? 'texteFort');
+  const titleInk = faqHeaderPaletteTokenColor(presentation.headerEditorialTitleColor ?? 'texteFort');
+  const subtitleInk = faqHeaderPaletteTokenColor(presentation.headerEditorialSubtitleColor ?? 'texteFort');
   // Small caps eyebrow: 65% reads above 4.5:1 in both modes (38% measured ~2.3:1 in light).
-  const kickerInk = `color-mix(in srgb, ${titleInk} 65%, transparent)`;
+  const kickerInk = `color-mix(in srgb, ${labelInk} 65%, transparent)`;
   const layout = createFaqHeaderLayoutResolver(presentation, 'editorial');
-  const kickerText = layout.text('kicker');
-  const showTitle = layout.isVisible('title');
-  const showSubtitle = layout.isVisible('subtitle');
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'editorial');
+  const customKicker = presentation.headerEditorialLabelText?.trim() ?? '';
+  const kickerText = show('label') ? customKicker || layout.text('kicker') : null;
+  const showTitle = show('title') && layout.isVisible('title');
+  const showSubtitle = show('subtitle') && layout.isVisible('subtitle');
 
   const headerRef = useRef<HTMLElement>(null);
 
@@ -111,7 +130,8 @@ export function FaqHeaderEditorialHeader({
     }, 90);
 
     let ctx: gsap.Context | undefined;
-    try {
+    let retryId = 0;
+    const build = () => {
       ctx = gsap.context(() => {
         const pick = (selector: string) =>
           [...header.querySelectorAll<HTMLElement>(selector)].filter(isLaidOut);
@@ -165,7 +185,8 @@ export function FaqHeaderEditorialHeader({
           );
         }
       }, header);
-    } catch (error) {
+    };
+    const failSafe = (error: unknown) => {
       // Observed intermittently on page load/reload: GSAP ScrollTrigger throws
       // "Cannot read properties of undefined (reading 'end')" from inside its own init-time
       // self.refresh() for this header's scroll-scrubbed stage effect. Uncaught, that crash
@@ -183,10 +204,27 @@ export function FaqHeaderEditorialHeader({
         ),
         { clearProps: 'all' }
       );
+    };
+    try {
+      build();
+    } catch {
+      // The crash comes from another section's `once` ScrollTrigger killing itself while this one refreshes the
+      // list (GSAP then reads a removed entry). It is a timing race, so a second attempt on the next frame,
+      // once that refresh is over, normally succeeds; only a second failure falls back to the static header.
+      ctx?.revert();
+      ctx = undefined;
+      retryId = window.requestAnimationFrame(() => {
+        try {
+          build();
+        } catch (error) {
+          failSafe(error);
+        }
+      });
     }
 
     return () => {
       window.clearTimeout(refreshId);
+      window.cancelAnimationFrame(retryId);
       ctx?.revert();
     };
   }, [animationEnabled, titleText, subtitleText, kickerText, showTitle, showSubtitle]);
@@ -194,15 +232,19 @@ export function FaqHeaderEditorialHeader({
   return (
     <header
       ref={headerRef}
-      className={`pf-faq-header-editorial-header relative w-full ${centered ? 'text-center' : 'text-left'}`}
+      className={`pf-faq-header-editorial-header relative w-full ${centered ? 'text-center' : alignRight ? 'text-right' : 'text-left'}`}
       style={{ marginBottom: `${FAQ_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
     >
-      <div className={`pf-faq-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
+      <div className={`pf-faq-header-editorial-stage flex flex-col gap-6 ${centered ? 'items-center' : alignRight ? 'items-end' : 'sm:flex-row sm:items-end sm:justify-between'}`}>
         <div className="min-w-0 max-w-3xl">
           {kickerText ? (
             <p
-              className="pf-faq-header-editorial-kicker mb-3 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
-              style={{ color: kickerInk }}
+              className="pf-faq-header-editorial-kicker mb-3 uppercase tracking-[0.24em]"
+              style={{
+                color: kickerInk,
+                fontSize: LABEL_SIZE[presentation.headerEditorialLabelSize ?? 'md'],
+                fontWeight: LABEL_WEIGHT[presentation.headerEditorialLabelWeight ?? 'regular'],
+              }}
             >
               {kickerText}
             </p>
@@ -210,7 +252,7 @@ export function FaqHeaderEditorialHeader({
           {showTitle ? (
             <h2
               className={`mb-0 ${faqHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
-              style={faqTitleColorStyle(presentation.titleColor)}
+              style={{ color: titleInk }}
             >
               <span className="pf-faq-header-editorial-title-mask block overflow-hidden">
                 <span className="pf-faq-header-editorial-title-line block">{titleText}</span>
@@ -219,8 +261,12 @@ export function FaqHeaderEditorialHeader({
           ) : null}
           {showSubtitle && subtitleText ? (
             <p
-              className={`pf-faq-header-editorial-sub mb-0 mt-6 max-w-xl ${faqHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
-              style={faqSubtitleColorStyle(presentation.subtitleColor)}
+              className={`pf-faq-header-editorial-sub mb-0 mt-6 max-w-xl ${centered ? 'mx-auto' : alignRight ? 'ml-auto' : ''} ${faqHeaderFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
+              style={{
+                color: subtitleInk,
+                fontSize: SUBTITLE_SIZE[presentation.headerEditorialSubtitleSize ?? 'md'],
+                fontWeight: SUBTITLE_WEIGHT[presentation.headerEditorialSubtitleWeight ?? 'regular'],
+              }}
             >
               {subtitleText}
             </p>

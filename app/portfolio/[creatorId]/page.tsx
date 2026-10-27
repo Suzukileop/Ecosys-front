@@ -3,14 +3,14 @@ import { cookies } from 'next/headers';
 import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PublicCreatorPortfolioPage } from '@/components/portfolio/PublicCreatorPortfolioPage';
-import { PublicCreatorPortfolioSkeleton } from '@/components/portfolio/PublicCreatorPortfolioSkeleton';
+import { PortfolioLoadingPage } from '@/components/portfolio/PortfolioLoadingPage';
 import { formatPlaceLabel } from '@/lib/geolocation';
 import {
   buildCreatorPortfolioPath,
   looksLikeUuid,
 } from '@/lib/portfolio-url';
 import { isPortfolioStudioEmbedParam, withPortfolioStudioEmbed } from '@/lib/portfolio-studio-preview';
-import { readDesignPreviewTarget, type DesignPreviewTarget } from '@/lib/portfolio-design-preview';
+import { readDesignPreviewTarget, withDesignPreview, type DesignPreviewTarget } from '@/lib/portfolio-design-preview';
 import {
   normalizeCreatorProfile,
   serverMarketplaceFetch,
@@ -94,7 +94,9 @@ async function CreatorPortfolioBody({
   const preferredSlug = profile.username?.trim();
   if (preferredSlug && looksLikeUuid(creatorId) && creatorId !== preferredSlug) {
     const dest = buildCreatorPortfolioPath(profile.id, preferredSlug);
-    permanentRedirect(studioEmbed ? withPortfolioStudioEmbed(dest) : dest);
+    permanentRedirect(studioEmbed && designPreview
+      ? withDesignPreview(dest, designPreview)
+      : studioEmbed ? withPortfolioStudioEmbed(dest) : dest);
   }
 
   /* null when nothing is set — formatLocationLabel would hand the page the literal "Location not set". */
@@ -125,12 +127,15 @@ export default async function CreatorPortfolioPage({
   const cookieStore = await cookies();
   const initialDesign =
     designFromCookie(cookieStore, creatorId) ?? DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN;
+  const safeCreatorKey=creatorId.replace(/[^a-zA-Z0-9_-]/g,'_').slice(0,64);
+  const modeHint=cookieStore.get(`pf_hm_${safeCreatorKey}`)?.value;
+  const initialMode=modeHint==='light'||modeHint==='dark'?modeHint:undefined;
 
   // Do NOT await the profile here — that would skip the Suspense fallback.
   return (
     <Suspense
       key={creatorId}
-      fallback={<PublicCreatorPortfolioSkeleton heroBannerDesign={initialDesign} />}
+      fallback={<PortfolioLoadingPage creatorKey={creatorId} initialDesign={initialDesign} initialMode={initialMode} designPreview={isPortfolioStudioEmbedParam(embed)?readDesignPreviewTarget(previewSection,previewDesign):null} />}
     >
       <CreatorPortfolioBody
         creatorId={creatorId}

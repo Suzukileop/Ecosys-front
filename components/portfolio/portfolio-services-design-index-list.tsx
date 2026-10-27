@@ -10,8 +10,10 @@ import {
   applyServicePriceLabels,
   resolveBillingSuffix,
 } from '@/components/portfolio/portfolio-services-pricing-style';
+import { IndexListCta } from '@/components/portfolio/portfolio-services-index-cta';
+import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { DEFAULT_SERVICES_PALETTE, mergeServicesPalette } from '@/components/portfolio/portfolio-services-palette-settings';
 import {
-  ServicesOrderButton,
   resolveServicesCardElements,
   resolveServicesCtaLabel,
 } from '@/components/portfolio/portfolio-services-card-elements';
@@ -93,8 +95,8 @@ function TasksPills({ tasks }: { tasks: string[] }) {
           key={`${task}-${i}`}
           data-index-chip=""
           data-pf-no-color-transition=""
-          className={`cursor-default rounded-full border border-[color:var(--il-line)] px-4 py-2 leading-none text-[color:var(--il-muted)] ${FILL_SWEEP_CLASS}`}
-          style={{ fontSize: FONT(0.78) }}
+          className={`cursor-default rounded-full border border-[color:var(--il-line)] px-4 py-2 leading-none text-[color:var(--il-ink)] ${FILL_SWEEP_CLASS}`}
+          style={{ fontSize: FONT(0.85) }}
         >
           {task}
         </li>
@@ -115,10 +117,10 @@ function TasksLedger({ tasks }: { tasks: string[] }) {
           className="group/task flex cursor-default items-center justify-between gap-4 border-t border-[color:var(--il-line)] py-3.5"
           style={{ fontSize: FONT(0.95) }}
         >
-          <span className="transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/task:translate-x-2.5">
+          <span data-pf-no-color-transition="" className="transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/task:translate-x-2.5">
             {task}
           </span>
-          <span
+          <span data-pf-no-color-transition=""
             aria-hidden
             className="-translate-x-2 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/task:translate-x-0 group-hover/task:opacity-100"
           >
@@ -140,10 +142,10 @@ function TasksNumbered({ tasks }: { tasks: string[] }) {
           data-index-chip=""
           data-pf-no-color-transition=""
           className="group/task flex cursor-default items-baseline gap-3 border-t border-[color:var(--il-line)] py-3.5"
-          style={{ fontSize: FONT(0.9) }}
+          style={{ fontSize: FONT(0.95) }}
         >
-          <span
-            className="font-mono text-[0.65rem] text-[color:var(--il-muted)] transition-colors duration-300 group-hover/task:text-[color:var(--il-accent)]"
+          <span data-pf-no-color-transition=""
+            className="font-mono text-[0.8rem] text-[color:var(--il-muted)] transition-colors duration-300 group-hover/task:text-[color:var(--il-accent)]"
             aria-hidden
           >
             {String(i + 1).padStart(2, '0')}
@@ -230,12 +232,19 @@ export function ServicesIndexListSection({
   const fallbackGradient = `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 45%, #0a0a0a) 100%)`;
   const vars = indexListVars(presentation.activeColorMode, accent);
   const pricingStyle = useServicesPricingStyle(presentation);
-  const hover = settings.hoverEffect;
   const show = resolveServicesCardElements(presentation);
   const ctaLabel = resolveServicesCtaLabel(presentation);
   const isLight = presentation.activeColorMode === 'light';
   const ink = isLight ? '#0a0a0a' : '#fafafa';
   const inverse = isLight ? '#fafafa' : '#0a0a0a';
+  const ctaToken = settings.ctaColor ?? 'auto';
+  const ctaColor =
+    ctaToken === 'auto'
+      ? null
+      : resolveHeroPaletteColor(mergeServicesPalette(DEFAULT_SERVICES_PALETTE, presentation.servicesPalette), ctaToken);
+  const pageBg = /^#[0-9a-f]{6}$/i.test(presentation.sectionBackgroundColor?.trim() ?? '')
+    ? (presentation.sectionBackgroundColor as string).trim()
+    : inverse;
 
   const listRef = useRef<HTMLDivElement>(null);
 
@@ -343,10 +352,6 @@ export function ServicesIndexListSection({
               mediaLeft
                 ? 'lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]'
                 : 'lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]'
-            } ${
-              hover === 'tint'
-                ? 'lg:transition-colors lg:duration-500 lg:hover:bg-[color-mix(in_srgb,var(--il-accent)_9%,transparent)]'
-                : ''
             }`}
             data-pf-no-color-transition=""
           >
@@ -358,7 +363,7 @@ export function ServicesIndexListSection({
               />
               {settings.showIndex ? (
                 <div data-index-text="" className="mt-5 flex items-center gap-3">
-                  <p className="font-mono text-[0.7rem] leading-none tracking-wide text-[color:var(--il-muted)]">
+                  <p className="font-mono text-[0.8rem] leading-none tracking-wide text-[color:var(--il-muted)]">
                     {String(index + 1).padStart(2, '0')}/
                   </p>
                 </div>
@@ -368,10 +373,6 @@ export function ServicesIndexListSection({
                 data-index-text=""
                 className={`font-sans font-normal leading-[1.02] tracking-[-0.025em] ${
                   settings.showIndex ? 'mt-6' : 'mt-7'
-                } ${
-                  hover === 'slide'
-                    ? 'lg:transition-transform lg:duration-500 lg:ease-[cubic-bezier(0.22,1,0.36,1)] lg:group-hover/row:translate-x-3'
-                    : ''
                 }`}
                 style={{
                   fontSize: 'calc(clamp(1.7rem, 2.8vw, 2.6rem) * var(--pf-services-font-scale, 1))',
@@ -386,14 +387,14 @@ export function ServicesIndexListSection({
                   {priceParts.isFrom && priceParts.kind === 'amount' ? `${t('From')} ` : ''}
                   {priceParts.text}
                   {priceSuffix ? (
-                    <span className="ml-1.5 font-normal text-[color:var(--il-muted)]" style={{ fontSize: FONT(0.8) }}>
+                    <span className="ml-1.5 font-normal text-[color:var(--il-muted)]" style={{ fontSize: FONT(0.85) }}>
                       {priceSuffix}
                     </span>
                   ) : null}
                 </p>
               ) : null}
               {delivery ? (
-                <p data-index-text="" className="mt-3 text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[color:var(--il-muted)]">
+                <p data-index-text="" className="mt-3 text-[0.8rem] font-medium uppercase tracking-[0.14em] text-[color:var(--il-muted)]">
                   {delivery}
                 </p>
               ) : null}
@@ -401,7 +402,7 @@ export function ServicesIndexListSection({
                 <p
                   data-index-text=""
                   className="mt-7 max-w-[28rem] leading-[1.6]"
-                  style={{ fontSize: FONT(0.9) }}
+                  style={{ fontSize: FONT(1) }}
                 >
                   {description}
                 </p>
@@ -412,21 +413,14 @@ export function ServicesIndexListSection({
                 </div>
               ) : null}
               {show.cta ? (
-                <ServicesOrderButton
-                  data-index-text=""
+                <IndexListCta
+                  design={settings.ctaDesign ?? 'classic'}
+                  color={ctaColor}
+                  pageBg={pageBg}
+                  ink={ink}
+                  inverse={inverse}
                   pricingStyle={pricingStyle}
                   label={ctaLabel}
-                  ink={ink}
-                  surface={inverse}
-                  className="group/cta mt-8 inline-flex items-center gap-2 rounded-full border border-current px-5 py-2.5 text-[0.85rem] font-medium transition-[background-color,color] duration-500 hover:bg-[color:var(--il-ink)] hover:text-[color:var(--il-inv)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
-                  autoContent={
-                    <>
-                      {ctaLabel}
-                      <span aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-0.5">
-                        &rarr;
-                      </span>
-                    </>
-                  }
                 />
               ) : null}
             </div>
@@ -434,16 +428,12 @@ export function ServicesIndexListSection({
             <div className={`min-w-0 ${mediaLeft ? 'lg:order-1' : ''}`}>
               <div
                 data-index-media=""
-                className={`relative w-full overflow-hidden ${RATIO_CLASS[settings.mediaRatio]}`}
+                className={`group/media relative w-full overflow-hidden ${RATIO_CLASS[settings.mediaRatio]}`}
               >
-                {/* No will-change: a promoted layer is rasterised at 1x and then scaled, which softens
-                    the picture on hover. Without it the zoom re-rasterises and stays sharp. */}
+                {/* Zoom only, triggered by hovering the thumbnail itself. No will-change: a promoted
+                    layer is rasterised at 1x and then scaled, which softens the picture on hover. */}
                 <div
-                  className={`absolute inset-0 ${
-                    hover === 'zoom'
-                      ? 'lg:transition-transform lg:duration-[900ms] lg:ease-[cubic-bezier(0.22,1,0.36,1)] lg:group-hover/row:scale-[1.035]'
-                      : ''
-                  }`}
+                  className="absolute inset-0 lg:transition-transform lg:duration-[900ms] lg:ease-[cubic-bezier(0.22,1,0.36,1)] lg:group-hover/media:scale-[1.035]"
                   data-pf-no-color-transition=""
                 >
                   {item.coverImageUrl ? (

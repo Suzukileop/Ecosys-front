@@ -92,8 +92,8 @@ export function FooterDesignHeroColumns({
   const ink = isLight ? '#0a0a0a' : '#ffffff';
   // Brighter, silvery resting tone for the right column's nav/manifesto/coordinates —
   // still restrained at rest, legible without a hover, and inverts natively with `ink`.
-  const softInk = isLight ? 'rgba(10,10,10,0.55)' : 'rgba(255,255,255,0.55)';
-  const labelInk = isLight ? 'rgba(10,10,10,0.6)' : 'rgba(255,255,255,0.6)';
+  const softInk = isLight ? 'rgba(10,10,10,0.72)' : 'rgba(255,255,255,0.72)';
+  const labelInk = isLight ? 'rgba(10,10,10,0.68)' : 'rgba(255,255,255,0.68)';
   const hairline = isLight ? 'rgba(10,10,10,0.08)' : 'rgba(255,255,255,0.1)';
   const placeholderGradient = isLight
     ? 'linear-gradient(155deg, #f2f2f2 0%, #e4e4e4 55%, #d8d8d8 100%)'
@@ -182,8 +182,10 @@ export function FooterDesignHeroColumns({
     >
       {/* Asymmetric three-column grid */}
       <div
-        className={`grid grid-cols-1 gap-x-10 gap-y-14 pb-16 pt-20 sm:pt-28 ${
-          showIdentityColumn ? 'md:grid-cols-3' : 'md:grid-cols-2'
+        className={`grid grid-cols-1 gap-x-10 gap-y-10 pb-16 pt-20 sm:pt-28 ${
+          showIdentityColumn
+            ? 'md:grid-cols-2 lg:grid-cols-[minmax(0,1.4fr)_minmax(0,0.8fr)_minmax(0,1fr)]'
+            : 'md:grid-cols-2 lg:grid-cols-[minmax(0,0.8fr)_minmax(0,1.2fr)]'
         } md:gap-x-12 md:pb-24 md:pt-32 ${portfolioEditorialGutterX(contentGutter)}`}
       >
         {/* Column 1 — portrait + giant derived initials */}
@@ -193,7 +195,7 @@ export function FooterDesignHeroColumns({
               <div
                 data-hc-image-col
                 data-pf-no-color-transition=""
-                className="relative aspect-[4/5] w-full overflow-hidden sm:aspect-[3/2] md:aspect-auto md:h-full md:min-h-[24rem]"
+                className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[3/2] md:aspect-auto md:h-full md:min-h-[24rem]"
               >
                 <div
                   ref={imageParallaxRef}
@@ -216,8 +218,8 @@ export function FooterDesignHeroColumns({
             {showInitials ? (
               <div
                 aria-hidden
-                className={`${showPortrait ? 'mt-4' : ''} select-none font-sans font-black leading-none tracking-tighter`}
-                style={{ color: ink, fontSize: 'clamp(3.25rem, 8vw, 6.5rem)' }}
+                className={`${showPortrait ? 'mt-6' : ''} select-none font-sans font-black leading-none tracking-tighter`}
+                style={{ color: ink, fontSize: 'calc(clamp(4rem, 11vw, 9rem) * var(--pf-footer-font-scale, 1))' }}
               >
                 {initials || '—'}
               </div>
@@ -228,7 +230,7 @@ export function FooterDesignHeroColumns({
         {/* Column 2 — vertical navigation */}
         <div className="flex min-w-0 flex-col md:pt-2">
           {navHeading ? (
-            <p className="m-0 mb-6 font-semibold uppercase tracking-[0.28em]" style={labelStyle}>
+            <p className="m-0 mb-6 font-semibold uppercase tracking-[0.2em] break-words" style={labelStyle}>
               {navHeading}
             </p>
           ) : null}
@@ -237,9 +239,10 @@ export function FooterDesignHeroColumns({
               <a
                 key={link.id}
                 href={link.url}
+                  {...(/^https?:\/\//i.test(link.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 data-pf-no-color-transition=""
-                className="flex min-h-[44px] w-fit items-center font-medium transition-none"
-                style={{ color: softInk, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+                className="flex min-h-[44px] w-fit items-center font-medium underline-offset-4 transition-none hover:underline focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
+                style={{ color: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {link.label}
               </a>
@@ -252,13 +255,13 @@ export function FooterDesignHeroColumns({
           {noteHeading || noteText ? (
             <div>
               {noteHeading ? (
-                <p className="m-0 mb-4 font-semibold uppercase tracking-[0.28em]" style={labelStyle}>
+                <p className="m-0 mb-4 font-semibold uppercase tracking-[0.2em] break-words" style={labelStyle}>
                   {noteHeading}
                 </p>
               ) : null}
               {noteText ? (
                 <p
-                  className="max-w-xs leading-[1.6]"
+                  className="max-w-[32ch] leading-[1.6]"
                   style={{ color: softInk, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {noteText}
@@ -269,11 +272,11 @@ export function FooterDesignHeroColumns({
 
           <div>
             {infoHeading ? (
-              <p className="m-0 mb-4 font-semibold uppercase tracking-[0.28em]" style={labelStyle}>
+              <p className="m-0 mb-4 font-semibold uppercase tracking-[0.2em] break-words" style={labelStyle}>
                 {infoHeading}
               </p>
             ) : null}
-            <div className="flex flex-col gap-3">
+            <div className="flex flex-col gap-0">
               {trimmedLocation ? (
                 <p
                   className="m-0"
@@ -286,7 +289,7 @@ export function FooterDesignHeroColumns({
                 <a
                   href={`mailto:${trimmedEmail}`}
                   data-pf-no-color-transition=""
-                  className="w-fit break-all transition-none"
+                  className="flex min-h-[44px] w-fit items-center transition-none hover:underline underline-offset-4 [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
                   style={{ color: softInk, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {trimmedEmail}
@@ -296,7 +299,7 @@ export function FooterDesignHeroColumns({
                 <a
                   href={`tel:${trimmedPhone!.replace(/\s+/g, '')}`}
                   data-pf-no-color-transition=""
-                  className="w-fit transition-none"
+                  className="flex min-h-[44px] w-fit items-center transition-none hover:underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
                   style={{ color: softInk, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {phoneDisplay}
@@ -313,7 +316,7 @@ export function FooterDesignHeroColumns({
                     target="_blank"
                     rel="noreferrer"
                     data-pf-no-color-transition=""
-                    className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border transition-none"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border transition-none focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current"
                     style={{ borderColor: hairline, color: softInk }}
                     aria-label={link.label}
                   >

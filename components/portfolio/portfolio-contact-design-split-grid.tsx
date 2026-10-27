@@ -1,11 +1,15 @@
 'use client';
+import { portfolioEditorialGutterNegativeX } from '@/components/portfolio/portfolio-editorial-layout';
 
 import gsap from 'gsap';
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
+import { useFitText } from '@/components/portfolio/portfolio-contact-fit-text';
 import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import { contactLightDarkTokens } from '@/components/portfolio/portfolio-contact-design-motion';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
+import { DEFAULT_CONTENT_GUTTER, portfolioEditorialGutterX, type PortfolioContentGutter } from '@/components/portfolio/portfolio-editorial-layout';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -132,7 +136,7 @@ function SplitGridMarquee({ text, active, ink }: { text: string; active: boolean
     <div className="pointer-events-none absolute inset-0 flex items-center overflow-hidden" aria-hidden>
       <div
         ref={rowRef}
-        className="flex shrink-0 whitespace-nowrap text-[10vw] font-black uppercase leading-none tracking-tight transition-opacity duration-500"
+        className="flex shrink-0 whitespace-nowrap text-[calc(10vw*var(--pf-contact-font-scale,1))] font-black uppercase leading-none tracking-tight transition-opacity duration-500"
         style={{ opacity: active ? 0.06 : 0, color: ink }}
       >
         <span>{sequence}</span>
@@ -161,6 +165,10 @@ export function ContactDesignSplitGrid({
   links,
   layout,
   colorMode,
+  heroImageUrl = null,
+  heroImageAlt = '',
+  accent = '#f97316',
+  contentGutter = DEFAULT_CONTENT_GUTTER,
 }: {
   email: string | null;
   phone: string | null;
@@ -171,10 +179,17 @@ export function ContactDesignSplitGrid({
    *  portfolio's own mode (pure white / pure black canvas, synced text), same recipe as
    *  every other genuinely light/dark-aware premium Contact design. */
   colorMode: 'light' | 'dark';
+  heroImageUrl?: string | null;
+  heroImageAlt?: string;
+  accent?: string;
+  contentGutter?: PortfolioContentGutter;
 }) {
   const t = useT();
   const emailRef = useMagnetic(0.25, 26);
   const hoverRef = useRef<HTMLDivElement>(null);
+  const emailBoxRef = useRef<HTMLDivElement>(null);
+  const emailLineRef = useRef<HTMLSpanElement>(null);
+  useFitText(emailBoxRef, emailLineRef, [email, colorMode]);
   const [marqueeActive, setMarqueeActive] = useState(false);
   const tokens = contactLightDarkTokens(colorMode);
 
@@ -184,14 +199,15 @@ export function ContactDesignSplitGrid({
   const hasPhone = Boolean(phone?.trim());
   const hasLocation = Boolean(locationLabel?.trim());
   const hasLinks = links.length > 0;
+  const showPortrait = layout.isVisible('portrait') && Boolean(heroImageUrl?.trim());
 
   return (
     <div
-      className="relative left-1/2 w-screen -translate-x-1/2"
+      className={`relative ${portfolioEditorialGutterNegativeX(contentGutter)}`}
       data-pf-no-color-transition=""
     >
-      <div className="mx-auto grid w-full max-w-[90rem] grid-cols-1 gap-16 px-6 py-24 sm:px-10 sm:py-28 lg:min-h-[80vh] lg:grid-cols-[minmax(0,0.3fr)_minmax(0,0.7fr)] lg:items-center lg:gap-0 lg:px-16">
-        <div className="flex flex-col gap-12 lg:pr-12">
+      <div className={`grid w-full grid-cols-1 gap-10 py-12 sm:gap-12 sm:py-16 lg:grid-cols-[minmax(0,0.3fr)_minmax(0,0.7fr)] lg:items-center lg:gap-x-0 ${portfolioEditorialGutterX(contentGutter)}`}>
+        <div className="flex min-w-0 flex-col gap-10 lg:pr-12">
           {hasLocation ? (
             <div>
               {locationHeading ? (
@@ -225,22 +241,25 @@ export function ContactDesignSplitGrid({
 
         <div
           ref={hoverRef}
-          className="relative flex flex-col items-center gap-10 text-center lg:items-end lg:gap-12 lg:text-right"
+          className="relative flex min-w-0 flex-col items-center gap-10 text-center lg:items-end lg:gap-12 lg:text-right"
         >
           {email ? (
-            <div className="relative w-full">
+            <div ref={emailBoxRef} className="relative w-full">
               {marqueeText ? <SplitGridMarquee text={marqueeText} active={marqueeActive} ink={tokens.ink} /> : null}
               <a
                 ref={emailRef as RefObject<HTMLAnchorElement>}
                 href={`mailto:${email}`}
-                className="relative inline-block break-words text-[clamp(1.75rem,6vw,4.5rem)] font-medium leading-[0.95] tracking-tight"
-                style={{ color: tokens.ink }}
+                className="relative block w-full min-w-0 max-w-full font-medium leading-[1.08] tracking-tight"
+                // One line, as large as the width allows (useFitText sets --fit on the wrapper).
+                style={{ color: tokens.ink, fontSize: 'calc(clamp(1.75rem, 6vw, 4.5rem) * var(--pf-contact-font-scale, 1) * var(--fit, 1))' }}
                 data-pf-no-color-transition=""
                 onPointerEnter={() => setMarqueeActive(true)}
                 onPointerLeave={() => setMarqueeActive(false)}
               >
                 <CurtainLine>
-                  <EmailSmartWrap email={email} />
+                  <span ref={emailLineRef} className="inline-block whitespace-nowrap">
+                    <EmailSmartWrap email={email} />
+                  </span>
                 </CurtainLine>
               </a>
             </div>
@@ -270,6 +289,17 @@ export function ContactDesignSplitGrid({
             </nav>
           ) : null}
         </div>
+        {showPortrait ? (
+          <div className="flex justify-center pt-3 lg:col-span-2" data-contact-split-portrait="">
+            <div className="relative shrink-0" style={{ width: 'min(74vw, 21rem)', maxWidth: '100%' }}>
+              <span aria-hidden="true" className="pointer-events-none absolute -bottom-2.5 -right-2.5 h-full w-full border" style={{ borderColor: tokens.border }} />
+              <div className="relative w-full overflow-hidden border shadow-[0_6px_18px_-12px_rgba(0,0,0,0.18)]" style={{ aspectRatio: '4 / 5', borderColor: tokens.border, backgroundColor: tokens.placeholderBg }}>
+                <PortfolioDeferredMedia src={heroImageUrl!} alt={heroImageAlt || t('Portrait')} sizes="(max-width: 454px) 74vw, 336px" objectFit="cover" objectPosition="top" crisp />
+              </div>
+              <span aria-hidden="true" className="relative mx-auto mt-6 block h-0.5 w-7" style={{ backgroundColor: accent }} />
+            </div>
+          </div>
+        ) : null}
       </div>
     </div>
   );

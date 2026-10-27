@@ -1,4 +1,5 @@
 'use client';
+import { workButtonColor } from './portfolio-work-button-color';
 
 import {
   useLayoutEffect,
@@ -21,8 +22,10 @@ import {
   DEFAULT_PROJECTS_CASCADE_SETTINGS,
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsCascadeSettings,
+  workPaletteTokenColor,
 } from '@/components/portfolio/portfolio-work-settings';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { WorkConsultButtonLink, WorkConsultTextLink } from './portfolio-work-consult-link';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -132,66 +135,6 @@ function cascadeCardHeightClass(height: PortfolioWorkProjectsCascadeCardHeight):
   }
 }
 
-/** "View project ↗" — hovering swaps the label (and arrow) for an identical copy
- *  sliding in from below, inside an overflow:hidden mask. Ported from Experience
- *  Cards' CardsRepoLink (same look everywhere a card-level link appears). */
-function CascadeProjectLink({ href, label, ink }: { href: string; label: string; ink: string }) {
-  const textCloneRef = useRef<HTMLSpanElement | null>(null);
-  const arrowCloneRef = useRef<SVGSVGElement | null>(null);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
-
-  useLayoutEffect(() => {
-    const textClone = textCloneRef.current;
-    const arrowClone = arrowCloneRef.current;
-    if (!textClone || !arrowClone) return undefined;
-    if (prefersReducedMotion()) return undefined;
-
-    const tl = gsap
-      .timeline({ paused: true, defaults: { duration: 0.5, ease: 'power3.inOut' } })
-      .to(textClone.parentElement, { yPercent: -100 }, 0)
-      .to(arrowClone.parentElement, { yPercent: -100 }, 0);
-    timelineRef.current = tl;
-
-    return () => {
-      tl.kill();
-      timelineRef.current = null;
-    };
-  }, [label]);
-
-  const onEnter = () => timelineRef.current?.play();
-  const onLeave = () => timelineRef.current?.reverse();
-
-  const isExternal = /^https?:\/\//i.test(href);
-  const anchorProps = isExternal ? { target: '_blank', rel: 'noopener noreferrer' } : {};
-
-  return (
-    <a
-      href={href}
-      {...anchorProps}
-      onMouseEnter={onEnter}
-      onMouseLeave={onLeave}
-      className="group/cascade-link inline-flex items-center gap-2.5 text-[0.82rem] font-medium tracking-[0.02em] outline-hidden focus-visible:opacity-70"
-      style={{ color: ink }}
-      data-pf-no-color-transition=""
-    >
-      <span className="relative inline-block h-[1.2em] overflow-hidden">
-        <span className="block">{label}</span>
-        <span ref={textCloneRef} className="absolute inset-x-0 top-full block">
-          {label}
-        </span>
-      </span>
-      <span className="relative inline-block h-[1em] w-[1em] shrink-0 overflow-hidden" aria-hidden>
-        <svg viewBox="0 0 16 16" className="absolute inset-0 h-full w-full" fill="none">
-          <path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-        <svg ref={arrowCloneRef} viewBox="0 0 16 16" className="absolute inset-x-0 top-full h-full w-full" fill="none">
-          <path d="M4 12L12 4M12 4H6M12 4V10" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" strokeLinejoin="round" />
-        </svg>
-      </span>
-    </a>
-  );
-}
-
 /** Sticky top offset (px) — keep in sync with --pf-work-cascade-stack-top (6rem) in globals.css. */
 const CASCADE_TOP_OFFSET_PX = 96;
 /** Same "escalier" depth model as Experience Cards: cumulative steps, geometry-only
@@ -244,7 +187,25 @@ function CascadeProjectCard({
   const href = settings.showLink ? item.linkUrl?.trim() || '' : '';
   const mediaUrl = item.mediaUrl?.trim() || '';
 
-  const labelParts: string[] = [category, role].filter(Boolean) as string[];
+  const labelParts = ([
+    category
+      ? {
+          text: category,
+          color:
+            !settings.categoryColor || settings.categoryColor === 'muted'
+              ? undefined
+              : workPaletteTokenColor(settings.categoryColor),
+        }
+      : null,
+    role
+      ? {
+          text: role,
+          color: !settings.roleColor || settings.roleColor === 'muted' ? undefined : workPaletteTokenColor(settings.roleColor),
+        }
+      : null,
+  ] as ({ text: string; color?: string } | null)[]).filter(
+    (part): part is { text: string; color?: string } => part !== null
+  );
   const hasContent = Boolean(description) || tags.length > 0 || tools.length > 0;
 
   // Entrance, once per card — same choreography as Experience Cards: title
@@ -322,17 +283,17 @@ function CascadeProjectCard({
         <div className="pf-work-cascade-stack-header">
           {labelParts.length > 0 ? (
             <p
-              className="mb-4 flex flex-wrap items-center gap-x-2.5 text-[0.62rem] font-semibold uppercase sm:mb-5 sm:text-[0.66rem]"
-              style={{ letterSpacing: '0.18em', opacity: 0.65, color: mutedColor }}
+              className="mb-4 flex flex-wrap items-center gap-x-2.5 text-[0.75rem] font-semibold uppercase sm:mb-5 sm:text-[0.8rem]"
+              style={{ letterSpacing: '0.14em', color: mutedColor }}
             >
               {labelParts.map((part, index) => (
-                <span key={`${part}-${index}`} className="flex items-center gap-x-2.5">
+                <span key={`${part.text}-${index}`} className="flex items-center gap-x-2.5">
                   {index > 0 ? (
-                    <span aria-hidden style={{ opacity: 0.45 }}>
+                    <span aria-hidden style={{ opacity: 0.4 }}>
                       &middot;
                     </span>
                   ) : null}
-                  <span>{part}</span>
+                  <span style={part.color ? { color: part.color } : { opacity: 0.85 }}>{part.text}</span>
                 </span>
               ))}
             </p>
@@ -340,7 +301,13 @@ function CascadeProjectCard({
           {title ? (
             <h4
               className="overflow-hidden text-[2.5rem] leading-[0.95] sm:text-[3.25rem] lg:text-[3.75rem]"
-              style={{ fontFamily: "'Playfair Display', serif" }}
+              style={{
+                fontFamily: "'Playfair Display', serif",
+                fontSize:
+                  settings.titleSize != null
+                    ? `clamp(24px, ${settings.titleSize / 14.4}vw, ${settings.titleSize}px)`
+                    : undefined,
+              }}
             >
               <span ref={titleInnerRef} className="block" style={{ color: titleColor }}>
                 {title}
@@ -355,7 +322,7 @@ function CascadeProjectCard({
               <p
                 ref={descRef}
                 className="max-w-2xl"
-                style={{ color: bodyColor, opacity: 0.6, fontSize: '0.98rem', lineHeight: 1.7, fontWeight: 300 }}
+                style={{ color: bodyColor, opacity: 0.85, fontSize: '1rem', lineHeight: 1.7, fontWeight: 400 }}
               >
                 {description}
               </p>
@@ -373,7 +340,7 @@ function CascadeProjectCard({
                     <span aria-hidden style={{ color: accent, opacity: 0.7 }}>
                       &mdash;
                     </span>
-                    <span style={{ opacity: 0.85 }}>{tag}</span>
+                    <span style={{ opacity: 0.95 }}>{tag}</span>
                   </p>
                 ))}
               </div>
@@ -384,8 +351,8 @@ function CascadeProjectCard({
                 {tools.map((tool) => (
                   <li
                     key={tool}
-                    className="text-[0.62rem] font-medium uppercase"
-                    style={{ color: mutedColor, opacity: 0.5, letterSpacing: '0.16em' }}
+                    className="text-[0.75rem] font-medium uppercase"
+                    style={{ color: mutedColor, opacity: 0.8, letterSpacing: '0.14em' }}
                   >
                     {tool}
                   </li>
@@ -397,7 +364,11 @@ function CascadeProjectCard({
 
         {href ? (
           <div className="mt-8 flex flex-col items-start">
-            <CascadeProjectLink href={href} label={settings.linkLabel || t('View project')} ink={titleColor} />
+            {settings.linkStyle === 'text' ? (
+              <WorkConsultTextLink href={href} label={settings.linkLabel || t('View project')} ink={workButtonColor(settings.buttonColor ? workPaletteTokenColor(settings.buttonColor) : titleColor, settings.buttonColorOpacity)} />
+            ) : (
+              <WorkConsultButtonLink href={href} label={settings.linkLabel || t('View project')} ink={workButtonColor(settings.buttonColor ? workPaletteTokenColor(settings.buttonColor) : titleColor, settings.buttonColorOpacity)} variant={settings.linkStyle} />
+            )}
           </div>
         ) : null}
       </div>

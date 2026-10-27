@@ -1,40 +1,12 @@
 'use client';
 
 /**
- * Avatar cards — the family's dark-UI portrait card, at an editorial scale.
- *
- * Everything this design measures lives in ONE table, `AVATAR_CARDS_SCALE` below: the avatar's
- * diameter, the card's track width, its padding and minimum height, the grid's gutters, and the
- * type sizes that have to grow with the portrait. Each of the section's existing settings
- * (`Avatar size`, `Card width`, `Card padding`, `Gap`) indexes into that table instead of the
- * family-wide helpers, which are sized for the small card layouts and left this one looking lost
- * in the middle of the page. Re-scaling the design is one edit in one object.
- *
- * Two deliberate consequences of that table:
- *  - **The portrait leads.** Every `Avatar size` step is roughly twice the family default
- *    (`md` is 224px against 112px), and the name's clamp is indexed by the same step, so the
- *    typography grows with the face instead of being left behind by it.
- *  - **The composition is grouped, not scattered.** The grid's own max width is computed from the
- *    card width and the gutters (`columns × card + gutters`) and centred with `mx-auto`, so the
- *    cards sit as one block in the middle of the section rather than being spread across the full
- *    content width by `justify-items-center`. The gutters themselves are a third of what the
- *    shared grid used.
- *
- * Hovering runs one choreography on one easing: the card lifts while its hairline brightens and
- * its shadow spreads; the avatar grows and morphs out of its circle into the shape `Avatar shape`
- * names, with the portrait pushing in behind the mask; a halo lit from the palette's principal
- * colour blooms behind it; and the links rise in under the copy on a per-icon stagger. Three
- * separate layers carry that — the mask scales, the media layer zooms, the halo blurs — because a
- * blur or a scale on a layer that also holds text softens the text
- * (portfolio-services-pricing-grid-blurry-text-fix), and a morphing mask that also held the
- * portrait would re-clip it on every frame.
- *
- * Site-wide trap respected throughout: any node that animates transform/opacity through CSS
- * carries `data-pf-no-color-transition`, otherwise the global color-mode transition rule in
- * globals.css replaces its `transition-property` and the motion silently disappears.
+ * Avatar cards: scalable portraits with readable captions and an optional subtle halo.
+ * The mask may morph on hover/focus; text stays still and links remain visible.
+ * Rail/grid, avatar shape, sizing, spacing and reduced-motion preferences are preserved.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import {
   EASE_CLS,
   META_CLS,
@@ -43,16 +15,17 @@ import {
   TeamViewToggleIcon,
 } from '@/components/portfolio/portfolio-team-design-primitives';
 import { servicesColorLuminance } from '@/components/portfolio/portfolio-services-settings';
+import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
+import { teamPrefersReducedMotion } from '@/components/portfolio/portfolio-team-design-motion';
 import {
+  TEAM_PROFILE_GUTTER_PX,
   PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS,
   teamCardFrameClass,
   teamCardStyle,
   teamContentAlignClass,
   teamFlexAlignClass,
-  teamReadableCardText,
   teamSocialAlignClass,
   type PortfolioTeamAvatarShape,
-  type PortfolioTeamAvatarColumnGap,
   type PortfolioTeamAvatarColumns,
   type PortfolioTeamAvatarGridWidth,
   type PortfolioTeamAvatarSize,
@@ -106,23 +79,11 @@ const AVATAR_CARDS_SCALE = {
    * nothing below the copy supplies stray breathing room that the padding has to discount.
    */
   padding: {
-    none: 'px-6 py-6 sm:px-7 sm:py-7',
-    sm: 'px-7 py-7 sm:px-8 sm:py-8',
-    md: 'px-8 py-8 sm:px-10 sm:py-9',
-    lg: 'px-9 py-10 sm:px-12 sm:py-11',
+    none: 'p-0',
+    sm: 'p-4',
+    md: 'p-6',
+    lg: 'p-8',
   } satisfies Record<PortfolioTeamCardPadding, string>,
-  /**
-   * The desktop column gutter in `rem`, per `Horizontal spacing`. Applied from `lg` up only,
-   * over the `gap` entry below: at one or two columns there is nothing for a desktop spacing
-   * choice to space, and the row rhythm still belongs to `Gap`. `md` is deliberately the same
-   * 1.5rem the default `Gap` already produced, so turning the control on moves nothing.
-   */
-  columnGap: {
-    sm: 0.75,
-    md: 1.5,
-    lg: 2.5,
-    xl: 4,
-  } satisfies Record<PortfolioTeamAvatarColumnGap, number>,
   /** Grid gutters in `rem` as `[column, row]`, per `Gap` — about a third of the shared grid's. */
   gap: {
     sm: [0.75, 1.5],
@@ -137,8 +98,6 @@ const AVATAR_CARDS_SCALE = {
     lg: 'text-[calc(clamp(1.6rem,1.5vw+1.1rem,2.15rem)*var(--pf-team-font-scale,1))]',
     xl: 'text-[calc(clamp(1.75rem,1.9vw+1.15rem,2.45rem)*var(--pf-team-font-scale,1))]',
   } satisfies Record<PortfolioTeamAvatarSize, string>,
-  /** Gap between the portrait and the name, per `Avatar size`. */
-  copyOffset: { sm: 'mt-7', md: 'mt-8', lg: 'mt-9', xl: 'mt-10' } satisfies Record<PortfolioTeamAvatarSize, string>,
   /**
    * The cascade's drop, per `Gap` — tied to the row gutter so the rhythm scales with the grid —
    * and per breakpoint, because the column count changes there and a drop that belonged to the
@@ -152,8 +111,8 @@ const AVATAR_CARDS_SCALE = {
   } satisfies Record<PortfolioTeamGap, Record<'sm' | 'lg' | 'xl', string>>,
 } as const;
 
-/** Small caps for the role. Wider tracking than the family's `META_CLS`, and a step larger. */
-const AVATAR_ROLE_CLS = 'text-[calc(0.7rem*var(--pf-team-font-scale,1))] font-semibold uppercase leading-none tracking-[0.34em]';
+/** Roles are sentences, not technical small-cap labels. */
+const AVATAR_ROLE_CLS = 'team-avatar-role';
 
 /**
  * Avatar cards' easing: a long expo-out, slower to settle than the family default. The avatar's
@@ -171,9 +130,9 @@ const cardWidthOf = (settings: PortfolioTeamPresentationSettings): number =>
 /** Members per row on a large screen. Falls back to the section-wide `columns` when unset. */
 const columnsOf = (settings: PortfolioTeamPresentationSettings): PortfolioTeamAvatarColumns =>
   settings.avatarCardsColumns ?? ((settings.columns ?? 3) as PortfolioTeamAvatarColumns);
-/** The desktop column gutter in `rem`. */
+/** The same visible spacing scale as Profile cards, in rem for the grid-width calculation. */
 const columnGapOf = (settings: PortfolioTeamPresentationSettings): number =>
-  AVATAR_CARDS_SCALE.columnGap[settings.avatarCardsColumnGap ?? 'md'];
+  TEAM_PROFILE_GUTTER_PX[settings.avatarCardsColumnGap ?? 'md'] / 16;
 
 /**
  * Columns per `Members per row`. One card per row on a phone and two from `sm` whatever the
@@ -231,12 +190,12 @@ function teamAvatarMorphClass(shape: PortfolioTeamAvatarShape): string {
 function teamAvatarShadowClass(shadow: PortfolioTeamPresentationSettings['cardShadow']): string {
   if (shadow === 'none') return '';
   if (shadow === 'soft') {
-    return 'shadow-[0_12px_32px_-22px_rgba(0,0,0,0.45)] hover:shadow-[0_24px_52px_-24px_rgba(0,0,0,0.55)]';
+    return 'shadow-[0_2px_6px_rgba(0,0,0,0.06)]';
   }
   if (shadow === 'strong') {
-    return 'shadow-[0_28px_64px_-28px_rgba(0,0,0,0.62)] hover:shadow-[0_48px_96px_-30px_rgba(0,0,0,0.75)]';
+    return 'shadow-[0_10px_26px_-10px_rgba(0,0,0,0.24)]';
   }
-  return 'shadow-[0_20px_46px_-26px_rgba(0,0,0,0.52)] hover:shadow-[0_34px_72px_-28px_rgba(0,0,0,0.64)]';
+  return 'shadow-[0_6px_18px_-8px_rgba(0,0,0,0.16)]';
 }
 
 /* ---------------------------------------------------------------------- */
@@ -246,11 +205,17 @@ function teamAvatarShadowClass(shadow: PortfolioTeamPresentationSettings['cardSh
 function TeamAvatarCard({
   member,
   presentation,
+  portrait,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
+  portrait?: ReactNode;
 }) {
-  const readable = teamReadableCardText(presentation);
+  const surface = presentation.cardBackgroundEnabled !== false ? presentation.cardBackgroundColor
+    : presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#fff');
+  const readable = { strong: readableMix(presentation.nameColor, 100, surface), muted: readableMix(presentation.responsibilityColor, 100, surface) };
+  const socialSurface = ['minimal', 'outline'].includes(presentation.socialIconStyle) ? surface : presentation.socialBackgroundColor;
+  const socialPresentation = { ...presentation, socialIconColor: readableMix(presentation.socialIconColor, 100, socialSurface) };
   const align = presentation.listAlign ?? 'center';
   const step = size(presentation);
   const shape = presentation.avatarCardsShape ?? 'squircle';
@@ -270,13 +235,13 @@ function TeamAvatarCard({
   const sheen = onDark ? 'rgba(255,255,255,0.5)' : `color-mix(in srgb, ${accent} 50%, transparent)`;
   return (
     <article
-      className={`group relative flex h-auto w-full flex-col ${teamFlexAlignClass(align)} ${teamCardFrameClass(
+      className={`team-avatar-card group relative flex h-auto w-full flex-col ${teamFlexAlignClass(align)} ${teamCardFrameClass(
         presentation
       )} ${teamAvatarShadowClass(presentation.cardShadow)} ${
         AVATAR_CARDS_SCALE.padding[presentation.cardPadding ?? 'md']
       } ${teamContentAlignClass(
         align
-      )} transition-[transform,translate,scale,rotate,box-shadow,border-color] duration-[760ms] ${AVATAR_EASE_CLS} hover:-translate-y-2 hover:![border-color:var(--team-avatar-border-lit)]`}
+      )} hover:![border-color:var(--team-avatar-border-lit)]`}
       data-pf-no-color-transition=""
       data-team-reveal=""
       style={{
@@ -303,7 +268,7 @@ function TeamAvatarCard({
             // Sized in percentages of the avatar, so every `Avatar size` step keeps the same halo.
             <span
               aria-hidden
-              className={`pointer-events-none absolute -inset-[30%] block rounded-full opacity-40 blur-2xl transition-[opacity,transform,translate,scale,rotate] duration-[1100ms] ${AVATAR_EASE_CLS} group-hover:scale-110 group-hover:opacity-90`}
+              className="team-avatar-glow pointer-events-none absolute -inset-[12%] block rounded-full blur-xl"
               data-pf-no-color-transition=""
               style={{
                 backgroundImage: `radial-gradient(circle at 50% 50%, ${accent} 0%, color-mix(in srgb, ${accent} 35%, transparent) 46%, transparent 72%)`,
@@ -311,49 +276,39 @@ function TeamAvatarCard({
             />
           ) : null}
           <div
-            className={`relative h-full w-full overflow-hidden rounded-full ${teamAvatarMorphClass(
+            className={`team-avatar-mask relative h-full w-full overflow-hidden rounded-full ${teamAvatarMorphClass(
               shape
-            )} transition-[border-radius,transform,translate,scale,rotate] duration-[980ms] ${AVATAR_EASE_CLS} group-hover:scale-[1.05]`}
+            )}`}
+            data-shape={shape}
             data-pf-no-color-transition=""
             data-team-reveal-media=""
           >
             <div
-              className={`h-full w-full transition-transform duration-[1300ms] ${AVATAR_EASE_CLS} group-hover:scale-[1.12]`}
+              className="team-avatar-photo h-full w-full"
               data-pf-no-color-transition=""
             >
-              <TeamMemberImage member={member} presentation={{ ...presentation, imageAspect: 'square' }} fill />
+              {portrait ?? <TeamMemberImage member={member} presentation={{ ...presentation, imageAspect: 'square' }} fill sizes="(max-width: 639px) 70vw, 328px" />}
             </div>
           </div>
         </div>
       ) : null}
+      {(hasCopy || hasSocials) && <span className="team-avatar-accent" data-with-image={presentation.showImage} aria-hidden="true" />}
       {presentation.showName ? (
-        // Two lines' worth of room whether the name needs them or not, with the text centred in
-        // it: without the floor a one-line name and a two-line one give their cards different
-        // heights, and a row of cards whose bottoms do not agree reads as a layout bug rather
-        // than as rhythm. The inner span is what carries the text, so `text-align` still applies
-        // — a bare text node inside a flex box becomes an anonymous item and stops obeying it.
+        // Natural height keeps short names compact while long names wrap without clipping.
         <h3
-          className={`${AVATAR_CARDS_SCALE.name[step]} flex min-h-[2.08em] w-full items-center font-semibold leading-[1.04] tracking-[-0.035em] ${
-            align === 'left' ? 'justify-start' : align === 'right' ? 'justify-end' : 'justify-center'
-          } ${
-            presentation.showImage ? AVATAR_CARDS_SCALE.copyOffset[step] : ''
-          } transition-transform duration-[760ms] ${AVATAR_EASE_CLS} group-hover:-translate-y-0.5`}
+          className={`team-avatar-name ${AVATAR_CARDS_SCALE.name[step]} w-full`}
           data-pf-no-color-transition=""
           style={{ color: readable.strong }}
         >
           <span className="block w-full">{member.name}</span>
         </h3>
       ) : null}
-      {presentation.showResponsibility ? (
-        // Technical, widely tracked small caps — "D I R E C T O R". Letter-spacing is added after
-        // the last glyph too, so a centered line needs that much indent back to look centered.
+      {presentation.showResponsibility && member.responsibility.trim() ? (
+        // Normal casing and line height keep longer role descriptions readable.
         <p
-          className={`${AVATAR_ROLE_CLS} min-h-[0.7rem] ${
-            presentation.showName ? 'mt-4' : presentation.showImage ? AVATAR_CARDS_SCALE.copyOffset[step] : ''
-          }`}
+          className={AVATAR_ROLE_CLS}
           style={{
             color: readable.muted,
-            textIndent: align === 'center' ? '0.34em' : undefined,
           }}
         >
           {member.responsibility.trim() || ' '}
@@ -364,7 +319,7 @@ function TeamAvatarCard({
         // a portrait this size that reads as a dead band rather than as restraint. They keep their
         // own per-icon hover lift, so the card still answers the pointer here.
         <div className={`w-full ${presentation.showImage || hasCopy ? 'pt-5' : ''}`}>
-          <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
+          <TeamSocialLinks member={member} presentation={socialPresentation} align={teamSocialAlignClass(align)} />
         </div>
       ) : null}
     </article>
@@ -392,9 +347,11 @@ function TeamAvatarCard({
 export function TeamAvatarCards({
   members,
   presentation,
+  renderPortrait,
 }: {
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
+  renderPortrait?: (member: ProfileTeamMember, index: number) => ReactNode;
 }) {
   const t = useT();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
@@ -402,13 +359,14 @@ export function TeamAvatarCards({
   const [view, setView] = useState<PortfolioTeamAvatarView>(opensOn);
   const [lastOpensOn, setLastOpensOn] = useState<PortfolioTeamAvatarView>(opensOn);
   const [bounds, setBounds] = useState({ atStart: true, atEnd: false, scrollable: false });
-  const readable = teamReadableCardText(presentation);
+  const surface = presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#fff');
+  const readable = { strong: readableMix(presentation.nameColor, 100, surface), muted: readableMix(presentation.responsibilityColor, 100, surface) };
   const align = presentation.listAlign ?? 'center';
   const stagger = presentation.avatarCardsStagger !== false;
   const hairline = `color-mix(in srgb, ${presentation.cardBorderColor} 70%, transparent)`;
   const columns = columnsOf(presentation);
   const deskGapX = columnGapOf(presentation);
-  const [gapX, gapY] = gapOf(presentation);
+  const [, gapY] = gapOf(presentation);
   const cardWidth = cardWidthOf(presentation);
 
   // Adjusting state during render — React's own recipe for "a prop changed, reset what was
@@ -457,7 +415,7 @@ export function TeamAvatarCards({
         : [...cards].reverse().find((card) => leftOf(card) < current - 4);
     const travel = scroller.scrollWidth - scroller.clientWidth;
     const target = next ? leftOf(next) : direction === 1 ? travel : 0;
-    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: 'smooth' });
+    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: teamPrefersReducedMotion() ? 'auto' : 'smooth' });
   };
 
   const toolbarAlign =
@@ -482,7 +440,7 @@ export function TeamAvatarCards({
   return (
     // `min-w-0` on the root and the scroller both: a horizontally scrollable flex row otherwise
     // reports its full content width to an auto-sized parent and stretches the whole page.
-    <div className="w-full min-w-0">
+    <div className="team-avatar-gallery w-full min-w-0">
       {members.length > 1 ? (
         <div className={`mb-10 flex w-full flex-wrap items-center gap-4 ${toolbarAlign}`}>
           <div
@@ -499,9 +457,7 @@ export function TeamAvatarCards({
                   type="button"
                   onClick={() => setView(option.value)}
                   aria-pressed={selected}
-                  className={`${META_CLS} inline-flex items-center gap-2 rounded-full px-4 py-2.5 transition-[background-color,color,opacity] duration-[420ms] ${EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
-                    selected ? '' : 'opacity-55 hover:opacity-100'
-                  }`}
+                  className={`${META_CLS} inline-flex items-center gap-2 rounded-full px-4 py-2.5 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current`}
                   data-pf-no-color-transition=""
                   style={{
                     color: selected ? readable.strong : readable.muted,
@@ -511,7 +467,7 @@ export function TeamAvatarCards({
                   }}
                 >
                   <TeamViewToggleIcon view={option.value} />
-                  {option.label}
+                  {t(option.label)}
                 </button>
               );
             })}
@@ -561,19 +517,14 @@ export function TeamAvatarCards({
 
       {view === 'grid' ? (
         <div
-          // `Horizontal spacing` is desktop-only, and an inline style cannot carry a breakpoint.
-          // So BOTH gutters ride custom properties and two utilities read them — an inline
-          // `column-gap` would win over the `lg:` variant no matter what, which is exactly how
-          // this first failed to take effect. Below `lg` the gutter stays the one this design's
-          // scale derives from `Gap`.
-          className={`grid w-full items-start justify-items-stretch [column-gap:var(--team-avatar-column-gap-base)] lg:[column-gap:var(--team-avatar-column-gap)] ${gridAlign} ${avatarGridColumnsClass(
+          // The gap is the actual visible distance in both views and at every multi-column width.
+          className={`team-avatar-grid grid w-full items-start justify-items-stretch ${gridAlign} ${avatarGridColumnsClass(
             columns
           )}`}
           style={{
             maxWidth: gridMaxWidth,
+            columnGap: `${deskGapX}rem`,
             rowGap: `${gapY}rem`,
-            ['--team-avatar-column-gap-base' as string]: `${gapX}rem`,
-            ['--team-avatar-column-gap' as string]: `${deskGapX}rem`,
           }}
         >
           {members.map((member, index) => (
@@ -585,18 +536,29 @@ export function TeamAvatarCards({
                 stagger ? avatarCascadeClass(index, columns, presentation.gap ?? 'lg') : ''
               }`}
             >
-              <TeamAvatarCard member={member} presentation={presentation} />
+              <TeamAvatarCard member={member} presentation={presentation} portrait={renderPortrait?.(member, index)} />
             </div>
           ))}
         </div>
       ) : (
         <div
           ref={scrollerRef}
+          role="region"
+          aria-label={t('Team members')}
+          tabIndex={0}
+          onKeyDown={event => {
+            if (event.target !== event.currentTarget) return;
+            if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+              event.preventDefault(); stepRail(event.key === 'ArrowRight' ? 1 : -1);
+            } else if (event.key === 'Home' || event.key === 'End') {
+              event.preventDefault(); event.currentTarget.scrollTo({left:event.key==='Home'?0:event.currentTarget.scrollWidth,behavior:teamPrefersReducedMotion()?'auto':'smooth'});
+            }
+          }}
           onScroll={syncBounds}
           // The card lifts on hover and its shadow spills, but an `overflow-x-auto` row cannot
           // keep `overflow-y: visible` — the room for both has to be padding, not overflow.
           className="flex min-w-0 max-w-full snap-x snap-mandatory items-start overflow-x-auto overscroll-x-contain px-1 pb-10 pt-4 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          style={{ gap: `${Math.max(gapX, 1)}rem` }}
+          style={{ gap: `${deskGapX}rem` }}
         >
           {members.map((member, index) => (
             <div
@@ -611,7 +573,7 @@ export function TeamAvatarCards({
               // and never more than the viewport allows on a narrow screen.
               style={{ width: `min(82vw, ${cardWidth}rem)` }}
             >
-              <TeamAvatarCard member={member} presentation={presentation} />
+              <TeamAvatarCard member={member} presentation={presentation} portrait={renderPortrait?.(member, index)} />
             </div>
           ))}
         </div>

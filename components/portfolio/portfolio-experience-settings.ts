@@ -1,3 +1,15 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import {
+  DEFAULT_EXPERIENCE_HEADER_FIELDS,
+  mergeExperienceHeaderFields,
+  type ExperienceHeaderFields,
+  type PortfolioExperienceHeaderDesign,
+} from '@/components/portfolio/portfolio-experience-header-settings';
+import {
+  DEFAULT_CARDS_STYLE,
+  mergeCardsStyle,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -75,19 +87,7 @@ export type PortfolioExperienceHeaderAlignment = 'left' | 'center' | 'right';
  * Header design applied from Experience → Header (above the design-owned lead).
  * `none` keeps only the design’s own header; more designs will be added one by one.
  */
-export type PortfolioExperienceHeaderDesign =
-  | 'none'
-  | 'editorial'
-  | 'milestone'
-  | 'table'
-  | 'cards'
-  | 'reel'
-  | 'duotone'
-  | 'gallery'
-  | 'spotlight'
-  | 'loft'
-  | 'press'
-  | 'legacy';
+export type { PortfolioExperienceHeaderDesign };
 
 /** Accent years header — display size mapped to text-4xl…text-7xl. */
 export type PortfolioExperienceAccentYearsFontSize = 4 | 5 | 6 | 7;
@@ -98,55 +98,8 @@ export type PortfolioExperienceAccentYearsRadius = 0 | 2 | 4;
 /** Accent years header — badge fill from the active theme. */
 export type PortfolioExperienceAccentYearsBadgeColor = 'accent' | 'principal' | 'secondaire';
 
-export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS: {
-  value: PortfolioExperienceAccentYearsFontSize;
-  label: string;
-}[] = [
-  { value: 4, label: msg('Small') },
-  { value: 5, label: msg('Medium') },
-  { value: 6, label: msg('Large') },
-  { value: 7, label: 'XL' },
-];
-
-export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS: {
-  value: PortfolioExperienceAccentYearsRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 0, label: msg('Sharp'), description: msg('Square corners — architectural.') },
-  { value: 2, label: msg('Soft'), description: msg('Noticeable 10px round.') },
-  { value: 4, label: msg('Rounded'), description: msg('20px round — clearly curved.') },
-];
-
-export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS: {
-  value: PortfolioExperienceAccentYearsBadgeColor;
-  label: string;
-}[] = [
-  { value: 'accent', label: msg('Accent') },
-  { value: 'principal', label: msg('Principal') },
-  { value: 'secondaire', label: msg('Secondaire') },
-];
-
-export const DEFAULT_ACCENT_YEARS_BADGE_TEXT = '{years}+ years';
-export const DEFAULT_ACCENT_YEARS_LEAD_TEXT = 'of hands-on experience in my field.';
 export const DEFAULT_CENTERED_TITLE_TEXT = 'Experience';
-export const DEFAULT_CENTERED_LEAD_TEXT = '{years}+ years of hands-on experience in my field.';
 export const DEFAULT_SERIF_LEAD_LABEL_TEXT = 'Experience';
-export const DEFAULT_SERIF_LEAD_TITLE_TEXT = '{years}+ years of hands-on experience in my field.';
-
-const ACCENT_YEARS_RADIUS_CSS: Record<PortfolioExperienceAccentYearsRadius, string> = {
-  0: '0px',
-  2: '10px',
-  4: '20px',
-};
-
-const ACCENT_YEARS_FONT_SIZE_CSS: Record<PortfolioExperienceAccentYearsFontSize, string> = {
-  4: 'clamp(1.375rem, 2.8vw, 2.25rem)',
-  5: 'clamp(1.75rem, 3.5vw, 3rem)',
-  6: 'clamp(2.25rem, 4.2vw, 3.75rem)',
-  7: 'clamp(2.75rem, 5.2vw, 4.5rem)',
-};
-
 export type PortfolioExperienceCenteredLeadWeight = 'light' | 'regular' | 'medium';
 export type PortfolioExperienceCenteredLeadOpacity = 'muted' | 'balanced' | 'vibrant';
 export type PortfolioExperienceCenteredScale = 'compact' | 'default' | 'monumental';
@@ -156,134 +109,9 @@ export type PortfolioExperienceCenteredDivider = 'none' | 'dot' | 'full' | 'trac
 export type PortfolioExperienceCenteredDividerOpacity = 'ghost' | 'subtle' | 'accent';
 export type PortfolioExperienceCenteredAlign = 'left' | 'center' | 'right';
 
-export const PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS: {
-  value: PortfolioExperienceCenteredLeadWeight;
-  label: string;
-}[] = [
-  { value: 'light', label: msg('Light') },
-  { value: 'regular', label: msg('Regular') },
-  { value: 'medium', label: msg('Medium') },
-];
-
-export const PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS: {
-  value: PortfolioExperienceCenteredAlign;
-  label: string;
-}[] = [
-  { value: 'left', label: msg('Left') },
-  { value: 'center', label: msg('Center') },
-  { value: 'right', label: msg('Right') },
-];
-
-export const PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS: {
-  value: PortfolioExperienceCenteredLeadOpacity;
-  label: string;
-}[] = [
-  { value: 'muted', label: msg('Muted') },
-  { value: 'balanced', label: msg('Balanced') },
-  { value: 'vibrant', label: msg('Vibrant') },
-];
-
-export const PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS: {
-  value: PortfolioExperienceCenteredScale;
-  label: string;
-}[] = [
-  { value: 'compact', label: msg('Compact') },
-  { value: 'default', label: msg('Default') },
-  { value: 'monumental', label: msg('Monumental') },
-];
-
-export const PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS: {
-  value: PortfolioExperienceCenteredMaxWidth;
-  label: string;
-}[] = [
-  { value: 'narrow', label: msg('Narrow') },
-  { value: 'balanced', label: msg('Balanced') },
-  { value: 'wide', label: msg('Wide') },
-];
-
-export const PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS: {
-  value: PortfolioExperienceCenteredLineHeight;
-  label: string;
-}[] = [
-  { value: 'tight', label: msg('Tight') },
-  { value: 'aery', label: msg('Aery') },
-  { value: 'spaced', label: msg('Spaced') },
-];
-
-export const PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS: {
-  value: PortfolioExperienceCenteredDivider;
-  label: string;
-}[] = [
-  { value: 'none', label: msg('None') },
-  { value: 'dot', label: msg('Minimal dot') },
-  { value: 'full', label: msg('Full width') },
-  { value: 'track', label: msg('Centered track') },
-];
-
-export const PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS: {
-  value: PortfolioExperienceCenteredDividerOpacity;
-  label: string;
-}[] = [
-  { value: 'ghost', label: msg('Ghost') },
-  { value: 'subtle', label: msg('Subtle') },
-  { value: 'accent', label: msg('Accent') },
-];
-
-export const CENTERED_LEAD_OPACITY: Record<PortfolioExperienceCenteredLeadOpacity, number> = {
-  muted: 0.4,
-  balanced: 0.65,
-  vibrant: 1,
-};
-
-export const CENTERED_LEAD_WEIGHT: Record<PortfolioExperienceCenteredLeadWeight, number> = {
-  light: 300,
-  regular: 400,
-  medium: 500,
-};
-
-export const CENTERED_LEAD_WIDTH: Record<PortfolioExperienceCenteredMaxWidth, string> = {
-  narrow: '40ch',
-  balanced: '55ch',
-  wide: '70ch',
-};
-
-export const CENTERED_LEAD_LINE_HEIGHT: Record<PortfolioExperienceCenteredLineHeight, number> = {
-  tight: 1.3,
-  aery: 1.6,
-  spaced: 1.9,
-};
-
 export type PortfolioExperienceSerifLeadInk = 'current' | 'accent' | 'principal' | 'secondaire';
 export type PortfolioExperienceSerifLeadLabelOpacity = 'ghost' | 'muted' | 'ink';
 export type PortfolioExperienceSerifLeadTracking = 'tight' | 'editorial' | 'open';
-
-export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS: {
-  value: PortfolioExperienceSerifLeadInk;
-  label: string;
-}[] = [
-  { value: 'current', label: msg('Ink') },
-  { value: 'accent', label: msg('Accent') },
-  { value: 'principal', label: msg('Principal') },
-  { value: 'secondaire', label: msg('Secondaire') },
-];
-
-export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS: {
-  value: PortfolioExperienceSerifLeadTracking;
-  label: string;
-}[] = [
-  { value: 'tight', label: msg('Tight') },
-  { value: 'editorial', label: msg('Editorial') },
-  { value: 'open', label: msg('Open') },
-];
-
-export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS: {
-  value: PortfolioExperienceSerifLeadLabelOpacity;
-  label: string;
-}[] = [
-  { value: 'ghost', label: msg('Ghost') },
-  { value: 'muted', label: msg('Muted') },
-  { value: 'ink', label: msg('Ink') },
-];
 
 export const SERIF_LEAD_WEIGHT: Record<PortfolioExperienceCenteredLeadWeight, number> = {
   light: 300,
@@ -329,66 +157,6 @@ export type PortfolioExperienceSpotlightMarqueeWeight = 'light' | 'normal' | 'bo
 export type PortfolioExperienceSpotlightMarqueeStyle = 'outline' | 'fill' | 'mixed';
 export type PortfolioExperienceSpotlightMarqueeGap = 'sm' | 'md' | 'lg';
 
-export const PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS: {
-  value: PortfolioExperienceMarqueeStyle;
-  label: string;
-}[] = [
-  { value: 'alternate', label: msg('Alternate') },
-  { value: 'fill', label: msg('Fill') },
-  { value: 'outline', label: msg('Outline') },
-];
-
-export const PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS: {
-  value: PortfolioExperienceMarqueeDirection;
-  label: string;
-}[] = [
-  { value: 'ltr', label: msg('Left → right') },
-  { value: 'rtl', label: msg('Right → left') },
-];
-
-export const PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS: {
-  value: PortfolioExperienceMarqueeSpeed;
-  label: string;
-}[] = [
-  { value: 'slow', label: msg('Slow') },
-  { value: 'cruise', label: msg('Cruise') },
-  { value: 'fast', label: msg('Fast') },
-];
-
-export const PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS: {
-  value: PortfolioExperienceMarqueeEdgeFade;
-  label: string;
-}[] = [
-  { value: 'none', label: msg('None') },
-  { value: 'soft', label: msg('Soft') },
-  { value: 'wide', label: msg('Wide') },
-];
-
-export const PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS: {
-  value: PortfolioExperienceMarqueeSeparator;
-  label: string;
-}[] = [
-  { value: 'dot', label: msg('Dot') },
-  { value: 'none', label: msg('None') },
-];
-
-export const PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS: {
-  value: PortfolioExperienceMarqueeWeight;
-  label: string;
-}[] = [
-  { value: 'light', label: msg('Light') },
-  { value: 'regular', label: msg('Regular') },
-  { value: 'medium', label: msg('Medium') },
-  { value: 'semibold', label: msg('Semibold') },
-];
-
-export const MARQUEE_WEIGHT: Record<PortfolioExperienceMarqueeWeight, number> = {
-  light: 300,
-  regular: 400,
-  medium: 500,
-  semibold: 600,
-};
-
 /** Marquee header loop speed (px/s) for the panel's Slow / Cruise / Fast steps. */
 export const MARQUEE_SPEED_PX: Record<PortfolioExperienceMarqueeSpeed, number> = {
   slow: 28,
@@ -397,52 +165,6 @@ export const MARQUEE_SPEED_PX: Record<PortfolioExperienceMarqueeSpeed, number> =
 };
 
 // Spotlight Marquee Premium constant mappings
-export const SPOTLIGHT_MARQUEE_SPEED_PX: Record<PortfolioExperienceSpotlightMarqueeSpeed, number> = {
-  slow: 28,
-  medium: 44,
-  fast: 72,
-};
-
-export const SPOTLIGHT_MARQUEE_WEIGHT: Record<PortfolioExperienceSpotlightMarqueeWeight, number> = {
-  light: 300,
-  normal: 400,
-  bold: 700,
-};
-
-export const SPOTLIGHT_MARQUEE_GAP: Record<PortfolioExperienceSpotlightMarqueeGap, string> = {
-  sm: '0.5rem',
-  md: '1rem',
-  lg: '2rem',
-};
-
-export const MARQUEE_FILL_OPACITY: Record<PortfolioExperienceSerifLeadLabelOpacity, number> = {
-  ghost: 0.55,
-  muted: 0.85,
-  ink: 1,
-};
-
-export const MARQUEE_EDGE_FADE: Record<PortfolioExperienceMarqueeEdgeFade, string> = {
-  none: '0%',
-  soft: '10%',
-  wide: '18%',
-};
-
-export function resolveMarqueeInkColor(
-  presentation: Pick<PortfolioExperiencePresentationSettings, 'marqueeInk' | 'accentColor'>,
-  ink: string
-): string {
-  switch (presentation.marqueeInk) {
-    case 'accent':
-      return experienceAccentColor(presentation.accentColor);
-    case 'principal':
-      return 'var(--pf-palette-principal)';
-    case 'secondaire':
-      return 'var(--pf-palette-secondaire)';
-    default:
-      return ink;
-  }
-}
-
 /** How the section title relates to the experience list. */
 export type PortfolioExperienceSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
 
@@ -518,64 +240,16 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS: {
 /** Gallery design: the full-bleed word above the section (e.g. "EXPERIENCE"). */
 export type PortfolioExperienceGalleryBigTitleStyle = 'outline' | 'fill';
 
-export const PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS: {
-  value: PortfolioExperienceGalleryBigTitleStyle;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'outline', label: msg('Outline'), description: msg('Letters drawn as an outline only — the default.') },
-  { value: 'fill', label: msg('Fill'), description: msg('Solid, fully filled letters.') },
-];
-
 export type PortfolioExperienceGalleryBigTitleColor = 'current' | 'accent' | 'simple';
-
-export const PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS: {
-  value: PortfolioExperienceGalleryBigTitleColor;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'current', label: msg('Current'), description: msg('The design’s own discreet tone — the default.') },
-  { value: 'accent', label: msg('Accent'), description: msg('Your section’s accent / primary color.') },
-  { value: 'simple', label: msg('Simple'), description: msg('Plain, flat color — same as the “Roles I’ve taken on” heading.') },
-];
 
 /** Gallery / Billboard header: entrance animation intensity. */
 export type PortfolioExperienceGalleryHeaderAnimationStyle = 'dramatic' | 'subtle' | 'none';
 
-export const PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS: {
-  value: PortfolioExperienceGalleryHeaderAnimationStyle;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'dramatic', label: msg('Dramatic'), description: msg('Scale + blur reveal — billboard lighting up.') },
-  { value: 'subtle', label: msg('Subtle'), description: msg('Soft fade only, no scale or blur.') },
-  { value: 'none', label: msg('None'), description: msg('No entrance animation.') },
-];
-
 /** Gallery / Billboard header: secondary title typography. */
 export type PortfolioExperienceGallerySecondaryTitleStyle = 'editorial' | 'uniform';
 
-export const PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS: {
-  value: PortfolioExperienceGallerySecondaryTitleStyle;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'editorial', label: msg('Editorial'), description: msg('First word italic light, rest semibold.') },
-  { value: 'uniform', label: msg('Uniform'), description: msg('Same weight on every word.') },
-];
-
 /** Gallery / Billboard header: role-count presentation. */
 export type PortfolioExperienceGalleryRoleCountStyle = 'micro' | 'normal' | 'hidden';
-
-export const PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS: {
-  value: PortfolioExperienceGalleryRoleCountStyle;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'micro', label: msg('Micro'), description: msg('Uppercase, letter-spaced, small.') },
-  { value: 'normal', label: msg('Normal'), description: msg('Regular body size, sentence case.') },
-  { value: 'hidden', label: msg('Hidden'), description: msg('Hide the role count line.') },
-];
 
 /** Loft design: how each row's thumbnail is presented. */
 export type PortfolioExperienceLoftThumbnailFit = 'cover' | 'glass';
@@ -671,7 +345,6 @@ export const PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS: {
 /** How responsibilities / tasks render inside an experience entry. */
 export type PortfolioExperienceTasksDisplay =
   | 'engineering-grid'
-  | 'cinematic-timeline'
   | 'editorial-dash'
   | 'accordion-stack'
   | 'architectural-index';
@@ -680,14 +353,14 @@ export type PortfolioExperienceTasksDisplay =
 function migrateExperienceTasksDisplay(value: unknown): PortfolioExperienceTasksDisplay | null {
   if (
     value === 'engineering-grid' ||
-    value === 'cinematic-timeline' ||
     value === 'editorial-dash' ||
     value === 'accordion-stack' ||
     value === 'architectural-index'
   ) {
     return value;
   }
-  if (value === 'arrows' || value === 'dashes') return 'editorial-dash';
+  // Retired style: accounts that picked it keep the closest quiet list.
+  if (value === 'arrows' || value === 'dashes' || value === 'cinematic-timeline') return 'editorial-dash';
   if (value === 'checkmarks' || value === 'chips') return 'engineering-grid';
   if (value === 'summary') return 'accordion-stack';
   return null;
@@ -698,19 +371,15 @@ function migrateExperienceTasksDisplay(value: unknown): PortfolioExperienceTasks
 export type PortfolioExperienceToolsBadgeStyle =
   | 'mineral-pills'
   | 'editorial-list'
-  | 'kinetic-marquee'
   | 'numbered-index';
 
 /** Map legacy/unknown tools-badge-style ids. */
 function migrateExperienceToolsBadgeStyle(value: unknown): PortfolioExperienceToolsBadgeStyle | null {
-  if (
-    value === 'mineral-pills' ||
-    value === 'editorial-list' ||
-    value === 'kinetic-marquee' ||
-    value === 'numbered-index'
-  ) {
+  if (value === 'mineral-pills' || value === 'editorial-list' || value === 'numbered-index') {
     return value;
   }
+  // Retired style: accounts that picked it keep a quiet single-line list.
+  if (value === 'kinetic-marquee') return 'editorial-list';
   return null;
 }
 
@@ -1106,6 +775,34 @@ export const PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS: {
     label: msg('Sticky vertical'),
     description: msg('Bottom story stays pinned; titles morph fluidly as you scroll through roles.'),
   },
+];
+
+/** Kinetic design: weight of the role title. */
+export type PortfolioExperienceKineticTitleWeight = 'regular' | 'medium' | 'semibold' | 'bold';
+
+export const PORTFOLIO_EXPERIENCE_KINETIC_TITLE_WEIGHT_OPTIONS: {
+  value: PortfolioExperienceKineticTitleWeight;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'regular', label: msg('Regular'), description: msg('A light, airy title.') },
+  { value: 'medium', label: msg('Medium'), description: msg('A calm, editorial title.') },
+  { value: 'semibold', label: msg('Semibold'), description: msg('Firm without being heavy (default).') },
+  { value: 'bold', label: msg('Bold'), description: msg('A strong, poster-like title.') },
+];
+
+/** Kinetic design: vertical space between the elements of a role and between roles. */
+export type PortfolioExperienceKineticSpacing = 'tight' | 'standard' | 'relaxed' | 'airy';
+
+export const PORTFOLIO_EXPERIENCE_KINETIC_SPACING_OPTIONS: {
+  value: PortfolioExperienceKineticSpacing;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'tight', label: msg('Tight'), description: msg('Elements and roles sit close together.') },
+  { value: 'standard', label: msg('Standard'), description: msg('Balanced spacing (default).') },
+  { value: 'relaxed', label: msg('Relaxed'), description: msg('More room around each element.') },
+  { value: 'airy', label: msg('Airy'), description: msg('Generous, gallery-like spacing.') },
 ];
 
 /** Duotone design: how you move between roles. */
@@ -1517,7 +1214,8 @@ export function experiencePremiumFontScale(size: PortfolioExperiencePremiumFontS
   return EXPERIENCE_PREMIUM_FONT_SCALE[size] ?? 1;
 }
 
-export type PortfolioExperiencePresentationSettings = PortfolioSectionBackgroundSettings & {
+export type PortfolioExperiencePresentationSettings = PortfolioSectionBackgroundSettings &
+  ExperienceHeaderFields & {
   titlePreset: PortfolioExperienceTitlePreset;
   titleCustom: string;
   subtitlePreset: PortfolioExperienceSubtitlePreset;
@@ -1531,13 +1229,6 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   /** Type-size scale applied uniformly across every Experience design (General tab). */
   premiumFontSize: PortfolioExperiencePremiumFontSize;
   headerAlignment: PortfolioExperienceHeaderAlignment;
-  /**
-   * Applied Experience header design (Header subsection).
-   * Renders in a zone above the design-owned header — Editorial first.
-   */
-  headerDesign: PortfolioExperienceHeaderDesign;
-  /** Header elements the owner hid, as `experience-<design>.<element>` keys. Empty = everything shown. */
-  headerHiddenElements: string[];
   /** Accent years only — badge copy. Empty falls back to the years template. `{years}` interpolates. */
   accentYearsBadgeText: string;
   /** Accent years only — sentence after the badge. Empty falls back to the years template. */
@@ -1651,6 +1342,12 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   itemsPerRow: PortfolioExperienceItemsPerRow;
   /** Gallery design: how many thumbnail cards per row on large screens. */
   galleryColumns: PortfolioExperienceGalleryColumns;
+  galleryDetailsEnabled: boolean;
+  galleryStaggered: boolean;
+  galleryStackStyle: 'text' | 'pill' | 'rectangle';
+  galleryButtonShape: 'link' | 'rectangle' | 'pill';
+  galleryButtonHover: 'wipe' | 'roll';
+  galleryButtonLabel: string;
   /** Gallery design: how the thumbnail image fits its frame. */
   galleryThumbnailFit: PortfolioExperienceGalleryThumbnailFit;
   /** Gallery design: corner radius of the card / thumbnail frame. */
@@ -1880,6 +1577,8 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   elementZones: PortfolioExperienceElementZones;
   /** Custom block headings (empty = default English labels). */
   tasksLabel: string;
+  ongoingStatusLabel: string;
+  finishedStatusLabel: string;
   proofLabel: string;
   toolsLabel: string;
   showBlockLabels: boolean;
@@ -1893,12 +1592,59 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   entryExpandMode: PortfolioExperienceEntryExpandMode;
   /** Editorial: stacked details vs right-hand Données & Actions column. */
   editorialDetailLayout: PortfolioExperienceEditorialDetailLayout;
+  editorialStackStyle: 'text' | 'pill' | 'rectangle';
+  editorialButtonShape: 'link' | 'rectangle' | 'pill';
+  editorialButtonHover: 'wipe' | 'roll';
+  editorialStatusStyle: 'watermark' | 'signature' | 'vertical';
+  editorialFocusMode: boolean;
+  editorialFocusBlur: boolean;
+  kineticStackStyle: 'text' | 'pill' | 'rectangle';
+  kineticStatusStyle: 'watermark' | 'signature' | 'vertical';
+  kineticButtonShape: 'link' | 'rectangle' | 'pill';
+  kineticButtonHover: 'wipe' | 'roll';
+  milestoneButtonShape: 'link' | 'rectangle' | 'pill';
+  milestoneStackStyle: 'text' | 'pill' | 'rectangle';
+  milestoneButtonHover: 'wipe' | 'roll';
+  milestoneLabelColor: 'primary' | 'secondary' | 'strong' | 'muted';
+  milestoneLabelSize: number;
+  kineticScrollMotion: boolean;
+  kineticTasksLabelColor: string;
+  kineticTasksLabelSize: number;
   /** How responsibilities / tasks are displayed inside entries. */
   tasksDisplay: PortfolioExperienceTasksDisplay;
+  showTaskMarkers: boolean;
   /** How the tools/tech badges are visually presented (pills, editorial list, marquee, numbered index). */
   toolsBadgeStyle: PortfolioExperienceToolsBadgeStyle;
   /** Table design: alternate row background for easier scanning. */
   tableStripedRows: boolean;
+  /** Table: soften other entries while hovering or focusing a row. */
+  tableFocusMode: boolean;
+  tableFocusBlur: boolean;
+  tableButtonShape: 'link' | 'rectangle' | 'pill';
+  tableButtonHover: 'wipe' | 'roll';
+  tableStackStyle: 'text' | 'pill' | 'rectangle';
+  reelStackStyle: 'text' | 'pill' | 'rectangle';
+  duotoneStackStyle: 'text' | 'pill' | 'rectangle';
+  duotoneTaskAlignment: 'offset' | 'aligned';
+  duotoneButtonLabel: string;
+  reelButtonShape: 'link' | 'rectangle' | 'pill';
+  reelButtonHover: 'wipe' | 'roll';
+  reelStatusPresentation: 'watermark' | 'signature' | 'vertical';
+  cardsButtonShape: 'link' | 'rectangle' | 'pill';
+  cardsButtonHover: 'wipe' | 'roll';
+  cardsStackStyle: 'text' | 'pill' | 'rectangle';
+  cardsLabelColor: 'primary' | 'secondary' | 'strong' | 'muted';
+  cardsLabelSize: number;
+  cardsFocusMode: boolean;
+  cardsFrameColor: 'fond' | 'neutre' | 'principal' | 'secondaire';
+  cardsFrameOpacity: number;
+  cardsFrameShadow: boolean;
+  tablePeriodLabel: string;
+  tableRoleLabel: string;
+  tableOrganizationLabel: string;
+  tableStatusLabel: string;
+  /** Kinetic design: every other role gets a barely-there background band. */
+  kineticStripedRows: boolean;
   /** Cards design: shared row + column gap between cards. */
   cardsGridGap: PortfolioExperienceCardsGridGap;
   /** Manual px when cardsGridGap is `custom`. */
@@ -1913,6 +1659,8 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   cardsVerticalGap: PortfolioExperienceCardsVerticalGap;
   /** Cards design: corner radius of the card frame. */
   cardsBorderRadius: PortfolioExperienceCardsBorderRadius;
+  /** Shared Design → Cards block; `auto` keeps each design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   /** Cards design: vertical gap between individual tasks in the timeline. */
   cardsTasksGap: PortfolioExperienceCardsTasksGap;
   /** Cards design: sticky cascade on scroll (desktop), or always static. */
@@ -1936,6 +1684,10 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   reelStatusStyle: PortfolioExperienceReelStatusStyle;
   /** Reel design: scroll choreography (index warp vs staggered fade & reveal). */
   reelScrollMotion: PortfolioExperienceReelScrollMotion;
+  /** Kinetic design: weight of the role title. */
+  kineticTitleWeight: PortfolioExperienceKineticTitleWeight;
+  /** Kinetic design: vertical spacing between elements and roles. */
+  kineticSpacing: PortfolioExperienceKineticSpacing;
   /** Duotone design: how you move between roles. */
   duotoneScrollMode: PortfolioExperienceDuotoneScrollMode;
   /** Duotone design, Slide mode: how the prev/next control is presented. */
@@ -1992,6 +1744,8 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
   /** Per-element color, font, size, and weight for entry content. */
   elementStyles: PortfolioExperienceElementStyles;
   /** Outer entry background (the gray shell around both columns). */
@@ -2188,8 +1942,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   subtitleUppercase: false,
   premiumFontSize: 'medium',
   headerAlignment: 'left',
-  headerDesign: 'none',
-  headerHiddenElements: [],
+  ...DEFAULT_EXPERIENCE_HEADER_FIELDS,
   accentYearsBadgeText: '',
   accentYearsLeadText: '',
   accentYearsFontSize: 6,
@@ -2246,6 +1999,12 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   listPlacement: 'left',
   itemsPerRow: 1,
   galleryColumns: 3,
+  galleryDetailsEnabled: true,
+  galleryStaggered: true,
+  galleryStackStyle: 'text',
+  galleryButtonShape: 'link',
+  galleryButtonHover: 'wipe',
+  galleryButtonLabel: '',
   galleryThumbnailFit: 'cover',
   galleryThumbnailRadius: 'md',
   galleryHoverEffect: 'curtain',
@@ -2381,6 +2140,8 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   elementOrder: DEFAULT_EXPERIENCE_ELEMENT_ORDER,
   elementZones: DEFAULT_EXPERIENCE_ELEMENT_ZONES,
   tasksLabel: '',
+  ongoingStatusLabel: '',
+  finishedStatusLabel: '',
   proofLabel: '',
   toolsLabel: '',
   showBlockLabels: true,
@@ -2389,9 +2150,54 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   periodDesign: 'plain',
   entryExpandMode: 'accordion',
   editorialDetailLayout: 'split-actions',
+  editorialStackStyle: 'text',
+  editorialButtonShape: 'link',
+  editorialButtonHover: 'wipe',
+  editorialStatusStyle: 'watermark',
+  editorialFocusMode: true,
+  editorialFocusBlur: true,
+  kineticStackStyle: 'rectangle',
+  kineticStatusStyle: 'watermark',
+  kineticButtonShape: 'rectangle',
+  kineticButtonHover: 'wipe',
+  milestoneButtonShape: 'link',
+  milestoneStackStyle: 'rectangle',
+  milestoneButtonHover: 'wipe',
+  milestoneLabelColor: 'muted',
+  milestoneLabelSize: 12,
+  kineticScrollMotion: true,
+  kineticTasksLabelColor: 'muted',
+  kineticTasksLabelSize: 12,
   tasksDisplay: 'editorial-dash',
-  toolsBadgeStyle: 'mineral-pills',
+  showTaskMarkers: true,
+  toolsBadgeStyle: 'editorial-list',
   tableStripedRows: false,
+  tableFocusMode: true,
+  tableFocusBlur: true,
+  tableButtonShape: 'link',
+  tableButtonHover: 'wipe',
+  tableStackStyle: 'text',
+  reelStackStyle: 'text',
+  duotoneStackStyle: 'text',
+  duotoneTaskAlignment: 'offset',
+  duotoneButtonLabel: '',
+  reelButtonShape: 'link',
+  reelButtonHover: 'wipe',
+  reelStatusPresentation: 'signature',
+  cardsButtonShape: 'link',
+  cardsButtonHover: 'roll',
+  cardsStackStyle: 'text',
+  cardsLabelColor: 'muted',
+  cardsLabelSize: 12,
+  cardsFocusMode: false,
+  cardsFrameColor: 'neutre',
+  cardsFrameOpacity: 100,
+  cardsFrameShadow: false,
+  tablePeriodLabel: '',
+  tableRoleLabel: '',
+  tableOrganizationLabel: '',
+  tableStatusLabel: '',
+  kineticStripedRows: true,
   cardsGridGap: 'md',
   cardsGridGapPx: 36,
   cardsCardWidth: 'medium',
@@ -2399,6 +2205,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   cardsElementSpacing: 'md',
   cardsVerticalGap: 'md',
   cardsBorderRadius: 'none',
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   cardsTasksGap: 'md',
   cardsStackEffect: 'cascade',
   cardsEqualHeight: false,
@@ -2409,7 +2216,9 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   reelKickerText: '02 / Chronology',
   reelHeaderAnimationEnabled: true,
   reelStatusStyle: 'minimal',
-  reelScrollMotion: 'fade-reveal',
+  reelScrollMotion: 'index-distort',
+  kineticTitleWeight: 'semibold',
+  kineticSpacing: 'standard',
   duotoneScrollMode: 'sticky',
   duotoneSlideNavStyle: 'chevron',
   duotoneFrameColor: 'none',
@@ -2417,7 +2226,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   duotoneAutoAdvance: false,
   duotoneThumbnailEffect: 'grayscale',
   duotoneThumbnailHeight: 'md',
-  duotoneRepoCtaMode: 'footer',
+  duotoneRepoCtaMode: 'thumb-cursor',
   duotoneScrollFullWidthTitle: false,
   duotoneStickySwapSides: false,
   duotoneAlternateSides: false,
@@ -2436,6 +2245,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   toolsChrome: { ...DEFAULT_EXPERIENCE_TOOLS_CHROME },
   useHeroPalette: true,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
   experiencePalette: { ...DEFAULT_EXPERIENCE_PALETTE },
   experienceColorBindings: { ...DEFAULT_EXPERIENCE_COLOR_BINDINGS },
   elementStyles: DEFAULT_EXPERIENCE_ELEMENT_STYLES,
@@ -2650,11 +2460,6 @@ export const PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS: {
     description: msg('Compact monochrome micro-blocks in a tight grid — technical and ordered.'),
   },
   {
-    value: 'cinematic-timeline',
-    label: msg('Cinematic Timeline'),
-    description: msg('Wire vertical rail with monospaced indexes — narrative and fluid.'),
-  },
-  {
     value: 'editorial-dash',
     label: msg('Editorial Dash'),
     description: msg('Airy typography with long em-dashes that stretch and shift on hover.'),
@@ -2685,11 +2490,6 @@ export const PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS: {
     value: 'editorial-list',
     label: msg('Editorial List'),
     description: msg('A single line of literary type, dot-separated — hover isolates one tool, dims the rest.'),
-  },
-  {
-    value: 'kinetic-marquee',
-    label: msg('Kinetic Marquee'),
-    description: msg('Monumental outline type drifting in an endless, silent loop — merges into the background.'),
   },
   {
     value: 'numbered-index',
@@ -2797,7 +2597,7 @@ export function experienceCardsTitleFontSize(
       return 'clamp(3.5rem, 7.2vw, 6.5rem)';
     case 'md':
     default:
-      return 'clamp(2.5rem, 5vw, 4.5rem)';
+      return 'clamp(2rem, 3.6vw, 3.5rem)';
   }
 }
 
@@ -2891,16 +2691,16 @@ export function experienceCardsElementSpacingClasses(
       };
     case 'lg':
       return {
-        cardPad: 'px-6 py-7 sm:px-8 sm:py-8 lg:px-9 lg:py-9',
-        sectionGap: 'mt-10 sm:mt-12',
-        linksGap: 'mt-9 sm:mt-10',
+        cardPad: 'px-6 py-8 sm:px-10 sm:py-10 lg:px-14 lg:py-14',
+        sectionGap: 'mt-12 sm:mt-16',
+        linksGap: 'mt-10 sm:mt-12',
       };
     case 'md':
     default:
       return {
-        cardPad: 'px-5 py-5 sm:px-6 sm:py-6 lg:px-7 lg:py-7',
-        sectionGap: 'mt-8 sm:mt-9',
-        linksGap: 'mt-7 sm:mt-8',
+        cardPad: 'px-5 py-7 sm:px-8 sm:py-9 lg:px-10 lg:py-10',
+        sectionGap: 'mt-10 sm:mt-12',
+        linksGap: 'mt-9 sm:mt-10',
       };
   }
 }
@@ -3189,101 +2989,6 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS: {
-  value: PortfolioExperiencePressAnimationStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'staggered',
-    label: msg('Staggered'),
-    description: msg('Words reveal one after another.'),
-  },
-  {
-    value: 'simultaneous',
-    label: msg('Simultaneous'),
-    description: msg('The whole headline appears at once.'),
-  },
-  {
-    value: 'none',
-    label: msg('None'),
-    description: msg('No entrance animation.'),
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS: {
-  value: PortfolioExperiencePressHeadingWeightStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'alternating',
-    label: msg('Alternating'),
-    description: msg('First word light, rest black — editorial contrast.'),
-  },
-  {
-    value: 'uniform',
-    label: msg('Uniform'),
-    description: msg('Every word the same bold weight.'),
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS: {
-  value: PortfolioExperiencePressSubtitleStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'micro',
-    label: msg('Micro'),
-    description: msg('Uppercase, letter-spaced, small.'),
-  },
-  {
-    value: 'normal',
-    label: msg('Normal'),
-    description: msg('Regular sentence-case body text.'),
-  },
-  {
-    value: 'hidden',
-    label: msg('Hidden'),
-    description: msg('Hide the intro line.'),
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS: {
-  value: PortfolioExperiencePressHeadingAlignment;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'left',
-    label: msg('Left'),
-    description: msg('Flush left — the default editorial alignment.'),
-  },
-  {
-    value: 'center',
-    label: msg('Center'),
-    description: msg('Centered masthead.'),
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS: {
-  value: PortfolioExperiencePressParallaxIntensity;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'subtle',
-    label: msg('Subtle'),
-    description: msg('Gentle line-by-line drift.'),
-  },
-  {
-    value: 'dramatic',
-    label: msg('Dramatic'),
-    description: msg('Stronger cascade as you scroll.'),
-  },
-];
-
 const EXPERIENCE_STORY_CONTENT_GAP_PX_MIN = 0;
 const EXPERIENCE_STORY_CONTENT_GAP_PX_MAX = 64;
 
@@ -3406,7 +3111,8 @@ export function ensureExperienceInkContrast(
   candidate: string | null | undefined,
   isDark: boolean,
   lightFallback: string,
-  darkFallback: string
+  darkFallback: string,
+  surface?: string
 ): string {
   const fallback = isDark ? darkFallback : lightFallback;
   const raw = typeof candidate === 'string' ? candidate.trim() : '';
@@ -3414,6 +3120,13 @@ export function ensureExperienceInkContrast(
   // rgba()/hsl() — trust the author; only rescue solid hex that fights the surface.
   if (!raw.startsWith('#')) return raw;
   const lum = experiencePeriodRuleLuminance(raw);
+  if (surface && /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i.test(surface.trim())) {
+    const background = experiencePeriodRuleLuminance(surface);
+    const contrast = (ink: number) => (Math.max(ink, background) + 0.05) / (Math.min(ink, background) + 0.05);
+    if (contrast(lum) >= 4.5) return raw;
+    return contrast(experiencePeriodRuleLuminance(darkFallback)) >= contrast(experiencePeriodRuleLuminance(lightFallback))
+      ? darkFallback : lightFallback;
+  }
   if (isDark && lum < 0.38) return darkFallback;
   if (!isDark && lum > 0.72) return lightFallback;
   return raw;
@@ -3722,34 +3435,6 @@ export function resolveExperienceSectionSubtitle(
   }
 }
 
-function experienceHeaderFontClass(
-  font: PortfolioExperienceHeaderFont,
-  kind: 'title' | 'subtitle'
-): string {
-  if (kind === 'title') {
-    switch (font) {
-      case 'serif':
-        return 'font-serif font-bold tracking-[-0.03em]';
-      case 'display':
-        return 'font-black uppercase tracking-[0.08em]';
-      default:
-        return 'font-extrabold tracking-[-0.04em]';
-    }
-  }
-  switch (font) {
-    case 'serif':
-      return 'font-serif leading-relaxed';
-    case 'display':
-      return 'font-bold uppercase tracking-[0.1em]';
-    default:
-      return 'leading-relaxed';
-  }
-}
-
-function experienceHeaderFontStyle(_font: PortfolioExperienceHeaderFont): CSSProperties | undefined {
-  return undefined;
-}
-
 export function experienceAccentColor(accent: string): string {
   return sanitizeHex(accent, DEFAULT_EXPERIENCE_ACCENT_COLOR);
 }
@@ -3780,12 +3465,7 @@ export function experienceHeaderDesignIsApplied(
   headerDesign: PortfolioExperienceHeaderDesign | undefined,
   _experienceDesign?: PortfolioExperienceDesign
 ): boolean {
-  return Boolean(
-    headerDesign &&
-      headerDesign !== 'none' &&
-      headerDesign !== 'cards' &&
-      headerDesign !== 'duotone'
-  );
+  return Boolean(headerDesign && headerDesign !== 'none');
 }
 
 /** Table design owns its own header (small section label + years intro). */
@@ -3900,195 +3580,12 @@ function clampAccentYearsBottomRem(value: unknown, fallback = 3.5): number {
   return Math.min(6.5, Math.max(1.25, Math.round(n * 4) / 4));
 }
 
-function interpolateAccentYearsToken(text: string, years: number): string {
-  return text.replaceAll('{years}', years > 0 ? String(years) : '');
-}
-
-export function resolveAccentYearsCopy(
-  years: number,
-  presentation: Pick<
-    PortfolioExperiencePresentationSettings,
-    'yearsPreset' | 'yearsCustom' | 'accentYearsBadgeText' | 'accentYearsLeadText'
-  >
-): { badge: string; lead: string } {
-  const customBadge = presentation.accentYearsBadgeText?.trim() ?? '';
-  const customLead = presentation.accentYearsLeadText?.trim() ?? '';
-  const template = resolveExperienceYearsTemplate(presentation);
-  const marker = '{years}';
-  const markerIndex = template.indexOf(marker);
-  let fallbackBadge = '';
-  let fallbackLead = interpolateAccentYearsToken(template, years);
-  if (markerIndex !== -1) {
-    const after = template.slice(markerIndex + marker.length);
-    const yearsPhraseMatch = after.match(/^(\+?\s*years?\b)/i);
-    const highlightTail = yearsPhraseMatch?.[1] ?? '';
-    fallbackBadge = interpolateAccentYearsToken(`${marker}${highlightTail}`, years);
-    fallbackLead = interpolateAccentYearsToken(after.slice(highlightTail.length), years).replace(
-      /^\s+/,
-      ''
-    );
-  }
-  return {
-    badge: customBadge ? interpolateAccentYearsToken(customBadge, years) : fallbackBadge,
-    lead: customLead ? interpolateAccentYearsToken(customLead, years) : fallbackLead,
-  };
-}
-
-export function resolveAccentYearsBadgeColor(
-  presentation: Pick<
-    PortfolioExperiencePresentationSettings,
-    'accentColor' | 'accentYearsBadgeColor'
-  >
-): string {
-  switch (presentation.accentYearsBadgeColor) {
-    case 'principal':
-      return 'var(--pf-palette-principal)';
-    case 'secondaire':
-      return 'var(--pf-palette-secondaire)';
-    default:
-      return experienceAccentColor(presentation.accentColor);
-  }
-}
-
-export function accentYearsCssVars(
-  presentation: Pick<
-    PortfolioExperiencePresentationSettings,
-    'accentYearsFontSize' | 'accentYearsBadgeRadius'
-  >
-): CSSProperties {
-  const size = clampAccentYearsFontSize(presentation.accentYearsFontSize);
-  const radius = clampAccentYearsBadgeRadius(presentation.accentYearsBadgeRadius);
-  return {
-    ['--pf-exp-accent-size' as string]: ACCENT_YEARS_FONT_SIZE_CSS[size],
-    ['--pf-exp-accent-badge-radius' as string]: ACCENT_YEARS_RADIUS_CSS[radius],
-  } as CSSProperties;
-}
-
 export function accentYearsGridAnchorEnabled(
   presentation: Pick<PortfolioExperiencePresentationSettings, 'headerDesign'>
 ): boolean {
-  return presentation.headerDesign === 'editorial';
-}
-
-export function accentYearsHasCustomCopy(
-  presentation: Pick<PortfolioExperiencePresentationSettings, 'accentYearsBadgeText' | 'accentYearsLeadText'>
-): boolean {
-  return Boolean(
-    presentation.accentYearsBadgeText?.trim() || presentation.accentYearsLeadText?.trim()
-  );
-}
-
-export function resolveCenteredHeaderCopy(
-  years: number | null | undefined,
-  sectionTitle: string,
-  presentation: Pick<
-    PortfolioExperiencePresentationSettings,
-    'centeredTitleText' | 'centeredLeadText' | 'yearsPreset' | 'yearsCustom' | 'showYears'
-  >
-): { title: string; lead: string } {
-  const yearsValue = years != null && years > 0 ? String(years) : '';
-  const interpolate = (text: string) => text.replaceAll('{years}', yearsValue);
-  const customTitle = presentation.centeredTitleText?.trim() ?? '';
-  const title = portfolioSectionTitleSentenceCase(
-    interpolate(customTitle || sectionTitle.trim() || DEFAULT_CENTERED_TITLE_TEXT)
-  );
-  const customLead = presentation.centeredLeadText?.trim() ?? '';
-  if (customLead) {
-    return { title, lead: interpolate(customLead) };
-  }
-  const showYears = presentation.showYears !== false && Boolean(yearsValue);
-  if (!showYears) return { title, lead: '' };
-  return { title, lead: interpolate(resolveExperienceYearsTemplate(presentation)) };
-}
-
-export function experienceYearsClass(
-  settings: Pick<
-    PortfolioExperiencePresentationSettings,
-    'yearsFont' | 'yearsSize' | 'yearsItalic' | 'yearsAlignment' | 'experienceDesign'
-  >
-): string {
-  const isEditorial = settings.experienceDesign === 'editorial';
-  const parts = [
-    isEditorial
-      ? 'pf-exp-accent-years relative mb-0 max-w-3xl bg-transparent font-bold'
-      : 'relative mb-8 max-w-2xl border-0 bg-transparent p-0 leading-relaxed shadow-none',
-  ];
-
-  if (isEditorial) {
-    switch (settings.yearsFont) {
-      case 'serif':
-        parts.push('font-serif');
-        break;
-      case 'display':
-        parts.push('uppercase tracking-[0.06em]');
-        break;
-      default:
-        break;
-    }
-  } else {
-    parts.push(experienceHeaderFontClass(settings.yearsFont, 'title'));
-    switch (settings.yearsSize) {
-      case 'sm':
-        parts.push('text-base sm:text-lg');
-        break;
-      case 'lg':
-        parts.push('text-xl sm:text-2xl lg:text-3xl');
-        break;
-      case 'xl':
-        parts.push('text-2xl sm:text-3xl lg:text-4xl');
-        break;
-      default:
-        parts.push('text-lg sm:text-xl lg:text-2xl');
-    }
-  }
-
-  if (settings.yearsItalic) parts.push('italic');
-
-  switch (settings.yearsAlignment) {
-    case 'center':
-      parts.push('mx-auto text-center');
-      break;
-    case 'right':
-      parts.push('ml-auto text-right');
-      break;
-    default:
-      parts.push('text-left');
-  }
-
-  return parts.filter(Boolean).join(' ');
-}
-
-export function experienceYearsStyle(
-  settings: Pick<PortfolioExperiencePresentationSettings, 'yearsColor' | 'yearsFont' | 'activeColorMode'>
-): CSSProperties {
-  const isDark = settings.activeColorMode !== 'light';
-  return {
-    color: ensureExperienceInkContrast(
-      settings.yearsColor,
-      isDark,
-      DEFAULT_EXPERIENCE_YEARS_COLOR,
-      DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
-    ),
-    ...experienceHeaderFontStyle(settings.yearsFont),
-  };
-}
-
-export function experienceYearsHighlightStyle(
-  settings: Pick<
-    PortfolioExperiencePresentationSettings,
-    'yearsHighlightColor' | 'yearsFont' | 'activeColorMode'
-  >
-): CSSProperties {
-  const isDark = settings.activeColorMode !== 'light';
-  return {
-    color: ensureExperienceInkContrast(
-      settings.yearsHighlightColor,
-      isDark,
-      DEFAULT_EXPERIENCE_YEARS_HIGHLIGHT_COLOR,
-      DEFAULT_EXPERIENCE_TITLE_COLOR_DARK
-    ),
-    ...experienceHeaderFontStyle(settings.yearsFont),
-  };
+  // The shared headers carry no accent-years line, so the list never anchors to one.
+  void presentation;
+  return false;
 }
 
 function mergeExperienceLayerFrame(
@@ -4349,25 +3846,7 @@ export function mergeExperiencePresentation(
       typeof record.subtitleUppercase === 'boolean' ? record.subtitleUppercase : base.subtitleUppercase,
     premiumFontSize: pick(record.premiumFontSize, EXPERIENCE_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     headerAlignment: pick(record.headerAlignment, ['left', 'center', 'right'], base.headerAlignment),
-    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
-    headerDesign: pick(
-      record.headerDesign,
-      [
-        'none',
-        'editorial',
-        'milestone',
-        'table',
-        'reel',
-        'gallery',
-        'spotlight',
-        'loft',
-        'press',
-        'legacy',
-      ],
-      base.headerDesign === 'cards' || base.headerDesign === 'duotone'
-        ? 'none'
-        : (base.headerDesign ?? 'none')
-    ),
+    ...mergeExperienceHeaderFields(base, record, mergeHeaderHiddenElements),
     accentYearsBadgeText:
       typeof record.accentYearsBadgeText === 'string' ? record.accentYearsBadgeText : base.accentYearsBadgeText,
     accentYearsLeadText:
@@ -4581,6 +4060,12 @@ export function mergeExperiencePresentation(
       if (raw === '1' || raw === '2' || raw === '3') return Number(raw) as PortfolioExperienceItemsPerRow;
       return base.itemsPerRow;
     })(),
+    galleryDetailsEnabled: typeof record.galleryDetailsEnabled === 'boolean' ? record.galleryDetailsEnabled : base.galleryDetailsEnabled ?? true,
+    galleryStaggered: typeof record.galleryStaggered === 'boolean' ? record.galleryStaggered : base.galleryStaggered ?? true,
+    galleryStackStyle: pick(record.galleryStackStyle, ['text', 'pill', 'rectangle'], base.galleryStackStyle ?? 'text'),
+    galleryButtonShape: pick(record.galleryButtonShape, ['link', 'rectangle', 'pill'], base.galleryButtonShape ?? 'link'),
+    galleryButtonHover: pick(record.galleryButtonHover, ['wipe', 'roll'], base.galleryButtonHover ?? 'wipe'),
+    galleryButtonLabel: typeof record.galleryButtonLabel === 'string' ? record.galleryButtonLabel.slice(0, 120) : base.galleryButtonLabel ?? '',
     galleryColumns: (() => {
       const raw = record.galleryColumns;
       if (raw === 2 || raw === 3) return raw;
@@ -5095,6 +4580,8 @@ export function mergeExperiencePresentation(
       return zones;
     })(),
     tasksLabel: typeof record.tasksLabel === 'string' ? record.tasksLabel : base.tasksLabel,
+    ongoingStatusLabel: typeof record.ongoingStatusLabel === 'string' ? record.ongoingStatusLabel.slice(0, 80) : (base.ongoingStatusLabel ?? ''),
+    finishedStatusLabel: typeof record.finishedStatusLabel === 'string' ? record.finishedStatusLabel.slice(0, 80) : (base.finishedStatusLabel ?? ''),
     proofLabel: typeof record.proofLabel === 'string' ? record.proofLabel : base.proofLabel,
     toolsLabel: typeof record.toolsLabel === 'string' ? record.toolsLabel : base.toolsLabel,
     showBlockLabels:
@@ -5123,18 +4610,65 @@ export function mergeExperiencePresentation(
       ['stacked', 'split-actions'],
       base.editorialDetailLayout ?? 'split-actions'
     ),
+    showTaskMarkers: typeof record.showTaskMarkers === 'boolean' ? record.showTaskMarkers : (base.showTaskMarkers ?? true),
     tasksDisplay:
       migrateExperienceTasksDisplay(record.tasksDisplay) ??
       migrateExperienceTasksDisplay(base.tasksDisplay) ??
       'editorial-dash',
-    toolsBadgeStyle:
-      migrateExperienceToolsBadgeStyle(record.toolsBadgeStyle) ??
-      migrateExperienceToolsBadgeStyle(base.toolsBadgeStyle) ??
-      'mineral-pills',
+    // The tools display is no longer a setting: every design shows the Editorial List, whatever an older save holds.
+    editorialStackStyle: pick(record.editorialStackStyle, ['text', 'pill', 'rectangle'], base.editorialStackStyle ?? 'text'),
+    editorialButtonShape: pick(record.editorialButtonShape, ['link', 'rectangle', 'pill'], base.editorialButtonShape ?? 'link'),
+    editorialButtonHover: pick(record.editorialButtonHover, ['wipe', 'roll'], base.editorialButtonHover ?? 'wipe'),
+    editorialStatusStyle: pick(record.editorialStatusStyle, ['watermark', 'signature', 'vertical'], base.editorialStatusStyle ?? 'watermark'),
+    editorialFocusMode: typeof record.editorialFocusMode === 'boolean' ? record.editorialFocusMode : (base.editorialFocusMode ?? true),
+    editorialFocusBlur: typeof record.editorialFocusBlur === 'boolean' ? record.editorialFocusBlur : (base.editorialFocusBlur ?? true),
+    kineticStackStyle: pick(record.kineticStackStyle, ['text', 'pill', 'rectangle'], base.kineticStackStyle ?? 'rectangle'),
+    kineticStatusStyle: pick(record.kineticStatusStyle, ['watermark', 'signature', 'vertical'], base.kineticStatusStyle ?? 'watermark'),
+    kineticButtonShape: pick(record.kineticButtonShape, ['link', 'rectangle', 'pill'], base.kineticButtonShape ?? 'rectangle'),
+    kineticButtonHover: pick(record.kineticButtonHover, ['wipe', 'roll'], base.kineticButtonHover ?? 'wipe'),
+    milestoneButtonShape: pick(record.milestoneButtonShape, ['link', 'rectangle', 'pill'], base.milestoneButtonShape ?? 'link'),
+    milestoneStackStyle: pick(record.milestoneStackStyle, ['text', 'pill', 'rectangle'], base.milestoneStackStyle ?? 'rectangle'),
+    milestoneButtonHover: pick(record.milestoneButtonHover, ['wipe', 'roll'], base.milestoneButtonHover ?? 'wipe'),
+    milestoneLabelColor: pick(record.milestoneLabelColor, ['primary', 'secondary', 'strong', 'muted'], base.milestoneLabelColor ?? 'muted'),
+    milestoneLabelSize: typeof record.milestoneLabelSize === 'number' && Number.isFinite(record.milestoneLabelSize) ? Math.max(8, Math.min(40, record.milestoneLabelSize)) : (base.milestoneLabelSize ?? 12),
+    kineticScrollMotion: typeof record.kineticScrollMotion === 'boolean' ? record.kineticScrollMotion : (base.kineticScrollMotion ?? true),
+    kineticTasksLabelColor: pick(record.kineticTasksLabelColor, ['primary', 'secondary', 'strong', 'muted'], 'muted'),
+    kineticTasksLabelSize: typeof record.kineticTasksLabelSize === 'number' && Number.isFinite(record.kineticTasksLabelSize) ? Math.max(8, Math.min(40, record.kineticTasksLabelSize)) : (base.kineticTasksLabelSize ?? 12),
+    toolsBadgeStyle: 'editorial-list',
+    kineticStripedRows:
+      typeof record.kineticStripedRows === 'boolean'
+        ? record.kineticStripedRows
+        : base.kineticStripedRows ?? true,
     tableStripedRows:
       typeof record.tableStripedRows === 'boolean'
         ? record.tableStripedRows
         : base.tableStripedRows ?? false,
+    tableFocusMode: typeof record.tableFocusMode === 'boolean' ? record.tableFocusMode : base.tableFocusMode ?? true,
+    tableFocusBlur: typeof record.tableFocusBlur === 'boolean' ? record.tableFocusBlur : base.tableFocusBlur ?? true,
+    tableButtonShape: pick(record.tableButtonShape, ['link', 'rectangle', 'pill'], base.tableButtonShape ?? 'link'),
+    tableButtonHover: pick(record.tableButtonHover, ['wipe', 'roll'], base.tableButtonHover ?? 'wipe'),
+    tableStackStyle: pick(record.tableStackStyle, ['text', 'pill', 'rectangle'], base.tableStackStyle ?? 'text'),
+    reelStackStyle: pick(record.reelStackStyle, ['text', 'pill', 'rectangle'], base.reelStackStyle ?? 'text'),
+    duotoneStackStyle: pick(record.duotoneStackStyle, ['text', 'pill', 'rectangle'], base.duotoneStackStyle ?? 'text'),
+    duotoneTaskAlignment: pick(record.duotoneTaskAlignment, ['offset', 'aligned'], base.duotoneTaskAlignment ?? 'offset'),
+    duotoneButtonLabel: typeof record.duotoneButtonLabel === 'string' ? record.duotoneButtonLabel.slice(0, 120) : base.duotoneButtonLabel ?? '',
+    reelButtonShape: pick(record.reelButtonShape, ['link', 'rectangle', 'pill'], base.reelButtonShape ?? 'link'),
+    reelButtonHover: pick(record.reelButtonHover, ['wipe', 'roll'], base.reelButtonHover ?? 'wipe'),
+    reelStatusPresentation: pick(record.reelStatusPresentation, ['watermark', 'signature', 'vertical'], base.reelStatusPresentation ?? 'signature'),
+    cardsButtonShape: pick(record.cardsButtonShape, ['link', 'rectangle', 'pill'], base.cardsButtonShape ?? 'link'),
+    cardsButtonHover: pick(record.cardsButtonHover, ['wipe', 'roll'], base.cardsButtonHover ?? 'roll'),
+    cardsStackStyle: pick(record.cardsStackStyle, ['text', 'pill', 'rectangle'], base.cardsStackStyle ?? 'text'),
+    cardsLabelColor: pick(record.cardsLabelColor, ['primary', 'secondary', 'strong', 'muted'], base.cardsLabelColor ?? 'muted'),
+    cardsLabelSize: typeof record.cardsLabelSize === 'number' && Number.isFinite(record.cardsLabelSize) ? Math.max(8, Math.min(40, record.cardsLabelSize)) : (base.cardsLabelSize ?? 12),
+    cardsFocusMode: typeof record.cardsFocusMode === 'boolean' ? record.cardsFocusMode : (base.cardsFocusMode ?? false),
+    cardsFrameColor: pick(record.cardsFrameColor, ['fond', 'neutre', 'principal', 'secondaire'], base.cardsFrameColor ?? 'neutre'),
+    cardsFrameOpacity: typeof record.cardsFrameOpacity === 'number' && Number.isFinite(record.cardsFrameOpacity) ? Math.max(0, Math.min(100, record.cardsFrameOpacity)) : (base.cardsFrameOpacity ?? 100),
+    cardsFrameShadow: typeof record.cardsFrameShadow === 'boolean' ? record.cardsFrameShadow : (base.cardsFrameShadow ?? false),
+    tablePeriodLabel: typeof record.tablePeriodLabel === 'string' ? record.tablePeriodLabel.slice(0, 60) : (base.tablePeriodLabel ?? ''),
+    tableRoleLabel: typeof record.tableRoleLabel === 'string' ? record.tableRoleLabel.slice(0, 60) : (base.tableRoleLabel ?? ''),
+    tableOrganizationLabel: typeof record.tableOrganizationLabel === 'string' ? record.tableOrganizationLabel.slice(0, 60) : (base.tableOrganizationLabel ?? ''),
+    tableStatusLabel: typeof record.tableStatusLabel === 'string' ? record.tableStatusLabel.slice(0, 60) : (base.tableStatusLabel ?? ''),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     cardsBorderRadius: pick(
       record.cardsBorderRadius,
       ['none', 'md', 'xl'],
@@ -5206,13 +4740,16 @@ export function mergeExperiencePresentation(
       ['minimal', 'badge', 'bar', 'square', 'plain'],
       base.reelStatusStyle ?? 'minimal'
     ),
-    reelScrollMotion: pick(
-      record.reelScrollMotion,
-      ['index-distort', 'fade-reveal', 'sticky-vertical'],
-      // Migrate retired sticky-snap → sticky-vertical
-      record.reelScrollMotion === 'sticky-snap'
-        ? 'sticky-vertical'
-        : (base.reelScrollMotion ?? 'fade-reveal')
+    reelScrollMotion: 'index-distort',
+    kineticSpacing: pick(
+      record.kineticSpacing,
+      ['tight', 'standard', 'relaxed', 'airy'],
+      base.kineticSpacing ?? 'standard'
+    ),
+    kineticTitleWeight: pick(
+      record.kineticTitleWeight,
+      ['regular', 'medium', 'semibold', 'bold'],
+      base.kineticTitleWeight ?? 'semibold'
     ),
     duotoneScrollMode: pick(
       record.duotoneScrollMode,
@@ -5248,11 +4785,7 @@ export function mergeExperiencePresentation(
       ['sm', 'md', 'lg'],
       base.duotoneThumbnailHeight ?? 'md'
     ),
-    duotoneRepoCtaMode: pick(
-      record.duotoneRepoCtaMode,
-      ['footer', 'thumb-cursor'],
-      base.duotoneRepoCtaMode ?? 'footer'
-    ),
+    duotoneRepoCtaMode: 'thumb-cursor',
     duotoneScrollFullWidthTitle:
       typeof record.duotoneScrollFullWidthTitle === 'boolean'
         ? record.duotoneScrollFullWidthTitle
@@ -5311,6 +4844,7 @@ export function mergeExperiencePresentation(
     ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
     experiencePalette: mergeExperiencePalette(
       mergeExperiencePalette(DEFAULT_EXPERIENCE_PALETTE, base.experiencePalette),
       record.experiencePalette

@@ -53,7 +53,7 @@ function useFitWidthTextSize(
       const measuredWidth = textEl.getBoundingClientRect().width;
       if (measuredWidth <= 0) return;
 
-      textEl.style.fontSize = `${REFERENCE_PX * (targetWidth / measuredWidth)}px`;
+      textEl.style.fontSize = `${Math.min(REFERENCE_PX * (targetWidth / measuredWidth), window.innerHeight * 0.38)}px`;
     };
 
     fit();
@@ -224,7 +224,7 @@ export function FooterDesignInvertedWordmark({
   // `transition-colors` compensates for `data-pf-no-color-transition` below (needed so the
   // global site-wide crossfade never fights this file's own GSAP hover tweens): the link's
   // ink color still glides smoothly across a light/dark toggle, just via its own transition.
-  const linkClass = 'w-fit uppercase tracking-[0.12em] transition-colors duration-500 ease-out';
+  const linkClass = 'inline-flex min-h-11 w-fit max-w-full items-center uppercase tracking-[0.12em] transition-colors duration-500 ease-out [overflow-wrap:anywhere] focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-current';
   const linkFontSize: CSSProperties = {
     fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
   };
@@ -238,13 +238,14 @@ export function FooterDesignInvertedWordmark({
       data-pf-no-color-transition=""
     >
       <div className={`relative z-[1] w-full pb-16 pt-20 sm:pb-20 sm:pt-24 lg:pb-24 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
-        <div className="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-8">
           {/* Column 1 — internal nav, fine-weight geometric caps */}
-          <nav aria-label={t('Footer')} data-iwm-fade-in className="flex flex-col gap-5">
+          <nav aria-label={t('Footer')} data-iwm-fade-in className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <a
                 key={link.id}
                 href={link.url}
+                  {...(/^https?:\/\//i.test(link.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 data-pf-no-color-transition=""
                 onMouseEnter={handleLinkEnter}
                 onMouseLeave={handleLinkLeave}
@@ -254,7 +255,7 @@ export function FooterDesignInvertedWordmark({
                 {link.label}
                 <span
                   aria-hidden
-                  className={`pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 ${isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]'} transition-transform duration-300 ease-out group-hover:scale-x-100`}
+                  className={`pointer-events-none absolute bottom-2 left-0 h-px w-full origin-left scale-x-0 ${isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]'} transition-transform duration-300 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100`}
                 />
               </a>
             ))}
@@ -262,7 +263,7 @@ export function FooterDesignInvertedWordmark({
 
           {/* Column 2 — social links, lighter/thinner weight, extra breathing room
               between rows so the central column reads as a distinct, airy block. */}
-          <div data-iwm-fade-in className="flex flex-col gap-7">
+          <div data-iwm-fade-in className="flex flex-col gap-1">
             {showSocials
               ? links.map((link) => (
                   <a
@@ -273,14 +274,14 @@ export function FooterDesignInvertedWordmark({
                     data-pf-no-color-transition=""
                     onMouseEnter={handleLinkEnter}
                     onMouseLeave={handleLinkLeave}
-                    className={`group relative flex w-fit items-center gap-2.5 ${linkClass} font-light ${pageInk}`}
+                    className={`group relative flex w-fit items-center gap-2.5 ${linkClass} font-normal ${pageInk}`}
                     style={linkFontSize}
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-3.5 w-3.5" />
                     <span>{link.label}</span>
                     <span
                       aria-hidden
-                      className={`pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 ${isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]'} transition-transform duration-300 ease-out group-hover:scale-x-100`}
+                      className={`pointer-events-none absolute bottom-2 left-0 h-px w-full origin-left scale-x-0 ${isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]'} transition-transform duration-300 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100`}
                     />
                   </a>
                 ))
@@ -289,7 +290,7 @@ export function FooterDesignInvertedWordmark({
 
           {/* Column 3 — direct contact (email / phone), real data replacing the old
               hardcoded "PRIVACY POLICY" / "TERMS OF SERVICES" placeholder microcopy. */}
-          <div data-iwm-fade-in className="flex flex-col gap-5 sm:items-end">
+          <div data-iwm-fade-in className="flex flex-col gap-1 md:items-end">
             {showContact
               ? contactItems.map((item) => (
                   <a
@@ -298,13 +299,13 @@ export function FooterDesignInvertedWordmark({
                     data-pf-no-color-transition=""
                     onMouseEnter={handleLinkEnter}
                     onMouseLeave={handleLinkLeave}
-                    className={`group relative ${linkClass} font-normal ${pageInk} sm:text-right`}
+                    className={`group relative ${linkClass} font-normal normal-case tracking-[0.02em] ${pageInk} md:text-right`}
                     style={linkFontSize}
                   >
                     {item.label}
                     <span
                       aria-hidden
-                      className={`pointer-events-none absolute -bottom-1 left-0 h-px w-full origin-left scale-x-0 ${isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]'} transition-transform duration-300 ease-out group-hover:scale-x-100 sm:left-auto sm:right-0 sm:origin-right`}
+                      className={`pointer-events-none absolute bottom-2 left-0 h-px w-full origin-left scale-x-0 ${isLight ? 'bg-[#0a0a0a]' : 'bg-[#fafaf7]'} transition-transform duration-300 ease-out group-hover:scale-x-100 group-focus-visible:scale-x-100 sm:left-auto sm:right-0 sm:origin-right`}
                     />
                   </a>
                 ))
@@ -343,7 +344,7 @@ export function FooterDesignInvertedWordmark({
               // above the bar instead of a font-dependent one. `transform` is untouched —
               // still a plain center-pivot scaleY(-1), per the warning above.
               lineHeight: 1.05,
-              paddingBottom: '0.08em',
+              paddingBottom: '0.04em',
               transform: wordmarkMirrored ? 'scaleY(-1)' : undefined,
             }}
           >

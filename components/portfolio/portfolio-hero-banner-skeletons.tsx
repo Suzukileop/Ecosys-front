@@ -1,4 +1,8 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import type { CSSProperties, ReactNode } from 'react';
+import { resolveThumbnailTheme, useThumbnailTheme } from './portfolio-thumbnail-theme';
+import type { PortfolioSettings } from './portfolio-settings-types';
 import {
   DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
   resolveHeroCurrentlyLabel,
@@ -13,1172 +17,809 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioHeroSectionSettings } from '@/components/portfolio/portfolio-settings-types';
 
-function Bone({ className = '' }: { className?: string }) {
-  return <div className={`animate-pulse rounded-md bg-neutral-200 ${className}`.trim()} />;
-}
-
-const HERO_SHELL =
-  'relative isolate flex min-h-[100dvh] min-h-screen w-full flex-col overflow-x-clip bg-white px-5 pb-16 pt-20 sm:px-10 md:px-16 lg:px-20 xl:px-40';
-
-const HERO_SHELL_PREVIEW =
-  'relative isolate flex h-full flex-col justify-center overflow-hidden bg-white px-2 pb-2 pt-2.5';
-
-function CirclePortrait({ className = '' }: { className?: string }) {
-  return <Bone className={`aspect-square rounded-full bg-neutral-300 ${className}`.trim()} />;
-}
-
 type HeroBannerSkeletonProps = { preview?: boolean };
 
-function shellClass(preview?: boolean) {
-  return preview ? HERO_SHELL_PREVIEW : HERO_SHELL;
+/** Shared minimal Swiss editorial silhouette for both catalogue and desktop preview. */
+function SwissEditorialSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <span className="absolute left-[6.3%] top-[10%] h-[5%] w-[36%] rounded-[0.3cqw] bg-neutral-800" />
+      <span className="absolute bottom-[5.5%] right-[7.2%] top-[17%] w-[37%] rounded-[1.2cqw_43%_0_0] bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+      <div className="absolute bottom-[34%] left-[6.3%] flex h-[1.6%] w-[35%] items-center gap-[10%]">
+        <span className="block h-full w-[32%] rounded-full bg-neutral-800" />
+        <span className="block h-full w-[27%] rounded-full bg-neutral-800" />
+      </div>
+      <span className="absolute bottom-[5.5%] left-[6.3%] h-[19%] w-[47%] rounded-[0.4cqw] bg-neutral-800" />
+    </div>
+  );
 }
 
 function SwissEditorialHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={`${shellClass(true)} bg-neutral-50`} aria-hidden>
-        <div className="relative mx-auto flex w-full items-start gap-2">
-          <div className="min-w-0 flex-1 space-y-2">
-            <Bone className="h-4 w-full rounded-xs" />
-            <Bone className="h-4 w-[65%] rounded-xs" />
-          </div>
-          <div className="w-14 shrink-0 overflow-hidden rounded-[0.4rem_42%_0.55rem_28%] bg-neutral-100">
-            <Bone className="aspect-[3/4] w-full rounded-none bg-neutral-300" />
-          </div>
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <SwissEditorialSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={`${shellClass(preview)} bg-neutral-50`} aria-hidden>
-      <div
-        className={`relative mx-auto flex w-full max-w-6xl flex-col ${
-          preview ? 'gap-1.5' : 'h-full flex-1 justify-between gap-6'
-        }`}
-      >
-        <div className={`grid w-full items-start ${preview ? 'gap-2' : 'gap-8'} grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]`}>
-          <div className={`min-w-0 space-y-2 ${preview ? '' : 'max-w-md'}`}>
-            <Bone className={`w-full rounded-xs ${preview ? 'h-4' : 'h-10 sm:h-12'}`} />
-            <Bone className={`w-[88%] rounded-xs ${preview ? 'h-4' : 'h-10 sm:h-12'}`} />
-            <Bone className={`w-[70%] rounded-xs ${preview ? 'h-4' : 'h-10 sm:h-12'}`} />
-          </div>
-          <div
-            className={`relative z-[1] justify-self-end overflow-hidden bg-neutral-100 ${
-              preview
-                ? 'w-14 translate-y-1 rounded-[0.4rem_42%_0.55rem_28%]'
-                : 'w-36 translate-y-2 rounded-[0.85rem_46%_1.1rem_26%] sm:w-44'
-            }`}
-          >
-            <Bone className="aspect-[3/4] w-full rounded-none bg-neutral-300" />
-          </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <SwissEditorialSkeletonCanvas />
+      </div>
+      <div className="relative flex min-h-[100dvh] animate-pulse flex-col px-5 pb-8 pt-16 md:hidden">
+        <span className="block h-6 w-[80%] rounded-sm bg-neutral-800" />
+        <span className="mx-auto mt-9 aspect-[4/5] w-[66%] rounded-[0.8rem_43%_0_0] bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+        <div className="mt-7 flex gap-6">
+          <span className="block h-3 w-24 rounded-full bg-neutral-800" />
+          <span className="block h-3 w-20 rounded-full bg-neutral-800" />
         </div>
-
-        <div className={`flex items-center ${preview ? 'gap-3' : 'gap-8'} ${preview ? 'w-[52%]' : 'max-w-md'}`}>
-          <div className="space-y-1.5">
-            <Bone className={`w-14 ${preview ? 'h-1.5' : 'h-2.5'}`} />
-            <Bone className={`w-20 ${preview ? 'h-2' : 'h-3.5'}`} />
-          </div>
-          <div className={`self-stretch bg-neutral-200 ${preview ? 'h-6 w-px' : 'h-10 w-px'}`} />
-          <div className="space-y-1.5">
-            <Bone className={`w-16 ${preview ? 'h-1.5' : 'h-2.5'}`} />
-            <Bone className={`w-24 ${preview ? 'h-2' : 'h-3.5'}`} />
-          </div>
-        </div>
-
-        <Bone
-          className={`relative z-[2] w-full ${preview ? 'h-8' : 'h-[4.5rem] sm:h-24'}`}
-        />
+        <span className="mt-auto block h-[18vw] max-h-28 w-full rounded-sm bg-neutral-800" />
       </div>
     </section>
+  );
+}
+
+/** Shared desktop canvas: percentages keep catalogue and full-size loading geometry identical. */
+function PortraitIdentitySkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute left-[6.3%] right-[6.3%] top-[13%] h-[9%]">
+        <span className="block h-[28%] w-[36%] rounded-full bg-neutral-800" />
+        <div className="absolute bottom-0 left-[46%] flex h-[24%] w-[25%] items-center gap-[4%]">
+          <span className="aspect-square h-[45%] rounded-full bg-neutral-700" />
+          <span className="h-[80%] w-[53%] rounded-full bg-neutral-800" />
+        </div>
+      </div>
+      <span className="absolute left-[6.3%] right-[6.3%] top-[27%] h-px bg-neutral-800" />
+      <div className="absolute bottom-[5%] left-[6.3%] right-[6.3%] top-[31.5%] grid grid-cols-[42%_4%_1fr]">
+        <span className="h-full w-[95%] rounded-[0.2cqw] bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+        <span />
+        <div className="relative min-w-0">
+          <span className="block h-[20%] w-[88%] rounded-[0.4cqw] bg-neutral-800" />
+          <span className="absolute bottom-0 left-0 block h-[6%] w-[38%] rounded-[0.2cqw] bg-neutral-800" />
+        </div>
+      </div>
+    </div>
   );
 }
 
 function PortraitIdentityHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-1.5">
-          <div className="flex items-center justify-between gap-2">
-            <Bone className="h-2.5 w-[45%]" />
-            <div className="flex items-center gap-1.5">
-              <Bone className="size-1.5 rounded-full bg-neutral-300" />
-              <Bone className="h-2 w-12" />
-            </div>
-          </div>
-          <div className="w-full border-t border-neutral-200" />
-          <div className="grid grid-cols-[42%_4%_1fr] items-start">
-            <div className="relative w-full max-w-[4rem] shrink-0 overflow-hidden rounded-none bg-neutral-100 ring-1 ring-neutral-200/80">
-              <Bone className="aspect-[4/5] w-full rounded-none bg-neutral-300" />
-              <Bone className="absolute bottom-0 left-0 h-0.5 w-[28%] rounded-none bg-neutral-400" />
-            </div>
-            <div aria-hidden />
-            <div className="flex min-w-0 flex-col gap-1.5">
-              <Bone className="h-5 w-full" />
-              <Bone className="h-2.5 w-[42%] rounded-full bg-neutral-300" />
-              <div className="mt-2 flex gap-1 border-t border-neutral-200 pt-1.5">
-                <Bone className="h-4 w-12 rounded-sm bg-neutral-300" />
-                <Bone className="h-4 w-10 rounded-sm" />
-              </div>
-            </div>
-          </div>
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <PortraitIdentitySkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto flex w-full max-w-6xl flex-col ${
-          preview ? 'gap-2' : 'h-full flex-1 justify-center gap-0'
-        }`}
-      >
-        {/* Top 3-col: bio ~44% | spacer | availability */}
-        <div
-          className="grid w-full items-end"
-          style={{
-            gridTemplateColumns: preview
-              ? 'minmax(0, 42%) minmax(0, 4%) minmax(0, 1fr)'
-              : 'minmax(10rem, 42%) minmax(1.5rem, 4%) minmax(0, 1fr)',
-          }}
-        >
-          <div className={`min-w-0 ${preview ? 'space-y-1.5' : 'space-y-2'}`}>
-            <Bone className={`w-full ${preview ? 'h-2.5' : 'h-4 sm:h-5'}`} />
-            <Bone className={`w-[92%] ${preview ? 'h-2.5' : 'h-4 sm:h-5'}`} />
-            <Bone className={`w-[70%] ${preview ? 'h-2.5' : 'h-4 sm:h-5'}`} />
-          </div>
-          <div aria-hidden />
-          <Bone
-            className={`justify-self-start ${preview ? 'h-2.5 w-16' : 'h-3.5 w-36 sm:h-4 sm:w-44'}`}
-          />
-        </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <PortraitIdentitySkeletonCanvas />
+      </div>
 
-        {/* Hairline */}
-        <div
-          className={`w-full border-t border-neutral-200 ${
-            preview ? 'my-1.5' : 'my-8 sm:my-10'
-          }`}
-        />
-
-        {/* Bottom 3-col: portrait | spacer | name + specialty + CTAs */}
-        <div
-          className="grid w-full items-start"
-          style={{
-            gridTemplateColumns: preview
-              ? 'minmax(0, 42%) minmax(0, 4%) minmax(0, 1fr)'
-              : 'minmax(10rem, 42%) minmax(1.5rem, 4%) minmax(0, 1fr)',
-          }}
-        >
-          <div
-            className={`relative overflow-hidden rounded-none bg-neutral-100 ring-1 ring-neutral-200/80 ${
-              preview ? 'w-full max-w-[3.5rem]' : 'w-full max-w-[14rem]'
-            }`}
-          >
-            <Bone className="aspect-[4/5] w-full rounded-none bg-neutral-300" />
-            <Bone className="absolute bottom-0 left-0 h-1 w-[28%] rounded-none bg-neutral-400" />
-          </div>
-          <div aria-hidden />
-          <div
-            className={`flex min-h-0 min-w-0 flex-col self-stretch ${
-              preview ? 'gap-1.5' : 'gap-6'
-            }`}
-          >
-            <div className={preview ? 'space-y-1' : 'space-y-3'}>
-              <Bone className={`w-[min(100%,14rem)] ${preview ? 'h-5' : 'h-12 sm:h-16'}`} />
-              <Bone
-                className={`rounded-full bg-neutral-300 ${
-                  preview ? 'h-3 w-16' : 'h-6 w-36 sm:h-7 sm:w-44'
-                }`}
-              />
-            </div>
-            <div
-              className={`mt-auto flex flex-wrap items-center border-t border-neutral-200 ${
-                preview ? 'gap-1.5 pt-1.5' : 'gap-3 pt-4'
-              }`}
-            >
-              <Bone
-                className={`rounded-sm bg-neutral-300 ${
-                  preview ? 'h-5 w-14' : 'h-12 w-32 sm:h-14 sm:w-36'
-                }`}
-              />
-              <Bone
-                className={`rounded-sm ${preview ? 'h-5 w-14' : 'h-12 w-28 sm:h-14 sm:w-32'}`}
-              />
-            </div>
-          </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-8 pt-16 md:hidden">
+        <span className="block h-5 w-[80%] rounded-full bg-neutral-800" />
+        <div className="mt-5 flex items-center gap-2.5">
+          <span className="size-2 rounded-full bg-neutral-700" />
+          <span className="h-3.5 w-32 rounded-full bg-neutral-800" />
         </div>
+        <span className="my-7 block h-px w-full bg-neutral-800" />
+        <span className="aspect-[4/5] w-full rounded-sm bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+        <span className="mt-7 block h-16 w-[82%] rounded-md bg-neutral-800" />
+        <span className="mt-7 block h-4 w-[38%] rounded-sm bg-neutral-800" />
       </div>
     </section>
+  );
+}
+
+/** One proportional canvas for the catalogue thumbnail and desktop loading preview. */
+function EditorialRailSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute bottom-[5%] left-[6.3%] right-[6.3%] top-[13%] grid grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] gap-x-[6%]">
+        <div className="relative min-w-0">
+          <div className="absolute inset-x-0 bottom-[21%] top-[10%] flex flex-col justify-center">
+            <div className="flex h-[2%] items-center gap-[2%]">
+              <span className="aspect-square h-full rounded-full bg-neutral-700" />
+              <span className="h-full w-[18%] rounded-full bg-neutral-800" />
+            </div>
+            <span className="mt-[7%] block h-[16%] w-[94%] rounded-[0.4cqw] bg-neutral-800" />
+          </div>
+          <div className="absolute inset-x-0 bottom-0 h-[11%]">
+            <span className="block h-[35%] w-[58%] rounded-[0.2cqw] bg-neutral-800" />
+          </div>
+        </div>
+        <span className="h-full w-full rounded-[1.7cqw_0.3cqw_1.7cqw_0.3cqw] bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+      </div>
+    </div>
   );
 }
 
 function EditorialRailHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto grid min-h-0 max-w-6xl grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] items-stretch gap-x-2">
-          <div className="flex min-h-0 flex-col justify-center gap-1.5">
-            <div className="flex items-center gap-1">
-              <Bone className="size-1 rounded-full bg-neutral-300" />
-              <Bone className="h-1.5 w-10" />
-              <Bone className="h-px w-7 rounded-none bg-neutral-300" />
-            </div>
-            <Bone className="h-4 w-[92%]" />
-            <Bone className="h-4 w-[78%]" />
-            <div className="mt-auto inline-flex w-fit overflow-hidden rounded-sm border border-neutral-200">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <Bone
-                  key={index}
-                  className={`h-3 w-7 rounded-none ${index > 0 ? 'border-l border-neutral-200' : ''}`}
-                />
-              ))}
-            </div>
-          </div>
-          <div className="relative ml-auto aspect-[3/4] h-full max-h-full w-full overflow-hidden rounded-bl-sm rounded-br-xl rounded-tl-xl rounded-tr-sm bg-neutral-100 ring-1 ring-neutral-200/80">
-            <Bone className="absolute inset-0 rounded-none bg-neutral-300" />
-            <Bone className="absolute left-1 top-[12%] h-[11%] w-0.5 rounded-none bg-neutral-400" />
-          </div>
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <EditorialRailSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto grid min-h-0 max-w-6xl items-stretch ${
-          preview
-            ? 'grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] gap-x-2'
-            : 'h-full flex-1 grid-cols-[minmax(0,1.65fr)_minmax(0,1fr)] gap-x-6 sm:gap-x-10'
-        }`}
-      >
-        <div className="flex min-h-0 min-w-0 flex-col">
-          <div
-            className={`flex min-h-0 flex-1 flex-col justify-center ${
-              preview ? 'gap-1.5' : 'gap-3 sm:gap-5'
-            }`}
-          >
-            <div className="flex items-center gap-2">
-              <Bone className={`shrink-0 rounded-full bg-neutral-300 ${preview ? 'h-1.5 w-1.5' : 'h-2 w-2'}`} />
-              <Bone className={`rounded-full ${preview ? 'h-1.5 w-14' : 'h-2.5 w-28'}`} />
-              <Bone className={`rounded-none bg-neutral-300 ${preview ? 'h-px w-8' : 'h-px w-14'}`} />
-            </div>
-            <div className={preview ? 'space-y-1' : 'space-y-1.5 sm:space-y-2'}>
-              <Bone className={preview ? 'h-4 w-[92%]' : 'h-7 w-[92%] sm:h-10 md:h-12'} />
-              <Bone className={preview ? 'h-4 w-[78%]' : 'h-7 w-[78%] sm:h-10 md:h-12'} />
-            </div>
-            <div className={preview ? 'space-y-1' : 'space-y-1.5'}>
-              <Bone className={`w-full max-w-[22rem] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-              <Bone className={`w-[88%] max-w-[20rem] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-              <Bone className={`w-[72%] max-w-[16rem] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-            </div>
-          </div>
-          <div className={`mt-auto shrink-0 ${preview ? 'pt-1.5' : 'pt-4 sm:pt-6'}`}>
-            <Bone className={`mb-1.5 ${preview ? 'h-1.5 w-10' : 'mb-2 h-2 w-16'}`} />
-            <div className="inline-flex max-w-full overflow-hidden rounded-sm border border-neutral-200 bg-neutral-50">
-              {Array.from({ length: 4 }).map((_, index) => (
-                <div
-                  key={index}
-                  className={`flex items-center gap-1.5 ${
-                    preview
-                      ? 'min-h-[1rem] min-w-[1.65rem] px-1 py-0.5'
-                      : 'min-h-[1.75rem] min-w-[2.75rem] px-2 py-1.5 sm:min-h-[2.15rem] sm:min-w-[4.5rem] sm:px-3'
-                  } ${index > 0 ? 'border-l border-neutral-200' : ''}`}
-                >
-                  <Bone className={preview ? 'size-0.5 bg-neutral-400' : 'h-1 w-1.5 bg-neutral-400'} />
-                  <Bone className={preview ? 'h-1 w-5' : 'h-2 w-8 sm:w-10'} />
-                </div>
-              ))}
-            </div>
-          </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <EditorialRailSkeletonCanvas />
+      </div>
+
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-8 pt-16 md:hidden">
+        <div className="flex items-center gap-2.5">
+          <span className="size-2 rounded-full bg-neutral-700" />
+          <span className="h-2.5 w-24 rounded-full bg-neutral-800" />
         </div>
-        <div className="relative ml-auto aspect-[3/4] h-full max-h-full w-full overflow-hidden rounded-bl-sm rounded-br-3xl rounded-tl-3xl rounded-tr-sm bg-neutral-100 ring-1 ring-neutral-200/80">
-          <Bone className="absolute inset-0 rounded-none bg-neutral-300" />
-          <Bone className="absolute left-1.5 top-[12%] h-[11%] w-0.5 rounded-none bg-neutral-400" />
-        </div>
+        <span className="mt-8 block h-12 w-[94%] rounded-md bg-neutral-800" />
+        <span className="mt-8 aspect-[3/4] w-full rounded-[1.25rem_0.25rem_1.25rem_0.25rem] bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+        <span className="mt-7 block h-4 w-[58%] rounded-sm bg-neutral-800" />
       </div>
     </section>
+  );
+}
+
+/** Shared Statement CTA composition, scaled within the catalogue or desktop viewport. */
+function StatementCtaSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute bottom-[4%] left-[6.3%] right-[6.3%] top-[15%] grid grid-cols-[74fr_26fr] grid-rows-[24%_1fr_10%] gap-x-[4%]">
+        <div>
+          <span className="block h-[38%] w-[88%] rounded-[0.4cqw] bg-neutral-800" />
+        </div>
+        <div className="flex h-[8%] items-center justify-end gap-[4%]">
+          <span className="aspect-square h-[60%] rounded-full bg-neutral-700" />
+          <span className="h-full w-[62%] rounded-full bg-neutral-800" />
+        </div>
+        <div className="flex min-h-0 items-center justify-center">
+          <span className="aspect-square w-[35%] rounded-full bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+        </div>
+        <div className="flex min-h-0 flex-col justify-center">
+          <div className="flex h-[18%] flex-col justify-between">
+            {[100, 76].map((width) => (
+              <span key={width} className="block h-[22%] rounded-full bg-neutral-800" style={{ width: `${width}%` }} />
+            ))}
+          </div>
+          <div className="mt-[10%] flex h-[12%] items-center gap-[8%]">
+            <span className="h-full w-[56%] rounded-[0.2cqw] bg-neutral-700" />
+            <span className="h-[20%] w-[30%] rounded-full bg-neutral-800" />
+          </div>
+        </div>
+        <div className="col-span-2 flex items-center gap-[4%] border-t border-neutral-800">
+          {Array.from({ length: 5 }).map((_, index) => (
+            <span key={index} className="h-[18%] w-[8%] rounded-full bg-neutral-800" />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
 function StatementCtaHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto flex w-full max-w-6xl flex-col items-center gap-2">
-          <CirclePortrait className="w-[min(100%,3rem)]" />
-          <Bone className="h-2 w-[60%]" />
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <StatementCtaSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto flex min-h-0 max-w-6xl flex-col ${
-          preview ? 'h-full' : 'h-full flex-1'
-        }`}
-      >
-        <div
-          className={`grid items-start ${
-            preview ? 'grid-cols-[minmax(0,74fr)_minmax(0,26fr)] gap-x-2' : 'grid-cols-[minmax(0,74fr)_minmax(0,26fr)] gap-x-4 sm:gap-x-8'
-          }`}
-        >
-          <Bone className={preview ? 'h-5 w-[92%]' : 'h-8 w-[92%] sm:h-11 md:h-14'} />
-          <div className={`flex items-center justify-end gap-1.5 ${preview ? '' : 'gap-2 pt-1'}`}>
-            <Bone className={`shrink-0 rounded-full bg-neutral-300 ${preview ? 'h-1.5 w-1.5' : 'h-2 w-2'}`} />
-            <Bone className={`rounded-full ${preview ? 'h-1.5 w-10' : 'h-2.5 w-24'}`} />
-          </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <StatementCtaSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-8 pt-16 md:hidden">
+        <div className="flex items-center gap-2.5">
+          <span className="size-2 rounded-full bg-neutral-700" />
+          <span className="h-3 w-28 rounded-full bg-neutral-800" />
         </div>
-
-        <div className={`${preview ? 'h-1.5' : 'h-[clamp(1.25rem,4vh,3.5rem)]'} shrink-0`} aria-hidden />
-
-        <div
-          className={`grid min-h-0 flex-1 items-start ${
-            preview ? 'grid-cols-[minmax(0,74fr)_minmax(0,26fr)] gap-x-2' : 'grid-cols-[minmax(0,74fr)_minmax(0,26fr)] gap-x-4 sm:gap-x-8'
-          }`}
-        >
-          <div className="flex justify-center">
-            <div className="relative">
-              <CirclePortrait className={preview ? 'w-[min(100%,2.75rem)]' : 'w-[min(100%,7.5rem)] sm:w-[min(100%,11rem)]'} />
-              <Bone className="absolute -inset-1 rounded-full border border-neutral-200 bg-transparent" />
-              <Bone className={`absolute -right-1 top-[18%] rounded-full bg-neutral-400 ${preview ? 'size-1' : 'size-2'}`} />
-            </div>
-          </div>
-          <div className={`min-w-0 ${preview ? 'space-y-1.5' : 'space-y-3 sm:space-y-4'}`}>
-            <div className="flex items-center gap-1.5">
-              <Bone className={preview ? 'h-px w-6 bg-neutral-400' : 'h-px w-12 bg-neutral-400'} />
-              <Bone className={preview ? 'size-1 rotate-45 rounded-none bg-neutral-400' : 'size-1.5 rotate-45 rounded-none bg-neutral-400'} />
-            </div>
-            <div className={preview ? 'space-y-1' : 'space-y-1.5'}>
-              <Bone className={`w-full ${preview ? 'h-1.5' : 'h-2.5'}`} />
-              <Bone className={`w-[94%] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-              <Bone className={`w-[80%] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-              <Bone className={`w-[88%] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-              <Bone className={`w-[70%] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-            </div>
-            <div className={`flex flex-wrap items-center ${preview ? 'gap-x-2 gap-y-1' : 'gap-x-5 gap-y-2'}`}>
-              <Bone
-                className={`rounded-sm bg-neutral-300 ${
-                  preview ? 'h-4 w-12' : 'h-8 w-28 sm:h-10 sm:w-36'
-                }`}
-              />
-              <Bone className={preview ? 'h-1.5 w-10' : 'h-2.5 w-24'} />
-            </div>
-          </div>
+        <span className="mt-8 block h-11 w-[88%] rounded-md bg-neutral-800" />
+        <span className="mx-auto mt-9 aspect-square w-[56%] rounded-full bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+        <div className="mt-8 space-y-3">
+          {[100, 76].map((width) => (
+            <span key={width} className="block h-3 rounded-full bg-neutral-800" style={{ width: `${width}%` }} />
+          ))}
         </div>
-
-        <div className={`mt-auto shrink-0 ${preview ? 'pt-1.5' : 'pt-4 sm:pt-6'}`}>
-          <div className="h-px w-full bg-neutral-200" />
-          <div
-            className={`flex w-full items-baseline justify-between gap-1 ${
-              preview ? 'mt-1.5' : 'mt-3 sm:mt-5 gap-2'
-            }`}
-          >
-            {Array.from({ length: 5 }).map((_, index) => (
-              <div key={index} className="flex items-baseline gap-1">
-                <Bone className={preview ? 'h-1 w-1.5 bg-neutral-400' : 'h-1.5 w-2 bg-neutral-400'} />
-                <Bone className={preview ? 'h-1.5 w-6' : 'h-2.5 w-10 sm:h-3 sm:w-14'} />
-              </div>
-            ))}
-          </div>
+        <div className="mt-7 flex items-center gap-5">
+          <span className="h-12 w-36 rounded-sm bg-neutral-700" />
+          <span className="h-3 w-24 rounded-full bg-neutral-800" />
+        </div>
+        <div className="mt-8 flex gap-5 border-t border-neutral-800 pt-5">
+          {Array.from({ length: 4 }).map((_, index) => (
+            <span key={index} className="h-3 flex-1 rounded-full bg-neutral-800" />
+          ))}
         </div>
       </div>
     </section>
+  );
+}
+
+/** Shared silhouette preserves Portrait balance's asymmetric title, bottom split and cut portrait. */
+function PortraitBalanceSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute bottom-[6%] left-[6.3%] right-[6.3%] top-[18%] grid grid-cols-[1.15fr_0.7fr] gap-x-[7%]">
+        <div className="relative min-w-0">
+          <span className="absolute left-0 top-[29%] h-[13%] w-[90%] rounded-[0.4cqw] bg-neutral-800" />
+          <div className="absolute inset-x-0 bottom-0 grid h-[12%] grid-cols-[0.75fr_1fr] items-end gap-x-[12%]">
+            <span className="block h-[45%] rounded-[0.2cqw] bg-neutral-800" />
+            <span className="block h-full rounded-[0.3cqw] bg-neutral-800" />
+          </div>
+        </div>
+        <div className="relative min-w-0">
+          <span className="absolute inset-0 bg-neutral-700" style={{ clipPath: 'polygon(0 0, 94% 0, 100% 5%, 100% 100%, 6% 100%, 0 95%)' }} />
+          <span className="absolute -top-[2%] right-0 h-[5%] w-[40%] rounded-[0.15cqw] bg-neutral-700" />
+        </div>
+      </div>
+    </div>
   );
 }
 
 function PortraitBalanceHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto grid w-full max-w-6xl grid-cols-[minmax(0,1.2fr)_minmax(0,1fr)] items-stretch gap-2">
-          <div className="flex flex-col justify-center gap-1.5">
-            <Bone className="h-4 w-[85%]" />
-            <Bone className="h-4 w-[65%]" />
-          </div>
-          <Bone className="aspect-[5/6] h-full w-full rounded-none bg-neutral-300" />
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <PortraitBalanceSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto grid min-h-0 max-w-6xl ${
-          preview ? 'h-full gap-x-2' : 'h-full flex-1 gap-x-6 sm:gap-x-10'
-        }`}
-        style={{
-          gridTemplateColumns: 'minmax(0, 1.2fr) minmax(0, 1fr)',
-          gridTemplateRows: 'auto minmax(0, 1fr)',
-        }}
-      >
-        <div className={`col-start-2 row-start-1 justify-self-end ${preview ? 'mb-1' : 'mb-2 sm:mb-3'}`}>
-          <Bone className={preview ? 'h-2 w-12 rounded-xs' : 'h-3 w-24 rounded-xs sm:h-4 sm:w-32'} />
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <PortraitBalanceSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-8 pt-16 md:hidden">
+        <span className="block h-12 w-[88%] rounded-md bg-neutral-800" />
+        <div className="relative mt-10">
+          <span className="absolute -top-2 right-0 z-[1] h-5 w-28 rounded-sm bg-neutral-700" />
+          <span className="block aspect-[5/6] w-full bg-neutral-700" style={{ clipPath: 'polygon(0 0, 94% 0, 100% 5%, 100% 100%, 6% 100%, 0 95%)' }} />
         </div>
-
-        <div className="col-start-1 row-start-2 flex min-h-0 min-w-0 flex-col self-stretch">
-          <div
-            className={`flex min-h-0 flex-1 flex-col justify-center ${
-              preview ? 'gap-1' : 'gap-2.5 sm:gap-3.5'
-            }`}
-          >
-            <Bone className={`rounded-full ${preview ? 'h-1.5 w-16' : 'h-2.5 w-36 sm:w-44'}`} />
-            <div className={`h-px bg-neutral-300 ${preview ? 'w-8' : 'w-16 max-w-[16ch] sm:w-24'}`} />
-            <div className={preview ? 'space-y-0.5' : 'space-y-1.5'}>
-              <Bone className={preview ? 'h-4 w-[min(100%,14ch)]' : 'h-7 w-[min(100%,14ch)] sm:h-10 md:h-12'} />
-              <Bone className={preview ? 'h-4 w-[min(100%,11ch)]' : 'h-7 w-[min(100%,11ch)] sm:h-10 md:h-12'} />
-            </div>
-          </div>
-          <div
-            className={`mt-auto flex shrink-0 flex-col ${
-              preview ? 'gap-1.5 pt-1' : 'gap-3 pt-3 sm:gap-4 sm:pt-4'
-            }`}
-          >
-            <div className={preview ? 'space-y-1' : 'space-y-2'}>
-              <Bone className={preview ? 'h-1.5 w-10' : 'h-2 w-16'} />
-              <div className={`flex flex-wrap ${preview ? 'gap-1' : 'gap-1.5'}`}>
-                {Array.from({ length: 4 }).map((_, index) => (
-                  <Bone
-                    key={index}
-                    className={`rounded-md border border-neutral-200 bg-neutral-100 ${
-                      preview ? 'h-3 w-7' : 'h-5 w-12 sm:h-6 sm:w-14'
-                    }`}
-                  />
-                ))}
-              </div>
-            </div>
-            <div className={`h-px bg-neutral-300 ${preview ? 'w-full' : 'w-full max-w-[20rem]'}`} />
-            <div className={preview ? 'space-y-1' : 'space-y-1.5'}>
-              <Bone className={`w-full max-w-[20rem] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-              <Bone className={`w-[92%] max-w-[18rem] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-              <Bone className={`w-[78%] max-w-[15rem] ${preview ? 'h-1.5' : 'h-2.5'}`} />
-            </div>
-          </div>
-        </div>
-
-        <div className="col-start-2 row-start-2 self-stretch">
-          <Bone className="aspect-[5/6] h-full w-full rounded-none bg-neutral-300" />
+        <div className="mt-8 grid grid-cols-[0.75fr_1fr] items-end gap-6">
+          <span className="block h-4 rounded-sm bg-neutral-800" />
+          <span className="block h-9 rounded-sm bg-neutral-800" />
         </div>
       </div>
     </section>
+  );
+}
+
+/** Shared minimal composition: tall left portrait, right headline and bottom-aligned copy/actions. */
+function LeftPortraitSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute bottom-[6%] left-[6.3%] right-[6.3%] top-[12%] grid grid-cols-[0.9fr_1.1fr] gap-x-[6%]">
+        <div className="relative min-w-0">
+          <span className="absolute inset-0 bg-neutral-700" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 94%, 92% 100%, 0 100%)' }} />
+          <span className="absolute left-0 top-[5%] h-[3%] w-[30%] rounded-r-sm bg-neutral-700" />
+        </div>
+        <div className="relative min-w-0">
+          <span className="block h-[15%] w-[90%] rounded-[0.4cqw] bg-neutral-800" />
+          <div className="absolute inset-x-0 bottom-0 h-[18%] border-l border-neutral-700 pl-[5%]">
+            <span className="block h-[32%] w-[88%] rounded-[0.2cqw] bg-neutral-800" />
+            <span className="absolute bottom-0 block h-[20%] w-[36%] rounded-[0.2cqw] bg-neutral-800" />
+          </div>
+        </div>
+      </div>
+    </div>
   );
 }
 
 function LeftPortraitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto grid max-w-6xl grid-cols-[minmax(2.25rem,38%)_minmax(0,1fr)] items-stretch gap-2">
-          <div className="overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/80">
-            <Bone className="aspect-[3/4] h-full w-full rounded-2xl bg-neutral-300" />
-          </div>
-          <div className="flex flex-col justify-center gap-1.5">
-            <Bone className="h-2.5 w-[85%]" />
-            <Bone className="h-2.5 w-[60%]" />
-          </div>
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <LeftPortraitSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto grid max-w-6xl items-stretch gap-6 ${
-          preview
-            ? 'grid-cols-[minmax(2.25rem,38%)_minmax(0,1fr)] gap-2'
-            : 'h-full flex-1 lg:grid-cols-[minmax(14rem,34%)_minmax(0,1fr)] lg:gap-10'
-        }`}
-      >
-        {/* Portrait left — tall rounded frame */}
-        <div
-          className={`overflow-hidden rounded-2xl bg-neutral-100 ring-1 ring-neutral-200/80 ${
-            preview ? 'min-h-[3.5rem]' : 'h-full min-h-[28rem]'
-          }`}
-        >
-          <Bone
-            className={`h-full w-full rounded-2xl bg-neutral-300 ${
-              preview ? 'aspect-[3/4] min-h-[3.5rem]' : 'min-h-[28rem]'
-            }`}
-          />
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <LeftPortraitSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-8 pt-16 md:hidden">
+        <span className="block h-12 w-[90%] rounded-md bg-neutral-800" />
+        <div className="relative mt-8 aspect-[4/5] w-full">
+          <span className="absolute inset-0 bg-neutral-700" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 94%, 92% 100%, 0 100%)' }} />
+          <span className="absolute left-0 top-[5%] h-3 w-[30%] rounded-r-sm bg-neutral-700" />
         </div>
-
-        {/* Right: availability + Hello I'm top; bio + CTAs bottom */}
-        <div className={`flex min-h-0 min-w-0 flex-col ${preview ? 'gap-1' : 'h-full'}`}>
-          <div className={`shrink-0 ${preview ? 'space-y-1' : 'space-y-4'}`}>
-            <div className="flex items-center gap-2">
-              <Bone className={`shrink-0 rounded-full bg-neutral-400 ${preview ? 'h-1 w-1' : 'h-2 w-2'}`} />
-              <Bone className={preview ? 'h-1.5 w-16' : 'h-3 w-28'} />
-            </div>
-            <div className={preview ? 'space-y-1' : 'mt-4 space-y-2'}>
-              <Bone className={preview ? 'h-2.5 w-[92%]' : 'h-10 w-[min(100%,18rem)] sm:h-12'} />
-              <Bone className={preview ? 'h-2.5 w-[72%]' : 'h-10 w-[min(100%,14rem)] sm:h-12'} />
-            </div>
-          </div>
-
-          <div
-            className={`flex min-h-0 flex-1 flex-col items-start justify-end ${
-              preview ? 'mt-1 gap-1' : 'gap-6 pt-10'
-            }`}
-          >
-            <div className={`w-full max-w-[32rem] ${preview ? 'space-y-1' : 'space-y-2'}`}>
-              <Bone className={preview ? 'h-1.5 w-full' : 'h-3 w-full'} />
-              <Bone className={preview ? 'h-1.5 w-[92%]' : 'h-3 w-[92%]'} />
-              <Bone className={preview ? 'h-1.5 w-[78%]' : 'h-3 w-[78%]'} />
-            </div>
-            <div className={`flex flex-wrap items-center ${preview ? 'gap-2' : 'gap-x-8 gap-y-3'}`}>
-              <Bone
-                className={`rounded-full bg-neutral-300 ${
-                  preview ? 'h-3 w-12' : 'h-10 w-28'
-                }`}
-              />
-              <Bone className={preview ? 'h-1.5 w-10' : 'h-3 w-24'} />
-            </div>
-          </div>
+        <div className="mt-8 border-l border-neutral-700 pl-4">
+          <span className="block h-7 w-[88%] rounded-sm bg-neutral-800" />
+          <span className="mt-6 block h-4 w-[36%] rounded-sm bg-neutral-800" />
         </div>
       </div>
     </section>
+  );
+}
+
+/** Shared minimal orbit composition: circle left, copy right, signature along the bottom. */
+function CirclePortraitSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute bottom-[24%] left-[6.3%] right-[6.3%] top-[12%] grid grid-cols-[0.92fr_1.08fr] items-center gap-x-[9%]">
+        <div className="relative aspect-square w-[90%]">
+          <span className="absolute inset-0 rounded-full bg-neutral-700" />
+          <span className="absolute -inset-[5%] rounded-full border border-neutral-800" />
+          <span className="absolute -bottom-[4%] left-[30%] h-[6%] w-[40%] rounded-full bg-neutral-700" />
+        </div>
+        <div className="flex h-[28%] flex-col justify-between">
+          <span className="block h-[28%] w-[90%] rounded-[0.3cqw] bg-neutral-800" />
+          <span className="block h-[16%] w-[33%] rounded-full bg-neutral-800" />
+        </div>
+      </div>
+      <div className="absolute bottom-[6%] left-[6.3%] right-[6.3%] flex h-[12%] items-end gap-[4%]">
+        <span className="block h-full w-[64%] rounded-[0.4cqw] bg-neutral-800" />
+        <span className="mb-[0.5%] block h-[28%] w-[14%] rounded-full bg-neutral-800" />
+      </div>
+    </div>
   );
 }
 
 function CirclePortraitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto flex w-full max-w-6xl items-center justify-center gap-3">
-          <CirclePortrait className="h-10 w-10 max-w-none shrink-0" />
-          <div className="flex flex-col gap-1.5">
-            <Bone className="h-2.5 w-20" />
-            <Bone className="h-2.5 w-14" />
-          </div>
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <CirclePortraitSkeletonCanvas />
       </section>
     );
   }
-  /* Default: title-bottom — upper 2-col centered; bottom title with rules */
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto flex w-full max-w-6xl flex-col ${
-          preview ? 'gap-1' : 'h-full flex-1 gap-3'
-        }`}
-      >
-        <div
-          className={`grid w-full flex-1 items-center ${
-            preview
-              ? 'grid-cols-2 gap-2'
-              : 'grid-cols-1 gap-8 md:grid-cols-2 md:gap-10'
-          }`}
-        >
-          {/* Left: large circle + availability under */}
-          <div className="flex w-full items-center justify-start self-center">
-            <div className={`flex flex-col items-center ${preview ? 'gap-1' : 'gap-6'}`}>
-              <CirclePortrait
-                className={
-                  preview
-                    ? 'h-10 w-10 max-w-none'
-                    : 'h-[clamp(10rem,28vw,18rem)] w-[clamp(10rem,28vw,18rem)] max-w-none'
-                }
-              />
-              <div className="flex items-center gap-2">
-                <Bone className={`shrink-0 rounded-full bg-neutral-400 ${preview ? 'h-1 w-1' : 'h-2 w-2'}`} />
-                <Bone className={preview ? 'h-1.5 w-14' : 'h-3 w-28'} />
-              </div>
-            </div>
-          </div>
-
-          {/* Right: bio + CTAs centered */}
-          <div className="flex min-w-0 items-center justify-center self-center">
-            <div
-              className={`flex w-full max-w-[36rem] flex-col ${
-                preview ? 'gap-1.5' : 'gap-10'
-              }`}
-            >
-              <div className={preview ? 'space-y-1' : 'space-y-2'}>
-                <Bone className={preview ? 'h-1.5 w-full' : 'h-3 w-full'} />
-                <Bone className={preview ? 'h-1.5 w-[94%]' : 'h-3 w-[94%]'} />
-                <Bone className={preview ? 'h-1.5 w-[80%]' : 'h-3 w-[80%]'} />
-              </div>
-              <div className={`flex w-full justify-center ${preview ? 'gap-2' : 'gap-x-8 gap-y-3'}`}>
-                <Bone
-                  className={`rounded-full bg-neutral-300 ${
-                    preview ? 'h-3 w-12' : 'h-10 w-28'
-                  }`}
-                />
-                <Bone className={`self-center ${preview ? 'h-1.5 w-10' : 'h-3 w-24'}`} />
-              </div>
-            </div>
-          </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <CirclePortraitSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-10 pt-20 md:hidden">
+        <div className="relative mx-auto aspect-square w-[68%]">
+          <span className="absolute inset-0 rounded-full bg-neutral-700" />
+          <span className="absolute -inset-[5%] rounded-full border border-neutral-800" />
+          <span className="absolute -bottom-2 left-[30%] h-4 w-[40%] rounded-full bg-neutral-700" />
         </div>
+        <div className="mt-12 flex items-end gap-4">
+          <span className="block h-14 w-[70%] rounded-md bg-neutral-800" />
+          <span className="block h-4 flex-1 rounded-full bg-neutral-800" />
+        </div>
+        <span className="mt-8 block h-7 w-[90%] rounded-sm bg-neutral-800" />
+        <span className="mt-6 block h-4 w-[33%] rounded-full bg-neutral-800" />
+      </div>
+    </section>
+  );
+}
 
-        {/* Bottom: short bar left — name/specialty — short bar right */}
-        <div className={`w-full shrink-0 ${preview ? 'mt-0.5 space-y-1' : 'mt-3 space-y-4'}`}>
-          <Bone
-            className={`self-start rounded-none bg-neutral-400 ${
-              preview ? 'h-0.5 w-8' : 'h-1.5 w-[min(7.5rem,28%)]'
-            }`}
-          />
-          <div className={preview ? 'space-y-1' : 'space-y-2'}>
-            <Bone className={preview ? 'h-2.5 w-[70%]' : 'h-10 w-[min(100%,22rem)] sm:h-12'} />
-            <Bone className={preview ? 'h-2 w-[45%]' : 'h-8 w-[min(100%,14rem)]'} />
-          </div>
-          <div className="flex justify-end">
-            <Bone
-              className={`rounded-none bg-neutral-400 ${
-                preview ? 'h-0.5 w-8' : 'h-1.5 w-[min(7.5rem,28%)]'
-              }`}
-            />
+/** Shared minimal Experience split: framed title left, portrait and experience aside right. */
+function ExperienceSplitSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute bottom-[19%] left-[6.3%] right-[6.3%] top-[24%] grid grid-cols-[0.85fr_1.15fr] items-start gap-x-[10%]">
+        <div className="relative h-[78%] border-l border-neutral-700 pl-[7%]">
+          <span className="block h-[28%] w-[94%] rounded-[0.4cqw] bg-neutral-800" />
+          <span className="mt-[9%] block h-[5%] w-[40%] rounded-full bg-neutral-800" />
+          <span className="absolute bottom-0 block h-[9%] w-[34%] rounded-[0.2cqw] bg-neutral-800" />
+        </div>
+        <div className="grid h-full grid-cols-[1.15fr_0.85fr] items-center gap-x-[8%]">
+          <span className="block h-full w-full bg-neutral-700" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 88%, 84% 100%, 0 100%)' }} />
+          <div className="flex h-[52%] flex-col justify-between">
+            <span className="block h-[35%] w-[62%] rounded-[0.3cqw] bg-neutral-800" />
+            <span className="block h-[18%] w-full rounded-[0.2cqw] bg-neutral-800" />
           </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }
 
 function ExperienceSplitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-2">
-          <div className="flex flex-1 flex-col gap-1.5">
-            <Bone className="h-3 w-[85%]" />
-            <Bone className="h-3 w-[60%]" />
-          </div>
-          <div className="h-10 w-px shrink-0 bg-neutral-300" />
-          <div className="flex flex-1 flex-col gap-1.5">
-            <Bone className="h-2 w-[70%]" />
-            <Bone className="h-2 w-[50%]" />
-          </div>
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <ExperienceSplitSkeletonCanvas />
       </section>
     );
   }
-  /* Default: bio-right — L-frame copy left; portrait + years/bio aside right */
   return (
-    <section className={`${shellClass(preview)}${preview ? '' : ' justify-center'}`} aria-hidden>
-      <div
-        className={`mx-auto grid w-full max-w-6xl items-start ${
-          preview
-            ? 'grid-cols-[minmax(0,1fr)_auto] gap-2'
-            : 'h-full flex-1 grid-cols-1 content-center gap-10 lg:grid-cols-[minmax(0,1fr)_auto] lg:gap-16'
-        }`}
-      >
-        {/* Left L-frame: title + specialty + 2 CTAs */}
-        <div
-          className={`min-w-0 justify-self-start border-b border-r border-neutral-300 ${
-            preview ? 'space-y-2 pb-1.5 pr-1.5' : 'space-y-8 pb-4 pr-4 sm:pb-5 sm:pr-5'
-          }`}
-        >
-          <div className={preview ? 'space-y-1' : 'space-y-2'}>
-            <Bone className={preview ? 'h-3 w-[88%]' : 'h-12 w-[min(100%,16rem)] sm:h-14'} />
-            <Bone className={preview ? 'h-3 w-[62%]' : 'h-12 w-[min(100%,11rem)] sm:h-14'} />
-          </div>
-          <Bone className={preview ? 'h-2 w-20' : 'h-5 w-40'} />
-          <div className={`flex flex-wrap items-center ${preview ? 'gap-1.5' : 'gap-3 sm:gap-4'}`}>
-            <Bone
-              className={`rounded-md bg-neutral-300 ${
-                preview ? 'h-3 w-14' : 'h-10 w-28'
-              }`}
-            />
-            <Bone
-              className={`rounded-md ring-1 ring-neutral-300 ${
-                preview ? 'h-3 w-14' : 'h-10 w-28'
-              }`}
-            />
-          </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <ExperienceSplitSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-10 pt-16 md:hidden">
+        <div className="border-l border-neutral-700 pl-4">
+          <span className="block h-12 w-[90%] rounded-md bg-neutral-800" />
+          <span className="mt-5 block h-3 w-[40%] rounded-full bg-neutral-800" />
         </div>
-
-        {/* Right: fixed-ish portrait + experience aside */}
-        <div
-          className={`flex shrink-0 items-start justify-self-end ${
-            preview ? 'gap-1.5' : 'gap-6 sm:gap-8'
-          }`}
-        >
-          <div
-            className={`overflow-hidden bg-neutral-100 ${
-              preview
-                ? 'h-12 w-9'
-                : 'h-[clamp(12rem,22vw,20rem)] w-[clamp(9rem,16vw,15rem)]'
-            }`}
-          >
-            <Bone className="h-full w-full rounded-none bg-neutral-300" />
-          </div>
-          <aside
-            className={`flex min-w-0 flex-col items-start ${
-              preview ? 'w-[4.5rem] gap-1' : 'max-w-[20rem] gap-0'
-            }`}
-          >
-            <Bone className={preview ? 'h-1.5 w-12' : 'h-2.5 w-24'} />
-            <Bone
-              className={`rounded-none bg-neutral-400 ${
-                preview ? 'mt-1 h-0.5 w-6' : 'mt-4 h-1.5 w-[4.5rem]'
-              }`}
-            />
-            <Bone
-              className={`bg-neutral-300 ${
-                preview ? 'mt-1.5 h-5 w-10' : 'mt-10 h-14 w-24 sm:h-16'
-              }`}
-            />
-            <Bone className={preview ? 'mt-1 h-1.5 w-10' : 'mt-2.5 h-2.5 w-28'} />
-            <div className={`w-full ${preview ? 'mt-1.5 space-y-0.5' : 'mt-10 space-y-2'}`}>
-              <Bone className={preview ? 'h-1.5 w-full' : 'h-3 w-full'} />
-              <Bone className={preview ? 'h-1.5 w-[90%]' : 'h-3 w-[90%]'} />
-              <Bone className={preview ? 'h-1.5 w-[70%]' : 'h-3 w-[70%]'} />
-            </div>
-          </aside>
+        <span className="mt-8 block aspect-[4/5] w-[72%] bg-neutral-700" style={{ clipPath: 'polygon(0 0, 100% 0, 100% 88%, 84% 100%, 0 100%)' }} />
+        <div className="mt-8 flex items-center gap-6">
+          <span className="block h-12 w-[20%] rounded-sm bg-neutral-800" />
+          <span className="block h-6 w-[52%] rounded-sm bg-neutral-800" />
         </div>
+        <span className="mt-8 block h-4 w-[34%] rounded-sm bg-neutral-800" />
       </div>
     </section>
+  );
+}
+
+/** Shared minimal magazine spread: left image window, centered identity on the right. */
+function EditorialOverlapSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <span className="absolute bottom-[16%] left-[9%] top-[24%] w-[38%] rounded-[0.2cqw] bg-neutral-700" />
+      <div className="absolute left-[52%] right-[9%] top-[36%] h-[35%]">
+        <span className="block h-[5%] w-[32%] rounded-full bg-neutral-800" />
+        <span className="mt-[6%] block h-[40%] w-[88%] rounded-[0.4cqw] bg-neutral-800" />
+        <span className="mt-[12%] block h-[10%] w-[72%] rounded-[0.2cqw] bg-neutral-800" />
+      </div>
+    </div>
   );
 }
 
 function EditorialOverlapHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={`${shellClass(true)} overflow-hidden`} aria-hidden>
-        <div className="relative mx-auto h-full w-full max-w-6xl">
-          <Bone className="absolute bottom-0 right-0 aspect-[16/10] w-[72%] rounded-2xl bg-neutral-300" />
-          <div className="relative z-[1] space-y-1.5">
-            <Bone className="h-3 w-[55%]" />
-            <Bone className="h-3 w-[42%]" />
-          </div>
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <EditorialOverlapSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`relative mx-auto flex w-full max-w-6xl flex-col ${
-          preview ? 'min-h-[4.25rem]' : 'h-full min-h-0 flex-1 justify-center'
-        }`}
-      >
-        <Bone
-          className={`w-full rounded-2xl bg-neutral-300 ${
-            preview ? 'aspect-[16/10] min-h-[4.25rem]' : 'aspect-[16/10] max-h-full'
-          }`}
-        />
-        <div
-          className={`absolute bottom-0 left-0 bg-neutral-50 ${
-            preview
-              ? 'w-[55%] space-y-0.5 p-1.5 [border-top-right-radius:1rem]'
-              : 'w-[min(58%,42rem)] space-y-3 p-5 sm:p-7 [border-top-right-radius:clamp(3.5rem,11vw,7.5rem)]'
-          }`}
-        >
-          <Bone className={preview ? 'h-1 w-8' : 'h-2.5 w-20'} />
-          <Bone className={preview ? 'h-2.5 w-[85%]' : 'h-10 w-[min(100%,14rem)] sm:h-12'} />
-          <Bone className={preview ? 'h-1 w-full' : 'h-3 w-full'} />
-          <Bone className={preview ? 'h-1 w-[90%]' : 'h-3 w-[92%]'} />
-          {!preview ? <Bone className="h-3 w-[78%]" /> : null}
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <EditorialOverlapSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-10 pt-16 md:hidden">
+        <span className="block aspect-[5/4] w-full rounded-sm bg-neutral-700" />
+        <div className="relative z-[1] -mt-6 ml-auto w-[94%] bg-neutral-950 px-4 pt-5">
+          <span className="block h-3 w-[32%] rounded-full bg-neutral-800" />
+          <span className="mt-5 block h-16 w-[88%] rounded-md bg-neutral-800" />
+          <span className="mt-8 block h-5 w-[72%] rounded-sm bg-neutral-800" />
         </div>
       </div>
     </section>
+  );
+}
+
+/** Shared minimal Selected works composition: identity above an asymmetric project rail. */
+function SelectedWorksSkeletonCanvas() {
+  const cards = [
+    { span: 4, height: '100%' },
+    { span: 3, height: '86%' },
+    { span: 2, height: '75%' },
+    { span: 3, height: '94%' },
+  ];
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute left-[6.3%] right-[6.3%] top-[12%] grid h-[24%] grid-cols-[2fr_1fr] gap-x-[8%]">
+        <span className="block h-[68%] w-[78%] rounded-[0.4cqw] bg-neutral-800" />
+        <div className="flex h-[55%] flex-col justify-between pt-[4%]">
+          <span className="block h-[12%] w-[44%] rounded-full bg-neutral-800" />
+          <span className="block h-[30%] w-[92%] rounded-[0.2cqw] bg-neutral-800" />
+        </div>
+      </div>
+      <div className="absolute bottom-[5%] left-[6.3%] right-[6.3%] top-[49%]">
+        <div className="flex h-[8%] items-start justify-between border-b border-neutral-800">
+          <span className="block h-[24%] w-[14%] rounded-full bg-neutral-800" />
+          <span className="block h-[24%] w-[6%] rounded-full bg-neutral-800" />
+        </div>
+        <div className="mt-[2%] grid h-[88%] grid-cols-12 items-end gap-[1.5%]">
+          {cards.map((card, index) => (
+            <span key={index} className="block w-full bg-neutral-800" style={{
+              gridColumn: `span ${card.span}`,
+              height: card.height,
+              clipPath: 'polygon(0 0, 94% 0, 100% 6%, 100% 100%, 0 100%)',
+            }} />
+          ))}
+        </div>
+      </div>
+    </div>
   );
 }
 
 function SelectedWorksHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-2">
-          <div className="grid grid-cols-2 items-start gap-2">
-            <Bone className="h-3 w-[80%]" />
-            <Bone className="h-1.5 w-[85%]" />
-          </div>
-          <Bone className="aspect-[4/5] w-[32%] rounded-2xl bg-neutral-300" />
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <SelectedWorksSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto flex w-full max-w-6xl flex-col ${
-          preview ? '' : 'h-full flex-1'
-        }`}
-      >
-        <div
-          className={`grid w-full ${
-            preview
-              ? 'grid-cols-2 items-start gap-2'
-              : 'gap-6 md:grid-cols-2 md:items-start md:gap-12'
-          }`}
-        >
-          <div className={preview ? 'space-y-1' : 'space-y-3'}>
-            <Bone className={preview ? 'h-3 w-[70%]' : 'h-10 w-[min(100%,12rem)] sm:h-12'} />
-            <Bone className={preview ? 'h-3 w-[90%]' : 'h-10 w-[min(100%,16rem)] sm:h-12'} />
-          </div>
-          <div className={preview ? 'space-y-0.5' : 'space-y-2 md:pt-1'}>
-            <Bone className={preview ? 'h-1.5 w-full' : 'h-3 w-full'} />
-            <Bone className={preview ? 'h-1.5 w-[96%]' : 'h-3 w-[96%]'} />
-            <Bone className={preview ? 'h-1.5 w-[80%]' : 'h-3 w-[88%]'} />
-            {!preview ? <Bone className="h-3 w-[72%]" /> : null}
-          </div>
-        </div>
-        <div className={`mt-auto flex w-full flex-col ${preview ? 'gap-1 pt-1.5' : 'gap-4 pt-10'}`}>
-          <div className="flex w-full justify-end">
-            <Bone className={preview ? 'h-1.5 w-10' : 'h-3 w-20'} />
-          </div>
-          <div className={`grid grid-cols-3 ${preview ? 'gap-1' : 'gap-3 sm:gap-4'}`}>
-            <Bone className="aspect-[4/5] w-full rounded-2xl bg-neutral-300" />
-            <Bone className="aspect-[4/5] w-full rounded-2xl bg-neutral-300" />
-            <Bone className="aspect-[4/5] w-full rounded-2xl bg-neutral-300" />
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <SelectedWorksSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col overflow-hidden px-5 pb-8 pt-16 md:hidden">
+        <span className="block h-16 w-[78%] rounded-md bg-neutral-800" />
+        <span className="mt-7 block h-3 w-[36%] rounded-full bg-neutral-800" />
+        <span className="mt-5 block h-6 w-[88%] rounded-sm bg-neutral-800" />
+        <div className="mt-auto pt-12">
+          <span className="mb-4 block h-px w-full bg-neutral-800" />
+          <div className="flex gap-4">
+            <span className="block h-[42svh] w-[82vw] shrink-0 bg-neutral-800" style={{ clipPath: 'polygon(0 0, 94% 0, 100% 6%, 100% 100%, 0 100%)' }} />
+            <span className="block h-[42svh] w-[82vw] shrink-0 bg-neutral-800" style={{ clipPath: 'polygon(0 0, 94% 0, 100% 6%, 100% 100%, 0 100%)' }} />
           </div>
         </div>
       </div>
     </section>
   );
 }
+/** Shared minimal Colophon: editorial bio, ruled project index and oversized bottom identity. */
+function ColophonSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute left-[6.3%] right-[6.3%] top-[13%] flex h-[5%] items-start justify-between border-b border-neutral-800">
+        <span className="block h-[22%] w-[12%] rounded-full bg-neutral-800" />
+        <span className="block h-[22%] w-[18%] rounded-full bg-neutral-800" />
+      </div>
+      <span className="absolute left-[6.3%] top-[27%] h-[12%] w-[38%] rounded-[0.4cqw] bg-neutral-700" />
+      <div className="absolute left-[57%] right-[6.3%] top-[29%] flex h-[28%] flex-col">
+        {[76, 90, 64].map((width) => (
+          <div key={width} className="flex flex-1 items-center border-t border-neutral-800">
+            <span className="ml-[8%] block h-[16%] rounded-full bg-neutral-800" style={{ width: `${width - 8}%` }} />
+          </div>
+        ))}
+      </div>
+      <span className="absolute bottom-0 left-[6.3%] right-[6.3%] h-[22%] rounded-t-[0.4cqw] bg-neutral-700" />
+    </div>
+  );
+}
 
-/** Colophon: compact credits, an editorial statement facing the index, and a monumental name. */
 function ColophonHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={`${shellClass(true)} overflow-hidden`} aria-hidden>
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-1.5">
-          <div className="h-px w-full bg-neutral-300" />
-          <div className="grid grid-cols-2 gap-2">
-            <Bone className="h-2 w-[80%]" />
-            <div className="flex flex-col gap-1">
-              <Bone className="h-1.5 w-full" />
-              <Bone className="h-1.5 w-full" />
-            </div>
-          </div>
-          <Bone className="h-5 w-full rounded-none" />
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <ColophonSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={`${shellClass(false)} overflow-hidden !pb-0`} aria-hidden>
-      <div className="mx-auto flex h-full w-full max-w-none flex-1 flex-col">
-        <div className="h-px w-full bg-neutral-300" />
-        <div className="mt-4 grid grid-cols-2 gap-6 lg:grid-cols-3">
-          {['w-40', 'w-44', 'w-28'].map((width) => (
-            <div key={width} className="flex flex-col gap-2">
-              <Bone className={`h-3 ${width}`} />
-              <Bone className="h-3 w-24" />
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <ColophonSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pt-16 md:hidden">
+        <div className="flex justify-between border-b border-neutral-800 pb-5">
+          <span className="block h-3 w-[24%] rounded-full bg-neutral-800" />
+          <span className="block h-3 w-[30%] rounded-full bg-neutral-800" />
+        </div>
+        <span className="mt-8 block h-12 w-[88%] rounded-md bg-neutral-700" />
+        <div className="mt-10">
+          {[76, 90, 64].map((width) => (
+            <div key={width} className="flex h-12 items-center border-t border-neutral-800">
+              <span className="ml-[8%] block h-2 rounded-full bg-neutral-800" style={{ width: `${width - 8}%` }} />
             </div>
           ))}
         </div>
-        <div className="mt-10 grid flex-1 grid-cols-1 content-start gap-8 pb-8 lg:grid-cols-12 lg:items-center">
-          <div className="flex flex-col gap-3 lg:col-span-6">
-            <Bone className="ml-[12%] h-7 w-[78%]" />
-            <Bone className="h-7 w-[92%]" />
-            <Bone className="h-7 w-[60%]" />
-          </div>
-          <div className="flex flex-col lg:col-span-5 lg:col-start-8">
-            {[0, 1, 2, 3].map((row) => (
-              <div key={row} className="flex items-center gap-4 border-t border-neutral-200 py-4">
-                <Bone className="h-3 w-6" />
-                <Bone className="h-3.5 w-[55%]" />
-              </div>
-            ))}
-          </div>
-        </div>
-        <div className="h-[14vw] w-full overflow-hidden">
-          <Bone className="h-[15.5vw] w-full rounded-none" />
-        </div>
+        <span className="mt-auto block h-[22vw] w-full rounded-t-md bg-neutral-700" />
       </div>
     </section>
+  );
+}
+
+/** Shared minimal Identity index: centered name, three metadata columns and lower bio. */
+function IdentityIndexSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <span className="absolute left-[48.5%] top-[12%] h-[0.4%] w-[3%] bg-neutral-700" />
+      <span className="absolute left-[22%] top-[21%] h-[14%] w-[56%] rounded-[0.4cqw] bg-neutral-800" />
+      <div className="absolute left-[6.3%] right-[6.3%] top-[44%] grid h-[6%] grid-cols-3 items-center justify-items-center gap-[4%] border-b border-neutral-800 pb-[2%]">
+        {[0, 1, 2].map((index) => (
+          <span key={index} className="block h-[30%] w-[40%] rounded-full bg-neutral-800" />
+        ))}
+      </div>
+      <span className="absolute bottom-[9%] left-[23%] h-[7%] w-[54%] rounded-[0.3cqw] bg-neutral-800" />
+    </div>
   );
 }
 
 function IdentityIndexHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto flex w-full max-w-5xl flex-col items-center gap-1.5">
-          <Bone className="h-4 w-[55%]" />
-          <div className="h-px w-full bg-neutral-200" />
-          <Bone className="h-2 w-[35%]" />
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <IdentityIndexSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto flex w-full max-w-5xl flex-col items-center ${
-          preview ? '' : 'h-full flex-1'
-        }`}
-      >
-        <Bone
-          className={`mx-auto rounded-none bg-neutral-400 ${
-            preview ? 'h-0.5 w-4' : 'h-[3px] w-10'
-          }`}
-        />
-        <Bone
-          className={`mx-auto ${
-            preview
-              ? 'mt-1.5 h-4 w-[min(100%,8rem)]'
-              : 'mt-8 h-14 w-[min(100%,20rem)] sm:h-20 sm:w-[min(100%,28rem)]'
-          }`}
-        />
-        <div
-          className={`grid w-full grid-cols-3 text-center ${
-            preview ? 'mt-2 gap-2' : 'mt-10 gap-4 sm:gap-8'
-          }`}
-        >
-          {(['w-14', 'w-16', 'w-12'] as const).map((valueWidth, index) => (
-            <div
-              key={index}
-              className={`flex flex-col items-center ${preview ? 'gap-0.5' : 'gap-1.5'}`}
-            >
-              <Bone className={preview ? 'h-1 w-6' : 'h-2 w-12'} />
-              <Bone className={`${preview ? 'h-2' : 'h-3.5'} ${preview ? 'w-8' : valueWidth}`} />
-            </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] lg:block">
+        <IdentityIndexSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-10 pt-20 lg:hidden">
+        <span className="block h-16 w-[86%] rounded-md bg-neutral-800" />
+        <div className="mt-12 space-y-4 border-b border-neutral-800 pb-5">
+          {[44, 36, 40].map((width) => (
+            <span key={width} className="block h-3 rounded-full bg-neutral-800" style={{ width: `${width}%` }} />
           ))}
         </div>
-        <div className={`w-full bg-neutral-200 ${preview ? 'mt-1.5 h-px' : 'mt-5 h-px'}`} />
-        <div
-          className={`mx-auto w-full max-w-xl text-center ${
-            preview ? 'mt-auto space-y-0.5 pt-1.5' : 'mt-auto space-y-2 pt-10'
-          }`}
-        >
-          <Bone className={`mx-auto w-full ${preview ? 'h-1.5' : 'h-3.5'}`} />
-          <Bone className={`mx-auto w-[92%] ${preview ? 'h-1.5' : 'h-3.5'}`} />
-          {!preview ? <Bone className="mx-auto h-3.5 w-[80%]" /> : null}
-        </div>
+        <span className="mt-8 block h-10 w-[92%] rounded-sm bg-neutral-800" />
       </div>
     </section>
+  );
+}
+
+/** Shared Studio split silhouette: two-column intro above a centered overlapping circular media. */
+function StudioSplitSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <span className="absolute inset-x-0 top-0 h-[57%] bg-neutral-900" />
+      <div className="absolute left-[6.3%] right-[6.3%] top-[13%] grid h-[22%] grid-cols-[7fr_5fr] gap-x-[8%]">
+        <span className="block h-[60%] w-[85%] rounded-[0.4cqw] bg-neutral-800" />
+        <div className="flex h-[72%] flex-col justify-between">
+          <span className="block h-[32%] w-full rounded-[0.3cqw] bg-neutral-800" />
+          <span className="block h-[16%] w-[36%] rounded-full bg-neutral-800" />
+        </div>
+      </div>
+      <span className="absolute left-1/2 top-[43%] aspect-square w-[35%] -translate-x-1/2 rounded-full bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
+    </div>
   );
 }
 
 function StudioSplitHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto flex w-full max-w-6xl flex-col gap-1.5">
-          <div className="grid grid-cols-2 gap-2 bg-neutral-900 p-1.5">
-            <Bone className="h-3 w-[80%] bg-neutral-400" />
-            <Bone className="h-1.5 w-[85%] bg-neutral-500" />
-          </div>
-          <Bone className="-mt-2 aspect-[16/9] w-full rounded-lg bg-neutral-300" />
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <StudioSplitSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto flex w-full max-w-6xl flex-col ${
-          preview ? '' : 'h-full flex-1 justify-center'
-        }`}
-      >
-        <div
-          className={`bg-neutral-900 ${
-            preview ? 'px-1.5 pb-5 pt-1.5' : 'px-5 pb-24 pt-8 sm:px-8 lg:px-10 lg:pb-28 lg:pt-10'
-          }`}
-        >
-          <div
-            className={`grid ${
-              preview ? 'grid-cols-2 gap-2' : 'gap-8 lg:grid-cols-2 lg:gap-x-16'
-            }`}
-          >
-            <div className={preview ? 'space-y-1' : 'space-y-4'}>
-              <Bone className={`bg-neutral-500 ${preview ? 'h-1 w-8' : 'h-2.5 w-20'}`} />
-              <Bone
-                className={`bg-neutral-400 ${
-                  preview ? 'h-3 w-[90%]' : 'h-12 w-[min(100%,18rem)] sm:h-14'
-                }`}
-              />
-              <Bone className={`bg-neutral-500 ${preview ? 'h-1.5 w-12' : 'h-4 w-36'}`} />
-            </div>
-            <div className={`flex flex-col ${preview ? 'space-y-0.5' : 'space-y-3 lg:pt-1'}`}>
-              <Bone className={`bg-neutral-500 ${preview ? 'h-1 w-full' : 'h-3 w-full'}`} />
-              <Bone className={`bg-neutral-500 ${preview ? 'h-1 w-[96%]' : 'h-3 w-[96%]'}`} />
-              {!preview ? (
-                <>
-                  <Bone className="h-3 w-[88%] bg-neutral-500" />
-                  <Bone className="h-3 w-[72%] bg-neutral-500" />
-                </>
-              ) : null}
-              <div className={`flex flex-wrap ${preview ? 'mt-1 gap-1' : 'mt-5 gap-3'}`}>
-                <Bone
-                  className={`rounded-full bg-neutral-200 ${
-                    preview ? 'h-2.5 w-10' : 'h-10 w-28'
-                  }`}
-                />
-                <Bone
-                  className={`rounded-full bg-neutral-600 ${
-                    preview ? 'h-2.5 w-10' : 'h-10 w-32'
-                  }`}
-                />
-              </div>
-              <div className={`flex items-center ${preview ? 'mt-1 gap-1' : 'mt-4 gap-2.5'}`}>
-                <Bone
-                  className={`shrink-0 rounded-full bg-neutral-300 ${
-                    preview ? 'h-1 w-1' : 'h-2 w-2'
-                  }`}
-                />
-                <Bone className={`bg-neutral-500 ${preview ? 'h-1 w-10' : 'h-2.5 w-28'}`} />
-              </div>
-            </div>
-          </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <StudioSplitSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col md:hidden">
+        <div className="bg-neutral-900 px-5 pb-28 pt-20">
+          <span className="block h-14 w-[85%] rounded-md bg-neutral-800" />
+          <span className="mt-8 block h-7 w-full rounded-sm bg-neutral-800" />
+          <span className="mt-6 block h-4 w-[36%] rounded-full bg-neutral-800" />
         </div>
-        <div
-          className={`relative z-[1] ${
-            preview ? '-mt-3.5 px-0.5' : '-mt-16 px-2 sm:-mt-20 lg:-mt-24'
-          }`}
-        >
-          <Bone
-            className={`aspect-[16/9] w-full bg-neutral-300 ${
-              preview
-                ? 'rounded-lg'
-                : 'rounded-[1.75rem] sm:rounded-[2rem] lg:rounded-[2.5rem]'
-            }`}
-          />
-          <Bone
-            className={`mx-auto rounded-none bg-neutral-400 ${
-              preview ? 'mt-1.5 h-px w-6' : 'mt-8 h-[2px] w-20 lg:mt-10 lg:w-24'
-            }`}
-          />
-        </div>
+        <span className="relative mx-auto -mt-16 block aspect-square w-[72%] rounded-full bg-neutral-700 ring-1 ring-inset ring-white/[0.06]" />
       </div>
     </section>
+  );
+}
+
+/** Shared minimal Work duo: left identity and experience, two staggered project panels right. */
+function WorkDuoSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute bottom-[6%] left-[6.3%] right-[6.3%] top-[13%] grid grid-cols-[0.82fr_1.18fr] gap-x-[6%]">
+        <div className="relative min-w-0">
+          <span className="block h-[2%] w-[30%] rounded-full bg-neutral-800" />
+          <span className="mt-[8%] block h-[18%] w-[90%] rounded-[0.4cqw] bg-neutral-800" />
+          <span className="mt-[10%] block h-[5%] w-[38%] rounded-full bg-neutral-800" />
+          <div className="absolute inset-x-0 bottom-0 flex h-[12%] items-end justify-between border-t border-neutral-800 pt-[3%]">
+            <span className="block h-[20%] w-[30%] rounded-full bg-neutral-800" />
+            <span className="block h-full w-[20%] rounded-[0.3cqw] bg-neutral-800" />
+          </div>
+        </div>
+        <div className="relative grid min-w-0 grid-cols-2 gap-[4%] pt-[5%]">
+          <span className="absolute right-0 top-0 h-[1.5%] w-[14%] rounded-full bg-neutral-800" />
+          <span className="block h-[94%] rounded-[0.8cqw_2.5cqw_0.8cqw_2.5cqw] bg-neutral-700" />
+          <span className="mt-[14%] block h-[94%] rounded-[2.5cqw_0.8cqw_2.5cqw_0.8cqw] bg-neutral-700" />
+        </div>
+      </div>
+    </div>
   );
 }
 
 function WorkDuoHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={shellClass(true)} aria-hidden>
-        <div className="mx-auto grid max-w-6xl grid-cols-2 items-center gap-2">
-          <div className="flex flex-col gap-1.5">
-            <Bone className="h-3 w-[85%]" />
-            <Bone className="h-3 w-[65%]" />
-          </div>
-          <Bone className="aspect-[3/4] w-full rounded-2xl bg-neutral-300" />
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <WorkDuoSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={shellClass(preview)} aria-hidden>
-      <div
-        className={`mx-auto grid max-w-6xl items-stretch ${
-          preview
-            ? 'grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)] gap-x-2'
-            : 'h-full flex-1 grid-cols-1 gap-8 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)] lg:gap-x-10'
-        }`}
-      >
-        <div className="flex min-w-0 flex-col">
-          <Bone className={preview ? 'h-1.5 w-12' : 'h-2.5 w-28'} />
-          <Bone
-            className={
-              preview
-                ? 'mt-1.5 h-3 w-[90%]'
-                : 'mt-4 h-10 w-[min(100%,16rem)] sm:h-12 sm:w-[min(100%,18rem)]'
-            }
-          />
-          <Bone
-            className={
-              preview
-                ? 'mt-0.5 h-3 w-[75%]'
-                : 'mt-1.5 h-10 w-[min(100%,14rem)] sm:h-12 sm:w-[min(100%,15rem)]'
-            }
-          />
-          <div className={preview ? 'mt-2 space-y-0.5' : 'mt-8 space-y-2'}>
-            <Bone className={`w-full max-w-[22rem] ${preview ? 'h-1.5' : 'h-3'}`} />
-            <Bone className={`w-[92%] max-w-[20rem] ${preview ? 'h-1.5' : 'h-3'}`} />
-            {!preview ? <Bone className="h-3 w-[78%] max-w-[17rem]" /> : null}
-          </div>
-          <div className={`flex flex-wrap items-center ${preview ? 'mt-1.5 gap-1' : 'mt-6 gap-2.5'}`}>
-            <Bone className={`rounded-xl bg-neutral-300 ${preview ? 'h-3 w-10' : 'h-10 w-28'}`} />
-            <Bone className={`rounded-xl ${preview ? 'h-3 w-10' : 'h-10 w-32'}`} />
-          </div>
-          <div className={`mt-auto ${preview ? 'pt-1.5' : 'pt-8 lg:pt-10'}`}>
-            <Bone className={preview ? 'h-4 w-8' : 'h-12 w-20 sm:h-14 sm:w-24'} />
-            <Bone className={preview ? 'mt-0.5 h-1 w-12' : 'mt-2 h-2.5 w-36'} />
-          </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <WorkDuoSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col overflow-hidden px-5 pb-10 pt-16 md:hidden">
+        <span className="block h-3 w-[30%] rounded-full bg-neutral-800" />
+        <span className="mt-6 block h-14 w-[90%] rounded-md bg-neutral-800" />
+        <span className="mt-7 block h-4 w-[38%] rounded-full bg-neutral-800" />
+        <div className="mt-10 flex items-end justify-between border-t border-neutral-800 pt-4">
+          <span className="block h-3 w-[30%] rounded-full bg-neutral-800" />
+          <span className="block h-10 w-[20%] rounded-sm bg-neutral-800" />
         </div>
-
-        <div className="flex min-w-0 flex-col">
-          <div className={`flex w-full items-center justify-end ${preview ? 'mb-1' : 'mb-3 lg:mb-4'}`}>
-            <Bone className={preview ? 'h-1.5 w-8' : 'h-2.5 w-16'} />
-          </div>
-          <div className={`grid min-h-0 flex-1 grid-cols-2 ${preview ? 'gap-1' : 'gap-3 sm:gap-4'}`}>
-            <Bone className="aspect-[3/4] w-full rounded-[1.75rem] bg-neutral-300" />
-            <Bone className="aspect-[3/4] w-full rounded-[1.75rem] bg-neutral-300" />
-          </div>
+        <div className="mt-10 flex gap-4">
+          <span className="block aspect-[4/5] w-[82vw] shrink-0 rounded-[0.8rem_2rem_0.8rem_2rem] bg-neutral-700" />
+          <span className="block aspect-[4/5] w-[82vw] shrink-0 rounded-[2rem_0.8rem_2rem_0.8rem] bg-neutral-700" />
         </div>
       </div>
     </section>
   );
 }
 
+/** Shared minimal Bowl intro: sculptural portrait left, specialty and restrained actions right. */
+function BowlIntroSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <div className="absolute bottom-[14%] left-[8%] right-[8%] top-[20%] grid grid-cols-[0.9fr_1.1fr] gap-x-[10%]">
+        <div className="relative min-w-0">
+          <span className="absolute bottom-[10%] left-0 h-[40%] w-full rounded-[50%_50%_16%_16%] border border-neutral-800" />
+          <span className="absolute bottom-[14%] left-[8%] right-[8%] top-[3%] bg-neutral-700" style={{ borderRadius: '8% 8% 42% 42% / 8% 8% 16% 16%' }} />
+          <span className="absolute left-[10%] top-0 h-[4%] w-[35%] rounded-full bg-neutral-700" />
+          <span className="absolute bottom-0 left-[30%] h-[3%] w-[40%] rounded-full bg-neutral-800" />
+        </div>
+        <div className="relative min-w-0">
+          <span className="block h-[24%] w-[94%] rounded-[0.4cqw] bg-neutral-800" />
+          <div className="absolute inset-x-0 bottom-[6%] h-[18%]">
+            <span className="block h-[30%] w-[88%] rounded-[0.2cqw] bg-neutral-800" />
+            <span className="absolute bottom-0 block h-[20%] w-[36%] rounded-full bg-neutral-800" />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function BowlIntroHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
   if (preview) {
     return (
-      <section className={`${shellClass(true)} overflow-hidden`} aria-hidden>
-        <div className="mx-auto flex w-full max-w-6xl items-center gap-2">
-          <Bone className="aspect-[3/4] w-[28%] rounded-[1.2rem] bg-neutral-300" />
-          <div className="flex flex-1 flex-col gap-1.5">
-            <Bone className="h-4 w-[85%] bg-neutral-300" />
-            <Bone className="h-4 w-[65%] bg-neutral-300" />
-          </div>
-        </div>
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <BowlIntroSkeletonCanvas />
       </section>
     );
   }
   return (
-    <section className={`${shellClass(preview)} overflow-hidden`} aria-hidden>
-      {!preview ? (
-        <div
-          className="pointer-events-none absolute -right-[12%] -top-[18%] z-0 h-[40%] w-[40%] rounded-full bg-neutral-200 opacity-40"
-          aria-hidden
-        />
-      ) : null}
-
-      <div
-        className={`relative z-[1] mx-auto grid max-w-6xl items-center ${
-          preview
-            ? 'grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] gap-x-2'
-            : 'h-full flex-1 grid-cols-1 content-center gap-8 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.08fr)] lg:gap-x-12'
-        }`}
-      >
-        <div
-          className={`mx-auto flex w-full flex-col items-center lg:mx-0 ${
-            preview ? 'max-w-[3.25rem]' : 'max-w-[14rem] sm:max-w-[16rem] lg:max-w-[18rem]'
-          }`}
-        >
-          <Bone className={`rounded-full ${preview ? 'mb-1 h-2.5 w-10' : 'mb-4 h-7 w-32'}`} />
-          <div className={`relative w-full ${preview ? 'pb-2' : 'pb-[min(42%,7rem)]'}`}>
-            <div
-              aria-hidden
-              className="pointer-events-none absolute left-1/2 top-[62%] z-0 w-[145%] -translate-x-1/2 animate-pulse bg-neutral-100"
-              style={{
-                aspectRatio: '2 / 1',
-                borderRadius: '0 0 50% 50% / 0 0 100% 100%',
-              }}
-            />
-            <Bone className="relative z-[1] aspect-[3/4] w-full rounded-[1.65rem] bg-neutral-300" />
-            <Bone className={`relative z-[1] mx-auto ${preview ? 'mt-1 h-1.5 w-8' : 'mt-4 h-5 w-28'}`} />
-          </div>
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <BowlIntroSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pb-10 pt-20 md:hidden">
+        <div className="relative mx-auto w-[72%] pb-8">
+          <span className="absolute bottom-6 inset-x-0 h-[40%] rounded-[50%_50%_16%_16%] border border-neutral-800" />
+          <span className="relative mx-auto block aspect-[3/4] w-[84%] bg-neutral-700" style={{ borderRadius: '8% 8% 42% 42% / 8% 8% 16% 16%' }} />
+          <span className="absolute -top-2 left-[10%] h-3 w-[35%] rounded-full bg-neutral-700" />
+          <span className="absolute bottom-0 left-[30%] h-3 w-[40%] rounded-full bg-neutral-800" />
         </div>
+        <span className="mt-9 block h-14 w-[94%] rounded-md bg-neutral-800" />
+        <span className="mt-8 block h-6 w-[88%] rounded-sm bg-neutral-800" />
+        <span className="mt-6 block h-4 w-[36%] rounded-full bg-neutral-800" />
+      </div>
+    </section>
+  );
+}
 
-        <div className="flex min-w-0 flex-col items-start">
-          <Bone
-            className={`w-full bg-neutral-300 ${
-              preview ? 'h-4 max-w-[8rem]' : 'h-14 max-w-[20rem] sm:h-16 sm:max-w-[24rem] lg:h-20'
-            }`}
-          />
-          <Bone
-            className={`bg-neutral-300 ${
-              preview
-                ? 'mt-0.5 h-4 w-[80%] max-w-[6.5rem]'
-                : 'mt-1.5 h-14 w-[88%] max-w-[18rem] sm:h-16 sm:max-w-[20rem] lg:h-20'
-            }`}
-          />
-          <div className={`w-full max-w-[28rem] ${preview ? 'mt-1.5 space-y-0.5' : 'mt-5 space-y-2'}`}>
-            <Bone className={`w-full ${preview ? 'h-1.5' : 'h-3'}`} />
-            <Bone className={`w-[94%] ${preview ? 'h-1.5' : 'h-3'}`} />
-            {!preview ? <Bone className="h-3 w-[82%]" /> : null}
-          </div>
-          <div className={`flex flex-wrap items-center ${preview ? 'mt-1.5 gap-1' : 'mt-6 gap-2.5'}`}>
-            <Bone className={`rounded-full bg-neutral-300 ${preview ? 'h-3 w-10' : 'h-10 w-32'}`} />
-            <Bone className={`rounded-full ${preview ? 'h-3 w-9' : 'h-10 w-28'}`} />
-          </div>
-        </div>
+/** Statement overlap: two big halves around a tall portrait, a credit block and a foot bar. */
+function StatementOverlapSkeletonCanvas() {
+  return (
+    <div className="absolute inset-0 animate-pulse" style={{ containerType: 'size' }}>
+      <span className="absolute left-[37.5%] top-[14%] h-[58%] w-[29%] bg-neutral-700" />
+      <span className="absolute left-[5%] top-[26%] z-10 h-[12%] w-[43%] rounded-[0.4cqw] bg-neutral-600" />
+      <span className="absolute bottom-[26%] right-[5%] z-10 h-[12%] w-[36%] rounded-[0.4cqw] bg-neutral-600" />
+      <span className="absolute bottom-[30%] left-[5%] h-[0.5%] w-[3%] bg-neutral-600" />
+      <span className="absolute bottom-[24%] left-[5%] h-[3%] w-[14%] rounded-full bg-neutral-700" />
+      <span className="absolute bottom-[19%] left-[5%] h-[2%] w-[10%] rounded-full bg-neutral-800" />
+      <span className="absolute bottom-[14%] left-[5%] right-[5%] h-px bg-neutral-800" />
+      <span className="absolute bottom-[7%] left-[5%] h-[3%] w-[24%] rounded-full bg-neutral-700" />
+      <span className="absolute bottom-[7%] left-[40%] h-[3%] w-[18%] rounded-full bg-neutral-700" />
+    </div>
+  );
+}
+
+function StatementOverlapHeroBannerSkeleton({ preview }: HeroBannerSkeletonProps = {}) {
+  if (preview) {
+    return (
+      <section className="relative h-full w-full overflow-hidden bg-neutral-950" aria-hidden>
+        <StatementOverlapSkeletonCanvas />
+      </section>
+    );
+  }
+  return (
+    <section className="relative isolate min-h-[100dvh] min-h-screen w-full overflow-hidden bg-neutral-950" aria-hidden>
+      <div className="relative hidden h-[100dvh] md:block">
+        <StatementOverlapSkeletonCanvas />
+      </div>
+      <div className="flex min-h-[100dvh] animate-pulse flex-col px-5 pt-16 md:hidden">
+        <span className="block h-14 w-[70%] rounded-md bg-neutral-700" />
+        <span className="-mt-3 mx-auto block aspect-[5/7] w-[62%] bg-neutral-800" />
+        <span className="-mt-6 ml-auto block h-14 w-[70%] rounded-md bg-neutral-700" />
+        <span className="mt-8 block h-4 w-[40%] rounded-full bg-neutral-800" />
       </div>
     </section>
   );
@@ -1203,17 +844,32 @@ const HERO_BANNER_SKELETONS: Record<
   'work-duo': WorkDuoHeroBannerSkeleton,
   'bowl-intro': BowlIntroHeroBannerSkeleton,
   colophon: ColophonHeroBannerSkeleton,
+  'statement-overlap': StatementOverlapHeroBannerSkeleton,
 };
 
 export function PortfolioHeroBannerSkeleton({
   design = DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
   preview = false,
+  settings,
 }: {
   design?: PortfolioHeroBannerDesign;
   preview?: boolean;
+  settings?: PortfolioSettings | null;
 }) {
   const Render = HERO_BANNER_SKELETONS[design] ?? SwissEditorialHeroBannerSkeleton;
-  return <Render preview={preview} />;
+  const thumbnailTheme = useThumbnailTheme('hero');
+  const theme = settings ? resolveThumbnailTheme(settings.global, settings.hero) : thumbnailTheme;
+  const canvas = theme.background;
+  const ink = theme.ink;
+  return <div className="hero-skeleton-theme contents"
+    style={{
+      '--hero-sk-canvas': canvas,
+      '--hero-sk-soft': `color-mix(in srgb, ${ink} 6%, ${canvas})`,
+      '--hero-sk-block': `color-mix(in srgb, ${ink} 12%, ${canvas})`,
+      '--hero-sk-image': `color-mix(in srgb, ${ink} 22%, ${canvas})`,
+    } as CSSProperties}>
+    <Render preview={preview} />
+  </div>;
 }
 
 const PREVIEW_SWISS_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
@@ -1830,6 +1486,34 @@ function SelectedWorksContentPreview({ hero }: { hero: PortfolioHeroSectionSetti
   );
 }
 
+function StatementOverlapContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
+  const p = previewPalette(hero);
+  const serif = '"Playfair Display", Georgia, serif';
+  return (
+    <PreviewCardShell fond={p.fond}>
+      <div className="absolute left-[37.5%] top-[14%] h-[52%] w-[29%]" style={{ backgroundColor: `color-mix(in srgb, ${p.ink} 24%, ${p.fond})` }} />
+      <p className="absolute left-[5%] top-[22%] z-10 m-0" style={{ color: p.ink, fontFamily: serif, fontSize: '15cqw', lineHeight: 0.84, letterSpacing: '-0.045em' }}>
+        {previewLorem(1, 0)}
+      </p>
+      <p className="absolute bottom-[32%] right-[5%] z-10 m-0 text-right" style={{ color: p.ink, fontFamily: serif, fontSize: '15cqw', lineHeight: 0.84, letterSpacing: '-0.045em' }}>
+        {previewLorem(1, 1)}
+        <span style={{ color: p.principal }}>.</span>
+      </p>
+      <span className="absolute bottom-[31%] left-[5%] h-[0.6cqw] w-[6cqw]" style={{ backgroundColor: p.principal }} />
+      <PreviewText color={p.ink} size="4.2cqw" fontFamily={serif} className="absolute bottom-[24%] left-[5%]">
+        {previewLorem(2, 3)}
+      </PreviewText>
+      <div className="absolute inset-x-[5%] bottom-[14%]" style={{ borderTop: `1px solid ${p.bordure}` }} />
+      <PreviewText color={p.ink} size="3.4cqw" fontFamily={serif} className="absolute bottom-[6%] left-[5%]">
+        {previewLorem(4, 5)}
+      </PreviewText>
+      <PreviewText color={p.ink} size="3.4cqw" fontFamily={serif} className="absolute bottom-[6%] left-[42%] border-b" >
+        {previewLorem(2, 9)}
+      </PreviewText>
+    </PreviewCardShell>
+  );
+}
+
 function ColophonContentPreview({ hero }: { hero: PortfolioHeroSectionSettings }) {
   const p = previewPalette(hero);
   return (
@@ -2053,6 +1737,7 @@ const HERO_BANNER_CONTENT_PREVIEWS: Partial<
   'work-duo': WorkDuoContentPreview,
   'bowl-intro': BowlIntroContentPreview,
   colophon: ColophonContentPreview,
+  'statement-overlap': StatementOverlapContentPreview,
 };
 
 /** Mini wireframe for Hero → Banner design picker. */
@@ -2063,13 +1748,34 @@ export function HeroBannerDesignPreview({
   design: PortfolioHeroBannerDesign;
   hero?: PortfolioHeroSectionSettings;
 }) {
-  const ContentPreview = hero ? HERO_BANNER_CONTENT_PREVIEWS[design] : undefined;
+  const ContentPreview = hero && !HERO_BANNER_SKELETONS[design]
+    ? HERO_BANNER_CONTENT_PREVIEWS[design]
+    : undefined;
   if (ContentPreview) {
     return <ContentPreview hero={hero!} />;
   }
   return (
     <div
-      className="aspect-square overflow-hidden rounded-xl border border-neutral-200/80 bg-white"
+      className={`${
+        design === 'swiss-editorial' ||
+        design === 'portrait-identity' ||
+        design === 'editorial-rail' ||
+        design === 'statement-cta' ||
+        design === 'portrait-balance' ||
+        design === 'left-portrait' ||
+        design === 'circle-portrait' ||
+        design === 'experience-split' ||
+        design === 'editorial-overlap' ||
+        design === 'selected-works' ||
+        design === 'identity-index' ||
+        design === 'studio-split' ||
+        design === 'work-duo' ||
+        design === 'bowl-intro' ||
+        design === 'colophon' ||
+        design === 'statement-overlap'
+          ? 'aspect-[2/1] w-full'
+          : 'aspect-square'
+      } overflow-hidden rounded-xl border border-neutral-200/80 bg-white`}
       aria-hidden
     >
       <PortfolioHeroBannerSkeleton design={design} preview />

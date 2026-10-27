@@ -1,0 +1,56 @@
+.lead.lead { row-gap: 24px; }
+.scrollFocus {
+  filter: brightness(var(--duotone-focus-light, 1));
+  transition: filter 240ms ease-out;
+}
+.scrollFocus:focus-within { filter: brightness(1); }
+@media (prefers-reduced-motion: reduce) {
+  .scrollFocus { filter: none; transition: none; }
+}
+.titleMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: .4rem .75rem;
+  font-size: calc(.8125rem * var(--pf-experience-font-scale, 1));
+  font-weight: 400;
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.titleMeta > span + span::before { content: '·'; margin-right: .75rem; opacity: .5; }
+.bracketMeta { position: relative; width: fit-content; max-width: 100%; padding-inline: 1.25rem; }
+.bracketMeta::before, .bracketMeta::after {
+  position: absolute;
+  top: 0;
+  font-size: 1.25em;
+  font-weight: 400;
+  line-height: 1.28;
+  opacity: .65;
+}
+.bracketMeta::before { content: '['; left: 0; }
+.bracketMeta::after { content: ']'; right: 0; }
+.titlePeriod { font-weight: 500; font-variant-numeric: tabular-nums; }
+.titleStatus { font-weight: 400; }
+.description p { max-width: 62ch; }
+.tasks[data-after-description='true'] { padding-top: clamp(1rem, 2.5vh, 1.75rem); }
+.metaFooter { min-width: 0; }
+@media (min-width: 1100px) {
+  .tasks[data-task-alignment='offset'] { margin-left: clamp(1.5rem, 2.5vw, 3rem); }
+  .metaFooter .titleMeta { justify-content: flex-end; text-align: right; }
+}
+@media (max-width: 639px) {
+  .tasks[data-after-description='true'] { padding-top: .5rem; }
+}
+.tasks [data-exp-task] > span:last-child { font-size: calc(1rem * var(--pf-experience-font-scale, 1)); font-weight: 400; line-height: 1.65; }
+:global(#experience) .tasks [data-exp-task] > span:last-child {
+  font-size: calc(1rem * var(--pf-experience-font-scale, 1));
+  font-weight: 400;
+  line-height: 1.65;
+}
+.tools { min-width: 0; }
+.tools li { font-size: calc(.875rem * var(--pf-experience-font-scale, 1)); font-weight: 400; }
+:global(#experience) .tools li {
+  font-size: calc(.875rem * var(--pf-experience-font-scale, 1));
+  font-weight: 400;
+  line-height: 1.6;
+}

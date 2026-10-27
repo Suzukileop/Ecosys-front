@@ -1,0 +1,28 @@
+.content :global(.pf-about-values-serif):not(:global(.pf-about-values-intro-p)) {
+  font-family:inherit !important;
+  font-weight:500;
+  font-size:var(--pf-values-item-size,1.125rem);
+  line-height:1.5;
+  letter-spacing:-.01em;
+  overflow-wrap:anywhere;
+}
+.content :global(.pf-about-values-step)::before,
+.content :global(.pf-about-values-item)::before,
+.content :global(.pf-about-values-card)::before,
+.content :global(.pf-about-values-row)::before { content:none; }
+.content :global(.pf-about-values-index) { opacity:.55; }
+.content :global(.pf-value-word) { letter-spacing:0; line-height:1.6; }
+.content :global(.pf-value-words) { column-gap:1.5rem; row-gap:.6rem; }
+.content :global(.pf-about-values-footer),
+.content :global(.pf-about-values-meta-section) { margin-top:3.5rem; }
+.content :global(.pf-about-values-meta-section) > div { margin-bottom:2.5rem; }
+.content :global(.pf-about-values-meta-section) > div:last-child { margin-bottom:0; }
+.content :global(.pf-about-values-rule) { opacity:.6; }
+.content :global(.pf-about-values-step) + :global(.pf-about-values-step) { margin-top:2rem; }
+.content :global(.pf-value-langs):has(:global(.pf-value-lang:hover)) :global(.pf-value-lang:not(:hover)) {
+  opacity:1; filter:none;
+}
+@media(max-width:639px) {
+  .content :global(.pf-about-values-footer),
+  .content :global(.pf-about-values-meta-section) { margin-top:2.5rem; }
+}

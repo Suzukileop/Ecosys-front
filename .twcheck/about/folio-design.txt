@@ -1,0 +1,193 @@
+/**
+ * Folio — a ruled page, the quietest of the set. A hairline rail with the section label (and the
+ * subtitle, when the creator wrote one); beneath it a portrait with its caption on the left, and on the
+ * right the headline, the paragraphs, a plain list set between hairlines and a text link; a second
+ * hairline closes the page on the quote, set as a single line of larger type. No fills, no boxes, no
+ * accent but the link — size and rules alone carry the hierarchy.
+ */
+function AboutUsFolioDesign({
+  aboutUs,
+  presentation,
+  sectionTitle,
+  sectionSubtitle,
+}: {
+  aboutUs: ProfileAboutUs;
+  presentation: PortfolioAboutUsPresentationSettings;
+  sectionTitle: string;
+  sectionSubtitle: string;
+}) {
+  const t = useT();
+  const title = aboutUs.title?.trim() ?? '';
+  const paragraphs = (aboutUs.description ?? '')
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
+  const founderName = aboutUs.founder?.name?.trim() ?? '';
+  const founderFunction = aboutUs.founder?.function?.trim() ?? '';
+  const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
+  // The portrait is the first image; with none, the founder's own photo stands in for it.
+  const portrait = filledImages(aboutUs.imageUrls)[0] || founderLogo;
+  const quote = aboutUs.quote?.trim() ?? '';
+  const label = sectionTitle.trim();
+  const aside =
+    sectionSubtitle.trim() && sectionSubtitle.trim() !== DEFAULT_ABOUT_US_SUBTITLE ? sectionSubtitle.trim() : '';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
+  const ctaLink = useAboutUsCtaLinkProps();
+  const chrome = aboutUsChrome(aboutUsIsDarkMode(presentation));
+  const showTasks = presentation.showTasks && tasks.length > 0;
+  const showQuote = presentation.showQuote && Boolean(quote);
+  const showCaption = presentation.showFounder && Boolean(founderName || founderFunction);
+  const hasLeft = Boolean(portrait) || showCaption;
+  const hasRight = Boolean(title) || paragraphs.length > 0 || showTasks || presentation.showCta;
+  // The list is plain by default; a bullet picked under List bullets stands in front of each row.
+  const bullet = presentation.taskBulletStyle;
+  const titleStyle = aboutUsCustomTitleStyle(presentation);
+
+  return (
+    <div className="w-full">
+      {label || aside ? (
+        <div className={`flex items-baseline justify-between gap-6 border-b pb-4 ${chrome.divider}`}>
+          <p
+            className="text-[calc(12px*var(--pf-about-scale,1))] font-medium uppercase tracking-[0.18em] sm:text-[calc(13px*var(--pf-about-scale,1))]"
+            style={{ color: presentation.titleColor }}
+          >
+            {label}
+          </p>
+          {aside ? (
+            <p
+              className="max-w-[60%] text-right text-[calc(12px*var(--pf-about-scale,1))] leading-snug tracking-wide sm:text-[calc(13px*var(--pf-about-scale,1))]"
+              style={{ color: presentation.descriptionColor }}
+            >
+              {aside}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {hasLeft || hasRight ? (
+        <div
+          className={`grid gap-10 lg:gap-14 xl:gap-20 ${label || aside ? 'mt-10 lg:mt-12' : ''} ${
+            hasLeft && hasRight ? 'lg:grid-cols-[minmax(0,0.85fr)_minmax(0,2.15fr)]' : ''
+          }`}
+        >
+          {hasLeft ? (
+            <div className="min-w-0 max-lg:order-2">
+              {portrait ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  {...mediaImageResponsive(portrait, ABOUT_MEDIA_WIDTHS)}
+                  sizes="(min-width: 1024px) 26vw, 70vw"
+                  alt=""
+                  loading="lazy"
+                  className="aspect-[4/5] w-full max-w-[20rem] rounded-[2px] object-cover lg:max-w-none"
+                />
+              ) : null}
+              {showCaption ? (
+                <div className={portrait ? 'mt-4' : ''}>
+                  {founderName ? (
+                    <p
+                      className="text-[calc(1.0625rem*var(--pf-about-scale,1))] font-normal leading-snug"
+                      style={{ color: presentation.founderNameColor }}
+                    >
+                      {founderName}
+                    </p>
+                  ) : null}
+                  {founderFunction ? (
+                    <p
+                      className="mt-0.5 text-[calc(15px*var(--pf-about-scale,1))] leading-snug"
+                      style={{ color: presentation.founderFunctionColor }}
+                    >
+                      {founderFunction}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {hasRight ? (
+            <div className="min-w-0 max-lg:order-1">
+              {title ? (
+                <h3
+                  className="max-w-[14em] text-balance text-[calc(clamp(2.25rem,5vw,3.75rem)*var(--pf-about-scale,1))] font-normal leading-[1.05] tracking-[-0.03em]"
+                  style={titleStyle}
+                >
+                  {title}
+                </h3>
+              ) : null}
+
+              {paragraphs.length > 0 ? (
+                <div className={`max-w-[38rem] space-y-4 ${title ? 'mt-7 sm:mt-8' : ''}`}>
+                  {paragraphs.map((paragraph, index) => (
+                    <p
+                      key={index}
+                      className="text-pretty text-[calc(1.0625rem*var(--pf-about-scale,1))] font-normal leading-[1.6] sm:text-[calc(1.1875rem*var(--pf-about-scale,1))]"
+                      style={{ color: presentation.descriptionColor }}
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+
+              {showTasks ? (
+                <ul className={`max-w-[38rem] ${paragraphs.length > 0 || title ? 'mt-8 sm:mt-9' : ''}`}>
+                  {tasks.map((task, index) => (
+                    <li
+                      key={`${index}-${task}`}
+                      className={`flex items-baseline gap-4 border-b py-3.5 first:pt-0 last:border-b-0 ${chrome.divider}`}
+                    >
+                      {bullet === 'number' ? (
+                        <span
+                          className="w-6 shrink-0 text-[calc(13px*var(--pf-about-scale,1))] tabular-nums tracking-wide"
+                          style={{ color: presentation.accentColor }}
+                          aria-hidden
+                        >
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                      ) : bullet && bullet !== 'none' ? (
+                        <span className="flex shrink-0 items-start self-start pt-[0.3rem]">
+                          <AboutUsTaskMarker presentation={presentation} index={index} />
+                        </span>
+                      ) : null}
+                      <span
+                        className="min-w-0 text-[calc(1.0625rem*var(--pf-about-scale,1))] font-normal leading-snug sm:text-[calc(1.1875rem*var(--pf-about-scale,1))]"
+                        style={{ color: presentation.taskColor }}
+                      >
+                        {task}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {presentation.showCta ? (
+                <AboutUsCta
+                  presentation={presentation}
+                  label={ctaLabel}
+                  linkProps={ctaLink}
+                  className={title || paragraphs.length > 0 || showTasks ? 'mt-9 sm:mt-10' : ''}
+                  solidClassName="inline-flex w-fit items-center justify-center rounded-full px-8 py-3.5 text-base font-semibold transition hover:opacity-90"
+                  textClassName="text-[calc(1.0625rem*var(--pf-about-scale,1))]"
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {showQuote ? (
+        <p
+          className={`max-w-[48rem] text-pretty border-t text-[calc(1.5rem*var(--pf-about-scale,1))] font-normal leading-[1.3] sm:text-[calc(1.875rem*var(--pf-about-scale,1))] ${chrome.divider} ${
+            hasLeft || hasRight || label || aside ? 'mt-12 pt-8 lg:mt-14' : ''
+          }`}
+          style={{ color: presentation.quoteColor }}
+        >
+          {quote}
+        </p>
+      ) : null}
+    </div>
+  );
+}
+

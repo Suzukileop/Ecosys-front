@@ -28,6 +28,7 @@ import {
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MediaImage } from '@/components/ui/MediaImage';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 type TeamLink = { id: string; platform: string; label: string; url: string; sortOrder: number };
@@ -160,8 +161,13 @@ function MemberPhoto({
         }`}
       >
         {hasPhoto ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={row.imageUrl} alt="" className="h-full w-full object-cover object-top" />
+          <MediaImage
+            src={row.imageUrl}
+            widths={[384, 640, 828]}
+            sizes="(max-width: 640px) 90vw, (max-width: 1280px) 45vw, 280px"
+            alt=""
+            className="h-full w-full object-cover object-top"
+          />
         ) : (
           <button
             type="button"

@@ -27,6 +27,19 @@ const desktopCardGeometry = [
   'col-span-3 h-[clamp(16rem,34vh,21.5rem)]',
 ] as const;
 
+const desktopGeometryByCount: Record<number, readonly string[]> = {
+  1: ['col-span-8 col-start-3 h-[clamp(21rem,48vh,32rem)]'],
+  2: [
+    'col-span-6 h-[clamp(19rem,40vh,27rem)]',
+    'col-span-6 h-[clamp(19rem,40vh,27rem)]',
+  ],
+  3: [
+    'col-span-4 h-[clamp(18rem,36vh,24rem)]',
+    'col-span-4 h-[clamp(18rem,36vh,24rem)]',
+    'col-span-4 h-[clamp(18rem,36vh,24rem)]',
+  ],
+};
+
 export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }) {
   const t = useT();
   const heroRef = useRef<HTMLElement>(null);
@@ -53,7 +66,9 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
   // still come from the shared presentation settings.
   const showAvailability = true;
   const dim = Math.min(80, Math.max(0, Math.round(data.presentation.heroSelectedWorksDimIntensity ?? 40)));
-  const isCenteredIdentity = (data.presentation.heroSelectedWorksIdentityLayout ?? 'split') === 'centered';
+  const identityLayout = data.presentation.heroSelectedWorksIdentityLayout ?? 'split';
+  const isCenteredIdentity = identityLayout === 'centered';
+  const isReversedIdentity = identityLayout === 'reversed';
   const bio = useMemo(() => data.description?.replace(/\s+/g, ' ').trim() || '', [data.description]);
   const works = useMemo(
     () => (data.featuredWorks ?? []).filter((work) => work.imageUrl?.trim()).slice(0, MAX_THUMBS),
@@ -86,7 +101,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
     }, hero);
 
     return () => context.revert();
-  }, [works.length, isCenteredIdentity]);
+  }, [works.length, identityLayout]);
 
   const renderCard = (work: (typeof works)[number], index: number, desktop: boolean) => {
     const finalHref = work.href || workHref;
@@ -94,11 +109,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
     const isHash = work.href?.startsWith('#');
     const geometry = works.length === 4
       ? desktopCardGeometry[index]
-      : works.length === 3
-        ? 'col-span-4 h-[clamp(16rem,33vh,21rem)]'
-        : works.length === 2
-          ? 'col-span-6 h-[clamp(17rem,35vh,23rem)]'
-          : 'col-span-12 h-[clamp(18rem,38vh,25rem)]';
+      : desktopGeometryByCount[works.length]?.[index] ?? desktopCardGeometry[index];
 
     return (
       <li
@@ -119,7 +130,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
             alt={work.title || t('Selected work')}
             fill
             loading={index === 0 ? 'eager' : 'lazy'}
-            sizes={desktop ? '(min-width: 1280px) 33vw, 100vw' : '(max-width: 767px) 82vw, 58vw'}
+            sizes={desktop ? (works.length === 1 ? '(min-width: 1280px) 66vw, 100vw' : works.length === 2 ? '(min-width: 1280px) 50vw, 100vw' : '(min-width: 1280px) 33vw, 100vw') : '(max-width: 767px) 82vw, 58vw'}
             className={`object-cover object-center transition duration-700 ease-out group-hover:scale-[1.035] ${imageBw ? 'grayscale' : 'grayscale group-hover:grayscale-0'}`}
           />
           <span
@@ -155,41 +166,43 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
       <div aria-hidden className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2" style={data.suppressBackground ? undefined : { backgroundColor: fond }} />
 
       <div className={`relative z-[1] flex min-h-[100dvh] flex-col pb-[clamp(1.5rem,3vh,2.5rem)] pt-[calc(4.75rem+env(safe-area-inset-top,0px))] sm:pt-[calc(5.5rem+env(safe-area-inset-top,0px))] ${shellX}`}>
+        <div className={works.length === 0 ? 'flex flex-1 items-center py-[clamp(3rem,9vh,8rem)]' : ''}>
         {isCenteredIdentity ? (
-          <div className="mx-auto flex w-full max-w-5xl flex-col items-center text-center">
+          <div className="mx-auto flex w-full max-w-6xl flex-col items-center text-center">
             {showAvailability ? (
-              <p className="pf-sw-copy m-0 flex items-center gap-2.5 font-mono text-[0.66rem] uppercase tracking-[0.18em]" style={{ color: muted }}>
+              <p data-hero-availability className="pf-sw-copy m-0 flex items-center gap-2.5 font-mono text-[0.66rem] uppercase tracking-[0.18em]" style={{ color: muted }}>
                 <span className="size-1.5 rounded-full" style={{ backgroundColor: principal }} aria-hidden />
                 {availability}
               </p>
             ) : null}
-            <h1 className={`pf-sw-copy m-0 max-w-[12ch] font-sans text-[clamp(3rem,7vw,7rem)] font-semibold leading-[0.9] tracking-[-0.065em] ${showAvailability ? 'mt-5' : ''}`}>
+            <h1 className={`pf-sw-copy m-0 max-w-[12ch] font-sans text-[clamp(3.5rem,7.6vw,8rem)] font-semibold leading-[0.88] tracking-[-0.07em] ${showAvailability ? 'mt-6' : ''}`}>
               <span style={{ color: principal }}>{firstName}</span><span style={{ color: ink }}> / {specialty}</span>
             </h1>
-            {bio ? <p className="pf-sw-copy m-0 mt-6 max-w-2xl text-[clamp(.95rem,1.1vw,1.08rem)] leading-relaxed" style={{ color: muted }}>{bio}</p> : null}
+            {bio ? <p data-hero-bio className="pf-sw-copy m-0 mt-8 max-w-3xl text-[clamp(1.08rem,1.45vw,1.38rem)] leading-[1.55] tracking-[-0.018em]" style={{ color: muted }}>{bio}</p> : null}
           </div>
         ) : (
-          <div className="grid w-full gap-8 md:grid-cols-12 md:items-start md:gap-6">
-            <div className="md:col-span-7 lg:col-span-8">
-              <h1 className="pf-sw-copy m-0 max-w-[10ch] font-sans text-[clamp(3.2rem,6.4vw,7rem)] font-semibold leading-[0.9] tracking-[-0.065em]">
+          <div className="grid w-full gap-10 md:grid-cols-12 md:items-start md:gap-8">
+            <div className={`md:col-span-7 lg:col-span-8 ${isReversedIdentity ? 'md:order-2 md:col-start-6 lg:col-start-5' : ''}`}>
+              <h1 className={`pf-sw-copy m-0 max-w-[10ch] font-sans text-[clamp(3.5rem,6.9vw,7.6rem)] font-semibold leading-[0.88] tracking-[-0.07em] ${isReversedIdentity ? 'md:ml-auto md:text-right' : ''}`}>
                 <span className="block" style={{ color: principal }}>{firstName}</span>
                 <span className="block" style={{ color: ink }}>/ {specialty}</span>
               </h1>
             </div>
             {bio || showAvailability ? (
-              <div className="pf-sw-copy md:col-span-5 md:pt-6 lg:col-span-4">
+              <div className={`pf-sw-copy md:col-span-5 md:pt-6 lg:col-span-4 ${isReversedIdentity ? 'md:order-1 md:col-start-1' : ''}`}>
                 {showAvailability ? (
-                  <p className="m-0 mb-4 flex items-center gap-2.5 font-mono text-[0.66rem] uppercase tracking-[0.18em]" style={{ color: muted }}>
+                  <p data-hero-availability className="m-0 mb-4 flex items-center gap-2.5 font-mono text-[0.66rem] uppercase tracking-[0.18em]" style={{ color: muted }}>
                     <span className="size-1.5 rounded-full" style={{ backgroundColor: principal }} aria-hidden />
                     {availability}
                   </p>
                 ) : null}
                 <div className="mb-5 h-px w-full" style={{ backgroundColor: bordure }} aria-hidden />
-                {bio ? <p className="m-0 max-w-[34rem] text-[clamp(.95rem,1.1vw,1.08rem)] leading-[1.6] tracking-[-0.01em]" style={{ color: muted }}>{bio}</p> : null}
+                {bio ? <p data-hero-bio className="m-0 max-w-[38rem] text-[clamp(1.08rem,1.38vw,1.34rem)] leading-[1.58] tracking-[-0.018em]" style={{ color: muted }}>{bio}</p> : null}
               </div>
             ) : null}
           </div>
         )}
+        </div>
 
         {works.length > 0 ? (
           <div className="mt-auto min-h-0 pt-[clamp(2.5rem,7vh,5rem)]">
@@ -207,7 +220,18 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
               {works.map((work, index) => renderCard(work, index, false))}
             </ul>
           </div>
-        ) : null}
+        ) : (
+          <div className="pf-sw-rail-head mt-auto grid grid-cols-2 items-end gap-6 border-t pt-4 md:grid-cols-12" style={{ borderColor: bordure }}>
+            <div className="col-span-1 md:col-span-4">
+              <p className="m-0 font-mono text-[0.64rem] uppercase tracking-[0.2em]" style={{ color: muted }}>{t('Portfolio')}</p>
+              <p className="m-0 mt-2 text-sm font-medium" style={{ color: ink }}>{t('Identity first')}</p>
+            </div>
+            <p className="m-0 hidden font-mono text-[0.64rem] uppercase tracking-[0.2em] md:col-span-4 md:block md:text-center" style={{ color: muted }}>00 / 04</p>
+            <a href={workHref} onClick={onNavClick(workHref)} className="col-span-1 inline-flex items-center justify-end gap-2 font-mono text-[0.66rem] font-semibold uppercase tracking-[0.18em] transition-opacity hover:opacity-60 md:col-span-4" style={{ color: ink }}>
+              {t('Explore all work')} <span aria-hidden>↗</span>
+            </a>
+          </div>
+        )}
       </div>
     </section>
   );

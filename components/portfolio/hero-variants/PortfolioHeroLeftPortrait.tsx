@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -364,7 +365,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
    * ─────────────────────────────────────────────────────────────────────────── */
 
   const availabilityRow = (
-    <div
+    <div data-hero-availability
       className="pf-left-availability inline-flex w-fit items-center gap-2.5 px-3 py-2"
       style={{ backgroundColor: fond, color: ink }}
     >
@@ -386,7 +387,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
   );
 
   // Split headline into lines for animation
-  const headlineText = `Hello, I'm ${displayName} — a ${specialty}.`;
+  const headlineText = resolveHeroGreeting(data.presentation,`Hello, I'm ${displayName} — a ${specialty}.`,displayName,specialty);
   const headlineLines = (() => {
     // Split at natural break: em-dash
     const parts = headlineText.split(/\s*—\s*/);
@@ -526,7 +527,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         boxShadow: `inset 0.35rem 0 0 ${principal}`,
       }}
     >
-      <p
+      <p data-hero-bio
         className="pf-left-bio-entry m-0 font-sans font-normal tracking-[-0.01em]"
         style={{
           color: muted,
@@ -547,7 +548,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
       className={`pf-left-photo-mask relative overflow-hidden ${className}`.trim()}
       style={{
         backgroundColor: neutre,
-        border: `1px solid ${borderSoft}`,
+        border: data.presentation.heroImageBorder === false ? undefined : `1px solid ${borderSoft}`,
         clipPath:
           'polygon(0 0, 100% 0, 100% calc(100% - 2.25rem), calc(100% - 2.25rem) 100%, 0 100%)',
       }}

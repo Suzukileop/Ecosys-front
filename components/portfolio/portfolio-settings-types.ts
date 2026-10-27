@@ -244,6 +244,7 @@ export type PortfolioNavEffectStrength = 'sm' | 'md' | 'lg' | 'xl';
  * `brand-bar` = full-width top bar with logo left and menu icon right (opens the same drawer).
  */
 export type PortfolioNavMobileLayout = 'drawer' | 'brand-bar';
+export type PortfolioNavMobileDrawerDesign = 'classic' | 'editorial' | 'contrast' | 'cards' | 'typographic';
 
 /** Optional brand next to the mobile drawer menu icon. */
 export type PortfolioNavMobileBrand = 'none' | 'avatar' | 'word';
@@ -1047,6 +1048,7 @@ export type PortfolioNavSettings = {
   mobileBrandWord: string;
   /** Edge the drawer panel slides from when `mobileLayout` is `drawer`. */
   mobileDrawerSide: PortfolioNavMobileDrawerSide;
+  mobileDrawerDesign: PortfolioNavMobileDrawerDesign;
   hideWhenSingle: boolean;
   /** Dedicated Contact CTA in free left/right space (detached from the nav pill). */
   contactButtonEnabled: boolean;
@@ -1396,6 +1398,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       mobileBrand: 'none',
       mobileBrandWord: '',
       mobileDrawerSide: 'right',
+      mobileDrawerDesign: 'classic',
       hideWhenSingle: true,
       contactButtonEnabled: false,
       contactButtonLabel: 'Contact',
@@ -1929,6 +1932,11 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
       typeof patch.mobileBrandWord === 'string'
         ? patch.mobileBrandWord.trim().slice(0, 32)
         : base.mobileBrandWord ?? '',
+    mobileDrawerDesign:
+      patch.mobileDrawerDesign === 'classic' || patch.mobileDrawerDesign === 'editorial' ||
+      patch.mobileDrawerDesign === 'contrast' || patch.mobileDrawerDesign === 'cards' ||
+      patch.mobileDrawerDesign === 'typographic'
+        ? patch.mobileDrawerDesign : base.mobileDrawerDesign ?? 'classic',
     mobileDrawerSide:
       patch.mobileDrawerSide === 'left' || patch.mobileDrawerSide === 'right'
         ? patch.mobileDrawerSide

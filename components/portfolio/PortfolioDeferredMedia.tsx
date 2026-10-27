@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { CRISP_QUALITY, mediaImageResponsive } from '@/lib/media-image-url';
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from 'react';
+import { CRISP_QUALITY, mediaImageResponsive, mediaImageSrc } from '@/lib/media-image-url';
 import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
+import { decodeLoadedImage } from '@/lib/decode-loaded-image';
 
 /** Gallery/Team frames run from thumbnail to full-bleed; `sizes` tells the browser which to take. */
 const DEFERRED_MEDIA_WIDTHS = [384, 640, 828, 1080, 1920] as const;
@@ -31,7 +32,7 @@ export function PortfolioDeferredMedia({
   showPlayBadge = false,
   fillParent = true,
   noColorTransition = false,
-  crisp = false,
+  crisp = true,
 }: {
   src: string;
   alt: string;
@@ -59,20 +60,66 @@ export function PortfolioDeferredMedia({
   usePauseOffscreenVideo(videoRef, !autoPlayVideo);
   const imageRef = useRef<HTMLImageElement>(null);
   const [inView, setInView] = useState(mountImmediately);
-  const [loaded, setLoaded] = useState(false);
+  const [loadedSource, setLoadedSource] = useState<string | null>(null);
+  const loaded = loadedSource === resolved;
+  // Keep failures scoped to their source: selecting another portrait immediately gets a fresh
+  // optimized attempt. Never loop between a failed optimizer response and the same original.
+  const [imageFailure, setImageFailure] = useState<{ source: string; stage: 'original' | 'unavailable' } | null>(null);
+  const failureStage = imageFailure?.source === resolved ? imageFailure.stage : null;
+  const [coverSource, setCoverSource] = useState<{ source: string; url: string } | null>(null);
+  const coverUrl = coverSource?.source === resolved ? coverSource.url : null;
+  const upgradeAttempts = useRef(new Set<string>());
 
-  useEffect(() => {
-    setLoaded(false);
-  }, [resolved]);
+  const finishImage = useCallback(async (image: HTMLImageElement) => {
+    if (!(await decodeLoadedImage(image))) return;
+    // With cover, a landscape picture fills a tall frame by its height. Slot width alone
+    // underestimates the bitmap resolution, sometimes by 3x. Preserve detail in the crop.
+    if (crisp && objectFit === 'cover' && fillParent && !failureStage) {
+      const rect = image.getBoundingClientRect();
+      const width = Math.max(rect.width, rect.height * image.naturalWidth / image.naturalHeight);
+      const target = mediaImageSrc(resolved, width * window.devicePixelRatio, true, CRISP_QUALITY);
+      const current = new URL(image.currentSrc || image.src, window.location.href);
+      const next = new URL(target, window.location.href);
+      if (next.pathname === '/_next/image' && current.pathname === '/_next/image'
+          && Number(next.searchParams.get('w')) > Number(current.searchParams.get('w'))
+          && !upgradeAttempts.current.has(target)) {
+        upgradeAttempts.current.add(target);
+        const candidate = new window.Image();
+        candidate.decoding = 'async';
+        const ready = await new Promise<boolean>((resolve) => {
+          const timeout = window.setTimeout(() => resolve(false), 3500);
+          const done = (ok: boolean) => { window.clearTimeout(timeout); resolve(ok); };
+          candidate.onload = () => { void candidate.decode().then(() => done(true), () => done(false)); };
+          candidate.onerror = () => done(false);
+          candidate.src = target;
+        });
+        if (!image.isConnected || imageRef.current !== image) return;
+        if (ready) {
+          // Swap only after the sharper bitmap is cached and decoded. Never expose its download.
+          setCoverSource((previous) => {
+            const previousWidth = previous?.source === resolved
+              ? Number(new URL(previous.url, window.location.href).searchParams.get('w')) : 0;
+            return previousWidth > Number(next.searchParams.get('w')) ? previous : { source: resolved, url: target };
+          });
+          return;
+        }
+      }
+    }
+    if (image.isConnected && imageRef.current === image) setLoadedSource(resolved);
+  }, [crisp, objectFit, fillParent, failureStage, resolved]);
 
-  useEffect(() => {
-    if (mountImmediately) setInView(true);
-  }, [mountImmediately]);
+  if (mountImmediately && !inView) setInView(true);
 
   useEffect(() => {
     const image = imageRef.current;
-    if (image?.complete && image.naturalWidth > 0) setLoaded(true);
-  }, [resolved, inView]);
+    if (image?.complete && image.naturalWidth > 0) {
+      void finishImage(image);
+    }
+    if (!image || !crisp || !fillParent || typeof ResizeObserver === 'undefined') return;
+    const observer = new ResizeObserver(() => { void finishImage(image); });
+    observer.observe(image);
+    return () => observer.disconnect();
+  }, [resolved, inView, crisp, fillParent, finishImage, coverUrl]);
 
   useEffect(() => {
     if (!resolved || inView) return;
@@ -143,8 +190,17 @@ export function PortfolioDeferredMedia({
   return (
     <div
       ref={wrapRef}
+      aria-busy={inView && !loaded && failureStage !== 'unavailable'}
       className={fillParent ? 'absolute inset-0 overflow-hidden' : `relative w-full overflow-hidden ${loaded ? '' : 'min-h-[12rem]'}`}
     >
+      {kind !== 'video' ? (
+        <span
+          aria-hidden="true"
+          className="pf-media-loading"
+          data-loading={inView && !loaded && failureStage !== 'unavailable' ? 'true' : 'false'}
+          data-pf-no-color-transition=""
+        />
+      ) : null}
       {kind === 'video' && inView ? (
         <video
           ref={videoRef}
@@ -156,7 +212,7 @@ export function PortfolioDeferredMedia({
           playsInline
           controls={controls}
           preload={mountImmediately ? 'metadata' : 'none'}
-          onLoadedData={() => setLoaded(true)}
+          onLoadedData={() => setLoadedSource(resolved)}
           {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : {})}
         />
       ) : null}
@@ -164,18 +220,40 @@ export function PortfolioDeferredMedia({
         // Native img: next/image `fill` collapsed to 0px in gallery frames (lightbox has explicit 82vh).
         // eslint-disable-next-line @next/next/no-img-element
         <img
+          key={resolved}
           ref={imageRef}
-          src={responsiveImage.src}
-          srcSet={responsiveImage.srcSet}
-          sizes={sizes ?? '100vw'}
+          src={failureStage ? resolved : coverUrl ?? responsiveImage.src}
+          srcSet={failureStage || coverUrl ? undefined : responsiveImage.srcSet}
+          sizes={`${mountImmediately ? '' : 'auto, '}${sizes ?? '100vw'}`}
+          loading={mountImmediately ? 'eager' : 'lazy'}
           alt={alt}
-          className={mediaClass}
-          style={fitStyle}
+          aria-hidden={failureStage === 'unavailable' ? true : undefined}
+          className={`${mediaClass} ${loaded ? 'media-reveal' : ''}`}
+          style={{ ...fitStyle, opacity: loaded && failureStage !== 'unavailable' ? fitStyle.opacity : 0 }}
           decoding="async"
           fetchPriority={mountImmediately ? 'high' : 'auto'}
-          onLoad={() => setLoaded(true)}
+          onLoad={(event) => {
+            void finishImage(event.currentTarget);
+          }}
+          onError={() => {
+            if (failureStage === 'unavailable') return;
+            setLoadedSource(null);
+            setImageFailure({
+              source: resolved,
+              stage: !failureStage && responsiveImage.src !== resolved ? 'original' : 'unavailable',
+            });
+          }}
           {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : {})}
         />
+      ) : null}
+      {kind !== 'video' && failureStage === 'unavailable' ? (
+        <div className="absolute inset-0 flex items-center justify-center bg-neutral-100 text-neutral-500" role="img" aria-label={alt} data-media-unavailable="">
+          <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.25" aria-hidden="true">
+            <rect x="3" y="3" width="18" height="18" rx="2" />
+            <circle cx="8" cy="8" r="1.5" />
+            <path d="m3 17 5-5 4 4 3-3 6 6" />
+          </svg>
+        </div>
       ) : null}
       {kind === 'video' && showPlayBadge ? (
         <span

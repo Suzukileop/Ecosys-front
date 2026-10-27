@@ -25,10 +25,8 @@ import {
   resolveToolsLevelTableGroupBy,
   resolveToolsShowLevel,
   toolsBrandCardLogoPx,
-  toolsLevelBentoEqualColumnsClass,
   toolsLevelBentoGridGapClass,
   type PortfolioToolsCardGap,
-  type PortfolioToolsLevelBentoGridMode,
   type PortfolioToolsLevelIndicatorDisplayStyle,
   type PortfolioToolsLevelProgressRowGap,
   type PortfolioToolsPresentationSettings,
@@ -41,7 +39,6 @@ import {
   resolveSkillLevelLabel,
   resolveSkillName,
   type PortfolioSkillRef,
-  type SkillCategoryGroup,
 } from '@/components/portfolio/skill-usage-descriptions';
 
 type ToolsGalleryProps = {
@@ -60,6 +57,7 @@ type BentoRootStyle = CSSProperties & {
   '--pf-stack-bento-row-pad': string;
   '--pf-stack-bento-pad': string;
   '--pf-stack-bento-pad-x': string;
+  '--pf-stack-bento-level-scale': number;
 };
 
 function prefersReducedMotion(): boolean {
@@ -146,20 +144,6 @@ function bentoLevelTrack(
   return '6.35rem';
 }
 
-function resolveFeaturedCategory(
-  groups: SkillCategoryGroup[],
-  mode: PortfolioToolsLevelBentoGridMode | undefined,
-  columnCount: number
-): string | null {
-  if (mode !== 'asymmetric' || groups.length < 2 || columnCount < 3) return null;
-
-  const ranked = [...groups].sort((a, b) => b.tools.length - a.tools.length);
-  const lead = ranked[0];
-  const runner = ranked[1];
-  if (!lead || lead.tools.length < 4) return null;
-  if (runner && lead.tools.length - runner.tools.length < 2) return null;
-  return lead.category;
-}
 
 function BentoLevelRead({
   tool,
@@ -334,10 +318,7 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
   }, [presentation, tools]);
 
   const columnCount = Math.min(4, Math.max(groups.length, 1));
-  const featuredCategory = useMemo(
-    () => resolveFeaturedCategory(groups, presentation.levelBentoGridMode, columnCount),
-    [columnCount, groups, presentation.levelBentoGridMode]
-  );
+  const levelScale = {tight:0.875,small:1,medium:1.125,large:1.25,xlarge:1.5}[resolveToolsLevelBarSize(presentation)];
 
   const logoPx = toolsBrandCardLogoPx(presentation.tileSize);
   const logoContrastBg = toolsLogoContrastBackground(presentation);
@@ -411,7 +392,8 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
     '--pf-stack-bento-fill': framed ? cardSurface : 'transparent',
     '--pf-stack-bento-accent': accent,
     '--pf-stack-bento-logo': `${logoPx}px`,
-    '--pf-stack-bento-level': bentoLevelTrack(displayStyle, showLevel),
+    '--pf-stack-bento-level': `calc(${bentoLevelTrack(displayStyle, showLevel)} * ${levelScale})`,
+    '--pf-stack-bento-level-scale': levelScale,
     '--pf-stack-bento-row-min': row.min,
     '--pf-stack-bento-row-pad': row.pad,
     '--pf-stack-bento-pad': pad.pad,
@@ -421,7 +403,8 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
   return (
     <div
       ref={rootRef}
-      className={`pf-stack-bento grid w-full grid-cols-1 items-start ${toolsLevelBentoEqualColumnsClass(columnCount)} ${toolsLevelBentoGridGapClass(presentation.cardGap)}`}
+      className={`pf-stack-bento grid w-full items-start ${toolsLevelBentoGridGapClass(presentation.cardGap)}`}
+      data-columns={columnCount}
       data-framed={framed ? 'true' : 'false'}
       data-show-name={showName ? 'true' : 'false'}
       data-show-level={showLevel ? 'true' : 'false'}
@@ -430,7 +413,6 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
       style={rootStyle}
     >
       {groups.map((group) => {
-        const featured = featuredCategory === group.category;
         const countLabel = String(group.tools.length).padStart(2, '0');
         const hasCategory = group.tools.some((tool) => Boolean(resolveSkillCategory(tool).trim()));
 
@@ -438,8 +420,6 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
           <article
             key={group.category}
             className="pf-stack-bento-panel"
-            data-featured={featured ? 'true' : 'false'}
-            data-span={featured ? '2' : '1'}
             aria-label={`${hasCategory ? `${group.category}, ` : ''}${group.tools.length} ${
               trPlural(group.tools.length, 'skill', 'skills')
             }`}

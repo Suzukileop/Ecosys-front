@@ -1,5 +1,6 @@
 'use client';
 
+import { faqHeaderRoleStyle, faqHeaderTextOverride } from '@/components/portfolio/portfolio-faq-header-layout';
 import { trPlural } from '@/lib/i18n/active';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -66,8 +67,8 @@ export function FaqHeaderDialogueHeader({
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
-  const titleText = title.trim();
-  const subtitleText = subtitle?.trim() || '';
+  const titleText = faqHeaderTextOverride(presentation, 'title') || title.trim();
+  const subtitleText = faqHeaderTextOverride(presentation, 'subtitle') || subtitle?.trim() || '';
   const words = splitWords(titleText);
   const count = itemCount ?? 0;
   const layout = createFaqHeaderLayoutResolver(presentation, 'dialogue');
@@ -161,6 +162,7 @@ export function FaqHeaderDialogueHeader({
         {showTitle || tagText ? (
           <h2
             className={`mb-0 max-w-3xl flex-1 ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
+            style={faqHeaderRoleStyle(presentation, 'title')}
           >
             {tagText ? (
               <span
@@ -184,7 +186,8 @@ export function FaqHeaderDialogueHeader({
                     className={`pf-faq-header-dialogue-word-line inline-block ${softWord ? 'italic opacity-70' : ''}`}
                     style={{
                       ...faqTitleColorStyle(presentation.titleColor),
-                      fontWeight: softWord ? 300 : undefined,
+                      ...faqHeaderRoleStyle(presentation, 'title'),
+                      fontWeight: softWord ? 300 : faqHeaderRoleStyle(presentation, 'title').fontWeight,
                     }}
                   >
                     {word}
@@ -214,7 +217,7 @@ export function FaqHeaderDialogueHeader({
       {showSubtitle && subtitleText ? (
         <p
           className={`pf-faq-header-dialogue-sub mb-0 mt-6 max-w-xl ${faqHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
-          style={faqSubtitleColorStyle(presentation.subtitleColor)}
+          style={{ ...faqSubtitleColorStyle(presentation.subtitleColor), ...faqHeaderRoleStyle(presentation, 'subtitle') }}
         >
           {subtitleText}
         </p>

@@ -1,0 +1,19 @@
+.content { width:100%; min-width:0; }
+.content :where(h2,h3) {
+  font-weight:500;
+  letter-spacing:-.015em;
+  overflow-wrap:anywhere;
+}
+.content :where(p) { letter-spacing:0; }
+.content :where(p,span,div,ul,li)[class~='uppercase'] {
+  text-transform:none;
+  letter-spacing:.02em;
+  font-weight:500;
+}
+.content :where(p,span,div,ul,li)[class~='font-mono'] {
+  font-family:inherit;
+  letter-spacing:.02em;
+}
+.content :where(p,li)[class~='font-semibold'] {
+  font-weight:400;
+}

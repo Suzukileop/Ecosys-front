@@ -20,9 +20,26 @@ import {
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const CAROUSEL_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-/** A hair of overshoot on the index snap — reads as inertia settling, not a hard stop. */
-const CAROUSEL_SPRING_EASE = 'cubic-bezier(0.22, 1.28, 0.36, 1)';
-const CAROUSEL_SNAP_MS = 680;
+/**
+ * Two feels for the same strip, picked through CSS variables on the track.
+ *  - Prev / Next / keys start from rest: an ease-OUT curve has its top speed on the very first frame,
+ *    which is the kick that read as brutal. They use a gentle ease-in-out that accelerates first.
+ *  - Releasing a drag already has momentum: starting from rest there would hitch, so it keeps an
+ *    ease-out that carries the finger's speed on.
+ */
+const CAROUSEL_NAV_EASE = 'cubic-bezier(0.4, 0, 0.15, 1)';
+const CAROUSEL_NAV_MS = 560;
+const CAROUSEL_RELEASE_EASE = 'cubic-bezier(0.22, 0.7, 0.2, 1)';
+const CAROUSEL_RELEASE_MS = 460;
+const CAROUSEL_SNAP_MS = CAROUSEL_NAV_MS;
+const CAROUSEL_FOCUS_MS = 520;
+const CAROUSEL_TRACK_TRANSITION = `transform var(--carousel-dur, ${CAROUSEL_NAV_MS}ms) var(--carousel-ease, ${CAROUSEL_NAV_EASE})`;
+
+function setTrackEase(track: HTMLElement | null | undefined, kind: 'nav' | 'release'): void {
+  if (!track) return;
+  track.style.setProperty('--carousel-ease', kind === 'nav' ? CAROUSEL_NAV_EASE : CAROUSEL_RELEASE_EASE);
+  track.style.setProperty('--carousel-dur', `${kind === 'nav' ? CAROUSEL_NAV_MS : CAROUSEL_RELEASE_MS}ms`);
+}
 const DRAG_THRESHOLD_PX = 8;
 const DESKTOP_MQ = '(min-width: 768px)';
 
@@ -30,6 +47,9 @@ const ENTER_HIDDEN: CSSProperties = {
   opacity: 0,
   transform: 'translate3d(0, 22px, 0)',
 };
+
+/** The caption under the strip fades its new project in instead of swapping text in one frame. */
+const CAPTION_FADE: CSSProperties = { animation: 'pf-workspace-panel-in 380ms cubic-bezier(0.4, 0, 0.2, 1) both' };
 
 const SLIDE_HIDDEN: CSSProperties = {
   opacity: 0,
@@ -89,7 +109,7 @@ function EditorialTitleText({ text }: { text: string }) {
   return (
     <>
       {parts.lead}{' '}
-      <span className="font-medium italic tracking-[-0.03em]">{parts.italic}</span>
+      <span className="font-medium tracking-[-0.03em]">{parts.italic}</span>
     </>
   );
 }
@@ -202,20 +222,24 @@ function useCarouselEntrance<T extends HTMLElement = HTMLElement>(
 type SlideMetrics = {
   stepPx: number;
   maxIndex: number;
+  centerOffsetPx: number;
+  loopCopies: number;
+  focusHeadroomPx: number;
 };
 
 function useCarouselSlideMetrics(
   viewportRef: RefObject<HTMLDivElement | null>,
   itemCount: number,
   imageSize: PortfolioWorkProjectsCarouselImageSize,
-  gap: PortfolioWorkProjectsCarouselSettings['gap']
+  gap: PortfolioWorkProjectsCarouselSettings['gap'],
+  desktopFocus: 'first' | 'center'
 ): SlideMetrics {
-  const [metrics, setMetrics] = useState<SlideMetrics>({ stepPx: 0, maxIndex: 0 });
+  const [metrics, setMetrics] = useState<SlideMetrics>({ stepPx: 0, maxIndex: 0, centerOffsetPx: 0, loopCopies: 1, focusHeadroomPx: 0 });
 
   useLayoutEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || itemCount === 0) {
-      setMetrics({ stepPx: 0, maxIndex: 0 });
+      setMetrics({ stepPx: 0, maxIndex: 0, centerOffsetPx: 0, loopCopies: 1, focusHeadroomPx: 0 });
       return undefined;
     }
 
@@ -229,26 +253,39 @@ function useCarouselSlideMetrics(
           window.getComputedStyle(track).columnGap || window.getComputedStyle(track).gap || '0'
         ) || 0;
       const stepPx = first.offsetWidth + gapPx;
-      const overflow = Math.max(0, track.scrollWidth - viewport.clientWidth);
-      const maxIndex =
+      // Measure the original sequence only; loop copies must not create overflow.
+      const overflow = Math.max(0, itemCount * first.offsetWidth + Math.max(0,itemCount-1) * gapPx - viewport.clientWidth);
+      const centered = desktopFocus === 'center' && window.matchMedia('(min-width: 1024px)').matches;
+      const maxIndex = centered ? Math.max(0,itemCount-1) :
         stepPx > 0 ? Math.max(0, Math.min(itemCount - 1, Math.ceil(overflow / stepPx - 0.01))) : 0;
+      const centerOffsetPx = centered ? Math.max(0,(viewport.clientWidth-first.offsetWidth)/2) : 0;
 
-      setMetrics({ stepPx, maxIndex });
+      const loopCopies = stepPx > 0 ? Math.max(1, Math.ceil(viewport.clientWidth / (itemCount * stepPx))) : 1;
+      setMetrics({ stepPx, maxIndex, centerOffsetPx, loopCopies, focusHeadroomPx: Math.ceil(first.offsetHeight * 0.05) });
     };
 
     measure();
     const observer = new ResizeObserver(measure);
     observer.observe(viewport);
+    const first = viewport.querySelector<HTMLElement>('[data-projects-carousel-item]');
+    if(first)observer.observe(first);
     window.addEventListener('resize', measure);
     return () => {
       observer.disconnect();
       window.removeEventListener('resize', measure);
     };
-  }, [viewportRef, itemCount, imageSize, gap]);
+  }, [viewportRef, itemCount, imageSize, gap, desktopFocus]);
 
   return metrics;
 }
 
+/**
+ * Pointer drag on the strip. The live offset and the velocity skew never go through React state:
+ * a re-render of the whole section (every slide, image and GSAP timeline) per pointermove was what
+ * made the drag stutter. They are written straight onto the track as CSS variables, once per frame
+ * (`--carousel-drag-x`, `--carousel-skew`), so the gesture stays on the compositor. React only learns
+ * when a drag starts and ends (`dragging`) and which index to settle on.
+ */
 function useCarouselPointerDrag(
   viewportRef: RefObject<HTMLDivElement | null>,
   enabled: boolean,
@@ -256,8 +293,7 @@ function useCarouselPointerDrag(
   maxIndex: number,
   activeIndex: number,
   onIndex: (index: number) => void
-): { offset: number; dragging: boolean } {
-  const [offset, setOffset] = useState(0);
+): { dragging: boolean } {
   const [dragging, setDragging] = useState(false);
   const dragRef = useRef<{
     pointerId: number;
@@ -283,6 +319,26 @@ function useCarouselPointerDrag(
   useEffect(() => {
     const viewport = viewportRef.current;
     if (!viewport || !enabled) return undefined;
+    const track = viewport.querySelector<HTMLElement>('[data-projects-carousel-track]');
+    if (!track) return undefined;
+
+    const motion = { x: 0, lastX: 0, skew: 0, raf: 0 };
+    const reduced = prefersReducedMotion();
+
+    const frame = () => {
+      motion.raf = 0;
+      const dx = motion.x - motion.lastX;
+      motion.lastX = motion.x;
+      const targetSkew = reduced ? 0 : Math.max(-2.5, Math.min(2.5, dx * -0.12));
+      motion.skew += (targetSkew - motion.skew) * 0.12;
+      const settled = Math.abs(motion.skew) < 0.03 && Math.abs(targetSkew) < 0.03;
+      track.style.setProperty('--carousel-drag-x', `${motion.x.toFixed(2)}px`);
+      track.style.setProperty('--carousel-skew', settled ? '0deg' : `${motion.skew.toFixed(2)}deg`);
+      if (!settled || dragRef.current) motion.raf = window.requestAnimationFrame(frame);
+    };
+    const schedule = () => {
+      if (!motion.raf) motion.raf = window.requestAnimationFrame(frame);
+    };
 
     const finish = (event: PointerEvent) => {
       const drag = dragRef.current;
@@ -293,15 +349,22 @@ function useCarouselPointerDrag(
       const max = maxRef.current;
       let next = current;
       if (drag.moved && step > 0) {
-        const projected = dx + drag.velocity * 220;
-        if (Math.abs(projected) > step * 0.16) {
+        const projected = dx + drag.velocity * 140;
+        if (Math.abs(projected) > step * 0.2) {
           next = current + (projected < 0 ? 1 : -1);
         }
-        next = Math.max(0, Math.min(max, next));
+        next = Math.max(-1, Math.min(max + 1, next));
       }
       dragRef.current = null;
+      // Hand the strip back to its eased transition in the same frame the offset is released, or it
+      // would jump to the rest position before React re-applies the transition.
+      setTrackEase(track, 'release');
+      track.style.transition = CAROUSEL_TRACK_TRANSITION;
+      motion.x = 0;
+      motion.lastX = 0;
+      track.style.setProperty('--carousel-drag-x', '0px');
+      schedule();
       setDragging(false);
-      setOffset(0);
       if (next !== current) onIndexRef.current(next);
       if (viewport.hasPointerCapture(event.pointerId)) {
         viewport.releasePointerCapture(event.pointerId);
@@ -324,7 +387,13 @@ function useCarouselPointerDrag(
         velocity: 0,
         moved: false,
       };
-      viewport.setPointerCapture(event.pointerId);
+      // Capture can be refused (a synthetic event, a pointer already gone): the drag still works
+      // from the viewport's own listeners, it just stops following a pointer that leaves it.
+      try {
+        viewport.setPointerCapture(event.pointerId);
+      } catch {
+        /* no active pointer with that id */
+      }
     };
 
     const onPointerMove = (event: PointerEvent) => {
@@ -333,19 +402,20 @@ function useCarouselPointerDrag(
       const now = performance.now();
       const dx = event.clientX - drag.startX;
       const dt = Math.max(1, now - drag.lastT);
-      drag.velocity = (event.clientX - drag.lastX) / dt;
+      // Smoothed so one jittery sample at release does not decide the whole flick.
+      drag.velocity = drag.velocity * 0.6 + ((event.clientX - drag.lastX) / dt) * 0.4;
       drag.lastX = event.clientX;
       drag.lastT = now;
       if (!drag.moved && Math.abs(dx) > DRAG_THRESHOLD_PX) {
         drag.moved = true;
         suppressClickRef.current = true;
+        track.style.transition = 'none';
         setDragging(true);
       }
       if (!drag.moved) return;
       event.preventDefault();
-      const atStart = indexRef.current <= 0 && dx > 0;
-      const atEnd = indexRef.current >= maxRef.current && dx < 0;
-      setOffset(dx * (atStart || atEnd ? 0.28 : 1));
+      motion.x = dx;
+      schedule();
     };
 
     const onClickCapture = (event: MouseEvent) => {
@@ -367,13 +437,15 @@ function useCarouselPointerDrag(
       viewport.removeEventListener('pointerup', finish);
       viewport.removeEventListener('pointercancel', finish);
       viewport.removeEventListener('click', onClickCapture, true);
+      if (motion.raf) window.cancelAnimationFrame(motion.raf);
       dragRef.current = null;
+      track.style.setProperty('--carousel-drag-x', '0px');
+      track.style.setProperty('--carousel-skew', '0deg');
       setDragging(false);
-      setOffset(0);
     };
   }, [viewportRef, enabled]);
 
-  return { offset, dragging };
+  return { dragging };
 }
 
 function useCarouselScrollKinetic(
@@ -413,11 +485,8 @@ function useCarouselScrollKinetic(
       const clamped = Math.max(-1.1, Math.min(1.1, centered));
       root.style.setProperty('--carousel-scroll-x', `${(clamped * 22).toFixed(2)}px`);
 
-      const fade = Math.max(0.58, 1 - Math.max(0, Math.abs(clamped) - 0.18) * 0.55);
-      const caption = root.querySelector<HTMLElement>('[data-carousel-caption]');
-      const nav = root.querySelector<HTMLElement>('[data-carousel-nav]');
-      if (caption) caption.style.opacity = fade.toFixed(3);
-      if (nav) nav.style.opacity = fade.toFixed(3);
+      // Drift only: the caption and Prev/Next used to fade down to 0.58 away from center,
+      // dimming the very controls the visitor needs.
     };
 
     const onScroll = () => {
@@ -445,57 +514,6 @@ function useCarouselScrollKinetic(
       reset();
     };
   }, [readyKey, rootRef]);
-}
-
-/**
- * Velocity-driven skew — while the strip is actively being dragged, a fast flick
- * tilts the cards; the tilt eases back to 0 the instant motion settles. Reads
- * `dragX` (the live, untransitioned drag offset) every frame through a ref so
- * the loop's own lifecycle never restarts mid-gesture — it starts on the first
- * frame that has real movement and stops itself once it decays to rest.
- */
-function useCarouselDragSkew(viewportRef: RefObject<HTMLDivElement | null>, dragX: number): void {
-  const dragXRef = useRef(dragX);
-  const loopRef = useRef<{ raf: number; lastX: number; skew: number } | null>(null);
-
-  useEffect(() => {
-    dragXRef.current = dragX;
-    const track = viewportRef.current?.querySelector<HTMLElement>(
-      '[data-projects-carousel-track]'
-    );
-    if (!track || prefersReducedMotion() || loopRef.current) return undefined;
-
-    const state = { raf: 0, lastX: dragX, skew: 0 };
-    loopRef.current = state;
-
-    const tick = () => {
-      const x = dragXRef.current;
-      const dx = x - state.lastX;
-      state.lastX = x;
-      const targetSkew = Math.max(-9, Math.min(9, dx * -0.4));
-      state.skew += (targetSkew - state.skew) * 0.22;
-
-      if (Math.abs(state.skew) < 0.03 && Math.abs(targetSkew) < 0.03) {
-        track.style.setProperty('--carousel-skew', '0deg');
-        state.raf = 0;
-        loopRef.current = null;
-        return;
-      }
-      track.style.setProperty('--carousel-skew', `${state.skew.toFixed(2)}deg`);
-      state.raf = window.requestAnimationFrame(tick);
-    };
-
-    state.raf = window.requestAnimationFrame(tick);
-    return undefined;
-  }, [dragX, viewportRef]);
-
-  useEffect(
-    () => () => {
-      if (loopRef.current?.raf) window.cancelAnimationFrame(loopRef.current.raf);
-      loopRef.current = null;
-    },
-    []
-  );
 }
 
 function workToolLabels(item: MarketplaceContentItem, max = 12): string[] {
@@ -562,12 +580,12 @@ function CarouselQuietNav({
 }) {
   const t = useT();
   const buttonClass =
-    'group/nav inline-flex items-center gap-2 bg-transparent text-[11px] font-semibold uppercase tracking-[0.22em] transition-opacity duration-300 hover:opacity-55 focus:outline-hidden focus-visible:opacity-55 disabled:pointer-events-none disabled:opacity-25 sm:text-[12px]';
+    'group/nav inline-flex min-h-11 items-center gap-2 bg-transparent text-[11px] font-semibold uppercase tracking-[0.22em] transition-opacity duration-300 hover:opacity-55 focus:outline-hidden focus-visible:opacity-55 disabled:pointer-events-none disabled:opacity-25 sm:text-[12px]';
 
   return (
     <div
       data-carousel-nav=""
-      className="flex shrink-0 items-center gap-7 sm:gap-9"
+      className="flex shrink-0 items-center justify-self-end gap-7 sm:gap-9"
       data-pf-no-color-transition=""
     >
       <button
@@ -655,7 +673,8 @@ function CarouselSlide({
   const timelineRef = useRef<gsap.core.Timeline | null>(null);
 
   useLayoutEffect(() => {
-    const veil = hoverReveal ? veilRef.current : null;
+    // The dark veil only exists to make the description legible: no description, no darkening.
+    const veil = hoverReveal && description ? veilRef.current : null;
     const descLine = hoverReveal && description ? descLineRef.current : null;
     const stackLine = hoverStack ? stackLineRef.current : null;
     const reduced = prefersReducedMotion();
@@ -722,6 +741,7 @@ function CarouselSlide({
             src={mediaUrl}
             alt={title || t('Project')}
             fill
+            loading="eager"
             draggable={false}
             sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 40vw"
             className="object-cover object-center"
@@ -734,14 +754,17 @@ function CarouselSlide({
             {t('Add a thumbnail in Information → Portfolio')}
           </div>
         )}
-        <span
-          className="pointer-events-none absolute left-4 top-4 z-[2] text-[10px] font-medium tabular-nums tracking-[0.2em] text-white sm:left-5 sm:top-5"
-          style={{ textShadow: '0 1px 12px rgba(0,0,0,0.45)' }}
-          aria-hidden
-        >
-          {indexLabel}
-        </span>
-        {hoverReveal ? (
+        {/* A small dark chip, not bare white digits: on a bright photo the old text-shadow
+            left "01" at ~1.2:1. */}
+        {settings.showNumbers !== false ? (
+          <span
+            className="pointer-events-none absolute left-3 top-3 z-[2] rounded-sm bg-black/60 px-1.5 py-1 text-[11px] font-medium leading-none tabular-nums tracking-[0.2em] text-white sm:left-4 sm:top-4"
+            aria-hidden
+          >
+            {indexLabel}
+          </span>
+        ) : null}
+        {hoverReveal && description ? (
           <>
             {/* Bottom-to-top gradient instead of a flat full-image tint — only
                 darkens the area directly behind the description, fading to
@@ -855,42 +878,89 @@ export function ProjectsCarouselSection({
     presentation.projectsCarousel
   );
   const [carouselIndex, setCarouselIndex] = useState(0);
+  const [resettingLoop, setResettingLoop] = useState(false);
+  const [hoverIndex, setHoverIndex] = useState<number | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const itemsKey = items.map((item) => item.id).join('|');
   const rootRef = useCarouselEntrance<HTMLDivElement>(itemsKey, 'descendants');
-  const { stepPx, maxIndex } = useCarouselSlideMetrics(
+  const { stepPx, maxIndex, centerOffsetPx, loopCopies, focusHeadroomPx } = useCarouselSlideMetrics(
     viewportRef,
     items.length,
     settings.imageSize ?? 'lg',
-    settings.gap ?? 'md'
+    settings.gap ?? 'md',
+    settings.desktopFocus ?? 'center'
   );
-  const activeIndex = Math.max(0, Math.min(carouselIndex, maxIndex));
   const canNav = items.length > 1 && maxIndex > 0;
-  const { offset, dragging } = useCarouselPointerDrag(
+  const [loopReady, setLoopReady] = useState(false);
+  useLayoutEffect(() => {
+    const track=viewportRef.current?.querySelector<HTMLElement>('[data-projects-carousel-track]');
+    if(track)void track.offsetWidth;
+    const frame=requestAnimationFrame(()=>setLoopReady(canNav));
+    return ()=>cancelAnimationFrame(frame);
+  },[canNav]);
+  const activeIndex = items.length ? ((carouselIndex % items.length) + items.length) % items.length : 0;
+  // Neighbouring copies fill the strip at either end. After crossing a seam,
+  // reset to the identical middle copy without animating backwards.
+  useEffect(() => {
+    if (!canNav || (carouselIndex >= 0 && carouselIndex < items.length)) return;
+    const timer = window.setTimeout(() => {
+      setResettingLoop(true);
+      setCarouselIndex(((carouselIndex % items.length) + items.length) % items.length);
+    },CAROUSEL_NAV_MS + 30);
+    return () => window.clearTimeout(timer);
+  },[carouselIndex,canNav,items.length]);
+  useLayoutEffect(() => {
+    if (!resettingLoop) return;
+    const track=viewportRef.current?.querySelector<HTMLElement>('[data-projects-carousel-track]');
+    if (track) void track.offsetWidth;
+    const frame=requestAnimationFrame(()=>setResettingLoop(false));
+    return ()=>cancelAnimationFrame(frame);
+  },[resettingLoop]);
+  const { dragging } = useCarouselPointerDrag(
     viewportRef,
     canNav,
     stepPx,
-    maxIndex,
-    activeIndex,
-    (index) => setCarouselIndex(index)
+    items.length - 1,
+    carouselIndex,
+    (index) => {if(!resettingLoop)setCarouselIndex(index);}
   );
   useCarouselScrollKinetic(rootRef, itemsKey);
-  useCarouselDragSkew(viewportRef, offset);
 
   const color = presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const accent = presentation.ctaColor || presentation.categoryActiveColor || color;
-  const translateX = stepPx > 0 ? activeIndex * stepPx : 0;
-  const focusBlurSiblings = settings.focusBlurSiblings !== false;
-  const activeItem = items[activeIndex] ?? items[0];
-  const activeTitle = activeItem?.title?.trim() || '';
-  const activeRole = activeItem ? workRoleLabel(activeItem) : '';
-  const progress = maxIndex > 0 ? (activeIndex / maxIndex) * 100 : items.length > 0 ? 100 : 0;
+  // Caption + Prev/Next ink. The section title is often bound to the main color; reusing it
+  // painted the project title AND the nav red. The main color now stays on the progress bar.
+  const cardTitleInk = presentation.elementStyles?.cardTitle?.color?.trim();
+  const ink =
+    cardTitleInk ||
+    (color && accent && color.trim().toLowerCase() === accent.trim().toLowerCase()
+      ? 'var(--pf-palette-texte-fort, #f5f5f5)'
+      : color);
+  const translateX = canNav && stepPx > 0 ? (loopCopies * items.length + carouselIndex) * stepPx : 0;
+  const showNumbers = settings.showNumbers !== false;
+  const focusOpacity = settings.focusOpacity ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS.focusOpacity;
+  // One or two slides that all fit have nothing to browse: no slide is "current", so none recedes
+  // on its own. They only yield to the pointer, and the caption follows whichever one it is on.
+  const canBrowse = canNav;
+  const pointerIndex = dragging ? null : hoverIndex;
+  const focusDim = settings.focusDim === true && items.length > 1;
+  const focusedIndex = centerOffsetPx > 0 ? activeIndex : pointerIndex ?? (canBrowse ? activeIndex : null);
+  const captionIndex = canBrowse ? activeIndex : (pointerIndex ?? 0);
+  const progress = items.length > 0 ? ((activeIndex + 1) / items.length) * 100 : 0;
 
   if (items.length === 0) return null;
 
-  const onPrev = () => setCarouselIndex((index) => Math.max(0, index - 1));
-  const onNext = () => setCarouselIndex((index) => Math.min(maxIndex, index + 1));
+  const navTrack = () =>
+    setTrackEase(viewportRef.current?.querySelector<HTMLElement>('[data-projects-carousel-track]'), 'nav');
+  const onPrev = () => {
+    navTrack();
+    if(!resettingLoop)setCarouselIndex((index) => Math.max(-1, index - 1));
+  };
+  const onNext = () => {
+    navTrack();
+    if(!resettingLoop)setCarouselIndex((index) => Math.min(items.length, index + 1));
+  };
 
   const onKeyDown = (event: ReactKeyboardEvent<HTMLDivElement>) => {
     if (event.key === 'ArrowLeft') {
@@ -901,10 +971,12 @@ export function ProjectsCarouselSection({
       onNext();
     } else if (event.key === 'Home') {
       event.preventDefault();
+      navTrack();
       setCarouselIndex(0);
     } else if (event.key === 'End') {
       event.preventDefault();
-      setCarouselIndex(maxIndex);
+      navTrack();
+      setCarouselIndex(items.length - 1);
     }
   };
 
@@ -920,46 +992,64 @@ export function ProjectsCarouselSection({
         className={`overflow-hidden pb-3 pt-1 ${canNav ? 'cursor-grab' : ''} ${
           dragging ? 'cursor-grabbing select-none' : ''
         }`}
-        style={{ touchAction: 'pan-y' }}
+        style={{ touchAction: 'pan-y', paddingTop: focusDim && centerOffsetPx > 0 ? focusHeadroomPx + 4 : undefined }}
         aria-roledescription="carousel"
         aria-label={title?.trim() || t('Selected work')}
         tabIndex={canNav ? 0 : undefined}
         onKeyDown={canNav ? onKeyDown : undefined}
         data-dragging={dragging ? '1' : undefined}
       >
+        {/* The scroll drift lives on its own un-transitioned layer: inside the track's transform it
+            retargeted the eased snap on every scroll frame, so the strip chased the page. */}
+        <div style={{ transform: centerOffsetPx > 0 ? 'none' : 'translate3d(var(--carousel-scroll-x, 0px), 0, 0)' }}>
         <div
           data-projects-carousel-track
           className={`group/carousel flex ${carouselGapClass(settings.gap ?? 'md')} transform-gpu will-change-transform`}
           style={{
-            '--carousel-skew': '0deg',
-            transform: `translate3d(calc(${(-translateX + offset).toFixed(2)}px + var(--carousel-scroll-x, 0px)), 0, 0) skewX(var(--carousel-skew, 0deg))`,
-            transition: dragging ? 'none' : `transform ${CAROUSEL_SNAP_MS}ms ${CAROUSEL_SPRING_EASE}`,
+            transform: `translate3d(calc(${(centerOffsetPx-translateX).toFixed(2)}px + var(--carousel-drag-x, 0px)), 0, 0) skewX(var(--carousel-skew, 0deg))`,
+            transition: dragging || resettingLoop || !loopReady || !canNav ? 'none' : CAROUSEL_TRACK_TRANSITION,
           } as CSSProperties}
         >
-          {items.map((item, index) => {
+          {(canNav ? Array.from({length:loopCopies*2+1},(_,i)=>i+1-loopCopies) : [1]).flatMap(cycle => items.map((item, index) => {
             const isActive = index === activeIndex;
-            const recedeClass = isActive
-              ? 'origin-bottom scale-100 opacity-100'
-              : 'origin-bottom scale-[0.92] translate-y-3.5 opacity-[0.58]';
-            const hoverFocusClass =
-              !dragging && focusBlurSiblings
-                ? 'group-hover/carousel:scale-[0.88] group-hover/carousel:translate-y-3.5 group-hover/carousel:opacity-40 hover:!translate-y-0 hover:!scale-100 hover:!opacity-100 group-focus-within/carousel:scale-[0.88] group-focus-within/carousel:translate-y-3.5 group-focus-within/carousel:opacity-40 focus-within:!translate-y-0 focus-within:!scale-100 focus-within:!opacity-100'
-                : '';
+            // Focus mode off: every slide is fully clear and full size, whatever the pointer or the
+            // current slide. Focus mode on: the slide holding the focus (pointer, else the current
+            // one) stays clear and the others fade back; nothing fades while no slide holds it.
+            const dimmed = focusDim && focusedIndex !== null && index !== focusedIndex;
+            const recedeClass = dimmed ? 'origin-bottom scale-[0.96]' : 'origin-bottom scale-100';
             return (
               <div
-                key={item.id}
+                key={`${cycle}-${item.id}`}
+                aria-hidden={cycle!==1 ? true : undefined}
+                inert={cycle!==1}
                 data-projects-carousel-item
-                data-carousel-enter=""
+                data-carousel-enter={cycle===1 ? '' : undefined}
                 data-enter-delay={String(Math.min(index, 5) * 70)}
                 data-pf-no-color-transition=""
                 className="shrink-0"
-                style={SLIDE_HIDDEN}
-                aria-current={isActive ? 'true' : undefined}
+                style={cycle===1 ? SLIDE_HIDDEN : undefined}
+                onPointerEnter={(event) => {
+                  if (event.pointerType !== 'mouse') return;
+                  setHoverIndex(index);
+                }}
+                onPointerLeave={() => setHoverIndex((current) => (current === index ? null : current))}
+                onFocus={() => setHoverIndex(index)}
+                onBlur={() => setHoverIndex((current) => (current === index ? null : current))}
+                aria-current={canBrowse && isActive ? 'true' : undefined}
                 aria-label={`${formatCarouselIndex(index)} ${item.title?.trim() || 'Project'}`}
               >
+                {/* The focus hand-off runs on the strip's own curve: on a separate 500ms ease-out
+                    clock the fade snapped in the first frames while the strip had barely moved. */}
                 <div
-                  className={`transition-[transform,translate,scale,rotate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${recedeClass} ${hoverFocusClass}`}
-                  style={{ zIndex: isActive ? 2 : 1 }}
+                  className={recedeClass}
+                  style={{
+                    zIndex: isActive ? 2 : 1,
+                    // Lift the desktop focal slide slightly, retaining its width
+                    // and bottom alignment; viewport headroom prevents clipping.
+                    scale: focusDim && centerOffsetPx > 0 && !dimmed ? '1 1.05' : undefined,
+                    opacity: dimmed ? focusOpacity / 100 : 1,
+                    transition: `scale ${CAROUSEL_FOCUS_MS}ms ${CAROUSEL_NAV_EASE}, opacity ${CAROUSEL_FOCUS_MS}ms ${CAROUSEL_NAV_EASE}`,
+                  }}
                   data-pf-no-color-transition=""
                 >
                   <CarouselSlide
@@ -971,55 +1061,57 @@ export function ProjectsCarouselSection({
                 </div>
               </div>
             );
-          })}
+          }))}
+        </div>
         </div>
       </div>
 
       <div
         data-carousel-enter=""
         data-enter-delay="220"
-        className="mt-6 flex flex-wrap items-end justify-between gap-x-8 gap-y-4 sm:mt-8"
+        className="mt-6 grid grid-cols-1 items-end gap-x-8 gap-y-4 sm:mt-8 lg:grid-cols-[minmax(0,1fr)_auto]"
         style={ENTER_HIDDEN}
       >
-        {/* w-full below sm: the caption's own rendered width varies with the
-            active project's title length (short titles measure narrow), and
-            in a flex-wrap row that's enough room for the nav buttons below
-            to sometimes squeeze onto the *same* line as a short caption
-            instead of wrapping to their own line — moving Prev/Next up or
-            down depending on which project happens to be active, not
-            anything the user did. Forcing the caption to claim the full row
-            at narrow widths makes the nav wrap every time, consistently;
-            sm:w-auto restores the side-by-side layout once there's reliably
-            enough room for both regardless of title length. */}
+        {/* Overlay captions in one grid cell: the longest title/role reserves
+            the natural height at every width and text size, without truncation.
+            Navigation has its own row through tablet widths, never flex-wraps. */}
         <div
           data-carousel-caption=""
-          className="w-full min-w-0 sm:w-auto"
+          className="grid w-full min-w-0"
           aria-live="polite"
         >
-          <p
-            className="text-[10px] font-medium tabular-nums tracking-[0.22em] sm:text-[11px]"
-            style={{ color: muted, opacity: 0.7 }}
-            data-pf-no-color-transition=""
-          >
-            {formatCarouselIndex(activeIndex)}
-            <span className="mx-2 opacity-40" aria-hidden>
-              —
-            </span>
-            {formatCarouselIndex(Math.max(0, items.length - 1))}
-          </p>
-          {activeTitle ? (
-            // min-h reserves space for 2 lines at this text's own line-height
-            // (28px/line at the base text-xl size, 30px/line once sm:leading-
-            // tight applies) even when the current title only needs one —
-            // without it, switching between a short and a long project name
-            // changes this block's height, which pushes the Prev/Next
-            // buttons below it up or down on every navigation.
-            <h3
-              className="mt-2 max-w-xl min-h-[3.5rem] text-xl font-medium tracking-[-0.035em] sm:min-h-[3.75rem] sm:text-2xl sm:leading-tight"
-              style={{ color }}
+          {items.map((item,index) => {
+            const activeTitle=item.title?.trim() || '';
+            const activeRole=workRoleLabel(item);
+            const visible=index===captionIndex;
+            return <div key={item.id} className="min-w-0" aria-hidden={!visible}
+              style={{gridArea:'1 / 1',visibility:visible?'visible':'hidden'}}>
+          {showNumbers && items.length > 1 ? (
+            <p
+              className="text-[11px] font-medium tabular-nums tracking-[0.22em] sm:text-[12px]"
+              style={{ color: muted, opacity: 0.88 }}
               data-pf-no-color-transition=""
             >
-              <EditorialTitleText text={activeTitle} />
+              <span key={captionIndex} className="inline-block" style={CAPTION_FADE}>
+                {formatCarouselIndex(index)}
+              </span>
+              <span className="mx-2 opacity-40" aria-hidden>
+                —
+              </span>
+              {formatCarouselIndex(Math.max(0, items.length - 1))}
+            </p>
+          ) : null}
+          {activeTitle ? (
+            // Keep a two-line editorial baseline; longer titles naturally grow
+            // the shared grid cell for every project, not just the active one.
+            <h3
+              className={`${showNumbers && items.length > 1 ? 'mt-2' : ''} max-w-xl min-h-[3.5rem] text-xl font-medium tracking-[-0.035em] sm:min-h-[4.1rem] sm:text-[1.75rem] sm:leading-[1.15] lg:min-h-[4.6rem] lg:text-[2rem]`}
+              style={{ color: ink }}
+              data-pf-no-color-transition=""
+            >
+              <span key={captionIndex} className="block" style={CAPTION_FADE}>
+                <EditorialTitleText text={activeTitle} />
+              </span>
             </h3>
           ) : null}
           {activeRole ? (
@@ -1030,15 +1122,19 @@ export function ProjectsCarouselSection({
               style={{ color: muted }}
               data-pf-no-color-transition=""
             >
-              {activeRole}
+              <span key={captionIndex} className="block" style={CAPTION_FADE}>
+                {activeRole}
+              </span>
             </p>
           ) : null}
+            </div>;
+          })}
         </div>
         {canNav ? (
           <CarouselQuietNav
-            color={color}
-            canPrev={activeIndex > 0}
-            canNext={activeIndex < maxIndex}
+            color={ink}
+            canPrev
+            canNext
             onPrev={onPrev}
             onNext={onNext}
           />

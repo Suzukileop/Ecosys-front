@@ -3,6 +3,7 @@
 import { useState, type ReactNode } from 'react';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
+import { NpCollapsibleSection } from './portfolio-nav-panel-ui';
 
 /**
  * Two ways to read the same list of settings, switchable by the user:
@@ -40,7 +41,6 @@ export type SettingGroup = { id: string; title: string; items: SettingItem[] };
 
 /* ------------------------------------------------------------------ tokens */
 
-const INK = 'var(--pf-palette-texte-fort,#171717)';
 export const SV_TEXT_STRONG = 'text-[color:var(--pf-palette-texte-fort,#171717)]';
 export const SV_TEXT_MUTED = 'text-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_58%,transparent)]';
 export const SV_TEXT_FAINT = 'text-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_42%,transparent)]';
@@ -49,7 +49,7 @@ const DIVIDE = 'divide-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171
 const CHIP_IDLE =
   'border border-transparent bg-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_5%,transparent)] hover:bg-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_9%,transparent)]';
 const CHIP_ACTIVE =
-  'border border-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_42%,transparent)] bg-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_8%,transparent)]';
+  'border border-transparent bg-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_16%,transparent)]';
 const FOCUS_RING =
   'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_45%,transparent)]';
 
@@ -153,7 +153,9 @@ export function SvSwatches({
           <span
             aria-hidden
             className={`block rounded-full ${compact ? 'h-[18px] w-[18px]' : 'h-4 w-4'} ${
-              option.auto ? 'border border-dashed border-current opacity-70' : 'border border-black/10'
+              option.auto
+                ? 'border border-dashed border-current opacity-70'
+                : 'border border-[color:color-mix(in_srgb,currentColor_45%,transparent)]'
             }`}
             style={option.auto ? undefined : { backgroundColor: option.color }}
           />
@@ -357,7 +359,8 @@ export function SvSlider({
         step={step}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className={`h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full ${CHIP_IDLE} ${FOCUS_RING} accent-[color:var(--pf-palette-texte-fort,#171717)]`}
+        className="np-range min-w-0 flex-1"
+        style={{ ['--np-fill' as string]: `${max > min ? ((value - min) / (max - min)) * 100 : 0}%` }}
       />
       <span
         className={`shrink-0 text-right font-semibold tabular-nums ${SV_TEXT_STRONG} ${
@@ -379,18 +382,9 @@ function SvSwitch({ checked, onChange, label }: { checked: boolean; onChange: (c
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={`relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ${FOCUS_RING}`}
-      style={{
-        backgroundColor: checked ? INK : `color-mix(in srgb, ${INK} 20%, transparent)`,
-      }}
+      className="np-switch"
     >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left] duration-200 ease-[cubic-bezier(0.34,1.4,0.64,1)]"
-        style={{
-          left: checked ? '1.125rem' : '0.125rem',
-          backgroundColor: checked ? 'var(--pf-palette-fond,#ffffff)' : 'var(--pf-palette-fond,#ffffff)',
-        }}
-      />
+      <span className="np-switch-knob" aria-hidden />
     </button>
   );
 }
@@ -548,17 +542,25 @@ export function SettingsVariantSwitcher({
 
 /* ------------------------------------------------------------------ Expanded */
 
-function FlatView({ groups }: { groups: SettingGroup[] }) {
+function FlatGroup({group,collapsible,children}:{group:SettingGroup;collapsible:boolean;children:ReactNode}) {
+  const t=useT();
+  if(collapsible) return <NpCollapsibleSection title={t(group.title)}>{children}</NpCollapsibleSection>;
+  return <section aria-label={t(group.title)}>
+    <h4 className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${SV_TEXT_FAINT}`}>{t(group.title)}</h4>
+    {children}
+  </section>;
+}
+
+function FlatView({ groups, collapsibleGroups=false }: { groups: SettingGroup[]; collapsibleGroups?:boolean }) {
   const t = useT();
   return (
-    <div className="space-y-11">
+    <div className={collapsibleGroups ? 'space-y-0' : 'space-y-11'}>
       {groups.map((group) => (
-        <section key={group.id} aria-label={t(group.title)}>
-          <h4 className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${SV_TEXT_FAINT}`}>{t(group.title)}</h4>
+        <FlatGroup key={group.id} group={group} collapsible={collapsibleGroups}>
           <div className={`divide-y ${DIVIDE}`}>
             {group.items.map((item) =>
               item.toggle ? (
-                <div key={item.id} className="flex items-center justify-between gap-4 py-5">
+                <div key={item.id} className={`flex items-center justify-between gap-4 ${collapsibleGroups ? 'py-3' : 'py-5'}`}>
                   <span className="flex min-w-0 items-center gap-1.5">
                     <span className={`truncate text-[14px] font-semibold ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
                     {item.info ? <SvInfo text={item.info} /> : null}
@@ -566,7 +568,7 @@ function FlatView({ groups }: { groups: SettingGroup[] }) {
                   <SvSwitch checked={item.toggle.checked} onChange={item.toggle.onChange} label={t(item.label)} />
                 </div>
               ) : (
-                <div key={item.id} className="py-6">
+                <div key={item.id} className={collapsibleGroups ? 'py-3.5' : 'py-6'}>
                   <div className="mb-3.5 flex items-baseline justify-between gap-3">
                     <span className="flex min-w-0 items-center gap-1.5">
                       <span className={`truncate text-[14px] font-semibold ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
@@ -581,7 +583,7 @@ function FlatView({ groups }: { groups: SettingGroup[] }) {
               )
             )}
           </div>
-        </section>
+        </FlatGroup>
       ))}
     </div>
   );
@@ -640,12 +642,12 @@ function FocusView({ groups }: { groups: SettingGroup[] }) {
   );
 }
 
-export function SettingsVariantView({ variant, groups }: { variant: SettingsVariant; groups: SettingGroup[] }) {
+export function SettingsVariantView({ variant, groups, collapsibleGroups=false }: { variant: SettingsVariant; groups: SettingGroup[]; collapsibleGroups?:boolean }) {
   const visible = groups.filter((group) => group.items.length > 0);
   return (
     // Re-keyed on the view, so switching plays the same short rise-in as a newly opened band.
     <div key={variant} style={{ animation: 'pf-exp-layout-body-in 0.32s cubic-bezier(0.22, 1, 0.36, 1) both' }}>
-      {variant === 'focus' ? <FocusView groups={visible} /> : <FlatView groups={visible} />}
+      {variant === 'focus' ? <FocusView groups={visible} /> : <FlatView groups={visible} collapsibleGroups={collapsibleGroups} />}
     </div>
   );
 }

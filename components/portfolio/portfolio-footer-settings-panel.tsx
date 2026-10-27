@@ -1,12 +1,21 @@
 'use client';
+import {DesignCatalogueCard} from './portfolio-design-catalogue-card';
+import {FooterHeaderSkeleton} from './portfolio-footer-header-skeleton';
+import {StackPreviewSkeleton} from './portfolio-stack-preview-skeleton';
+import {useThumbnailTheme} from './portfolio-thumbnail-theme';
 
-import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
+import { SectionPaletteFamilyControl } from '@/components/portfolio/portfolio-section-palette-family';
+import { TextSizeSlider } from '@/components/portfolio/portfolio-text-size-slider';
+import { ColorSwatchRow } from '@/components/portfolio/portfolio-color-swatch-row';
+import { HeaderSteppedSlider } from '@/components/portfolio/portfolio-header-style-controls';
+import { FooterDesignThumbnail } from '@/components/portfolio/portfolio-footer-design-thumbnail';
+import { FooterPreviewSkeleton } from './portfolio-footer-preview-skeleton';
 import {
-  PortfolioDesignLivePreviewCard,
+  PortfolioDesignLivePreview,
   usePortfolioDesignPreviewSource,
 } from '@/components/portfolio/PortfolioDesignLivePreview';
 import { withDesignPreview } from '@/lib/portfolio-design-preview';
-import { createContext, Fragment, useContext, useId, useState, type ReactNode } from 'react';
+import { createContext, Fragment, useContext, useId, useState, type CSSProperties, type ReactNode } from 'react';
 import { PortfolioSettingsPhotoField } from '@/components/portfolio/portfolio-settings-photo-field';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -36,6 +45,7 @@ import {
   type PortfolioFooterDesign,
   type PortfolioFooterMiniBarDesign,
   type PortfolioFooterContactCardColorToken,
+  type PortfolioFooterLinkItem,
   type PortfolioFooterSectionSettings,
 } from '@/components/portfolio/portfolio-footer-settings';
 import { FooterMiniBarMinimalWireframe } from '@/components/portfolio/portfolio-footer-mini-bar-minimal';
@@ -46,18 +56,6 @@ import { FooterMiniBarContactCtaWireframe } from '@/components/portfolio/portfol
 import { FooterMiniBarHeroColumnsWireframe } from '@/components/portfolio/portfolio-footer-mini-bar-hero-columns';
 import { FooterMiniBarInvertedWordmarkWireframe } from '@/components/portfolio/portfolio-footer-mini-bar-inverted-wordmark';
 import { FooterMiniBarServicesRevealWireframe } from '@/components/portfolio/portfolio-footer-mini-bar-services-reveal';
-import { FooterHeroColumnsWireframe } from '@/components/portfolio/portfolio-footer-design-hero-columns';
-import { FooterSplitFormWireframe } from '@/components/portfolio/portfolio-footer-design-split-form';
-import { FooterTimezoneEditorialWireframe } from '@/components/portfolio/portfolio-footer-design-timezone-editorial';
-import { FooterInvertedWordmarkWireframe } from '@/components/portfolio/portfolio-footer-design-inverted-wordmark';
-import { FooterServicesRevealWireframe } from '@/components/portfolio/portfolio-footer-design-services-reveal';
-import { FooterEditorialGridWireframe } from '@/components/portfolio/portfolio-footer-design-editorial-grid';
-import { FooterHeadlineRevealWireframe } from '@/components/portfolio/portfolio-footer-design-headline-reveal';
-import { FooterDispatchWireframe } from '@/components/portfolio/portfolio-footer-design-dispatch';
-import { FooterCompactWireframe } from '@/components/portfolio/portfolio-footer-design-compact';
-import { FooterCenteredMinimalWireframe } from '@/components/portfolio/portfolio-footer-design-centered-minimal';
-import { FooterLandingWireframe } from '@/components/portfolio/portfolio-footer-design-landing';
-import { FooterContactCardWireframe } from '@/components/portfolio/portfolio-footer-design-contact-card';
 import {
   FOOTER_DESIGN_LAYOUT_SPECS,
   footerLayoutOverride,
@@ -69,6 +67,10 @@ import {
   resolveFooterLayoutTarget,
   resolveFooterLayoutVisible,
   resolveFooterSelectedSectionIds,
+  footerCustomLinks,
+  FOOTER_BIO_CUSTOM_MAX,
+  footerDesignAcceptsCustomLinks,
+  patchFooterCustomLinks,
   type FooterContactTargetMode,
   type FooterLayoutBioSpec,
   type FooterLayoutElementSpec,
@@ -82,8 +84,10 @@ import {
   FOOTER_HEADER_PALETTE_TOKEN_OPTIONS,
   FOOTER_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
   footerHeaderPaletteTokenColor,
+  type PortfolioFooterHeaderBillboardWordStyle,
   type PortfolioFooterHeaderDesign,
   type PortfolioFooterHeaderTitleSize,
+  type PortfolioFooterHeaderTitleWeight,
   type PortfolioFooterHeaderPaletteToken,
 } from '@/components/portfolio/portfolio-footer-header-settings';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -94,80 +98,14 @@ import {
   NpOptionCard,
   NpOptionCardGroup,
   NpPanelShell,
-  NpPickerRow,
   NpSegmentedControl,
   NpToggleRow,
   type NpPanelChrome,
 } from '@/components/portfolio/portfolio-nav-panel-ui';
 import { PORTFOLIO_SECTION_COLOR_MODE_OPTIONS } from '@/components/portfolio/portfolio-section-color-mode';
+import { headerElementVisibility, toggleHeaderElement } from '@/components/portfolio/portfolio-header-elements';
 
-function FooterMinimalCtaWireframe() {
-  return (
-    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
-      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
-      <rect className="pf-stack-mini-ink" x="8" y="12" width="30" height="6" rx="2" />
-      <rect className="pf-stack-mini-mute" x="8" y="24" width="60" height="2.5" rx="1.25" />
-      <rect className="pf-stack-mini-mute" x="8" y="30" width="46" height="2.5" rx="1.25" />
-      <rect className="pf-stack-mini-accent" x="8" y="40" width="26" height="8" rx="4" />
-      <rect className="pf-stack-mini-mute" x="8" y="58" width="20" height="2" rx="1" />
-      <rect className="pf-stack-mini-mute" x="32" y="58" width="20" height="2" rx="1" />
-      <circle className="pf-stack-mini-ring" cx="100" cy="59" r="4" strokeWidth={1.2} />
-      <circle className="pf-stack-mini-ring" cx="110" cy="59" r="4" strokeWidth={1.2} />
-    </svg>
-  );
-}
 
-function FooterMonumentalWireframe() {
-  return (
-    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
-      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
-      <rect className="pf-stack-mini-ink" x="6" y="10" width="70" height="11" rx="2" />
-      <rect className="pf-stack-mini-ink" x="6" y="24" width="46" height="11" rx="2" opacity={0.55} />
-      <rect className="pf-stack-mini-mute" x="80" y="14" width="32" height="2.5" rx="1.25" />
-      <rect className="pf-stack-mini-mute" x="80" y="21" width="32" height="2.5" rx="1.25" />
-      <rect className="pf-stack-mini-mute" x="80" y="28" width="20" height="2.5" rx="1.25" />
-      <rect className="pf-stack-mini-mute" x="6" y="50" width="108" height="16" rx="3" opacity={0.18} />
-    </svg>
-  );
-}
-
-/** Abstract mini-schema preview for every "Section design" option — one wireframe per
- *  design, no exceptions, matching the thumbnail convention already used by Info/Stack/
- *  Services/Work's own design pickers (see the "Settings design standard" rules). */
-function FooterDesignWireframe({ design }: { design: PortfolioFooterDesign }) {
-  switch (design) {
-    case 'centered-minimal':
-      return <FooterCenteredMinimalWireframe />;
-    case 'landing':
-      return <FooterLandingWireframe />;
-    case 'minimal':
-      return <FooterMinimalCtaWireframe />;
-    case 'contact-card':
-      return <FooterContactCardWireframe />;
-    case 'monumental':
-      return <FooterMonumentalWireframe />;
-    case 'hero-columns':
-      return <FooterHeroColumnsWireframe />;
-    case 'split-form':
-      return <FooterSplitFormWireframe />;
-    case 'timezone-editorial':
-      return <FooterTimezoneEditorialWireframe />;
-    case 'inverted-wordmark':
-      return <FooterInvertedWordmarkWireframe />;
-    case 'services-reveal':
-      return <FooterServicesRevealWireframe />;
-    case 'editorial-grid':
-      return <FooterEditorialGridWireframe />;
-    case 'headline-reveal':
-      return <FooterHeadlineRevealWireframe />;
-    case 'dispatch':
-      return <FooterDispatchWireframe />;
-    case 'compact':
-      return <FooterCompactWireframe />;
-    default:
-      return null;
-  }
-}
 
 /** A footer wireframe (120×72 drawing) fitted into an option card, or bare into a picker thumbnail. */
 function FooterWireThumb({ children, framed = true }: { children: ReactNode; framed?: boolean }) {
@@ -180,82 +118,15 @@ function FooterWireThumb({ children, framed = true }: { children: ReactNode; fra
 
 /** The main "Section design" picker — the current design with "Change"; the catalogue replaces it
  *  until a card is picked. Same mechanism as Navigation › Layout. */
-function FooterDesignChoiceGrid({
-  value,
-  onChange,
-  showGrid,
-  setShowGrid,
-}: {
-  value: PortfolioFooterDesign;
-  onChange: (value: PortfolioFooterDesign) => void;
-  /** Owned by the panel so the selected design's settings can hide while the catalogue is open. */
-  showGrid: boolean;
-  setShowGrid: (open: boolean) => void;
-}) {
-  const t = useT();
-  const previewSource = usePortfolioDesignPreviewSource();
-  const selected =
-    PORTFOLIO_FOOTER_DESIGN_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_FOOTER_DESIGN_OPTIONS[0];
-  const pick = (design: PortfolioFooterDesign) => {
-    onChange(design);
-    setShowGrid(false);
-  };
-
-  if (!showGrid) {
-    return (
-      <NpPickerRow
-        label={t('Section design')}
-        value={t(selected.label)}
-        onClick={() => setShowGrid(true)}
-        thumbnail={
-          <FooterWireThumb framed={false}>
-            <FooterDesignWireframe design={value} />
-          </FooterWireThumb>
-        }
-      />
-    );
-  }
-
-  return (
-    <div>
-      <NpBackRow title={t('Section design')} onBack={() => setShowGrid(false)} />
-      {previewSource ? (
-        /* In the studio: every design rendered for real, one per row. */
-        <div className="flex flex-col gap-4">
-          {PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => (
-            <PortfolioDesignLivePreviewCard
-              key={option.value}
-              cardClassName="pf-stack-design-card"
-              labelClassName="pf-stack-card-label"
-              active={option.value === value}
-              label={t(option.label)}
-              src={withDesignPreview(previewSource.portfolioPath, { section: 'footer', design: option.value })}
-              settings={previewSource.settings}
-              onClick={() => pick(option.value)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 gap-3">
-          {PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => (
-            <NpOptionCard
-              key={option.value}
-              selected={option.value === value}
-              title={t(option.label)}
-              illustration={
-                <FooterWireThumb>
-                  <FooterDesignWireframe design={option.value} />
-                </FooterWireThumb>
-              }
-              onClick={() => pick(option.value)}
-            />
-          ))}
-        </div>
-      )}
-    </div>
-  );
+function FooterDesignChoiceGrid({value,onChange,showGrid,setShowGrid}:{value:PortfolioFooterDesign;onChange:(value:PortfolioFooterDesign)=>void;showGrid:boolean;setShowGrid:(open:boolean)=>void}){
+ const t=useT();
+ const previewSource=usePortfolioDesignPreviewSource();
+ const selected=PORTFOLIO_FOOTER_DESIGN_OPTIONS.find(option=>option.value===value)??PORTFOLIO_FOOTER_DESIGN_OPTIONS[0];
+ if(!showGrid)return <NpBackRow title={t(selected.label)} onBack={()=>setShowGrid(true)}/>;
+ return <div className="flex flex-col gap-8" aria-label={t('Choose a design')}>{PORTFOLIO_FOOTER_DESIGN_OPTIONS.map(option=><DesignCatalogueCard key={option.value} label={t(option.label)} selected={option.value===value} onSelect={()=>onChange(option.value)} onCustomize={()=>{if(value!==option.value)onChange(option.value);setShowGrid(false);}}>{previewSource?<span className="relative block aspect-[2/1] w-full overflow-hidden rounded-lg"><PortfolioDesignLivePreview src={withDesignPreview(previewSource.portfolioPath,{section:'footer',design:option.value})} settings={previewSource.settings} fill loadMargin="48px 0px" skeleton={<FooterPreviewSkeleton design={option.value} dark={(previewSource.settings.footer.colorModeOverride === 'auto' ? previewSource.settings.global.colorMode : previewSource.settings.footer.colorModeOverride) !== 'light'} />}/></span>:<FooterDesignThumbnail design={option.value} mode="light" priority={option.value===value}/>}</DesignCatalogueCard>)}</div>;
 }
+
+
 
 function FooterMiniBarWireframe({ design }: { design: PortfolioFooterMiniBarDesign }) {
   switch (design) {
@@ -287,7 +158,7 @@ function FooterMiniBarDesignGrid({
   onChange: (value: PortfolioFooterMiniBarDesign) => void;
 }) {
   const t = useT();
-  return (
+    return (
     <NpOptionCardGroup label={t('Bar design')}>
       {PORTFOLIO_FOOTER_MINI_BAR_DESIGN_OPTIONS.map((option) => (
         <NpOptionCard
@@ -327,14 +198,6 @@ function asFooterPatch(patch: Record<string, unknown> | object): Partial<Portfol
   return patch as Partial<PortfolioFooterSectionSettings>;
 }
 
-function FooterGroupLabel({ children, id }: { children: string; id?: string }) {
-  return (
-    <p id={id} className="np-field-label">
-      {children}
-    </p>
-  );
-}
-
 /* ---------------------------------------------------------------------- */
 /* Shared controls — thin wrappers over the Navigation panel's building   */
 /* blocks (portfolio-nav-panel-ui), so every Footer tab reads the same.   */
@@ -356,7 +219,7 @@ function FooterOptionGrid<T extends string>({
   hideLabel?: boolean;
 }) {
   const t = useT();
-  const translated = options.map((option) => ({ value: option.value, label: t(option.label) }));
+    const translated = options.map((option) => ({ value: option.value, label: t(option.label) }));
   if (!hideLabel) {
     return <NpSegmentedControl label={label} options={translated} value={value} onChange={onChange} />;
   }
@@ -382,34 +245,395 @@ function FooterOptionGrid<T extends string>({
   );
 }
 
-const FOOTER_HEADER_SIZE_PILL_OPTIONS: { value: PortfolioFooterHeaderTitleSize; label: string; fontPx: number }[] = [
-  { value: 'sm', label: 'S', fontPx: 12 },
-  { value: 'md', label: 'M', fontPx: 15 },
-  { value: 'lg', label: 'L', fontPx: 18 },
-  { value: 'xl', label: 'XL', fontPx: 22 },
+const FOOTER_HEADER_SIZE_STEPS: { value: PortfolioFooterHeaderTitleSize; tick: string; label: string }[] = [
+  { value: 'sm', tick: 'S', label: msg('Small') },
+  { value: 'md', tick: 'M', label: msg('Medium') },
+  { value: 'lg', tick: 'L', label: msg('Large') },
+  { value: 'xl', tick: 'XL', label: msg('Extra large') },
 ];
 
-/** S · M · L · XL, each letter drawn at its own size. */
-function FooterHeaderSizePill({
+const FOOTER_HEADER_WEIGHT_STEPS: {
+  value: PortfolioFooterHeaderTitleWeight;
+  tick: string;
+  label: string;
+  fontWeight: number;
+}[] = [
+  { value: 'light', tick: '300', label: msg('Light'), fontWeight: 300 },
+  { value: 'regular', tick: '400', label: msg('Regular'), fontWeight: 400 },
+  { value: 'semibold', tick: '600', label: msg('Semibold'), fontWeight: 600 },
+  { value: 'bold', tick: '800', label: msg('Bold'), fontWeight: 800 },
+];
+
+function FooterScaleControl<T extends string>({
   label,
+  steps,
+  value,
+  onChange,
+  stepStyle,
+}: {
+  label: string;
+  steps: { value: T; tick: string; label: string }[];
+  value: T;
+  onChange: (value: T) => void;
+  stepStyle?: (value: T) => CSSProperties;
+}) {
+  const t = useT();
+  const selected = steps.find((step) => step.value === value) ?? steps[0];
+  return (
+    <HeaderSteppedSlider
+      label={label}
+      steps={steps.map((step) => ({ value: step.value, tick: step.tick }))}
+      value={value}
+      currentName={selected ? t(selected.label) : ''}
+      onChange={onChange}
+      stepStyle={stepStyle ? (step) => stepStyle(step.value) : undefined}
+    />
+  );
+}
+
+function FooterAlignmentIcon({ value }: { value: 'left' | 'center' | 'right' }) {
+  const x = value === 'left' ? 3 : value === 'center' ? 9 : 15;
+  const anchor = value === 'left' ? 'start' : value === 'center' ? 'middle' : 'end';
+  const line = (width: number) => (anchor === 'start' ? x : anchor === 'middle' ? x - width / 2 : x - width);
+  return (
+    <svg viewBox="0 0 18 18" className="relative z-[1] h-[18px] w-[18px]" fill="none" aria-hidden>
+      <path d={`M${line(12)} 4.5h12M${line(8)} 9h8M${line(10)} 13.5h10`} stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
+    </svg>
+  );
+}
+
+function FooterAlignmentControl({
   value,
   onChange,
 }: {
-  label: string;
-  value: PortfolioFooterHeaderTitleSize;
-  onChange: (value: PortfolioFooterHeaderTitleSize) => void;
+  value: 'left' | 'center' | 'right';
+  onChange: (value: 'left' | 'center' | 'right') => void;
 }) {
+  const t = useT();
+  const options = [
+    { value: 'left' as const, label: t('Left') },
+    { value: 'center' as const, label: t('Center') },
+    { value: 'right' as const, label: t('Right') },
+  ];
   return (
-    <NpSegmentedControl
-      label={label}
-      options={FOOTER_HEADER_SIZE_PILL_OPTIONS.map((option) => ({
-        value: option.value,
-        label: option.label,
-        sizePx: option.fontPx,
-      }))}
-      value={value}
-      onChange={onChange}
-    />
+    <div>
+      <p className="np-field-label">{t('Alignment')}</p>
+      <div className="np-seg grid-cols-3" role="group" aria-label={t('Alignment')}>
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className="np-seg-btn gap-2"
+            aria-label={option.label}
+            title={option.label}
+            aria-pressed={option.value === value}
+            onClick={() => onChange(option.value)}
+          >
+            <FooterAlignmentIcon value={option.value} />
+            <span className="sr-only">{option.label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+type FooterHeaderSettingKey = keyof PortfolioFooterSectionSettings;
+
+type FooterHeaderElementTarget = {
+  id: string;
+  label: string;
+  text?: {
+    key: FooterHeaderSettingKey;
+    label?: string;
+    placeholder?: string;
+    multiline?: boolean;
+  };
+  color?: {
+    key: FooterHeaderSettingKey;
+    label?: string;
+    fallback?: PortfolioFooterHeaderPaletteToken;
+  };
+  sizeKey?: FooterHeaderSettingKey;
+  weightKey?: FooterHeaderSettingKey;
+  wordStyleKey?: FooterHeaderSettingKey;
+  note?: string;
+};
+
+const FOOTER_HEADER_ELEMENT_TARGETS: Record<Exclude<PortfolioFooterHeaderDesign, 'none'>, FooterHeaderElementTarget[]> = {
+  editorial: [
+    {
+      id: 'title',
+      label: msg('Title'),
+      text: { key: 'headerEditorialTitleText', placeholder: msg("Let's work together."), multiline: true },
+      color: { key: 'headerEditorialTitleColor' },
+    },
+    {
+      id: 'subtitle',
+      label: msg('Subtitle'),
+      text: { key: 'headerEditorialSubtitleText', placeholder: msg('Optional subtitle') },
+    },
+  ],
+  'serif-lead': [
+    {
+      id: 'label',
+      label: msg('Label'),
+      text: { key: 'headerSerifLeadLabelText', placeholder: msg('Contact') },
+      color: { key: 'headerSerifLeadLabelColor' },
+      sizeKey: 'headerSerifLeadLabelSize',
+      weightKey: 'headerSerifLeadLabelWeight',
+    },
+    {
+      id: 'title',
+      label: msg('Title'),
+      text: { key: 'headerSerifLeadTitleText', placeholder: msg('A few ways to start a conversation and say hello.'), multiline: true },
+      color: { key: 'headerSerifLeadTitleColor' },
+      sizeKey: 'headerSerifLeadTitleSize',
+      weightKey: 'headerSerifLeadTitleWeight',
+    },
+    {
+      id: 'subtitle',
+      label: msg('Subtitle'),
+      text: { key: 'headerSerifLeadSubtitleText', placeholder: msg('Reach out — I read every message.'), multiline: true },
+      color: { key: 'headerSerifLeadSubtitleColor' },
+      sizeKey: 'headerSerifLeadSubtitleSize',
+      weightKey: 'headerSerifLeadSubtitleWeight',
+    },
+  ],
+  billboard: [
+    {
+      id: 'word',
+      label: msg('Big word'),
+      text: { key: 'headerBillboardBigWord', placeholder: 'TALK' },
+      color: { key: 'headerBillboardWordColor', label: msg('Word color'), fallback: 'principal' },
+      wordStyleKey: 'headerBillboardWordStyle',
+    },
+  ],
+  index: [
+    {
+      id: 'label',
+      label: msg('Rule label'),
+      text: { key: 'headerIndexLabelText', placeholder: msg('Contact') },
+      color: { key: 'headerIndexLabelColor' },
+      sizeKey: 'headerIndexLabelSize',
+      weightKey: 'headerIndexLabelWeight',
+    },
+    {
+      id: 'number',
+      label: msg('Counter'),
+      color: { key: 'headerIndexNumberColor', label: msg('Number color'), fallback: 'principal' },
+    },
+    {
+      id: 'countLabel',
+      label: msg('Count label'),
+      text: { key: 'headerIndexCountLabelText', placeholder: msg('Links') },
+    },
+    {
+      id: 'title',
+      label: msg('Title'),
+      text: { key: 'headerIndexTitleText', placeholder: msg("Let's talk") },
+      color: { key: 'headerIndexTitleColor' },
+      sizeKey: 'headerIndexTitleSize',
+      weightKey: 'headerIndexTitleWeight',
+    },
+    {
+      id: 'subtitle',
+      label: msg('Subtitle'),
+      text: { key: 'headerIndexSubtitleText', placeholder: msg('Reach out — I read every message.'), multiline: true },
+      color: { key: 'headerIndexSubtitleColor' },
+      sizeKey: 'headerIndexSubtitleSize',
+      weightKey: 'headerIndexSubtitleWeight',
+    },
+  ],
+  masthead: [
+    {
+      id: 'line1',
+      label: msg('Line 1'),
+      text: { key: 'headerMastheadLine1Text', placeholder: msg('Always open.') },
+      color: { key: 'headerMastheadHeadlineColor', label: msg('Headline color'), fallback: 'principal' },
+      sizeKey: 'headerMastheadHeadlineSize',
+      weightKey: 'headerMastheadHeadlineWeight',
+    },
+    {
+      id: 'line2',
+      label: msg('Line 2'),
+      text: { key: 'headerMastheadLine2Text', placeholder: msg('Quick to reply.') },
+      color: { key: 'headerMastheadHeadlineColor', label: msg('Headline color'), fallback: 'principal' },
+      sizeKey: 'headerMastheadHeadlineSize',
+      weightKey: 'headerMastheadHeadlineWeight',
+    },
+    {
+      id: 'line3',
+      label: msg('Line 3'),
+      text: { key: 'headerMastheadLine3Text', placeholder: msg('Easy to reach.') },
+      color: { key: 'headerMastheadHeadlineColor', label: msg('Headline color'), fallback: 'principal' },
+      sizeKey: 'headerMastheadHeadlineSize',
+      weightKey: 'headerMastheadHeadlineWeight',
+    },
+  ],
+  hero: [
+    {
+      id: 'title',
+      label: msg('Title'),
+      text: { key: 'headerHeroTitleText', placeholder: msg("Let's build a space\nthat feels alive."), multiline: true },
+      color: { key: 'headerHeroTitleColor', label: msg('Title & button color') },
+    },
+    {
+      id: 'cta',
+      label: msg('Button'),
+      text: { key: 'headerHeroCtaLabel', label: msg('Button label'), placeholder: msg('Get in touch') },
+      color: { key: 'headerHeroTitleColor', label: msg('Title & button color') },
+    },
+  ],
+  name: [
+    {
+      id: 'name',
+      label: msg('Name'),
+      color: { key: 'headerNameColor', label: msg('Name color') },
+      note: msg('Always shows your creator name — nothing to type here.'),
+    },
+  ],
+  timezone: [
+    {
+      id: 'kicker',
+      label: msg('Kicker'),
+      text: { key: 'headerTimezoneKickerText', placeholder: msg('( Get in touch )') },
+      color: { key: 'headerTimezoneTitleColor', label: msg('Header color') },
+    },
+    {
+      id: 'title',
+      label: msg('Title'),
+      text: { key: 'headerTimezoneTitleText', placeholder: msg("Let's start\na conversation."), multiline: true },
+      color: { key: 'headerTimezoneTitleColor', label: msg('Header color') },
+    },
+    {
+      id: 'description',
+      label: msg('Description'),
+      text: { key: 'headerTimezoneDescriptionText', placeholder: msg('Reach out and tell us about your project — we read every message.'), multiline: true },
+      color: { key: 'headerTimezoneTitleColor', label: msg('Header color') },
+    },
+    {
+      id: 'clock',
+      label: msg('Local time'),
+      note: msg('The local time is generated automatically from your profile data.'),
+    },
+    {
+      id: 'location',
+      label: msg('Location'),
+      note: msg('The location comes from your real profile data.'),
+    },
+  ],
+};
+
+function FooterHeaderElementEditor({
+  design,
+  footer,
+  onChange,
+}: {
+  design: Exclude<PortfolioFooterHeaderDesign, 'none'>;
+  footer: PortfolioFooterSectionSettings;
+  onChange: (patch: Partial<PortfolioFooterSectionSettings>) => void;
+}) {
+  const t = useT();
+  const targets = FOOTER_HEADER_ELEMENT_TARGETS[design];
+  const preferred = targets.find((item) => item.id === 'title') ?? targets[0];
+  const [activeElement, setActiveElement] = useState(preferred.id);
+  const target = targets.find((item) => item.id === activeElement) ?? preferred;
+  const visibilityDesign = `footer-${design}`;
+  const visible = headerElementVisibility(footer.headerHiddenElements, visibilityDesign)(target.id);
+  const settings = footer as unknown as Record<string, unknown>;
+  const updateSetting = (key: FooterHeaderSettingKey, value: unknown) =>
+    onChange({ [key]: value } as Partial<PortfolioFooterSectionSettings>);
+  const selectorStyle: CSSProperties =
+    targets.length > 3
+      ? { gridAutoFlow: 'column', gridAutoColumns: 'minmax(96px, max-content)' }
+      : { gridTemplateColumns: `repeat(${targets.length}, minmax(0, 1fr))` };
+
+  return (
+    <div className="flex flex-col gap-[30px]">
+      {targets.length > 1 ? (
+        <div
+          role="group"
+          aria-label={t('Header element')}
+          className={`np-seg ${targets.length > 3 ? 'overflow-x-auto' : ''}`}
+          style={selectorStyle}
+        >
+          {targets.map((item) => (
+            <button
+              key={item.id}
+              type="button"
+              aria-pressed={item.id === target.id}
+              className="np-seg-btn"
+              onClick={() => setActiveElement(item.id)}
+            >
+              <span className="relative z-[1] truncate">{t(item.label)}</span>
+            </button>
+          ))}
+        </div>
+      ) : null}
+
+      <NpToggleRow
+        title={t('Visible')}
+        checked={visible}
+        onChange={(next) =>
+          onChange({
+            headerHiddenElements: toggleHeaderElement(
+              footer.headerHiddenElements,
+              visibilityDesign,
+              target.id,
+              next
+            ),
+          })
+        }
+      />
+
+      <div className={visible ? 'flex flex-col gap-[30px]' : 'pointer-events-none opacity-40'} aria-disabled={!visible}>
+        {target.note ? <p className="np-subtle">{t(target.note)}</p> : null}
+        {target.text ? (
+          <FooterHeaderTextField
+            label={t(target.text.label ?? target.label)}
+            value={String(settings[target.text.key] ?? '')}
+            placeholder={target.text.placeholder ? t(target.text.placeholder) : undefined}
+            multiline={target.text.multiline}
+            onChange={(value) => updateSetting(target.text!.key, value)}
+          />
+        ) : null}
+        {target.wordStyleKey ? (
+          <FooterOptionGrid
+            label={t('Word style')}
+            options={FOOTER_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({ value: option.value, label: option.label }))}
+            value={(settings[target.wordStyleKey] ?? 'outline') as PortfolioFooterHeaderBillboardWordStyle}
+            onChange={(value) => updateSetting(target.wordStyleKey!, value)}
+          />
+        ) : null}
+        {target.color ? (
+          <FooterHeaderPaletteSwatches
+            label={t(target.color.label ?? 'Color')}
+            value={(settings[target.color.key] ?? target.color.fallback ?? 'texteFort') as PortfolioFooterHeaderPaletteToken}
+            onChange={(value) => updateSetting(target.color!.key, value)}
+          />
+        ) : null}
+        {target.sizeKey ? (
+          <FooterScaleControl
+            label={t('Size')}
+            steps={FOOTER_HEADER_SIZE_STEPS}
+            value={(settings[target.sizeKey] ?? 'md') as PortfolioFooterHeaderTitleSize}
+            onChange={(value) => updateSetting(target.sizeKey!, value)}
+          />
+        ) : null}
+        {target.weightKey ? (
+          <FooterScaleControl
+            label={t('Weight')}
+            steps={FOOTER_HEADER_WEIGHT_STEPS}
+            value={(settings[target.weightKey] ?? 'regular') as PortfolioFooterHeaderTitleWeight}
+            onChange={(value) => updateSetting(target.weightKey!, value)}
+            stepStyle={(step) => ({
+              fontWeight: FOOTER_HEADER_WEIGHT_STEPS.find((item) => item.value === step)?.fontWeight,
+            })}
+          />
+        ) : null}
+      </div>
+    </div>
   );
 }
 
@@ -423,30 +647,17 @@ function FooterHeaderPaletteSwatches({
   value: PortfolioFooterHeaderPaletteToken;
   onChange: (value: PortfolioFooterHeaderPaletteToken) => void;
 }) {
-  const t = useT();
-  const id = useId();
-  return (
-    <div className="np-field">
-      <FooterGroupLabel id={id}>{label}</FooterGroupLabel>
-      <div role="group" aria-labelledby={id} className="np-chips">
-        {FOOTER_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={option.value === value}
-            onClick={() => onChange(option.value)}
-            className="np-chip"
-          >
-            <span
-              aria-hidden
-              className="h-3 w-3 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15)]"
-              style={{ backgroundColor: footerHeaderPaletteTokenColor(option.value) }}
-            />
-            {t(option.label)}
-          </button>
-        ))}
-      </div>
-    </div>
+      return (
+    <ColorSwatchRow
+      label={label}
+      options={FOOTER_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+        color: footerHeaderPaletteTokenColor(option.value),
+      }))}
+      value={value}
+      onChange={(next) => onChange(next as PortfolioFooterHeaderPaletteToken)}
+    />
   );
 }
 
@@ -487,124 +698,42 @@ function FooterHeaderTextField({
   );
 }
 
-function FooterHeaderMiniWireframe({ design }: { design: PortfolioFooterHeaderDesign }) {
-  return (
-    <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
-      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
-      {design === 'none' ? (
-        <rect className="pf-stack-mini-mute" x="44" y="34" width="32" height="2.5" rx="1.25" opacity={0.5} />
-      ) : design === 'billboard' ? (
-        <>
-          <rect className="pf-stack-mini-mute" x="4" y="10" width="112" height="24" rx="2" opacity={0.35} />
-          <rect className="pf-stack-mini-ink" x="8" y="46" width="50" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="8" y="58" width="30" height="2.5" rx="1.25" />
-        </>
-      ) : design === 'masthead' ? (
-        <>
-          <rect className="pf-stack-mini-ink" x="8" y="12" width="90" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="70" height="10" rx="2" opacity={0.6} />
-          <rect className="pf-stack-mini-ink" x="8" y="40" width="80" height="10" rx="2" opacity={0.3} />
-        </>
-      ) : design === 'index' ? (
-        <>
-          <rect className="pf-stack-mini-mute" x="8" y="14" width="104" height="1.5" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="22" height="18" rx="2" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="40" y="26" width="1.5" height="18" />
-          <rect className="pf-stack-mini-ink" x="50" y="28" width="60" height="8" rx="2" />
-        </>
-      ) : design === 'serif-lead' ? (
-        <>
-          <rect className="pf-stack-mini-mute" x="8" y="14" width="24" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="100" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="40" width="70" height="10" rx="2" opacity={0.5} />
-        </>
-      ) : design === 'hero' ? (
-        <>
-          <rect className="pf-stack-mini-ink" x="22" y="14" width="76" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="30" y="28" width="60" height="10" rx="2" opacity={0.7} />
-          <rect className="pf-stack-mini-accent" x="42" y="48" width="36" height="10" rx="5" />
-        </>
-      ) : design === 'name' ? (
-        <>
-          <rect className="pf-stack-mini-ink" x="4" y="24" width="112" height="24" rx="2" />
-        </>
-      ) : design === 'timezone' ? (
-        <>
-          <rect className="pf-stack-mini-mute" x="8" y="12" width="18" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="8" y="20" width="44" height="8" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="30" width="36" height="8" rx="2" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="8" y="42" width="30" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="86" y="12" width="24" height="6" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="92" y="20" width="18" height="2.5" rx="1.25" />
-        </>
-      ) : (
-        <>
-          <rect className="pf-stack-mini-ink" x="8" y="16" width="104" height="12" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="34" width="70" height="12" rx="2" opacity={0.55} />
-          <rect className="pf-stack-mini-mute" x="8" y="54" width="46" height="2.5" rx="1.25" />
-        </>
-      )}
-    </svg>
-  );
+function FooterHeaderMiniWireframe({design}:{design:PortfolioFooterHeaderDesign}){
+ return <StackPreviewSkeleton section="footer"><FooterHeaderSkeleton design={design} compact/></StackPreviewSkeleton>;
 }
 
 /** Same picker as Section design; `open` is owned by the panel so the header's settings hide while
  *  the catalogue is browsed. */
-function FooterHeaderDesignGrid({
-  value,
-  onChange,
-  open,
-  onOpenChange,
-}: {
-  value: PortfolioFooterHeaderDesign;
-  onChange: (value: PortfolioFooterHeaderDesign) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selected =
-    PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS[0];
-
-  if (!open) {
-    return (
-      <NpPickerRow
-        label={t('Header design')}
-        value={t(selected.label)}
-        onClick={() => onOpenChange(true)}
-        thumbnail={
-          <FooterWireThumb framed={false}>
-            <FooterHeaderMiniWireframe design={value} />
-          </FooterWireThumb>
-        }
-      />
-    );
-  }
-
-  return (
-    <div>
-      <NpBackRow title={t('Header design')} onBack={() => onOpenChange(false)} />
-      <div className="grid grid-cols-2 gap-3">
-        {PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.map((option) => (
-          <NpOptionCard
-            key={option.value}
-            selected={option.value === value}
-            title={t(option.label)}
-            illustration={
-              <FooterWireThumb>
-                <FooterHeaderMiniWireframe design={option.value} />
-              </FooterWireThumb>
-            }
-            onClick={() => {
-              onChange(option.value);
-              onOpenChange(false);
-            }}
-          />
-        ))}
-      </div>
-    </div>
-  );
+function FooterHeaderDesignGrid({value,onChange,open,onOpenChange}:{value:PortfolioFooterHeaderDesign;onChange:(value:PortfolioFooterHeaderDesign)=>void;open:boolean;onOpenChange:(open:boolean)=>void}){
+ const t=useT();
+ const previewSource=usePortfolioDesignPreviewSource();
+ const theme=useThumbnailTheme('footer');
+ const selected=PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.find(option=>option.value===value)??PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS[0];
+ if(!open)return <NpBackRow title={t(selected.label)} onBack={()=>onOpenChange(true)}/>;
+ return <div className="flex flex-col gap-8" aria-label={t('Choose a header')}>
+  {PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.map(option=>{
+   if(option.value==='none')return <button
+    key={option.value}
+    type="button"
+    aria-pressed={value===option.value}
+    onClick={()=>onChange(option.value)}
+    className="flex min-h-12 w-full items-center rounded-xl border px-4 text-left text-sm font-medium transition-colors hover:bg-neutral-500/5 focus-visible:outline-2 focus-visible:outline-offset-2"
+    style={{borderColor:value===option.value?'var(--pf-palette-principal,#f97316)':'color-mix(in srgb,currentColor 18%,transparent)'}}
+   >{t(option.label)}</button>;
+   return <DesignCatalogueCard
+    key={option.value}
+    label={t(option.label)}
+    selected={value===option.value}
+    previewBackground={theme.background}
+    onSelect={()=>onChange(option.value)}
+    onCustomize={()=>{if(value!==option.value)onChange(option.value);onOpenChange(false);}}
+   >
+    <span className="relative block aspect-[3/1] w-full" style={{backgroundColor:theme.background}}>{previewSource?<PortfolioDesignLivePreview src={withDesignPreview(previewSource.portfolioPath,{section:'footerHeader',design:option.value})+'&previewRevision=footer-header-compact-v3'} settings={previewSource.settings} fill loadMargin="48px 0px" skeleton={<FooterHeaderMiniWireframe design={option.value}/>} animateSkeleton={false} backgroundColor={theme.background}/>:<FooterHeaderMiniWireframe design={option.value}/>}</span>
+   </DesignCatalogueCard>;
+  })}
+ </div>;
 }
+
 
 /** Free colour: round swatch (native picker), name, editable hex. */
 function FooterManualColorField({
@@ -653,9 +782,7 @@ function FooterColorField({
   label: string;
   value: string;
 }) {
-  const t = useT();
-  const id = useId();
-  if (footer.useHeroPalette === false) {
+    if (footer.useHeroPalette === false) {
     return (
       <FooterManualColorField
         label={label}
@@ -668,32 +795,19 @@ function FooterColorField({
   const palette = mergeFooterPalette(DEFAULT_FOOTER_PALETTE, footer.footerPalette);
   const bindings = mergeFooterColorBindings(DEFAULT_FOOTER_COLOR_BINDINGS, footer.footerColorBindings);
   const token = bindings[slot];
-  const resolved = resolveHeroPaletteColor(palette, token);
-
-  return (
-    <div className="np-field">
-      <label htmlFor={id} className="np-field-label">
-        {label}
-      </label>
-      <div className="flex items-center gap-3">
-        <span className="np-swatch-dot" style={{ backgroundColor: resolved }} title={resolved} aria-hidden />
-        <select
-          id={id}
-          value={token}
-          onChange={(event) =>
-            onChange(asFooterPatch(patchFooterColorBinding(footer, slot, event.target.value as HeroPaletteTokenId)))
-          }
-          className="np-input min-w-0 flex-1"
-          aria-label={t('{label} palette token', { label })}
-        >
-          {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
-            <option key={option.value} value={option.value}>
-              {t(option.label)}
-            </option>
-          ))}
-        </select>
-      </div>
-    </div>
+    return (
+    <ColorSwatchRow
+      label={label}
+      options={PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+        color: resolveHeroPaletteColor(palette, option.value),
+      }))}
+      value={token}
+      onChange={(next) =>
+        onChange(asFooterPatch(patchFooterColorBinding(footer, slot, next as HeroPaletteTokenId)))
+      }
+    />
   );
 }
 
@@ -723,12 +837,14 @@ function FooterSectionLinksPicker({
   options: PortfolioFooterSectionLinkOption[];
   onChange: FooterLayoutPatch;
 }) {
-  const t = useT();
   const id = useId();
-  const selected = new Set(resolveFooterSelectedSectionIds(footer, footer.design));
+  const t = useT();
+    const selected = new Set(resolveFooterSelectedSectionIds(footer, footer.design));
   const selectedCount = options.filter((option) => selected.has(option.id)).length;
+  const customLinks = footerCustomLinks(footer, footer.design);
+  const canAddLinks = footerDesignAcceptsCustomLinks(footer.design);
 
-  if (options.length === 0) {
+  if (options.length === 0 && !canAddLinks) {
     return <p className="np-note">{t('Visible sections will appear here.')}</p>;
   }
 
@@ -757,6 +873,132 @@ function FooterSectionLinksPicker({
             </button>
           );
         })}
+        {customLinks.map((link) => (
+          <span key={link.id} className="np-chip inline-flex items-center gap-1.5" aria-pressed="true" title={link.href}>
+            {link.label}
+            <button
+              type="button"
+              aria-label={t('Remove {label}', { label: link.label })}
+              onClick={() => onChange(patchFooterCustomLinks(footer, footer.design, customLinks.filter((item) => item.id !== link.id)))}
+              className="-mr-1 inline-flex h-4 w-4 items-center justify-center rounded-full opacity-70 transition hover:opacity-100"
+            >
+              <svg viewBox="0 0 12 12" className="h-2.5 w-2.5" fill="none" aria-hidden>
+                <path d="M2.5 2.5l7 7M9.5 2.5l-7 7" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" />
+              </svg>
+            </button>
+          </span>
+        ))}
+      </div>
+      {canAddLinks ? <FooterCustomLinkForm footer={footer} links={customLinks} onChange={onChange} /> : null}
+    </div>
+  );
+}
+
+const FOOTER_CUSTOM_LINKS_MAX = 6;
+const FOOTER_CUSTOM_LABEL_MAX = 30;
+
+/** A typed address as a safe href: http(s), mailto, tel, a path or an anchor; a bare domain gets https://. */
+function normalizeFooterCustomHref(raw: string): string | null {
+  const value = raw.trim();
+  if (!value || value.length > 500 || /\s/.test(value)) return null;
+  if (/^(https?:\/\/|mailto:|tel:|\/|#)/i.test(value)) return value;
+  if (/^[a-z][a-z0-9+.-]*:/i.test(value)) return null;
+  return /^[^.\s]+\.[^.\s]+/.test(value) ? `https://${value}` : null;
+}
+
+/** Add a link of your own next to the section chips: a label and where it points. */
+function FooterCustomLinkForm({
+  footer,
+  links,
+  onChange,
+}: {
+  footer: PortfolioFooterSectionSettings;
+  links: PortfolioFooterLinkItem[];
+  onChange: FooterLayoutPatch;
+}) {
+  const count = links.length;
+  const t = useT();
+  const [open, setOpen] = useState(false);
+  const [label, setLabel] = useState('');
+  const [url, setUrl] = useState('');
+  const [error, setError] = useState<string | null>(null);
+
+  if (count >= FOOTER_CUSTOM_LINKS_MAX) {
+    return <p className="np-note mt-3">{t('You can add up to {max} links of your own.', { max: FOOTER_CUSTOM_LINKS_MAX })}</p>;
+  }
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} className="np-chip mt-3" aria-expanded={false}>
+        + {t('Add your own link')}
+      </button>
+    );
+  }
+
+  const submit = () => {
+    const trimmed = label.trim();
+    const href = normalizeFooterCustomHref(url);
+    if (!trimmed) return setError(t('Give the link a name.'));
+    if (!href) return setError(t('Enter a valid address, like example.com or https://…'));
+    const link = {
+      id: `link-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`,
+      label: trimmed,
+      href,
+    };
+    onChange(patchFooterCustomLinks(footer, footer.design, [...links, link]));
+    setLabel('');
+    setUrl('');
+    setError(null);
+    setOpen(false);
+  };
+
+  return (
+    <div className="mt-4 flex flex-col gap-3">
+      <div>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="np-field-label !mb-1">{t('Link name')}</p>
+          <span className="text-xs tabular-nums text-[color:var(--pf-palette-texte-muted)]">
+            {label.length}/{FOOTER_CUSTOM_LABEL_MAX}
+          </span>
+        </div>
+        <input
+          type="text"
+          value={label}
+          maxLength={FOOTER_CUSTOM_LABEL_MAX}
+          placeholder={t('Blog')}
+          aria-label={t('Link name')}
+          onChange={(event) => setLabel(event.target.value)}
+          className="np-input"
+        />
+      </div>
+      <div>
+        <p className="np-field-label !mb-1">{t('Link address')}</p>
+        <input
+          type="text"
+          value={url}
+          placeholder="example.com"
+          aria-label={t('Link address')}
+          onChange={(event) => setUrl(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') submit();
+          }}
+          className="np-input"
+        />
+      </div>
+      {error ? <p className="text-xs text-red-600">{error}</p> : null}
+      <div className="flex gap-2">
+        <button type="button" onClick={submit} className="np-chip" aria-pressed="true">
+          {t('Add link')}
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            setOpen(false);
+            setError(null);
+          }}
+          className="np-chip"
+        >
+          {t('Cancel')}
+        </button>
       </div>
     </div>
   );
@@ -788,7 +1030,21 @@ function FooterLayoutTextField({
           onChange={(checked) => onChange(patchFooterLayoutElement(footer, design, spec.key, { visible: checked }))}
         />
       ) : (
-        <p className="np-field-label !mb-1">{t(spec.label)}</p>
+        <div className="flex items-baseline justify-between gap-3">
+          <p className="np-field-label !mb-1">{t(spec.label)}</p>
+          {spec.maxLength ? (
+            <span
+              aria-live="polite"
+              className={`text-xs tabular-nums ${
+                value.length >= spec.maxLength
+                  ? 'font-semibold text-[color:var(--pf-palette-texte-fort)]'
+                  : 'text-[color:var(--pf-palette-texte-muted)]'
+              }`}
+            >
+              {value.length}/{spec.maxLength}
+            </span>
+          ) : null}
+        </div>
       )}
       {visible ? (
         spec.multiline ? (
@@ -806,6 +1062,7 @@ function FooterLayoutTextField({
             value={value}
             placeholder={placeholder}
             aria-label={t(spec.label)}
+            maxLength={spec.maxLength}
             onChange={(event) => setText(event.target.value)}
             className="np-input"
           />
@@ -846,15 +1103,28 @@ function FooterLayoutBioField({
             onChange={(next) => onChange(patchFooterLayoutElement(footer, design, spec.key, { source: next }))}
           />
           {source === 'custom' ? (
-            <textarea
-              value={resolveFooterLayoutBioCustom(footer, design, spec.key)}
-              rows={3}
-              aria-label={`${spec.label} text`}
-              onChange={(event) =>
-                onChange(patchFooterLayoutElement(footer, design, spec.key, { text: event.target.value }))
-              }
-              className="np-input"
-            />
+            <>
+              <textarea
+                value={resolveFooterLayoutBioCustom(footer, design, spec.key)}
+                rows={3}
+                maxLength={FOOTER_BIO_CUSTOM_MAX}
+                aria-label={`${spec.label} text`}
+                onChange={(event) =>
+                  onChange(patchFooterLayoutElement(footer, design, spec.key, { text: event.target.value }))
+                }
+                className="np-input"
+              />
+              <span
+                aria-live="polite"
+                className={`self-end text-xs tabular-nums ${
+                  resolveFooterLayoutBioCustom(footer, design, spec.key).length >= FOOTER_BIO_CUSTOM_MAX
+                    ? 'font-semibold text-[color:var(--pf-palette-texte-fort)]'
+                    : 'text-[color:var(--pf-palette-texte-muted)]'
+                }`}
+              >
+                {resolveFooterLayoutBioCustom(footer, design, spec.key).length}/{FOOTER_BIO_CUSTOM_MAX}
+              </span>
+            </>
           ) : null}
         </>
       ) : null}
@@ -874,30 +1144,13 @@ function FooterSwatchChips<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
-  const t = useT();
-  const id = useId();
-  return (
-    <div className="np-field">
-      <FooterGroupLabel id={id}>{label}</FooterGroupLabel>
-      <div role="group" aria-labelledby={id} className="np-chips">
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            aria-pressed={option.value === value}
-            onClick={() => onChange(option.value)}
-            className="np-chip"
-          >
-            <span
-              aria-hidden
-              className="h-3 w-3 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15)]"
-              style={{ backgroundColor: option.color }}
-            />
-            {t(option.label)}
-          </button>
-        ))}
-      </div>
-    </div>
+    return (
+    <ColorSwatchRow
+      label={label}
+      options={options}
+      value={value}
+      onChange={(next) => onChange(next as T)}
+    />
   );
 }
 
@@ -1119,31 +1372,53 @@ function FooterContactCardColorField({
 function FooterLayoutSettingsSections({
   footer,
   sectionLinkOptions,
+  profileAvatarUrl,
   onChange,
 }: {
   footer: PortfolioFooterSectionSettings;
   sectionLinkOptions: PortfolioFooterSectionLinkOption[];
+  profileAvatarUrl?: string | null;
   onChange: FooterLayoutPatch;
 }) {
   const t = useT();
   const spec = FOOTER_DESIGN_LAYOUT_SPECS[footer.design];
   if (!spec) return null;
-  // "Identity" (name/avatar/portrait/bio/watermark show-hide + style) is intentionally not
-  // surfaced here — identity content is configured once in the account's own General/profile
-  // settings, so exposing a second per-design override for it in Layout settings was redundant.
-  // Elements still render at their spec default (`defaultVisible`/`defaultText`/`defaultValue`);
-  // only the ability to override them per Footer design from this panel was removed.
-  const elements = spec.elements.filter(
-    (element) => element.group !== 'identity' && (!element.showWhen || element.showWhen(footer))
-  );
+  const elements = spec.elements.filter((element) => !element.showWhen || element.showWhen(footer));
+  const identity = elements.filter((element) => element.group === 'identity');
   // The giant decorative name (Inverted wordmark, Monumental / Timezone watermark) is styling, not
   // identity — it keeps its own group so hiding Identity doesn't take these controls with it.
   const wordmark = elements.filter((element) => element.group === 'wordmark');
   const text = elements.filter((element) => element.group === 'text');
   const headings = elements.filter((element) => element.group === 'labels');
+  const photoVisibilityKey: Partial<Record<PortfolioFooterDesign, string>> = {
+    landing: 'avatar',
+    minimal: 'avatar',
+    'hero-columns': 'portrait',
+    'split-form': 'portrait',
+    'timezone-editorial': 'avatar',
+    'editorial-grid': 'avatar',
+  };
+  const photoKey = photoVisibilityKey[footer.design];
+  const showsPhotoControl =
+    footer.design === 'centered-minimal'
+      ? footer.centeredIdentity === 'avatar' && resolveFooterLayoutVisible(footer, footer.design, 'identity')
+      : Boolean(photoKey && resolveFooterLayoutVisible(footer, footer.design, photoKey));
 
   return (
     <Fragment key={footer.design}>
+      {identity.length > 0 ? (
+        <FooterLayoutGroup title={t('Identity')} elements={identity} footer={footer} onChange={onChange} />
+      ) : null}
+      {showsPhotoControl ? (
+        <NpCollapsibleSection title={t('Photo')}>
+          <PortfolioSettingsPhotoField
+            label={t('Photo')}
+            photoUrl={footer.photoUrl ?? ''}
+            profileAvatarUrl={profileAvatarUrl ?? null}
+            onChange={(photoUrl) => onChange({ photoUrl })}
+          />
+        </NpCollapsibleSection>
+      ) : null}
       {spec.sectionLinks ? (
         <NpCollapsibleSection title={t('Section links')}>
           <FooterSectionLinksPicker footer={footer} options={sectionLinkOptions} onChange={onChange} />
@@ -1214,11 +1489,11 @@ function FooterHiddenNotice({ onEnable }: { onEnable: () => void }) {
 }
 
 const FOOTER_SPACING_OPTIONS = [
-  { value: 'none' as const, label: msg('None') },
-  { value: 'sm' as const, label: msg('Small') },
-  { value: 'md' as const, label: msg('Medium') },
-  { value: 'lg' as const, label: msg('Large') },
-  { value: 'xl' as const, label: 'XL' },
+  { value: 'none' as const, tick: '0', label: msg('None') },
+  { value: 'sm' as const, tick: 'S', label: msg('Small') },
+  { value: 'md' as const, tick: 'M', label: msg('Medium') },
+  { value: 'lg' as const, tick: 'L', label: msg('Large') },
+  { value: 'xl' as const, tick: 'XL', label: msg('Extra large') },
 ];
 
 /** What "Reset" restores and what the header's status compares against. */
@@ -1267,12 +1542,22 @@ export function FooterSettingsPanel({
   chrome?: NpPanelChrome;
 }) {
   const t = useT();
-  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
-  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
+  const backgroundTheme = useThumbnailTheme('footer');
+  const backgroundPalette = footer.lockPaletteAcrossColorModes ? mergeFooterPalette(DEFAULT_FOOTER_PALETTE, footer.footerPalette) : backgroundTheme.palette;
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(true);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(true);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FooterSubSection>('general');
   const subSection = normalizeFooterSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const [previousSubSection, setPreviousSubSection] = useState(subSection);
+  if(previousSubSection !== subSection){
+    setPreviousSubSection(subSection);
+    if(subSection === 'design')setDesignCatalogOpen(true);
+    if(subSection === 'header')setHeaderCatalogOpen(true);
+  }
   const setSubSection = (value: FooterSubSection) => {
     const next = normalizeFooterSubSection(value);
+    if(next === 'design')setDesignCatalogOpen(true);
+    if(next === 'header')setHeaderCatalogOpen(true);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
@@ -1283,7 +1568,6 @@ export function FooterSettingsPanel({
   const miniBarOn = footer.showMiniBar === true;
   const headerDesign = footer.headerDesign ?? 'editorial';
   const headerTitleStyle = FOOTER_HEADER_TITLE_STYLE[headerDesign];
-  const showBottomLine = designShows.copyright || designShows.marketplace || miniBarOn;
 
   return (
     <NpPanelShell
@@ -1300,49 +1584,56 @@ export function FooterSettingsPanel({
           <NpToggleRow
             card
             title={t('Show footer')}
-            description={enabled ? t('Contact details at the bottom of the page') : t('The page ends with its last section.')}
             checked={enabled}
             onChange={(next) => onChange({ enabled: next })}
           />
+          <div className="pb-6"><NpSegmentedControl hideLabel
+                label={t('Color mode')}
+                options={PORTFOLIO_SECTION_COLOR_MODE_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
+                value={footer.colorModeOverride}
+                onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+              /></div>
 
           <div className="np-dimmable" data-disabled={enabled ? 'false' : 'true'} aria-disabled={!enabled} inert={!enabled}>
-            <NpCollapsibleSection title={t('Contact details')}>
-              <div className="flex flex-col">
-                <NpToggleRow title={t('Email')} checked={footer.showEmail !== false} onChange={(showEmail) => onChange({ showEmail })} />
-                <NpToggleRow title={t('Phone')} checked={footer.showPhone !== false} onChange={(showPhone) => onChange({ showPhone })} />
-                {designShows.location || miniBarOn ? (
-                  <NpToggleRow
-                    title={t('Location')}
-                    checked={footer.showLocation !== false}
-                    onChange={(showLocation) => onChange({ showLocation })}
-                  />
-                ) : null}
-                {designShows.hours || miniBarOn ? (
-                  <NpToggleRow title={t('Hours')} checked={footer.showHours !== false} onChange={(showHours) => onChange({ showHours })} />
-                ) : null}
-              </div>
+            <NpCollapsibleSection title={t('Content shown')}>
+              <NpToggleRow title={t('Email')} checked={footer.showEmail !== false} onChange={(showEmail) => onChange({ showEmail })} />
+              <NpToggleRow title={t('Phone')} checked={footer.showPhone !== false} onChange={(showPhone) => onChange({ showPhone })} />
+              {designShows.location || miniBarOn ? (
+                <NpToggleRow title={t('Location')} checked={footer.showLocation !== false} onChange={(showLocation) => onChange({ showLocation })} />
+              ) : null}
+              {designShows.hours || miniBarOn ? (
+                <NpToggleRow title={t('Hours')} checked={footer.showHours !== false} onChange={(showHours) => onChange({ showHours })} />
+              ) : null}
+              {designShows.copyright || miniBarOn ? (
+                <NpToggleRow title={t('Copyright')} checked={footer.showCopyright !== false} onChange={(showCopyright) => onChange({ showCopyright })} />
+              ) : null}
+              {designShows.marketplace ? (
+                <NpToggleRow title={t('Marketplace link')} checked={footer.showMarketplaceLink === true} onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })} />
+              ) : null}
             </NpCollapsibleSection>
 
-            {showBottomLine ? (
-              <NpCollapsibleSection title={t('Bottom line')}>
-                <div className="flex flex-col">
-                  {designShows.copyright || miniBarOn ? (
-                    <NpToggleRow
-                      title={t('Copyright')}
-                      checked={footer.showCopyright !== false}
-                      onChange={(showCopyright) => onChange({ showCopyright })}
-                    />
-                  ) : null}
-                  {designShows.marketplace ? (
-                    <NpToggleRow
-                      title={t('Marketplace link')}
-                      checked={footer.showMarketplaceLink === true}
-                      onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
-                    />
-                  ) : null}
-                </div>
-              </NpCollapsibleSection>
-            ) : null}
+            <NpCollapsibleSection title={t('Style')}>
+              
+              <TextSizeSlider
+                label={t('Text size')}
+                options={PORTFOLIO_FOOTER_PREMIUM_FONT_SIZE_OPTIONS}
+                value={footer.premiumFontSize ?? 'medium'}
+                onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+              />
+            </NpCollapsibleSection>
+
+            <NpCollapsibleSection title={t('Mini bottom bar')}>
+              <NpToggleRow
+                title={t('Show mini bottom bar')}
+                description={t('An independent, edge-to-edge bar below the Footer — works with every design.')}
+                checked={miniBarOn}
+                onChange={(showMiniBar) => onChange({ showMiniBar })}
+              />
+              {miniBarOn ? (
+                <FooterMiniBarDesignGrid value={footer.miniBarDesign} onChange={(miniBarDesign) => onChange({ miniBarDesign })} />
+              ) : null}
+            </NpCollapsibleSection>
+
           </div>
         </div>
       ) : null}
@@ -1360,38 +1651,19 @@ export function FooterSettingsPanel({
           />
         ) : (
           <div className="np-stack">
-            <NpCollapsibleSection title={t('Layout')}>
               <FooterDesignChoiceGrid
                 showGrid={false}
                 setShowGrid={setDesignCatalogOpen}
                 value={footer.design}
                 onChange={(design) => onChange(footerDesignPatch(design, footer))}
               />
-            </NpCollapsibleSection>
-
-            <NpCollapsibleSection title={t('Style')}>
-              <NpSegmentedControl
-                label={t('Color mode')}
-                options={PORTFOLIO_SECTION_COLOR_MODE_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
-                value={footer.colorModeOverride}
-                onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-              />
-              <FooterOptionGrid
-                label={t('Text size')}
-                options={PORTFOLIO_FOOTER_PREMIUM_FONT_SIZE_OPTIONS}
-                value={footer.premiumFontSize ?? 'medium'}
-                onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-              />
-              <PortfolioSettingsPhotoField
-                label={t('Photo')}
-                photoUrl={footer.photoUrl ?? ''}
-                profileAvatarUrl={profileAvatarUrl}
-                onChange={(photoUrl) => onChange({ photoUrl })}
-              />
-            </NpCollapsibleSection>
-
             <FooterContactLinkOptionsContext.Provider value={contactLinkOptions}>
-              <FooterLayoutSettingsSections footer={footer} sectionLinkOptions={sectionLinkOptions} onChange={onChange} />
+              <FooterLayoutSettingsSections
+                footer={footer}
+                sectionLinkOptions={sectionLinkOptions}
+                profileAvatarUrl={profileAvatarUrl}
+                onChange={onChange}
+              />
             </FooterContactLinkOptionsContext.Provider>
 
             {footer.design === 'contact-card' ? (
@@ -1400,24 +1672,13 @@ export function FooterSettingsPanel({
               </NpCollapsibleSection>
             ) : null}
 
-            <NpCollapsibleSection title={t('Mini bottom bar')}>
-              <NpToggleRow
-                title={t('Show mini bottom bar')}
-                description={t('An independent, edge-to-edge bar below the Footer — works with every design.')}
-                checked={miniBarOn}
-                onChange={(showMiniBar) => onChange({ showMiniBar })}
-              />
-              {miniBarOn ? (
-                <FooterMiniBarDesignGrid value={footer.miniBarDesign} onChange={(miniBarDesign) => onChange({ miniBarDesign })} />
-              ) : null}
-            </NpCollapsibleSection>
           </div>
         )
       ) : null}
 
       {subSection === 'header' && enabled ? (
         <div className="np-stack">
-          <NpCollapsibleSection title={t('Header design')}>
+          <div className="np-stack">
             <FooterHeaderDesignGrid
               value={headerDesign}
               onChange={(next) => onChange({ headerDesign: next })}
@@ -1429,49 +1690,37 @@ export function FooterSettingsPanel({
                 {t('No header is shown above the footer — the section’s own layout starts right away.')}
               </p>
             ) : null}
-          </NpCollapsibleSection>
+          </div>
 
           {/* Browsing the catalogue is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen || headerDesign === 'none' ? null : (
             <Fragment key={headerDesign}>
               <NpCollapsibleSection title={t('Content')}>
-                <HeaderElementToggles
-                  design={`footer-${headerDesign}`}
-                  settings={footer}
-                  onPatch={(patch) => onChange(patch as Partial<PortfolioFooterSectionSettings>)}
-                />
-                <FooterHeaderContentFields footer={footer} onChange={onChange} />
+                <FooterHeaderElementEditor design={headerDesign} footer={footer} onChange={onChange} />
               </NpCollapsibleSection>
 
               {headerTitleStyle ? (
                 <NpCollapsibleSection title={t('Title style')}>
-                  <FooterOptionGrid
-                    label={t('Alignment')}
-                    options={[
-                      { value: 'left' as const, label: msg('Left') },
-                      { value: 'center' as const, label: msg('Center') },
-                      { value: 'right' as const, label: msg('Right') },
-                    ]}
+                  <FooterAlignmentControl
                     value={footer.headerDesignAlignment ?? 'left'}
                     onChange={(headerDesignAlignment) => onChange({ headerDesignAlignment })}
                   />
                   {headerTitleStyle.sizeAndWeight ? (
                     <>
-                      <FooterHeaderSizePill
+                      <FooterScaleControl
                         label={t('Title size')}
+                        steps={FOOTER_HEADER_SIZE_STEPS}
                         value={footer.headerTitleSize ?? 'xl'}
                         onChange={(headerTitleSize) => onChange({ headerTitleSize })}
                       />
-                      <FooterOptionGrid
+                      <FooterScaleControl
                         label={t('Title weight')}
-                        options={[
-                          { value: 'light' as const, label: msg('Light') },
-                          { value: 'regular' as const, label: msg('Regular') },
-                          { value: 'semibold' as const, label: msg('Semibold') },
-                          { value: 'bold' as const, label: msg('Bold') },
-                        ]}
+                        steps={FOOTER_HEADER_WEIGHT_STEPS}
                         value={footer.headerTitleWeight ?? 'bold'}
                         onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
+                        stepStyle={(step) => ({
+                          fontWeight: FOOTER_HEADER_WEIGHT_STEPS.find((item) => item.value === step)?.fontWeight,
+                        })}
                       />
                     </>
                   ) : null}
@@ -1480,21 +1729,21 @@ export function FooterSettingsPanel({
 
               {/* Rarely touched: folded, like Global's Preferences. */}
               <NpCollapsibleSection title={t('Spacing')} defaultOpen={false}>
-                <FooterOptionGrid
+                <FooterScaleControl
                   label={t('Space above the title')}
-                  options={FOOTER_SPACING_OPTIONS}
+                  steps={FOOTER_SPACING_OPTIONS}
                   value={footer.headerPaddingTop ?? 'none'}
                   onChange={(headerPaddingTop) => onChange({ headerPaddingTop })}
                 />
-                <FooterOptionGrid
+                <FooterScaleControl
                   label={t('Space below the title')}
-                  options={FOOTER_SPACING_OPTIONS}
+                  steps={FOOTER_SPACING_OPTIONS}
                   value={footer.headerPaddingBottom ?? 'none'}
                   onChange={(headerPaddingBottom) => onChange({ headerPaddingBottom })}
                 />
-                <FooterOptionGrid
+                <FooterScaleControl
                   label={t('Gap before the footer')}
-                  options={FOOTER_SPACING_OPTIONS}
+                  steps={FOOTER_SPACING_OPTIONS}
                   value={footer.headerMarginBottom ?? 'md'}
                   onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
                 />
@@ -1506,16 +1755,25 @@ export function FooterSettingsPanel({
 
       {subSection === 'background' && enabled ? (
         <div className="np-stack">
+          <NpCollapsibleSection title={t('Palette')}>
+            <SectionPaletteFamilyControl
+              value={footer.paletteFamily ?? 'global'}
+              onChange={(paletteFamily) => onChange({ paletteFamily })}
+              mode={backgroundTheme.mode}
+            />
+          </NpCollapsibleSection>
           <NpCollapsibleSection title={t('Background')}>
             <SectionBackgroundSettingsFields
               settings={footer}
               onChange={onChange}
               renderColorField={({ label, value, onChange: onColorChange }) => {
-                const slot = FOOTER_BACKGROUND_LABEL_SLOTS[label];
-                if (!slot) {
-                  return <FooterManualColorField label={label} value={value} onChange={onColorChange} />;
-                }
-                return <FooterColorField footer={footer} onChange={onChange} slot={slot} label={label} value={value} />;
+                const slot = Object.entries(FOOTER_BACKGROUND_LABEL_SLOTS).find(([key]) => t(key) === label)?.[1];
+                const options = ([['fond', 'Background'], ['neutre', 'Surface'], ['principal', 'Primary'], ['secondaire', 'Secondary'], ['texteFort', 'Strong text']] as const).map(([token, text]) => ({ value: token, label: t(text), color: backgroundPalette[token] }));
+                const bindings = mergeFooterColorBindings(DEFAULT_FOOTER_COLOR_BINDINGS, footer.footerColorBindings);
+                return <ColorSwatchRow label={label} options={options} value={slot ? bindings[slot] : options.find(option => option.color.toLowerCase() === value.toLowerCase())?.value ?? ''} onChange={token => {
+                  if (slot) onChange({ useHeroPalette: true, footerPalette: backgroundPalette, ...asFooterPatch(patchFooterColorBinding({ ...footer, footerPalette: backgroundPalette }, slot, token as HeroPaletteTokenId)) });
+                  else { const option = options.find(option => option.value === token); if (option) onColorChange(option.color); }
+                }} />;
               }}
             />
             {footer.sectionBackgroundEnabled ? (
@@ -1530,95 +1788,6 @@ export function FooterSettingsPanel({
       ) : null}
     </NpPanelShell>
   );
-}
-
-/** The words of the chosen header design (and its colour) — one set of fields per design. */
-function FooterHeaderContentFields({
-  footer,
-  onChange,
-}: {
-  footer: PortfolioFooterSectionSettings;
-  onChange: (patch: Partial<PortfolioFooterSectionSettings>) => void;
-}) {
-  const t = useT();
-  switch (footer.headerDesign ?? 'editorial') {
-    case 'editorial':
-      return (
-        <>
-          <FooterHeaderTextField label={t('Title')} value={footer.headerEditorialTitleText} placeholder={t('Let\'s work together.')} onChange={(headerEditorialTitleText) => onChange({ headerEditorialTitleText })} multiline />
-          <FooterHeaderTextField label={t('Subtitle (optional)')} value={footer.headerEditorialSubtitleText} placeholder="" onChange={(headerEditorialSubtitleText) => onChange({ headerEditorialSubtitleText })} />
-          <FooterHeaderPaletteSwatches label={t('Title color')} value={footer.headerEditorialTitleColor ?? 'texteFort'} onChange={(headerEditorialTitleColor) => onChange({ headerEditorialTitleColor })} />
-        </>
-      );
-    case 'index':
-      return (
-        <>
-          <FooterHeaderTextField label={t('Rule label')} value={footer.headerIndexLabelText} placeholder={t('Contact')} onChange={(headerIndexLabelText) => onChange({ headerIndexLabelText })} />
-          <FooterHeaderTextField label={t('Title')} value={footer.headerIndexTitleText} placeholder={t('Let\'s talk')} onChange={(headerIndexTitleText) => onChange({ headerIndexTitleText })} />
-          <FooterHeaderTextField label={t('Subtitle')} value={footer.headerIndexSubtitleText} placeholder={t('Reach out — I read every message.')} onChange={(headerIndexSubtitleText) => onChange({ headerIndexSubtitleText })} multiline />
-          <FooterHeaderTextField label={t('Count label (optional)')} value={footer.headerIndexCountLabelText} placeholder={t('Links')} onChange={(headerIndexCountLabelText) => onChange({ headerIndexCountLabelText })} />
-          <FooterHeaderPaletteSwatches label={t('Number color')} value={footer.headerIndexNumberColor ?? 'principal'} onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })} />
-          <FooterHeaderPaletteSwatches label={t('Title color')} value={footer.headerIndexTitleColor ?? 'texteFort'} onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })} />
-        </>
-      );
-    case 'serif-lead':
-      return (
-        <>
-          <FooterHeaderTextField label={t('Label')} value={footer.headerSerifLeadLabelText} placeholder={t('Contact')} onChange={(headerSerifLeadLabelText) => onChange({ headerSerifLeadLabelText })} />
-          <FooterHeaderTextField label={t('Title')} value={footer.headerSerifLeadTitleText} placeholder={t('A few ways to start a conversation and say hello.')} onChange={(headerSerifLeadTitleText) => onChange({ headerSerifLeadTitleText })} multiline />
-          <FooterHeaderPaletteSwatches label={t('Title color')} value={footer.headerSerifLeadTitleColor ?? 'texteFort'} onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })} />
-        </>
-      );
-    case 'billboard':
-      return (
-        <>
-          <FooterHeaderTextField label={t('Big word')} value={footer.headerBillboardBigWord} placeholder="TALK" onChange={(headerBillboardBigWord) => onChange({ headerBillboardBigWord })} />
-          <FooterOptionGrid
-            label={t('Word style')}
-            options={FOOTER_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
-            value={footer.headerBillboardWordStyle ?? 'outline'}
-            onChange={(headerBillboardWordStyle) => onChange({ headerBillboardWordStyle })}
-          />
-          <FooterHeaderPaletteSwatches label={t('Word color')} value={footer.headerBillboardWordColor ?? 'principal'} onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })} />
-        </>
-      );
-    case 'masthead':
-      return (
-        <>
-          <FooterHeaderTextField label={t('Line 1')} value={footer.headerMastheadLine1Text} placeholder={t('Always open.')} onChange={(headerMastheadLine1Text) => onChange({ headerMastheadLine1Text })} />
-          <FooterHeaderTextField label={t('Line 2')} value={footer.headerMastheadLine2Text} placeholder={t('Quick to reply.')} onChange={(headerMastheadLine2Text) => onChange({ headerMastheadLine2Text })} />
-          <FooterHeaderTextField label={t('Line 3')} value={footer.headerMastheadLine3Text} placeholder={t('Easy to reach.')} onChange={(headerMastheadLine3Text) => onChange({ headerMastheadLine3Text })} />
-          <FooterHeaderPaletteSwatches label={t('Headline color')} value={footer.headerMastheadHeadlineColor ?? 'principal'} onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })} />
-        </>
-      );
-    case 'hero':
-      return (
-        <>
-          <FooterHeaderTextField label={t('Title')} value={footer.headerHeroTitleText} placeholder={t('Let\'s build a space\nthat feels alive.')} onChange={(headerHeroTitleText) => onChange({ headerHeroTitleText })} multiline />
-          <FooterHeaderTextField label={t('Button label')} value={footer.headerHeroCtaLabel} placeholder={t('Get in touch')} onChange={(headerHeroCtaLabel) => onChange({ headerHeroCtaLabel })} />
-          <FooterHeaderPaletteSwatches label={t('Title & button color')} value={footer.headerHeroTitleColor ?? 'texteFort'} onChange={(headerHeroTitleColor) => onChange({ headerHeroTitleColor })} />
-        </>
-      );
-    case 'name':
-      return (
-        <>
-          <p className="np-subtle">{t('Always shows your creator name — nothing to type here.')}</p>
-          <FooterHeaderPaletteSwatches label={t('Name color')} value={footer.headerNameColor ?? 'texteFort'} onChange={(headerNameColor) => onChange({ headerNameColor })} />
-        </>
-      );
-    case 'timezone':
-      return (
-        <>
-          <FooterHeaderTextField label={t('Kicker')} value={footer.headerTimezoneKickerText} placeholder={t('( Get in touch )')} onChange={(headerTimezoneKickerText) => onChange({ headerTimezoneKickerText })} />
-          <FooterHeaderTextField label={t('Title')} value={footer.headerTimezoneTitleText} placeholder={t('Let\'s start\na conversation.')} onChange={(headerTimezoneTitleText) => onChange({ headerTimezoneTitleText })} multiline />
-          <FooterHeaderTextField label={t('Description')} value={footer.headerTimezoneDescriptionText} placeholder={t('Reach out and tell us about your project — we read every message.')} onChange={(headerTimezoneDescriptionText) => onChange({ headerTimezoneDescriptionText })} multiline />
-          <FooterHeaderPaletteSwatches label={t('Title color')} value={footer.headerTimezoneTitleColor ?? 'texteFort'} onChange={(headerTimezoneTitleColor) => onChange({ headerTimezoneTitleColor })} />
-          <p className="np-subtle">{t('The clock and location on the right always come from your real profile data.')}</p>
-        </>
-      );
-    default:
-      return null;
-  }
 }
 
 /** What picking a footer design also resets — designs that reorganise their content start clean. */

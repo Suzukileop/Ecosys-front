@@ -6,6 +6,7 @@ const PORTFOLIO_STUDIO_EMBED_QUERY = 'embed';
 
 export type PortfolioStudioPreviewMeta = {
   availableTools: string[];
+  availableSkills?: { id: string; title: string }[];
   availableGallery?: import('@/types/profile').ProfileGalleryItem[];
   availableWorks: { id: string; title: string; imageUrl: string }[];
   availableServices: { id: string; title: string }[];
@@ -31,6 +32,7 @@ type PortfolioStudioPreviewMessage =
       source: typeof PORTFOLIO_STUDIO_PREVIEW_SOURCE;
       type: 'apply-settings';
       settings: unknown;
+      previewRequestId?: number;
     }
   | {
       source: typeof PORTFOLIO_STUDIO_PREVIEW_SOURCE;

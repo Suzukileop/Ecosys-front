@@ -17,7 +17,6 @@ import {
   toolsLevelCircularRingPx,
   toolsLevelBarPercentRem,
   toolsLevelCircularRingStroke,
-  toolsLevelIndicatorGridGapClass,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
 import {
@@ -202,8 +201,7 @@ export function EditorialToolsLevelCircularCards({ tools, presentation }: ToolsG
   const columnsPerRow = resolveToolsDesignBrandColumnsPerRow('level-circular-cards', presentation);
   const ink = presentation.labelColor?.trim() || '#171717';
   const gap = presentation.levelProgressRowGap;
-  const gaps = gap === 'tight' ? [0.75, 1, 1.25] : gap === 'large' ? [1.5, 2, 2.5]
-    : gap === 'xlarge' ? [2, 2.5, 3] : [1.25, 1.5, 1.75];
+  const gapRem = gap === 'tight' ? 0.25 : gap === 'large' ? 2 : gap === 'xlarge' ? 3.5 : 1;
 
   const toolSignature = tools
     .map((tool) => (typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`))
@@ -266,7 +264,9 @@ export function EditorialToolsLevelCircularCards({ tools, presentation }: ToolsG
   return (
     <ul
       ref={rootRef}
-      className={`pf-stack-circular-root w-full list-none p-0 ${toolsLevelIndicatorGridGapClass(presentation.levelProgressRowGap)}`}
+      // The same CSS gap variable must drive both gutters and flex-basis. Responsive
+      // gap utilities override the gutters and make the last column wrap.
+      className="pf-stack-circular-root w-full list-none p-0"
       role="list"
       data-pf-no-color-transition=""
       data-columns={columnsPerRow}
@@ -274,9 +274,10 @@ export function EditorialToolsLevelCircularCards({ tools, presentation }: ToolsG
       data-align={presentation.brandCardsContentAlignment ?? 'left'}
       style={{
         '--pf-stack-circular-ink': ink,
-        '--pf-circular-gap-base': `${gaps[0]}rem`,
-        '--pf-circular-gap-sm': `${gaps[1]}rem`,
-        '--pf-circular-gap-lg': `${gaps[2]}rem`,
+        '--pf-circular-gap-base': `${gapRem}rem`,
+        '--pf-circular-gap-sm': `${gapRem}rem`,
+        '--pf-circular-gap-lg': `${gapRem}rem`,
+        rowGap: 'var(--pf-circular-gap)',
       } as CSSProperties}
     >
       {tools.map((tool) => {

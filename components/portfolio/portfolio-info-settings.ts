@@ -1,3 +1,7 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import { limitInfoBio } from './portfolio-info-bio';
+import { DEFAULT_PLATFORM_HEADLINE_FORMAT, mergePlatformHeadlineFormat, mergePlatformIcons, type PlatformHeadlineFormat } from './portfolio-info-platform-settings';
+import type { ServiceIconChoice } from './portfolio-services-icon-cards-icons';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -104,6 +108,14 @@ export type PortfolioInfoAboutValueListMarkerStyle =
   | 'chevron'
   | 'none';
 
+/** About · value steps — what sits before each step: its number, or one of four bullets. */
+export type PortfolioInfoAboutValueStepsMarker = 'number' | 'dot' | 'dash' | 'arrow' | 'chevron';
+
+/** About · value steps — lead intro paragraph: serif italic (display), upright serif, or plain sans. */
+export type PortfolioInfoAboutValueStepsIntroStyle = 'italic-serif' | 'serif' | 'sans';
+
+export type PortfolioInfoAboutValueStepsIntroSize = 'sm' | 'md' | 'lg' | 'xl';
+
 export type PortfolioInfoAboutValueBioSize = 'sm' | 'md' | 'lg' | 'xl';
 
 /**
@@ -143,6 +155,16 @@ export {
 import { infoHeaderPaletteTokenColor as infoPaletteTokenColor } from '@/components/portfolio/portfolio-info-header-settings';
 
 export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettings & {
+  /** Empty keeps the Creator Studio profile biography. */
+  bioCustom?: string;
+  bioBold?: boolean;
+  bioFontFamily?: 'default' | 'serif' | 'sans';
+  bioFontSize?: number;
+  bioColor?: 'principal' | 'texteMuted' | 'texteFort';
+  bioOpacity?: number;
+  bioItalic?: boolean;
+  bioCase?: import('./portfolio-info-bio').InfoBioCase;
+  bioLineHeight?: number;
   design: PortfolioInfoDesign;
   /** Accent for labels / bullets / trait (bound to hero principal when useHeroPalette). */
   accentColor: string;
@@ -174,6 +196,10 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   premiumFontSize: PortfolioInfoPremiumFontSize;
   /** Color of the in-section block labels (Education, Skills, Languages…) — not the header. */
   blockLabelColor: PortfolioInfoBlockLabelColor;
+  /** Size of those same block labels, from the Small…Super Extra Large scale; Medium is each design's own size. */
+  blockLabelSize: PortfolioInfoPremiumFontSize;
+  /** The creator's own names for the block labels, by block (empty = the default name). */
+  blockLabels: PortfolioInfoBlockLabels;
   /**
    * @deprecated About · value removed — kept for saved settings migration.
    * Split (title left / list right) or grid-2 for secondary blocks.
@@ -195,6 +221,11 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutValueStepsIntroEnabled: boolean;
   aboutValueStepsIntroParagraph1: string;
   aboutValueStepsIntroParagraph2: string;
+  /** About · value steps — marker before each step (default: the step number). */
+  aboutValueStepsMarker: PortfolioInfoAboutValueStepsMarker;
+  aboutValueStepsIntroStyle: PortfolioInfoAboutValueStepsIntroStyle;
+  aboutValueStepsIntroSize: PortfolioInfoAboutValueStepsIntroSize;
+  aboutValueStepsIntroColor: PortfolioInfoHeaderPaletteToken;
   /** Internal — one-time migration for about-value → about-value-steps. */
   aboutValueSettingsRevision?: number;
   /** Internal — one-time migration for about-manifesto block visibility defaults. */
@@ -210,6 +241,12 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutManifestoPortraitFrame: PortfolioInfoAboutManifestoPortraitFrame;
   /** About · split — portrait column side on large screens. */
   aboutSplitPortraitSide: PortfolioInfoAboutSplitPortraitSide;
+  aboutSplitPortraitCaptionEnabled?: boolean;
+  aboutSplitPortraitUrl?: string;
+  /** Show the portrait in the designs that have one. Unset: each design's own previous switch decides. */
+  infoShowPortrait?: boolean;
+  /** Portrait picture used by every design that shows one; empty = the profile photo. */
+  infoPortraitUrl?: string;
   /** @deprecated Use aboutSplitLabelsMode + aboutSplitCustom*Label — kept for saved settings migration. */
   aboutSplitSectionLabelsStyle: PortfolioInfoAboutSplitSectionLabelsStyle;
   /** About · split — Standard wording, or Custom free text per label (below). */
@@ -228,6 +265,10 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutBannerCustomStrengthsLabel: string;
   /** About · platform — left headline beside bio (supports line breaks). */
   aboutPlatformHeadlineCustomText: string;
+  aboutPlatformHeadlineFormat?: PlatformHeadlineFormat;
+  aboutPlatformSkillIcons?: Record<string, ServiceIconChoice>;
+  aboutPlatformFilledCards?: boolean;
+  aboutPortraitSkillsPortraitEnabled?: boolean;
   /** About · platform — full-width skills section title. */
   aboutPlatformSkillsSectionTitle: string;
   /** About · platform — strengths split section title (left column). */
@@ -391,6 +432,8 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
 };
 
 export type PortfolioInfoSectionSettings = PortfolioSectionCopy & PortfolioInfoPresentationSettings;
@@ -430,6 +473,11 @@ export const ABOUT_VALUE_STEPS_SECTION_LABELS = {
 } as const;
 
 export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
+  bioCustom: '',
+  bioBold: false,
+  bioOpacity: 100,
+  bioItalic: false,
+  bioCase: 'original',
   ...DEFAULT_SECTION_BACKGROUND,
   design: 'about-me',
   accentColor: '#e2572e',
@@ -451,6 +499,8 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   aboutMeTraitHeadlineCustomText: DEFAULT_ABOUT_ME_TRAIT_HEADLINE,
   premiumFontSize: 'medium',
   blockLabelColor: 'muted',
+  blockLabelSize: 'medium',
+  blockLabels: {},
   aboutValueBlocksLayout: 'split',
   aboutValueValuesLayout: 'editorial',
   aboutValueListMarkerStyle: 'dot',
@@ -463,10 +513,17 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   aboutValueStepsIntroEnabled: true,
   aboutValueStepsIntroParagraph1: DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_1,
   aboutValueStepsIntroParagraph2: DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_2,
+  aboutValueStepsMarker: 'number',
+  aboutValueStepsIntroStyle: 'italic-serif',
+  aboutValueStepsIntroSize: 'md',
+  aboutValueStepsIntroColor: 'texteFort',
   aboutManifestoAvatarGrayscale: false,
   infoPortraitGrayscale: false,
   aboutManifestoPortraitFrame: 'square',
   aboutSplitPortraitSide: 'left',
+  aboutSplitPortraitCaptionEnabled: true,
+  aboutSplitPortraitUrl: '',
+  infoPortraitUrl: '',
   aboutSplitSectionLabelsStyle: 'default',
   aboutSplitLabelsMode: 'standard',
   aboutSplitCustomSkillsLabel: '',
@@ -479,6 +536,10 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   aboutBannerCustomSkillsLabel: '',
   aboutBannerCustomStrengthsLabel: '',
   aboutPlatformHeadlineCustomText: DEFAULT_ABOUT_PLATFORM_HEADLINE,
+  aboutPlatformHeadlineFormat: { ...DEFAULT_PLATFORM_HEADLINE_FORMAT },
+  aboutPlatformSkillIcons: {},
+  aboutPlatformFilledCards: false,
+  aboutPortraitSkillsPortraitEnabled: true,
   aboutPlatformSkillsSectionTitle: DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE,
   aboutPlatformStrengthsSectionTitle: DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE,
   aboutPortraitSkillsMetaLead: DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD,
@@ -588,6 +649,7 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   headerCoverHeadlineWeight: 'regular',
   useHeroPalette: true,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
 };
 
 const PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS: {
@@ -864,16 +926,14 @@ export function resolveInfoAboutManifestoBlocksScrollFocus(
   return presentation.aboutManifestoBlocksScrollFocus === true;
 }
 
-/** About · manifesto — statement typography override, or null when the toggle is off. */
+/** Retained for saved-setting compatibility; Manifesto now uses its native typography. */
 export function resolveInfoAboutManifestoStatementStyle(
-  presentation: Pick<
+  _presentation: Pick<
     PortfolioInfoPresentationSettings,
     'aboutManifestoStatementStyleEnabled' | 'aboutManifestoStatementStyle'
   >
 ): PortfolioElementTextStyle | null {
-  return presentation.aboutManifestoStatementStyleEnabled === true
-    ? presentation.aboutManifestoStatementStyle
-    : null;
+  return null;
 }
 
 /** About · terminal — the console shell's own dark-mode pin, independent of the section/global mode. */
@@ -896,6 +956,100 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS: {
   { value: 'chevron', label: msg('Chevron'), description: msg('Chevron ›.'), preview: '›' },
   { value: 'none', label: msg('None'), description: msg('Hide bullets — text only.'), preview: '∅' },
 ];
+
+const ABOUT_VALUE_STEPS_MARKERS = ['number', 'dot', 'dash', 'arrow', 'chevron'] as const;
+const ABOUT_VALUE_STEPS_INTRO_STYLES = ['italic-serif', 'serif', 'sans'] as const;
+const ABOUT_VALUE_STEPS_INTRO_SIZES = ['sm', 'md', 'lg', 'xl'] as const;
+const ABOUT_VALUE_STEPS_INTRO_COLORS = ['principal', 'secondaire', 'texteFort'] as const;
+
+export const PORTFOLIO_INFO_ABOUT_VALUE_STEPS_MARKER_OPTIONS: {
+  value: PortfolioInfoAboutValueStepsMarker;
+  label: string;
+  description: string;
+  preview: string;
+}[] = [
+  { value: 'number', label: msg('Numbers'), description: msg('Step numbers — (01), (02)…'), preview: '01' },
+  { value: 'dot', label: msg('Dot'), description: msg('Solid round bullet.'), preview: '●' },
+  { value: 'dash', label: msg('Dash'), description: msg('Short horizontal dash.'), preview: '—' },
+  { value: 'arrow', label: msg('Arrow'), description: msg('Arrow →.'), preview: '→' },
+  { value: 'chevron', label: msg('Chevron'), description: msg('Chevron ›.'), preview: '›' },
+];
+
+export const PORTFOLIO_INFO_ABOUT_VALUE_STEPS_INTRO_STYLE_OPTIONS: {
+  value: PortfolioInfoAboutValueStepsIntroStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'italic-serif', label: msg('Serif italic'), description: msg('Editorial display — italic serif.') },
+  { value: 'serif', label: msg('Serif'), description: msg('Upright serif — easier to read.') },
+  { value: 'sans', label: msg('Sans'), description: msg('Plain body font.') },
+];
+
+export const PORTFOLIO_INFO_ABOUT_VALUE_STEPS_INTRO_SIZE_OPTIONS: {
+  value: PortfolioInfoAboutValueStepsIntroSize;
+  label: string;
+}[] = [
+  { value: 'sm', label: msg('Small') },
+  { value: 'md', label: msg('Medium') },
+  { value: 'lg', label: msg('Large') },
+  { value: 'xl', label: msg('Extra Large') },
+];
+
+const ABOUT_VALUE_STEPS_INTRO_SIZE_STEP: Record<PortfolioInfoAboutValueStepsIntroSize, number> = {
+  sm: -1,
+  md: 0,
+  lg: 1,
+  xl: 2,
+};
+const PREMIUM_SIZE_LADDER: PortfolioInfoPremiumFontSize[] = ['small', 'medium', 'large', 'xlarge', 'xxlarge'];
+
+/** Typography of the value-steps lead paragraph, relative to the section's text size. */
+export function resolveAboutValueStepsIntroTypography(
+  presentation: Partial<
+    Pick<
+      PortfolioInfoPresentationSettings,
+      | 'aboutValueStepsIntroStyle'
+      | 'aboutValueStepsIntroSize'
+      | 'aboutValueStepsIntroColor'
+      | 'premiumFontSize'
+    >
+  >
+): {
+  style: PortfolioInfoAboutValueStepsIntroStyle;
+  sizeClassKey: PortfolioInfoPremiumFontSize;
+  color: string;
+} {
+  const style = (ABOUT_VALUE_STEPS_INTRO_STYLES as readonly string[]).includes(
+    presentation.aboutValueStepsIntroStyle as string
+  )
+    ? (presentation.aboutValueStepsIntroStyle as PortfolioInfoAboutValueStepsIntroStyle)
+    : 'italic-serif';
+  const sizeKey = (ABOUT_VALUE_STEPS_INTRO_SIZES as readonly string[]).includes(
+    presentation.aboutValueStepsIntroSize as string
+  )
+    ? (presentation.aboutValueStepsIntroSize as PortfolioInfoAboutValueStepsIntroSize)
+    : 'md';
+  const base = presentation.premiumFontSize ?? 'medium';
+  const baseIndex = Math.max(0, PREMIUM_SIZE_LADDER.indexOf(base));
+  const shifted = Math.min(
+    PREMIUM_SIZE_LADDER.length - 1,
+    Math.max(0, baseIndex + ABOUT_VALUE_STEPS_INTRO_SIZE_STEP[sizeKey])
+  );
+  const token = (ABOUT_VALUE_STEPS_INTRO_COLORS as readonly string[]).includes(
+    presentation.aboutValueStepsIntroColor as string
+  )
+    ? (presentation.aboutValueStepsIntroColor as PortfolioInfoHeaderPaletteToken)
+    : 'texteFort';
+  return { style, sizeClassKey: PREMIUM_SIZE_LADDER[shifted], color: infoPaletteTokenColor(token) };
+}
+
+export function resolveInfoAboutValueStepsMarker(
+  presentation: Partial<Pick<PortfolioInfoPresentationSettings, 'aboutValueStepsMarker'>>
+): PortfolioInfoAboutValueStepsMarker {
+  return (ABOUT_VALUE_STEPS_MARKERS as readonly string[]).includes(presentation.aboutValueStepsMarker as string)
+    ? (presentation.aboutValueStepsMarker as PortfolioInfoAboutValueStepsMarker)
+    : 'number';
+}
 
 function isPortfolioInfoAboutValueListMarkerStyle(
   value: unknown
@@ -1065,6 +1219,30 @@ export function resolveInfoPortraitGrayscale(
 ): boolean {
   if (presentation.infoPortraitGrayscale === true) return true;
   return presentation.aboutManifestoAvatarGrayscale === true;
+}
+
+/**
+ * The portrait every portrait design draws: shown unless switched off (About · portrait skills keeps
+ * honouring its former own switch until the shared one is touched), from the uploaded picture, else the
+ * former About · split picture, else the profile photo.
+ */
+export function resolveInfoPortrait(
+  presentation: Pick<
+    PortfolioInfoPresentationSettings,
+    'design' | 'infoShowPortrait' | 'infoPortraitUrl' | 'aboutSplitPortraitUrl' | 'aboutPortraitSkillsPortraitEnabled'
+  >,
+  profileAvatarUrl: string | null | undefined
+): { show: boolean; url: string | null } {
+  const design = resolveInfoDesign(presentation.design);
+  const show =
+    presentation.infoShowPortrait ??
+    (design === 'about-portrait-skills' ? presentation.aboutPortraitSkillsPortraitEnabled !== false : true);
+  const url =
+    presentation.infoPortraitUrl?.trim() ||
+    (design === 'about-split' ? presentation.aboutSplitPortraitUrl?.trim() : '') ||
+    profileAvatarUrl?.trim() ||
+    null;
+  return { show, url };
 }
 
 export function portfolioInfoDesignHasPortrait(design: PortfolioInfoDesign | undefined): boolean {
@@ -1323,7 +1501,7 @@ export function aboutPortraitSkillsListSizeClass(
         return 'text-5xl leading-[1.16] sm:text-6xl lg:text-[3.75rem] xl:text-[4.5rem]';
       case 'medium':
       default:
-        return 'text-2xl leading-[1.2] sm:text-3xl lg:text-4xl xl:text-[2.5rem]';
+        return 'text-2xl leading-[1.25] sm:text-[1.75rem] lg:text-[2rem] xl:text-[2.25rem]';
     }
   }
   switch (size) {
@@ -1337,7 +1515,7 @@ export function aboutPortraitSkillsListSizeClass(
       return 'text-6xl leading-[1.06] sm:text-7xl lg:text-8xl xl:text-[7rem]';
     case 'medium':
     default:
-      return 'text-3xl leading-[1.12] sm:text-4xl lg:text-5xl xl:text-[4rem]';
+      return 'text-[1.75rem] leading-[1.2] sm:text-[2rem] lg:text-[2.5rem] xl:text-[3rem]';
   }
 }
 
@@ -1354,7 +1532,7 @@ export function aboutPortraitSkillsBioSizeClass(size: PortfolioInfoPremiumFontSi
       return 'text-[1.625rem] sm:text-[2.125rem] leading-[1.55]';
     case 'medium':
     default:
-      return 'text-lg sm:text-[1.375rem] leading-[1.6]';
+      return 'text-lg sm:text-xl leading-[1.65]';
   }
 }
 
@@ -1371,7 +1549,7 @@ export function aboutPortraitSkillsStrengthsTitleSizeClass(size: PortfolioInfoPr
       return 'text-6xl sm:text-7xl lg:text-[4.75rem]';
     case 'medium':
     default:
-      return 'text-3xl sm:text-4xl lg:text-[2.5rem]';
+      return 'text-2xl sm:text-[1.75rem] lg:text-[1.875rem]';
   }
 }
 
@@ -1429,16 +1607,16 @@ export function resolveAboutPortraitSkillsMetaEnabled(
 export function aboutBannerBioSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
     case 'small':
-      return 'text-xl sm:text-2xl';
+      return 'text-lg sm:text-xl';
     case 'large':
-      return 'text-3xl sm:text-4xl';
+      return 'text-2xl sm:text-[1.875rem]';
     case 'xlarge':
-      return 'text-4xl sm:text-5xl';
+      return 'text-[1.625rem] sm:text-[2.125rem]';
     case 'xxlarge':
-      return 'text-5xl sm:text-6xl';
+      return 'text-[1.875rem] sm:text-[2.5rem]';
     case 'medium':
     default:
-      return 'text-2xl sm:text-3xl';
+      return 'text-[1.375rem] sm:text-[1.625rem]';
   }
 }
 
@@ -1494,7 +1672,16 @@ export function aboutPlatformHeadlineSizeClass(size: PortfolioInfoPremiumFontSiz
 }
 
 /** About · platform — bio (lead). One step below the hero headline, well above list items. */
-export function aboutPlatformLeadSizeClass(size: PortfolioInfoPremiumFontSize): string {
+export function aboutPlatformLeadSizeClass(size: PortfolioInfoPremiumFontSize, compact = false): string {
+  if (compact) {
+    return {
+      small: 'text-base sm:text-lg',
+      medium: 'text-lg sm:text-xl lg:text-[1.375rem]',
+      large: 'text-xl sm:text-2xl',
+      xlarge: 'text-[1.375rem] sm:text-[1.625rem]',
+      xxlarge: 'text-2xl sm:text-[1.875rem]',
+    }[size];
+  }
   switch (size) {
     case 'small':
       return 'text-[1.25rem] sm:text-[1.375rem]';
@@ -1531,32 +1718,32 @@ export function aboutPlatformItemSizeClass(size: PortfolioInfoPremiumFontSize): 
 export function aboutPlatformSkillsTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
     case 'small':
-      return 'text-2xl sm:text-3xl';
+      return 'text-xl sm:text-2xl';
     case 'large':
-      return 'text-4xl sm:text-5xl lg:text-[3.25rem]';
+      return 'text-3xl sm:text-[2.125rem]';
     case 'xlarge':
-      return 'text-5xl sm:text-6xl lg:text-[4rem]';
+      return 'text-[2rem] sm:text-[2.5rem]';
     case 'xxlarge':
-      return 'text-6xl sm:text-7xl lg:text-[4.75rem]';
+      return 'text-4xl sm:text-5xl';
     case 'medium':
     default:
-      return 'text-3xl sm:text-4xl lg:text-[2.5rem]';
+      return 'text-2xl sm:text-[1.875rem]';
   }
 }
 
 export function aboutMeTraitHeadlineSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
     case 'small':
-      return 'text-[clamp(2.25rem,6.5vw,5.5rem)]';
+      return 'text-[clamp(1.875rem,5.5cqw,4rem)]';
     case 'large':
-      return 'text-[clamp(3.25rem,8.8vw,7.25rem)]';
+      return 'text-[clamp(2.5rem,7.2cqw,5rem)]';
     case 'xlarge':
-      return 'text-[clamp(3.5rem,9.4vw,7.6rem)]';
+      return 'text-[clamp(2.75rem,7.8cqw,5.5rem)]';
     case 'xxlarge':
-      return 'text-[clamp(3.75rem,10vw,8rem)]';
+      return 'text-[clamp(3rem,8.5cqw,6rem)]';
     case 'medium':
     default:
-      return 'text-[clamp(3rem,8vw,6.75rem)]';
+      return 'text-[clamp(2.125rem,6.6cqw,4.5rem)]';
   }
 }
 
@@ -1795,7 +1982,63 @@ export const PORTFOLIO_INFO_BLOCK_LABEL_COLOR_OPTIONS: {
 /** CSS color for a block label tone. Palette tokens go through the `--pf-palette-*` vars so they
  *  follow the section's light/dark mode; 'muted' keeps each design's own quiet tint. */
 export function infoBlockLabelColor(token: PortfolioInfoBlockLabelColor | undefined, muted: string): string {
-  return !token || token === 'muted' ? muted : infoPaletteTokenColor(token);
+  const color = !token || token === 'muted' ? muted : infoPaletteTokenColor(token);
+  // The variable is never defined: it only tags every element drawn in the label colour, so one CSS rule
+  // (`[style*='--pf-info-label-ink']`, globals.css) can scale all block labels of every design at once.
+  return `var(--pf-info-label-ink, ${color})`;
+}
+
+export const INFO_BLOCK_LABEL_KEYS = ['education', 'skills', 'strengths', 'languages', 'interests', 'tools'] as const;
+export type PortfolioInfoBlockLabelKey = (typeof INFO_BLOCK_LABEL_KEYS)[number];
+export type PortfolioInfoBlockLabels = Partial<Record<PortfolioInfoBlockLabelKey, string>>;
+export const INFO_BLOCK_LABEL_MAX_LENGTH = 30;
+
+/** The strings the Info designs draw for each block label (a design may spell one in more than one way). */
+const INFO_BLOCK_LABEL_SOURCES: Record<PortfolioInfoBlockLabelKey, readonly string[]> = {
+  education: ['Education'],
+  skills: ['Skills'],
+  strengths: ['Strengths'],
+  languages: ['Languages'],
+  interests: ['Interests'],
+  tools: ['Systems & tools', 'Tools'],
+};
+
+function sanitizeInfoBlockLabels(value: unknown, fallback: PortfolioInfoBlockLabels | undefined): PortfolioInfoBlockLabels {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return { ...(fallback ?? {}) };
+  const record = value as Record<string, unknown>;
+  const result: PortfolioInfoBlockLabels = {};
+  for (const key of INFO_BLOCK_LABEL_KEYS) {
+    const text = typeof record[key] === 'string' ? (record[key] as string).trim().slice(0, INFO_BLOCK_LABEL_MAX_LENGTH) : '';
+    if (text) result[key] = text;
+  }
+  return result;
+}
+
+/** Source string → the creator's name for it, to feed `TranslationOverrides` around the Info section. */
+export function infoBlockLabelOverrides(labels: PortfolioInfoBlockLabels | undefined): Record<string, string> {
+  const overrides: Record<string, string> = {};
+  for (const key of INFO_BLOCK_LABEL_KEYS) {
+    const text = labels?.[key]?.trim();
+    if (!text) continue;
+    for (const source of INFO_BLOCK_LABEL_SOURCES[key]) overrides[source] = text;
+  }
+  return overrides;
+}
+
+/** Zoom applied to every block label for the Block label size setting (1 = each design's own size). */
+export function infoBlockLabelScale(size: PortfolioInfoPremiumFontSize | undefined): number {
+  switch (size) {
+    case 'small':
+      return 0.85;
+    case 'large':
+      return 1.18;
+    case 'xlarge':
+      return 1.36;
+    case 'xxlarge':
+      return 1.56;
+    default:
+      return 1;
+  }
 }
 
 /** Swatch shown in the editor for each tone ('muted' previewed as a 62% tint of the strong ink). */
@@ -1815,7 +2058,7 @@ export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
     value: 'about-me',
     label: msg('About me'),
     description:
-      msg('Title + subtitle, bio, then Education and Skills / Strengths / Languages / Systems & tools grids.'),
+      msg('Title + subtitle, bio, then Education and Skills / Strengths / Languages / Systems & tools — as grids, or as a Swiss-style numbered index (switch under Layout).'),
   },
   {
     value: 'about-me-trait',
@@ -1858,12 +2101,6 @@ export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
     label: msg('About · terminal'),
     description:
       msg('Monospace terminal — header, bio, skills //, strengths, interests, languages (stars/text/bar), tools, education.log; Hero palette.'),
-  },
-  {
-    value: 'about-index',
-    label: msg('About · index'),
-    description:
-      msg('Brutalist-chic Swiss editorial — asymmetric 12-col grid, index-numbered sections, hover-focus keywords, no cards.'),
   },
   {
     value: 'about-value-steps',
@@ -2304,6 +2541,15 @@ export function mergeInfoPresentation(
   return {
     ...base,
     ...mergeSectionBackground(base, record),
+    bioCustom: limitInfoBio(typeof record.bioCustom === 'string' ? record.bioCustom : base.bioCustom ?? ''),
+    bioBold: typeof record.bioBold === 'boolean' ? record.bioBold : base.bioBold ?? false,
+    bioFontFamily: record.bioFontFamily === 'default' ? 'serif' : record.bioFontFamily === 'serif' || record.bioFontFamily === 'sans' ? record.bioFontFamily : base.bioFontFamily,
+    bioFontSize: typeof record.bioFontSize === 'number' && Number.isFinite(record.bioFontSize) ? Math.max(12, Math.min(120, record.bioFontSize)) : undefined,
+    bioColor: record.bioColor === 'secondaire' ? 'texteMuted' : record.bioColor === 'principal' || record.bioColor === 'texteMuted' || record.bioColor === 'texteFort' ? record.bioColor : base.bioColor,
+    bioOpacity: typeof record.bioOpacity === 'number' && Number.isFinite(record.bioOpacity) ? Math.max(30, Math.min(100, record.bioOpacity)) : base.bioOpacity ?? 100,
+    bioItalic: typeof record.bioItalic === 'boolean' ? record.bioItalic : base.bioItalic ?? false,
+    bioCase: ['original', 'sentence', 'lowercase', 'uppercase', 'title'].includes(String(record.bioCase)) ? record.bioCase as import('./portfolio-info-bio').InfoBioCase : base.bioCase ?? 'original',
+    bioLineHeight: typeof record.bioLineHeight === 'number' && Number.isFinite(record.bioLineHeight) ? Math.max(1, Math.min(2.5, record.bioLineHeight)) : base.bioLineHeight,
     design,
     accentColor: sanitizeHex(record.accentColor, base.accentColor),
     titleColor: sanitizeHex(record.titleColor, base.titleColor),
@@ -2344,6 +2590,12 @@ export function mergeInfoPresentation(
         'medium'
     ),
     blockLabelColor: pick(record.blockLabelColor, INFO_BLOCK_LABEL_COLORS, base.blockLabelColor ?? 'muted'),
+    blockLabels: sanitizeInfoBlockLabels(record.blockLabels, base.blockLabels),
+    blockLabelSize: pick(
+      record.blockLabelSize,
+      ['small', 'medium', 'large', 'xlarge', 'xxlarge'] as const,
+      base.blockLabelSize ?? 'medium'
+    ),
     aboutValueBlocksLayout: isPortfolioInfoAboutValueBlocksLayout(record.aboutValueBlocksLayout)
       ? record.aboutValueBlocksLayout
       : base.aboutValueBlocksLayout,
@@ -2376,6 +2628,26 @@ export function mergeInfoPresentation(
     aboutValueStepsIntroEnabled,
     aboutValueStepsIntroParagraph1,
     aboutValueStepsIntroParagraph2,
+    aboutValueStepsMarker: pick(
+      record.aboutValueStepsMarker,
+      ABOUT_VALUE_STEPS_MARKERS,
+      base.aboutValueStepsMarker ?? 'number'
+    ),
+    aboutValueStepsIntroStyle: pick(
+      record.aboutValueStepsIntroStyle,
+      ABOUT_VALUE_STEPS_INTRO_STYLES,
+      base.aboutValueStepsIntroStyle ?? 'italic-serif'
+    ),
+    aboutValueStepsIntroSize: pick(
+      record.aboutValueStepsIntroSize,
+      ABOUT_VALUE_STEPS_INTRO_SIZES,
+      base.aboutValueStepsIntroSize ?? 'md'
+    ),
+    aboutValueStepsIntroColor: pick(
+      record.aboutValueStepsIntroColor,
+      ABOUT_VALUE_STEPS_INTRO_COLORS,
+      base.aboutValueStepsIntroColor ?? 'texteFort'
+    ),
     aboutValueSettingsRevision,
     aboutManifestoSettingsRevision,
     aboutValueStepsSettingsRevision,
@@ -2394,6 +2666,13 @@ export function mergeInfoPresentation(
     aboutSplitPortraitSide: isPortfolioInfoAboutSplitPortraitSide(record.aboutSplitPortraitSide)
       ? record.aboutSplitPortraitSide
       : base.aboutSplitPortraitSide,
+    aboutSplitPortraitCaptionEnabled: typeof record.aboutSplitPortraitCaptionEnabled === 'boolean'
+      ? record.aboutSplitPortraitCaptionEnabled : base.aboutSplitPortraitCaptionEnabled ?? true,
+    infoShowPortrait: typeof record.infoShowPortrait === 'boolean' ? record.infoShowPortrait : base.infoShowPortrait,
+    infoPortraitUrl: typeof record.infoPortraitUrl === 'string'
+      ? record.infoPortraitUrl.trim().slice(0, 2048) : base.infoPortraitUrl ?? '',
+    aboutSplitPortraitUrl: typeof record.aboutSplitPortraitUrl === 'string'
+      ? record.aboutSplitPortraitUrl.trim().slice(0,2048) : base.aboutSplitPortraitUrl ?? '',
     aboutSplitSectionLabelsStyle: isPortfolioInfoAboutSplitSectionLabelsStyle(
       record.aboutSplitSectionLabelsStyle
     )
@@ -2442,6 +2721,10 @@ export function mergeInfoPresentation(
       typeof record.aboutPlatformHeadlineCustomText === 'string'
         ? record.aboutPlatformHeadlineCustomText
         : base.aboutPlatformHeadlineCustomText,
+    aboutPlatformHeadlineFormat: mergePlatformHeadlineFormat(record.aboutPlatformHeadlineFormat, base.aboutPlatformHeadlineFormat),
+    aboutPlatformSkillIcons: mergePlatformIcons(record.aboutPlatformSkillIcons, base.aboutPlatformSkillIcons),
+    aboutPlatformFilledCards: typeof record.aboutPlatformFilledCards === 'boolean' ? record.aboutPlatformFilledCards : base.aboutPlatformFilledCards ?? false,
+    aboutPortraitSkillsPortraitEnabled: typeof record.aboutPortraitSkillsPortraitEnabled === 'boolean' ? record.aboutPortraitSkillsPortraitEnabled : base.aboutPortraitSkillsPortraitEnabled ?? true,
     aboutPlatformSkillsSectionTitle:
       typeof record.aboutPlatformSkillsSectionTitle === 'string'
         ? record.aboutPlatformSkillsSectionTitle
@@ -2878,5 +3161,6 @@ export function mergeInfoPresentation(
     ),
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
   };
 }

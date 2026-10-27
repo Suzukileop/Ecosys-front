@@ -1,0 +1,15 @@
+.preview header { margin-bottom: 0 !important; }
+.preview h2 { font-size: 112px !important; line-height: 1.08 !important; }
+.preview p { font-size: 34px !important; line-height: 1.5 !important; }
+.preview :global(.pf-faq-header-editorial-kicker) { font-size: 32px !important; }
+.preview :global(.pf-faq-header-signal-pill) { gap: 16px; padding: 14px 24px; }
+.preview :global(.pf-faq-header-signal-pill) span { font-size: 30px !important; }
+.preview :global(.pf-faq-header-query-kicker) { font-size: 28px !important; }
+.preview :global(.pf-faq-header-query-glyph) { font-size: 440px !important; }
+.preview :global(.pf-faq-header-dialogue-badge) { padding: 24px 30px; }
+.preview :global(.pf-faq-header-dialogue-badge) span:first-child { font-size: 64px !important; }
+.preview :global(.pf-faq-header-dialogue-badge) span:last-child { font-size: 24px !important; }
+
+/* Use the available catalogue width rather than adding a third title line. */
+.preview[data-faq-header-preview='query'] :global(.min-w-0.max-w-2xl) { max-width:900px !important; }
+.preview[data-faq-header-preview='dialogue'] h2 { max-width:none !important; }

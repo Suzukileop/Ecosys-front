@@ -4,7 +4,6 @@ import type { CSSProperties } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
 import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
-  resolveFooterCopyrightLabel,
   type PortfolioFooterPresentationSettings,
 } from '@/components/portfolio/portfolio-footer-settings';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
@@ -17,7 +16,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 
 function Dot({ muted }: { muted: string }) {
   return (
-    <span aria-hidden className="hidden text-sm sm:inline" style={{ color: muted }}>
+    <span aria-hidden className="hidden sm:inline" style={{ color: muted, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}>
       •
     </span>
   );
@@ -87,9 +86,6 @@ export function FooterDesignCompact({
   const phoneDisplay = phoneTrimmed ? formatPhoneDisplay(phoneTrimmed) : null;
   const emailTrimmed = email?.trim() || null;
   const locationTrimmed = presentation.showLocation ? locationLabel?.trim() || null : null;
-  const copyrightText = presentation.showCopyright
-    ? resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)
-    : null;
 
   return (
     <footer
@@ -98,23 +94,23 @@ export function FooterDesignCompact({
       className="relative isolate left-1/2 w-screen -translate-x-1/2 overflow-hidden"
       style={{ ...backgroundStyle, color: ink, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
     >
-      <div className={`relative z-[1] w-full pb-12 pt-20 sm:pt-24 lg:pb-16 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
-        <div className="flex flex-col items-center gap-10 text-center sm:items-stretch sm:gap-8 sm:text-left">
+      <div className={`relative z-[1] w-full pb-12 pt-16 sm:pt-20 lg:pb-16 lg:pt-24 ${portfolioEditorialGutterX(contentGutter)}`}>
+        <div className="flex flex-col items-center gap-10 text-center sm:items-stretch sm:gap-10 sm:text-left">
           {/* 2. Brand + bare socials — no boxes, no divider. */}
           <div className="flex flex-col items-center gap-5 sm:flex-row sm:items-start sm:justify-between sm:gap-8">
             {showName || description ? (
-              <div className="max-w-xl space-y-2">
+              <div className="max-w-xl space-y-2 text-balance">
                 {showName ? (
                   <p
-                    className="font-semibold"
-                    style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+                    className="font-semibold tracking-tight"
+                    style={{ fontSize: 'calc(var(--pf-footer-body-size) * 1.25 * var(--pf-footer-font-scale, 1))' }}
                   >
                     {creatorName}
                   </p>
                 ) : null}
                 {description ? (
                   <p
-                    className="leading-[1.6]"
+                    className="text-pretty leading-[1.6] opacity-80"
                     style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   >
                     {description}
@@ -124,7 +120,7 @@ export function FooterDesignCompact({
             ) : null}
 
             {links.length > 0 ? (
-              <nav className="flex flex-wrap items-center justify-center gap-7 sm:justify-end" aria-label={t('Social')}>
+              <nav className="flex flex-wrap items-center justify-center gap-3 sm:justify-end sm:gap-5" aria-label={t('Social')}>
                 {links.map((link) => (
                   <a
                     key={link.id}
@@ -134,7 +130,7 @@ export function FooterDesignCompact({
                     aria-label={link.label}
                     title={link.label}
                     data-pf-no-color-transition=""
-                    className="inline-flex items-center justify-center p-2 transition-opacity duration-300 hover:opacity-70"
+                    className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-md p-2 transition-opacity duration-300 hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-current"
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-7 w-7" />
                   </a>
@@ -145,12 +141,12 @@ export function FooterDesignCompact({
 
           {/* 3. Coordinates — one airy, dot-separated line. */}
           {phoneDisplay || emailTrimmed || locationTrimmed ? (
-            <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
+            <div className="flex flex-col items-center gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-x-3 sm:gap-y-1">
               {phoneDisplay ? (
                 <a
                   href={`tel:${phoneTrimmed!.replace(/\s+/g, '')}`}
                   data-pf-no-color-transition=""
-                  className="w-fit transition-opacity duration-300 hover:opacity-70"
+                  className="inline-flex min-h-11 w-fit items-center transition-opacity duration-300 hover:opacity-70 focus-visible:underline focus-visible:underline-offset-4 focus-visible:outline-none"
                   style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {phoneDisplay}
@@ -161,8 +157,8 @@ export function FooterDesignCompact({
                 <a
                   href={`mailto:${emailTrimmed}`}
                   data-pf-no-color-transition=""
-                  className="w-fit break-all border-b pb-0.5 transition-opacity duration-300 hover:opacity-70"
-                  style={{ color: ink, borderColor: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+                  className="inline-flex min-h-11 w-fit items-center break-words underline decoration-1 underline-offset-4 transition-opacity duration-300 hover:opacity-70 [overflow-wrap:anywhere]"
+                  style={{ color: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {emailTrimmed}
                 </a>
@@ -170,20 +166,13 @@ export function FooterDesignCompact({
               {(phoneDisplay || emailTrimmed) && locationTrimmed ? <Dot muted={muted} /> : null}
               {locationTrimmed ? (
                 <p
-                  className="w-fit max-w-xs"
+                  className="w-fit max-w-md"
                   style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {locationTrimmed}
                 </p>
               ) : null}
             </div>
-          ) : null}
-
-          {/* 4. Copyright — no rule above it, pure whitespace close. */}
-          {copyrightText ? (
-            <p style={{ fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))' }}>
-              {copyrightText}
-            </p>
           ) : null}
         </div>
       </div>

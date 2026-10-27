@@ -54,6 +54,7 @@ export function WorkMastheadHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
   const centered = presentation.headerAlignment === 'center';
+  const alignRight = presentation.headerAlignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = workPaletteTokenColor(presentation.mastheadHeadlineColor ?? 'principal');
@@ -232,11 +233,11 @@ export function WorkMastheadHeader({
       data-work-header="masthead"
     >
       {styledLines.length > 0 ? (
-        <div className={`flex flex-col gap-1 sm:gap-2 ${centered ? 'items-center' : 'items-start'}`}>
+        <div className={`flex flex-col gap-1 sm:gap-2 ${centered ? 'items-center' : alignRight ? 'items-end' : 'items-start'}`}>
           {styledLines.map((words, lineIndex) => (
             <div key={lineIndex} className="overflow-hidden" data-work-line>
               <h2
-                className={`${HEADLINE_SIZE_CLASS[presentation.mastheadHeadlineSize ?? 'md']} uppercase leading-[1.08] tracking-[-0.02em] ${centered ? 'text-center' : 'text-left'}`}
+                className={`${HEADLINE_SIZE_CLASS[presentation.mastheadHeadlineSize ?? 'md']} uppercase leading-[1.08] tracking-[-0.02em] ${centered ? 'text-center' : alignRight ? 'text-right' : 'text-left'}`}
                 style={{ color: ink }}
               >
                 {words.map((word, wordIndex) => (

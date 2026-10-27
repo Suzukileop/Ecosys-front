@@ -1,0 +1,5 @@
+Generated with the built-in image_gen tool for the Accordion catalogue thumbnail. Fictional demonstration imagery, not client project photography.
+
+Prompt: Use case: product-mockup. Asset type: single photorealistic portfolio project image for an Accordion layout thumbnail. Primary request: premium commercial brand identity still life, cool slate blue, midnight navy and brushed silver palette, distinctly different from terracotta and beige. Subject: a carefully composed unbranded navy clothbound presentation book, thick ice-blue business cards and a brushed aluminum sleeve on a slate-blue studio surface. Tactile paper grain, convincing metal reflections, soft directional daylight, refined editorial photography. Almost square composition, all key objects centered with safe margins, legible at tiny size. No writing, no letters, no logos, no UI, no devices, no watermark, no collage. Real photographed materials, not abstract placeholder blocks, not CGI.
+
+Background and typography remain code-rendered using the active portfolio theme. Only the Accordion design uses this image.

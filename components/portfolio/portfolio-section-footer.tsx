@@ -146,7 +146,7 @@ function FooterContactCtaBody({
   return (
     <div className="flex min-w-0 flex-col gap-10 sm:gap-12">
       <div
-        className={`grid w-full grid-cols-1 gap-10 lg:items-start lg:gap-16 xl:gap-24 ${
+        className={`grid w-full grid-cols-1 gap-12 md:grid-cols-2 md:gap-12 lg:items-start lg:gap-16 xl:gap-24 ${
           showPortrait ? 'lg:grid-cols-[1.1fr_1fr_auto]' : 'lg:grid-cols-2'
         }`}
       >
@@ -159,7 +159,7 @@ function FooterContactCtaBody({
           {bio ? (
             <p
               data-pf-no-color-transition=""
-              className={`text-pretty ${cleanDescriptionClass}`}
+              className={`max-w-[60ch] text-pretty ${cleanDescriptionClass}`}
               style={{
                 ...descriptionStyle,
                 fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
@@ -177,7 +177,7 @@ function FooterContactCtaBody({
         </div>
 
         {contactItems.length > 0 || socialLinks.length > 0 ? (
-          <div className="flex min-w-0 flex-col items-start gap-8 text-left">
+          <div className="flex min-w-0 flex-col items-start gap-6 text-left">
             {contactItems.length > 0 ? (
               <ul className="flex w-full max-w-md flex-col items-start gap-6">
                 {contactItems.map((item) =>
@@ -186,10 +186,11 @@ function FooterContactCtaBody({
                       <a
                         href={item.href}
                         data-pf-no-color-transition=""
-                        className={`inline-block text-pretty transition-opacity duration-300 hover:opacity-70 ${cleanContactLineClass} font-semibold`}
+                        className={`inline-flex min-h-11 items-center text-pretty transition-opacity duration-300 hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 rounded-sm ${cleanContactLineClass} font-medium`}
                         style={{
                           ...contactLineStyle,
                           fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+                          lineHeight: 1.4,
                         }}
                       >
                         {t(item.label)}
@@ -199,10 +200,11 @@ function FooterContactCtaBody({
                     <li key={item.id} className="w-full">
                       <span
                         data-pf-no-color-transition=""
-                        className={`inline-block text-pretty ${cleanContactLineClass} font-semibold`}
+                        className={`inline-flex min-h-11 items-center text-pretty ${cleanContactLineClass} font-medium`}
                         style={{
                           ...contactLineStyle,
                           fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
+                          lineHeight: 1.4,
                         }}
                       >
                         {t(item.label)}
@@ -214,7 +216,7 @@ function FooterContactCtaBody({
             ) : null}
 
             {socialLinks.length > 0 ? (
-              <nav className="flex flex-wrap items-center gap-6" aria-label={t('Social')}>
+              <nav className="-ml-3 flex flex-wrap items-center gap-1" aria-label={t('Social')}>
                 {socialLinks.map((link) => (
                   <a
                     key={link.id}
@@ -224,7 +226,7 @@ function FooterContactCtaBody({
                     aria-label={t(link.label)}
                     title={t(link.label)}
                     data-pf-no-color-transition=""
-                    className="inline-flex items-center justify-center transition-opacity duration-300 hover:opacity-70"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full transition-opacity duration-300 hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                     style={iconStyle}
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
@@ -243,7 +245,7 @@ function FooterContactCtaBody({
             alt=""
             loading="lazy"
             decoding="async"
-            className="hidden aspect-[4/5] w-full max-w-[19rem] shrink-0 rounded-[1.5rem] object-cover lg:block lg:w-64 xl:w-72"
+            className="hidden aspect-[4/5] w-full max-w-[19rem] shrink-0 self-start rounded-[1.5rem] object-cover lg:block lg:w-64 xl:w-72"
           />
         ) : null}
       </div>
@@ -870,14 +872,14 @@ export function EditorialPortfolioFooter({
     (presentation.showContactCta || presentation.design === 'minimal') && contactCtaLabel ? (
     <a
       href={ctaHref}
-      className={`${contactCtaChromeClass} ${ctaButtonTextClass} text-center`}
+      className={`${contactCtaChromeClass} ${ctaButtonTextClass} max-w-full whitespace-normal text-center`}
       style={{
         ...contactCtaChromeStyle,
         ...(contactCtaTextArrowStyle ?? {}),
       }}
     >
       {presentation.showCtaIcon !== false ? (
-        <FooterCtaMailIcon className="h-4 w-4 shrink-0" />
+        <FooterCtaMailIcon className="h-[1.125em] w-[1.125em] shrink-0" />
       ) : null}
       {contactCtaLabel}
     </a>

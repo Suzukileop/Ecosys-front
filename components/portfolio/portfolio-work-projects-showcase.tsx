@@ -16,6 +16,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
+  PortfolioWorkProjectsShowcaseNavHover,
   PortfolioWorkProjectsShowcaseRadius,
   PortfolioWorkProjectsShowcaseSettings,
 } from '@/components/portfolio/portfolio-work-settings';
@@ -45,23 +46,6 @@ const SHOWCASE_MOTION_CSS = `
     filter: none !important;
     transition: none !important;
   }
-}
-[data-showcase-thumb-strip]:hover [data-showcase-thumb]:not(:hover) {
-  opacity: 0.55 !important;
-}
-.pf-showcase-marquee {
-  animation: pf-showcase-marquee-scroll 8.5s linear infinite;
-  animation-play-state: paused;
-}
-[data-showcase-thumb]:hover .pf-showcase-marquee {
-  animation-play-state: running;
-}
-@keyframes pf-showcase-marquee-scroll {
-  from { transform: translate3d(0, 0, 0); }
-  to { transform: translate3d(-50%, 0, 0); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .pf-showcase-marquee { animation: none !important; }
 }
 .pf-showcase-mobile-thumbs {
   scrollbar-width: none;
@@ -130,8 +114,8 @@ function splitEditorialTitle(title: string): { lead: string; italic: string } | 
   return { lead: words.slice(0, -1).join(' '), italic: last };
 }
 
-function EditorialTitleText({ text }: { text: string }) {
-  const parts = splitEditorialTitle(text);
+function EditorialTitleText({ text, italic = true }: { text: string; italic?: boolean }) {
+  const parts = italic ? splitEditorialTitle(text) : null;
   if (!parts) return <>{text}</>;
   return (
     <>
@@ -329,11 +313,20 @@ function ShowcaseHref({
 
 /** Ring that fades in and tracks the pointer within the nav cluster — a local "cursor grows as
  * it approaches" cue, contained to this control instead of replacing the OS cursor globally. */
-function ShowcaseNavAura({ children, color }: { children: ReactNode; color: string }) {
+function ShowcaseNavAura({
+  children,
+  color,
+  mode,
+}: {
+  children: ReactNode;
+  color: string;
+  mode: PortfolioWorkProjectsShowcaseNavHover;
+}) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const [style, setStyle] = useState<CSSProperties>({ opacity: 0, transform: 'translate3d(-50%, -50%, 0) scale(0.4)' });
 
   const handleMove = (event: ReactMouseEvent<HTMLDivElement>) => {
+    if (mode !== 'aura') return;
     const rect = wrapRef.current?.getBoundingClientRect();
     if (!rect) return;
     const x = event.clientX - rect.left;
@@ -349,11 +342,13 @@ function ShowcaseNavAura({ children, color }: { children: ReactNode; color: stri
       onMouseMove={handleMove}
       onMouseLeave={handleLeave}
     >
-      <span
-        aria-hidden
-        className="pointer-events-none absolute left-0 top-0 h-9 w-9 rounded-full border transition-[opacity,transform,translate,scale,rotate] duration-300 ease-out"
-        style={{ borderColor: color, ...style }}
-      />
+      {mode === 'aura' ? (
+        <span
+          aria-hidden
+          className="pointer-events-none absolute left-0 top-0 h-9 w-9 rounded-full border transition-[opacity,transform,translate,scale,rotate] duration-300 ease-out"
+          style={{ borderColor: color, ...style }}
+        />
+      ) : null}
       {children}
     </div>
   );
@@ -370,12 +365,15 @@ function ShowcaseChevron({
   color,
   disabled,
   touchSize = false,
+  circled = false,
 }: {
   direction: 'prev' | 'next';
   onClick: () => void;
   label: string;
   color: string;
   disabled?: boolean;
+  /** Projects showcase → Arrows "Circle": a fixed hairline ring around the glyph. */
+  circled?: boolean;
   /** Widens the hit area to a comfortable thumb target (48px) without enlarging the
    * glyph itself — the graphic stays as thin/discreet as the desktop version. */
   touchSize?: boolean;
@@ -416,13 +414,13 @@ function ShowcaseChevron({
       onClick={onClick}
       onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
-      disabled={disabled}
+      aria-disabled={disabled || undefined}
       aria-label={label}
       data-pf-no-color-transition=""
-      className={`relative z-[1] inline-flex items-center justify-center rounded-xs transition-[opacity,transform,translate,scale,rotate] duration-200 ease-out hover:opacity-50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current active:opacity-40 disabled:pointer-events-none disabled:opacity-25 ${
+      className={`relative z-[1] inline-flex items-center justify-center transition-[opacity,transform,translate,scale,rotate] duration-200 ease-out hover:opacity-50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current active:opacity-40 ${
         touchSize ? 'h-12 w-12' : 'h-9 w-9'
-      }`}
-      style={{ color }}
+      } ${circled ? 'rounded-full border' : 'rounded-xs'}`}
+      style={circled ? { color, borderColor: `color-mix(in srgb, ${color} 45%, transparent)` } : { color }}
     >
       <svg
         viewBox="0 0 24 24"
@@ -542,12 +540,10 @@ function ShowcasePrimaryMedia({
 
       {showRole ? (
         <div className="pointer-events-none absolute inset-x-0 bottom-0 p-5 sm:p-6 lg:p-7">
+          {/* Dark chip, not bare white text: on a bright photo the text-shadow left the role
+              at ~1.1:1. */}
           <p
-            className="w-fit text-[10px] font-medium uppercase tracking-[0.22em] sm:text-[11px]"
-            style={{
-              color: '#f7f7f7',
-              textShadow: '0 1px 18px rgba(0,0,0,0.42)',
-            }}
+            className="w-fit rounded-sm bg-black/55 px-2 py-1 text-[11px] font-medium uppercase leading-none tracking-[0.18em] text-[#f7f7f7] backdrop-blur-sm sm:text-[11px]"
             data-pf-no-color-transition=""
           >
             {role}
@@ -566,12 +562,15 @@ function ShowcaseTitleReveal({
   activeId,
   titleColor,
   reduceMotion,
+  italic = true,
 }: {
   title: string;
   href: string | null;
   activeId: string;
   titleColor: string;
   reduceMotion: boolean | null;
+  /** Projects showcase → "Italic last word"; false renders the title as typed. */
+  italic?: boolean;
 }) {
   if (!title) return null;
 
@@ -581,21 +580,26 @@ function ShowcaseTitleReveal({
         href={href}
         className="rounded-xs outline-hidden transition-opacity duration-500 hover:opacity-70 focus-visible:opacity-70"
       >
-        <EditorialTitleText text={title} />
+        <EditorialTitleText text={title} italic={italic} />
       </ShowcaseHref>
     ) : (
-      <EditorialTitleText text={title} />
+      <EditorialTitleText text={title} italic={italic} />
     );
   }
 
   const words = title.trim().split(/\s+/).filter(Boolean);
-  const parts = splitEditorialTitle(title);
+  const parts = italic ? splitEditorialTitle(title) : null;
   const italicLastIndex = parts ? words.length - 1 : -1;
 
+  // Each word's mask gets a little inline-end room (cancelled by the negative margin): it
+  // clipped the italic overhang, cutting the last letter ("marketplac|e").
   const track = (
     <AnimatePresence mode="wait" initial={false}>
       {words.map((word, i) => (
-        <span key={`${activeId}-${i}`} className="inline-block overflow-hidden pb-[0.14em] align-bottom">
+        <span
+          key={`${activeId}-${i}`}
+          className="-me-[0.12em] inline-block overflow-hidden pb-[0.14em] pe-[0.12em] align-bottom"
+        >
           <motion.span
             className={`inline-block ${i === italicLastIndex ? 'font-medium italic tracking-[-0.03em]' : ''}`}
             initial={{ y: '105%' }}
@@ -632,6 +636,7 @@ function ShowcaseDetails({
   settings,
   reduceMotion,
   hideTitle = false,
+  hideIndex = false,
   compact = false,
 }: {
   item: MarketplaceContentItem;
@@ -643,6 +648,8 @@ function ShowcaseDetails({
   /** Mobile layout renders the massive title separately, overlapping the media — this
    * skips it here so it isn't duplicated. */
   hideTitle?: boolean;
+  /** Immersive layout: its nav row already shows "01 / 06", so a second counter here is noise. */
+  hideIndex?: boolean;
   /** Mobile layout: description and tags shrink further and sit closer together —
    * "very discreet, very thin" per the immersive full-width redesign. */
   compact?: boolean;
@@ -662,10 +669,10 @@ function ShowcaseDetails({
 
   return (
     <div className="min-w-0" aria-live="polite" aria-atomic="true">
-      {total > 0 ? (
+      {total > 0 && !hideIndex && settings.showIndex !== false ? (
         <p
-          className={`flex items-center gap-3 text-[10px] font-medium uppercase tracking-[0.22em] ${
-            compact ? 'mb-4' : 'mb-6 sm:mb-7 sm:text-[11px]'
+          className={`flex items-center gap-3 text-[11px] font-medium uppercase tracking-[0.18em] ${
+            compact ? 'mb-4' : 'mb-6 sm:mb-7 sm:text-[12px]'
           }`}
           style={{ color: muted }}
           data-pf-no-color-transition=""
@@ -676,7 +683,7 @@ function ShowcaseDetails({
             style={{ backgroundColor: accent, opacity: 0.55 }}
             aria-hidden
           />
-          <span style={{ opacity: 0.48 }}>{formatShowcaseIndex(total - 1)}</span>
+          <span style={{ opacity: 0.85 }}>{formatShowcaseIndex(total - 1)}</span>
         </p>
       ) : null}
 
@@ -692,6 +699,7 @@ function ShowcaseDetails({
             activeId={item.id}
             titleColor={titleColor}
             reduceMotion={reduceMotion}
+            italic={settings.titleItalic === true}
           />
         </h3>
       ) : null}
@@ -700,12 +708,12 @@ function ShowcaseDetails({
         <p
           className={
             compact
-              ? `max-w-[26rem] text-[0.8rem] font-light leading-[1.75] ${title ? 'mt-1' : ''}`
-              : `max-w-[26rem] text-[0.9375rem] leading-[1.8] sm:text-[0.98rem] sm:leading-[1.85] ${
+              ? `max-w-[26rem] text-[0.9375rem] leading-[1.65] ${title ? 'mt-1' : ''}`
+              : `max-w-[26rem] text-[0.9375rem] leading-[1.7] sm:text-[0.98rem] lg:text-base lg:leading-[1.7] ${
                   showTitle ? 'mt-6 sm:mt-7' : ''
                 }`
           }
-          style={{ color: muted, opacity: 0.82 }}
+          style={{ color: muted }}
           data-pf-no-color-transition=""
         >
           {description}
@@ -715,15 +723,15 @@ function ShowcaseDetails({
       {showCategory ? (
         <div
           className={
-            compact ? 'mt-5' : `${showTitle || showDescription ? 'mt-9 sm:mt-11' : ''}`
+            compact ? 'mt-5' : `${showTitle || showDescription ? 'mt-9 sm:mt-10' : ''}`
           }
           data-pf-no-color-transition=""
         >
           <p
             className={`font-medium uppercase tracking-[0.22em] ${
-              compact ? 'text-[9px]' : 'text-[10px] sm:text-[11px]'
+              compact ? 'text-[11px]' : 'text-[11px] sm:text-[12px]'
             }`}
-            style={{ color: muted, opacity: 0.55 }}
+            style={{ color: muted, opacity: 0.88 }}
           >
             {categoryLabel}
           </p>
@@ -1123,7 +1131,12 @@ export function ProjectsShowcaseGallery({
   const ink = presentation.titleColor;
   const muted = presentation.subtitleColor;
   const border = presentation.cardBorderColor || muted;
-  const radiusClass = showcaseRadiusClass(settings.mediaRadius ?? 'xl');
+  const thumbRadiusClass = showcaseRadiusClass(settings.thumbRadius ?? 'none');
+  // Small mobile chips: the desktop radius scale (up to 2rem) would turn them into pills.
+  const mobileThumbRadiusClass =
+    settings.thumbRadius === 'xl' ? 'rounded-lg' : settings.thumbRadius === 'md' ? 'rounded-[4px]' : 'rounded-none';
+  const navHover = settings.navHover ?? 'aura';
+  const showCounter = settings.showCounter !== false;
   const busy = Boolean(thumbAnim);
 
   /** Click a visible thumb → advance until that project is featured (same slide feel). */
@@ -1201,9 +1214,9 @@ export function ProjectsShowcaseGallery({
                 role="listitem"
                 aria-label={t('Show {label}', { label })}
                 onClick={() => selectThumb(index)}
-                disabled={busy}
+                aria-disabled={busy || undefined}
                 data-showcase-thumb=""
-                className={`group/thumb relative block aspect-[4/5] overflow-hidden opacity-[0.72] transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-100 focus:outline-hidden focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none ${radiusClass}`}
+                className={`group/thumb relative block aspect-[4/5] overflow-hidden opacity-[0.86] transition-opacity duration-300 ease-out hover:opacity-100 focus:outline-hidden focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current ${thumbRadiusClass}`}
                 style={{
                   backgroundColor: `${border}28`,
                   flex: `0 0 ${
@@ -1220,27 +1233,14 @@ export function ProjectsShowcaseGallery({
                     alt=""
                     fill
                     sizes="(max-width: 1024px) 30vw, 12vw"
+                    loading="eager"
                     className="object-cover object-center transition-transform duration-[6000ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover/thumb:scale-[1.12]"
                     draggable={false}
                     data-pf-no-color-transition=""
                   />
                 ) : null}
-                <span
-                  aria-hidden
-                  className="pointer-events-none absolute inset-x-0 bottom-0 overflow-hidden py-1"
-                  style={{ background: 'linear-gradient(to top, rgba(0,0,0,0.34), transparent)' }}
-                >
-                  <span className="pf-showcase-marquee flex w-max whitespace-nowrap text-[9px] font-medium uppercase tracking-[0.2em] text-white">
-                    {[0, 1].map((rep) => (
-                      <span key={rep} className="flex shrink-0 items-center gap-3 pr-6">
-                        <span>{label}</span>
-                        <span>•</span>
-                        <span>{label}</span>
-                        <span>•</span>
-                      </span>
-                    ))}
-                  </span>
-                </span>
+                {/* No label over the image: it covered the bottom of every thumb. The name
+                    stays in aria-label for assistive tech. */}
               </button>
             );
           })}
@@ -1251,15 +1251,31 @@ export function ProjectsShowcaseGallery({
   const details = (
     <div className="flex h-full min-h-0 w-full flex-col justify-start">
       <div
-        className="shrink-0"
+        className="grid shrink-0"
         data-showcase-enter=""
         data-enter-delay="120"
         data-showcase-copy-shift=""
         data-pf-no-color-transition=""
         style={SHOWCASE_HIDDEN}
       >
+        {/* Invisible copies of every project's copy stacked in the same cell: the cell (and so
+            the row, the media and the thumb strip) always takes the tallest project's height,
+            instead of growing/shrinking by a line on each switch. */}
+        {items.map((item, index) => (
+          <div key={item.id} className="invisible [grid-area:1/1]" aria-hidden>
+            <ShowcaseDetails
+              item={item}
+              index={index}
+              total={items.length}
+              presentation={presentation}
+              settings={settings}
+              reduceMotion
+            />
+          </div>
+        ))}
         <motion.div
           key={active.id}
+          className="[grid-area:1/1]"
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
@@ -1283,32 +1299,38 @@ export function ProjectsShowcaseGallery({
         style={SHOWCASE_HIDDEN}
       >
         {items.length > 1 ? (
-          <ShowcaseNavAura color={ink}>
+          <ShowcaseNavAura color={ink} mode={navHover}>
             <ShowcaseChevron
               direction="prev"
               onClick={() => cycle(-1)}
               label={t('Previous project')}
               color={ink}
               disabled={busy}
+              circled={navHover === 'circle'}
             />
-            <p
-              className="min-w-[4.75rem] px-1 text-center text-[10px] font-medium uppercase tracking-[0.2em] sm:text-[11px]"
-              style={{ color: muted }}
-              aria-hidden
-              data-pf-no-color-transition=""
-            >
-              {formatShowcaseIndex(safeIndex)}
-              <span className="mx-1.5" style={{ opacity: 0.4 }}>
-                /
-              </span>
-              {formatShowcaseIndex(items.length - 1)}
-            </p>
+            {showCounter ? (
+              <p
+                className="min-w-[4.75rem] px-1 text-center text-[11px] font-medium uppercase tracking-[0.18em] sm:text-[12px]"
+                style={{ color: muted }}
+                aria-hidden
+                data-pf-no-color-transition=""
+              >
+                {formatShowcaseIndex(safeIndex)}
+                <span className="mx-1.5" style={{ opacity: 0.4 }}>
+                  /
+                </span>
+                {formatShowcaseIndex(items.length - 1)}
+              </p>
+            ) : (
+              <span className="w-2" aria-hidden />
+            )}
             <ShowcaseChevron
               direction="next"
               onClick={() => cycle(1)}
               label={t('Next project')}
               color={ink}
               disabled={busy}
+              circled={navHover === 'circle'}
             />
           </ShowcaseNavAura>
         ) : null}
@@ -1317,16 +1339,18 @@ export function ProjectsShowcaseGallery({
     </div>
   );
 
-  // Full-width immersive mobile layout (< 768px): stacked, edge-to-edge, the title pulled
-  // up to overlap the image/background seam, swipe-driven instead of the desktop chevron
-  // rail + windowed thumb track. Kept as an entirely separate tree (toggled with the
-  // desktop grid via `hidden`/`md:hidden`) rather than reshaping the same markup at a
-  // breakpoint — the two layouts are structurally too different to share safely.
+  // Full-width immersive layout for phones AND tablets (< 1024px): stacked, edge-to-edge, the
+  // title pulled up to overlap the image/background seam, swipe-driven instead of the desktop
+  // chevron rail + windowed thumb track. Tablets used to get the desktop tree stacked in one
+  // column: a 4:5 image ~830px tall, Prev/Next ~400px below it, three 270px thumbs competing
+  // with the hero — ~2000px for one project. Kept as a separate tree (toggled with the
+  // desktop grid via `hidden`/`lg:hidden`): the two layouts are too different to share.
+  // Order: content first (title, copy, link), then ONE browse block (arrows + counter + strip).
   const mobileGallery = (
-    <div className="md:hidden">
+    <div className="lg:hidden">
       <div
         ref={mobileMediaRef}
-        className="relative mx-[calc(50%-50vw)] h-[50vh] min-h-[20rem] w-screen overflow-hidden"
+        className="relative mx-[calc(50%-50vw)] h-[50vh] min-h-[20rem] w-screen overflow-hidden md:h-[58vh] md:max-h-[40rem]"
         data-pf-no-color-transition=""
         onClickCapture={(event) => {
           if (!suppressTapRef.current) return;
@@ -1352,10 +1376,10 @@ export function ProjectsShowcaseGallery({
         />
       </div>
 
-      <div className="relative z-[1] -mt-16 px-1">
+      <div className="relative z-[1] -mt-16 px-1 md:-mt-20">
         {active.title?.trim() ? (
           <h3
-            className="max-w-[16ch] font-semibold tracking-[-0.045em]"
+            className="max-w-[16ch] font-semibold tracking-[-0.045em] md:max-w-[20ch]"
             style={{
               fontSize: 'clamp(2.35rem, 11vw, 3.35rem)',
               lineHeight: 0.98,
@@ -1370,13 +1394,14 @@ export function ProjectsShowcaseGallery({
               activeId={active.id}
               titleColor="#fbfbfb"
               reduceMotion={reduceMotion}
+              italic={settings.titleItalic === true}
             />
           </h3>
         ) : null}
 
         <motion.div
           key={active.id}
-          className="mt-7"
+          className="mt-6 md:max-w-xl"
           initial={reduceMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: reduceMotion ? 0 : 0.28, ease: [0.22, 1, 0.36, 1] }}
@@ -1389,12 +1414,38 @@ export function ProjectsShowcaseGallery({
             settings={settings}
             reduceMotion={reduceMotion}
             hideTitle
+            hideIndex
             compact
           />
         </motion.div>
 
+        {/* The project's own action sits with its copy, not after the whole browse block. */}
+        {active.linkUrl?.trim() ? (
+          <ShowcaseHref
+            href={active.linkUrl.trim()}
+            className="mt-6 inline-flex min-h-11 items-center gap-2 text-[12px] font-medium uppercase tracking-[0.2em]"
+            style={{ color: ink }}
+            ariaLabel={`Open ${active.title?.trim() || 'project'}`}
+          >
+            {t('Tap to Explore')}
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="1.4"
+              className="h-3 w-3"
+              aria-hidden
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9M17 7V15" />
+            </svg>
+          </ShowcaseHref>
+        ) : null}
+
         {items.length > 1 ? (
-          <div className="mt-7 flex items-center justify-between">
+          <div
+            className="mt-8 flex items-center justify-between border-t pt-4 md:mt-10"
+            style={{ borderColor: `color-mix(in srgb, ${muted} 22%, transparent)` }}
+          >
             <ShowcaseChevron
               direction="prev"
               onClick={() => cycle(-1)}
@@ -1403,18 +1454,20 @@ export function ProjectsShowcaseGallery({
               disabled={busy}
               touchSize
             />
-            <p
-              className="px-1 text-[10px] font-medium uppercase tracking-[0.2em]"
-              style={{ color: muted }}
-              aria-hidden
-              data-pf-no-color-transition=""
-            >
-              {formatShowcaseIndex(safeIndex)}
-              <span className="mx-1.5" style={{ opacity: 0.4 }}>
-                /
-              </span>
-              {formatShowcaseIndex(items.length - 1)}
-            </p>
+            {showCounter ? (
+              <p
+                className="px-1 text-[11px] font-medium uppercase tracking-[0.18em]"
+                style={{ color: muted }}
+                aria-hidden
+                data-pf-no-color-transition=""
+              >
+                {formatShowcaseIndex(safeIndex)}
+                <span className="mx-1.5" style={{ opacity: 0.4 }}>
+                  /
+                </span>
+                {formatShowcaseIndex(items.length - 1)}
+              </p>
+            ) : null}
             <ShowcaseChevron
               direction="next"
               onClick={() => cycle(1)}
@@ -1428,7 +1481,7 @@ export function ProjectsShowcaseGallery({
 
         {items.length > 1 ? (
           <div
-            className="pf-showcase-mobile-thumbs -mx-1 mt-6 flex gap-2 overflow-x-auto px-1 pb-1"
+            className="pf-showcase-mobile-thumbs -mx-1 mt-4 flex gap-2 overflow-x-auto px-1 pb-1 md:gap-3"
             style={{ scrollSnapType: 'x proximity' }}
             role="list"
             aria-label={t('Project thumbnails')}
@@ -1445,10 +1498,12 @@ export function ProjectsShowcaseGallery({
                   disabled={busy}
                   aria-label={t('Show {label}', { label })}
                   aria-current={idx === safeIndex}
-                  className="relative h-11 w-16 shrink-0 overflow-hidden rounded-[3px] transition-opacity duration-300 disabled:pointer-events-none"
+                  /* Larger targets (64×44 was below a comfortable thumb size) and dimmed only
+                     to 0.65: at 0.4 the strip read as a row of black boxes. */
+                  className={`relative h-14 w-20 shrink-0 overflow-hidden transition-opacity duration-300 disabled:pointer-events-none md:h-20 md:w-28 ${mobileThumbRadiusClass}`}
                   style={{
                     scrollSnapAlign: 'center',
-                    opacity: idx === safeIndex ? 1 : 0.4,
+                    opacity: idx === safeIndex ? 1 : 0.65,
                     boxShadow: idx === safeIndex ? `0 0 0 1px ${ink}99 inset` : 'none',
                     backgroundColor: `${border}28`,
                   }}
@@ -1459,7 +1514,7 @@ export function ProjectsShowcaseGallery({
                       src={thumbUrl}
                       alt=""
                       fill
-                      sizes="64px"
+                      sizes="(max-width: 767px) 80px, 112px"
                       className="object-cover object-center"
                       draggable={false}
                       data-pf-no-color-transition=""
@@ -1469,27 +1524,6 @@ export function ProjectsShowcaseGallery({
               );
             })}
           </div>
-        ) : null}
-
-        {active.linkUrl?.trim() ? (
-          <ShowcaseHref
-            href={active.linkUrl.trim()}
-            className="mb-1 mt-8 inline-flex items-center gap-2 text-[11px] font-medium uppercase tracking-[0.24em]"
-            style={{ color: ink }}
-            ariaLabel={`Open ${active.title?.trim() || 'project'}`}
-          >
-            {t('Tap to Explore')}
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.4"
-              className="h-3 w-3"
-              aria-hidden
-            >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9M17 7V15" />
-            </svg>
-          </ShowcaseHref>
         ) : null}
       </div>
     </div>
@@ -1520,7 +1554,11 @@ export function ProjectsShowcaseGallery({
         {active.title?.trim() ? `: ${active.title.trim()}` : ''}
       </p>
       {mobileGallery}
-      <div className="hidden grid-cols-1 gap-10 sm:gap-12 md:grid lg:grid-cols-[minmax(0,0.56fr)_minmax(0,0.44fr)] lg:items-stretch lg:gap-x-16 xl:gap-x-24">
+      {/* Fixed row floor: the media took the row's height, and the row followed the details
+          column — a 1-line vs 2-line title resized the image and moved the strip by ~54px on
+          every project change. The floor sits above the tallest usual details column, so the
+          stage stays put; only unusually long copy can still grow it. */}
+      <div className="hidden lg:grid lg:grid-cols-[minmax(0,0.56fr)_minmax(0,0.44fr)] lg:grid-rows-[minmax(46rem,auto)] lg:items-stretch lg:gap-x-16 xl:grid-rows-[minmax(43rem,auto)] xl:gap-x-24">
         <div
           className={`min-w-0 lg:self-stretch ${
             mediaOnLeft ? 'lg:col-start-1 lg:row-start-1' : 'lg:col-start-2 lg:row-start-1'

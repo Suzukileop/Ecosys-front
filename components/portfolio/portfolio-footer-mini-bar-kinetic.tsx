@@ -9,6 +9,7 @@ import {
 import {
   footerMiniBarCopyrightBase,
   prefersReducedMotion,
+  scrollPortfolioPageToTop,
   useFooterMiniBarLiveClock,
   type FooterMiniBarVariantProps,
 } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
@@ -172,7 +173,7 @@ function KineticBackToTop({ ink }: { ink: string }) {
 
   const handleClick = () => {
     try {
-      window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' });
+      scrollPortfolioPageToTop();
     } catch {
       window.scrollTo(0, 0);
     }

@@ -127,7 +127,6 @@ import {
   type FooterSubSection,
 } from '@/components/portfolio/portfolio-footer-settings-panel';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
-import { useTheme } from '@/components/landing/ThemeProvider';
 import {
   getVisiblePortfolioSettingsSections,
   PortfolioStudioSectionList,
@@ -1547,7 +1546,7 @@ const PALETTE_FAMILY_OPTIONS = [
   },
   {
     id: 'citron' as const,
-    label: msg('Lemon'),
+    label: msg('Ruby'),
     dark: CITRON_DARK_HERO_PALETTE,
     light: CITRON_LIGHT_HERO_PALETTE,
   },
@@ -1763,6 +1762,12 @@ function GlobalSettingsPanel({
           </NpCollapsibleSection>
 
           <NpCollapsibleSection title={t('Animations')}>
+            <GlobalSwitchRow label={t('Smooth scrolling')} checked={global.smoothScrollEnabled??false} onChange={smoothScrollEnabled=>onGlobalChange({smoothScrollEnabled})}/>
+            {global.smoothScrollEnabled?<>
+              <NpRangeField label={t('Smoothness')} value={global.smoothScrollSoftness??50} min={0} max={100} unit="%" onChange={smoothScrollSoftness=>onGlobalChange({smoothScrollSoftness})}/>
+              <NpRangeField label={t('Wheel speed')} value={global.smoothScrollWheelSpeed??100} min={25} max={200} unit="%" onChange={smoothScrollWheelSpeed=>onGlobalChange({smoothScrollWheelSpeed})}/>
+              <p className="np-note">{t('Touch scrolling stays native. Reduced motion preferences are respected.')}</p>
+            </>:null}
             <GlobalSwitchRow
               label={t('Motion effects')}
               description={t('Entrance reveals, scroll and hover animations on every section. Turn off for a fully static page.')}
@@ -1887,6 +1892,9 @@ const GLOBAL_TAB_KEYS = {
     'sectionTitleTopSpacing',
     'sectionTitleBottomSpacing',
     'motionEnabled',
+    'smoothScrollEnabled',
+    'smoothScrollSoftness',
+    'smoothScrollWheelSpeed',
     'headerMotionEnabled',
     'settingsShortcutEnabled',
   ],
@@ -3688,6 +3696,7 @@ function NavLayoutDesignGrid({
                 active={option.value === value}
                 label={t(option.label)}
                 src={withDesignPreview(previewSource.portfolioPath, { section: 'navigation', design: option.value })}
+                thumbnail={<NavLayoutDesignPreview design={option.value} accent={accent} strongText={strongText} muted={muted} />}
                 settings={previewSource.settings}
                 onClick={() => pick(option.value)}
               />
@@ -3877,6 +3886,7 @@ const NAV_GENERAL_KEYS = [
   'itemGap',
   'mobileLayout',
   'mobileDrawerSide',
+  'mobileDrawerDesign',
   'mobileBrand',
   'mobileBrandWord',
 ] as const satisfies readonly (keyof PortfolioNavSettings)[];
@@ -3984,6 +3994,9 @@ function NavigationPanel({
             checked={navigation.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
+          <NpSegmentedControl hideLabel label={t('Color mode')}
+            options={PORTFOLIO_SECTION_COLOR_MODE_OPTIONS.map(option => ({ value: option.value, label: t(option.label) }))}
+            value={navigation.colorModeOverride} onChange={colorModeOverride => onChange({ colorModeOverride })} />
 
           <div
             className="np-dimmable"
@@ -4087,6 +4100,27 @@ function NavigationPanel({
                   />
                 </NpOptionCardGroup>
 
+                <NpOptionCardGroup label={t('Drawer design')}>
+                  {([
+                    ['classic', 'Classic'], ['editorial', 'Editorial index'],
+                    ['contrast', 'Contrast panel'], ['cards', 'Navigation cards'],
+                    ['typographic', 'Typographic menu'],
+                  ] as const).map(([value, label]) => (
+                    <NpOptionCard
+                      key={value}
+                      selected={(navigation.mobileDrawerDesign ?? 'classic') === value}
+                      title={t(label)}
+                      illustration={
+                        <svg viewBox="0 0 120 64" className="h-16 w-full" aria-hidden="true">
+                          <rect x="25" y="4" width="70" height="56" rx="5" fill={value === 'contrast' ? '#303030' : '#1b1b1b'} stroke="#424242" />
+                          {value === 'cards' ? [0,1,2,3].map(i => <rect key={i} x={32 + (i%2)*29} y={13+Math.floor(i/2)*21} width="23" height="16" rx="3" fill="#444" />) : [0,1,2].map(i => <g key={i}><rect x={value === 'editorial' ? 44 : 34} y={15+i*14} width={value === 'typographic' ? 47 : 40-i*5} height={value === 'typographic' ? 6 : 3} rx="1" fill="#666" />{value === 'editorial' ? <rect x="33" y={15+i*14} width="5" height="3" fill="#888" /> : null}</g>)}
+                          <rect x="33" y="8" width="13" height="2" fill="#f97316" />
+                        </svg>
+                      }
+                      onClick={() => onChange({ mobileDrawerDesign: value })}
+                    />
+                  ))}
+                </NpOptionCardGroup>
                 {mobileLayout === 'drawer' ? (
                   <>
                     <NpSegmentedControl
@@ -4174,12 +4208,6 @@ function NavigationPanel({
                 options={PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
                 value={navigation.navBarHeight ?? 'md'}
                 onChange={(navBarHeight) => onChange({ navBarHeight })}
-              />
-              <NpSegmentedControl
-                label={t('Color mode')}
-                options={PORTFOLIO_SECTION_COLOR_MODE_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
-                value={navigation.colorModeOverride}
-                onChange={(colorModeOverride) => onChange({ colorModeOverride })}
               />
               <NpToggleRow
                 title={t('Light / dark toggle in bar')}
@@ -4677,8 +4705,8 @@ export function PortfolioSettingsModal({
 }: PortfolioSettingsModalProps) {
   const t = useT();
   const router = useRouter();
-  const { theme: appTheme } = useTheme();
-  const appColorMode = appTheme === 'light' ? 'light' : 'dark';
+  // Studio chrome is always dark; portfolio/section colours remain independent.
+  const appColorMode = 'dark' as const;
   const [mounted, setMounted] = useState(variant === 'dock');
   const [ownActiveSection, setOwnActiveSection] = useState<PortfolioSettingsSectionId>('theme');
   const activeSection = activeSectionId ?? ownActiveSection;
@@ -4949,7 +4977,7 @@ export function PortfolioSettingsModal({
       activeMeta.id === 'hero';
     const dockChromeClass = panelFramesItself ? (dockShowsList ? 'lg:hidden' : 'hidden') : '';
     return (
-      <div className="portfolio-studio-dock flex h-full min-h-0 flex-col" data-color-mode={appColorMode}>
+      <div className="portfolio-studio-dock dark flex h-full min-h-0 flex-col" data-color-mode={appColorMode} style={{colorScheme:'dark'}}>
         <div
           className={`relative z-20 flex h-16 shrink-0 items-center border-b border-[color:var(--pf-palette-bordure)] px-5 ${dockChromeClass}`}
         >

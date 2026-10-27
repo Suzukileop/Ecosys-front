@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowLeft, faArrowPointer } from '@fortawesome/free-solid-svg-icons';
+import { faArrowPointer, faChevronLeft } from '@fortawesome/free-solid-svg-icons';
 import {
   getVisiblePortfolioSettingsSections,
   PortfolioStudioSectionList,
@@ -378,7 +378,7 @@ export function PortfolioLivePreview({
   } = usePortfolioSettings(creatorId, { canEdit: true });
 
   /* Design pickers render each design for real from this portfolio, wearing these settings. */
-  const designPreviewSource = useMemo(() => ({ portfolioPath: path, settings, availableGallery: previewMeta.availableGallery }), [path, settings, previewMeta.availableGallery]);
+  const designPreviewSource = useMemo(() => ({ portfolioPath: path, settings, availableSkills: previewMeta.availableSkills, availableGallery: previewMeta.availableGallery, profileAvatarUrl: previewMeta.profileAvatarUrl }), [path, settings, previewMeta.availableSkills, previewMeta.availableGallery, previewMeta.profileAvatarUrl]);
   const studioSections = useMemo(
     () =>
       getVisiblePortfolioSettingsSections({
@@ -707,7 +707,7 @@ export function PortfolioLivePreview({
   return (
     <div
       ref={previewRootRef}
-      className={`portfolio-live-preview max-w-full min-w-0 ${
+      className={`portfolio-live-preview dark max-w-full min-w-0 ${
         focusActive
           ? `relative flex h-full flex-col overflow-x-clip bg-white dark:bg-black`
           : immersive
@@ -717,12 +717,13 @@ export function PortfolioLivePreview({
               }`
             : `relative sticky z-20 flex flex-col overflow-x-clip bg-white px-0 pb-2 pt-px dark:bg-black sm:px-4`
       }`}
-      style={focusActive || immersive ? undefined : { top: dockTop, height: dockHeight }}
+      style={{ colorScheme: 'dark', backgroundColor: '#000000', ...(focusActive || immersive ? {} : { top: dockTop, height: dockHeight }) }}
     >
       {/* Floating chrome — above the canvas, never part of the previewed page. Docked, it sits
           inside the same hairline frame as the screen: both use a 1px outline and the screen is
           offset by 1px, so their shared edge collapses into a single separator line. */}
       <div
+        style={{ backgroundColor: '#000000', color: '#E7E9EA', borderColor: '#1F2226' }}
         className={`portfolio-live-preview-chrome grid min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 ${
           focusActive
             ? 'px-3 py-0 sm:px-0.5'
@@ -738,10 +739,10 @@ export function PortfolioLivePreview({
               type="button"
               onClick={onExit}
               title={t('Back to the editor (Esc)')}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]/45"
+              aria-label={t('Back to the editor (Esc)')}
+              className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[14px] font-semibold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]/45"
             >
-              <FontAwesomeIcon icon={faArrowLeft} className="h-3.5 w-3.5" fixedWidth aria-hidden />
-              <span className="hidden sm:inline">{t('Editor')}</span>
+              <FontAwesomeIcon icon={faChevronLeft} className="h-3.5 w-3.5" fixedWidth aria-hidden />
             </button>
             <p className="hidden min-w-0 truncate text-[15px] font-bold normal-case tracking-normal text-[#0F1419] dark:text-[#E7E9EA] sm:block">
               {t('Live preview')}
@@ -813,7 +814,7 @@ export function PortfolioLivePreview({
               uninterrupted canvas. Navigation and controls stay on the same side of the screen. */}
           <aside
             aria-label={t('Sections')}
-            className="portfolio-studio-sections-rail h-full min-h-0 w-[84px] min-w-0 shrink-0 overflow-hidden border-r border-neutral-200 bg-white dark:border-neutral-800 dark:bg-[#0A0A0A] sm:w-[96px] xl:w-[112px]"
+            className="portfolio-studio-sections-rail h-full min-h-0 w-[84px] min-w-0 shrink-0 overflow-hidden border-r border-neutral-200 bg-neutral-100 dark:border-neutral-900 dark:bg-[#050505] sm:w-[96px] xl:w-[112px]"
           >
             <div className="portfolio-studio-sections-rail-inner h-full min-h-0 w-[84px] sm:w-[96px] xl:w-[112px]">
               <PortfolioStudioSectionList
@@ -842,15 +843,15 @@ export function PortfolioLivePreview({
             id="portfolio-studio-settings"
             role="complementary"
             aria-label={t('Portfolio settings')}
-            aria-hidden={!settingsOpen}
             data-open={settingsOpen ? 'true' : 'false'}
-            className={`portfolio-studio-settings-pane relative z-20 flex h-full min-w-0 shrink-0 flex-col overflow-visible border-r border-neutral-200 bg-white transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-neutral-800 dark:bg-[#0A0A0A] ${
+            className={`portfolio-studio-settings-pane relative z-20 flex h-full min-w-0 shrink-0 flex-col overflow-visible border-r border-neutral-200 bg-white transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-neutral-800 dark:bg-[#121212] ${
               settingsOpen
                 ? 'w-[calc(100%_-_84px)] sm:w-[min(calc(100%_-_96px),25.5rem)] xl:w-[410px]'
                 : 'pointer-events-none w-0 border-r-0'
             }`}
           >
             <div
+              aria-hidden={!settingsOpen}
               className={`h-full w-full min-w-0 overflow-hidden transition-opacity duration-300 ${
                 settingsOpen ? 'opacity-100 delay-75' : 'invisible opacity-0'
               }`}
@@ -893,13 +894,13 @@ export function PortfolioLivePreview({
               aria-expanded={settingsOpen}
               aria-controls="portfolio-studio-settings"
               title={settingsOpen ? t('Collapse settings') : t('Expand settings')}
-              className={`portfolio-studio-settings-toggle absolute top-1/2 z-40 flex h-12 w-6 -translate-y-1/2 items-center justify-center border border-neutral-200 bg-white text-neutral-500 shadow-sm transition-[right,transform,background-color,color] hover:bg-neutral-100 hover:text-neutral-950 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-500 dark:hover:bg-neutral-900 dark:hover:text-neutral-100 ${
+              className={`portfolio-studio-settings-toggle pointer-events-auto absolute top-1/2 z-40 flex h-9 w-4 -translate-y-1/2 items-center justify-center border border-neutral-200 bg-white text-neutral-400 shadow-sm transition-[right,transform,background-color,color] hover:bg-neutral-100 hover:text-neutral-950 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-600 dark:hover:bg-neutral-900 dark:hover:text-neutral-100 ${
                 settingsOpen
-                  ? 'right-1 rounded-lg sm:right-0 sm:translate-x-full sm:rounded-l-none sm:rounded-r-lg sm:border-l-0'
-                  : 'right-0 translate-x-full rounded-r-lg border-l-0'
+                  ? 'right-1 rounded-md sm:right-0 sm:translate-x-full sm:rounded-l-none sm:rounded-r-md sm:border-l-0'
+                  : 'right-0 translate-x-full rounded-r-md border-l-0'
               }`}
             >
-              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <svg viewBox="0 0 24 24" className="h-3 w-3" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d={settingsOpen ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} />
               </svg>
             </button>

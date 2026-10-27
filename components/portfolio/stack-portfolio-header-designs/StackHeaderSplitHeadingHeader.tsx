@@ -1,6 +1,8 @@
 'use client';
 
-import { useEffect, useMemo, useRef, type ReactNode } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { useLayoutEffect, useMemo, useRef, type ReactNode } from 'react';
 import { DEFAULT_STACK_PRESENTATION, type PortfolioStackPresentationSettings } from '@/components/portfolio/portfolio-stack-settings';
 import {
   STACK_HEADER_MARGIN_BOTTOM_REM,
@@ -10,6 +12,27 @@ import {
 } from '@/components/portfolio/portfolio-stack-header-settings';
 import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
+
+function prefersReducedMotion(): boolean {
+  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+}
+
+/** Nearest scrollable ancestor — ScrollTrigger needs this explicitly inside an
+ *  embedded/iframe dashboard preview, where `window` isn't the real scroller. */
+function stackHeaderScrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if (
+      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
+      node.scrollHeight > node.clientHeight + 1
+    ) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
 
 const DEFAULT_LABEL_TEXT = 'Stack';
 const DEFAULT_TITLE_TEXT = 'Core stack';
@@ -45,13 +68,24 @@ const LABEL_WEIGHT_CLASS: Record<PortfolioStackHeaderTitleWeight, string> = {
 };
 
 /**
- * Split heading — exact disposition + motion copy of Portfolio/Work's Split
- * heading header (`WorkSplitHeadingHeader`): the title on the left (first
- * word italic/light, rest regular) masked-reveals from the bottom; a small
- * uppercase label sits top-aligned on the right and fades in from a slight
- * offset. No separator line. On scroll only the label reacts — it slides
- * right and fades out fast while the title stays put. Every element —
- * title, label — has its own text, color, size, and weight.
+ * Split heading — exact disposition of Portfolio/Work's Split heading header
+ * (`WorkSplitHeadingHeader`): the title on the left (first word italic/light,
+ * rest regular); a small uppercase label sits top-aligned on the right. No
+ * separator line. Every element — title, label — has its own text, color,
+ * size, and weight.
+ *
+ * Motion — a CONVERGENCE, unlike the other Stack headers (no mask, no count,
+ * no wipe, no tracking, no stretch): the two halves of the heading start apart
+ * — the italic word off to the left, leaning forward (extra skew), the regular
+ * words off to the right, leaning the other way — and glide toward each other
+ * until they lock into the sentence, with an overshoot-free expo settle. The
+ * regular words brake one after the other, nearest first, like carriages
+ * closing up. Once the halves have met, the label (the aside) slides in from
+ * the side facing the heading. It replays on every pass: arriving from below
+ * the halves also lift a few px into place, arriving from above (scrolling
+ * back up) they drop into place instead. Leaving is shorter and harder
+ * (`power3.in`): the label retracts toward the heading first, then the halves
+ * part ways — outermost words first — drifting the way the page moves.
  */
 export function StackHeaderSplitHeadingHeader({
   presentation: presentationProp,
@@ -75,169 +109,194 @@ export function StackHeaderSplitHeadingHeader({
   const titleWeight = TITLE_WEIGHT[presentation.headerSplitHeadingTitleWeight ?? 'regular'];
 
   const sectionRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLHeadingElement>(null);
+  const italicRef = useRef<HTMLSpanElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
+  const regularWordRefs = useRef<(HTMLSpanElement | null)[]>([]);
 
   const headingParts = useMemo(() => {
     const words = title.split(/\s+/).filter(Boolean);
-    if (words.length === 0) return { italic: '', regular: '' };
-    return { italic: words[0], regular: words.slice(1).join(' ') };
+    if (words.length === 0) return { italic: '', regular: [] as string[] };
+    return { italic: words[0], regular: words.slice(1) };
   }, [title]);
 
-  // ========== ANIMATION: Entry — title mask reveal, label fades from the right ==========
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-
+  // ========== ANIMATION: Convergence in / parting out, replayed on every pass ==========
+  useLayoutEffect(() => {
     const section = sectionRef.current;
-    const titleEl = titleRef.current;
-    const labelEl = labelRef.current;
     if (!section) return;
+    if (prefersReducedMotion() || !animationEnabled) return;
 
-    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches || !animationEnabled) {
-      if (titleEl) {
-        titleEl.style.opacity = '1';
-        titleEl.style.transform = 'translateY(0)';
+    const italicEl = italicRef.current;
+    const labelEl = labelRef.current;
+    const wordEls = regularWordRefs.current
+      .slice(0, headingParts.regular.length)
+      .filter((node): node is HTMLSpanElement => Boolean(node));
+
+    gsap.registerPlugin(ScrollTrigger);
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        // A best-effort refresh must never take the page down (GSAP can throw on an init-time edge case).
+        console.error('[ScrollTrigger] deferred refresh() failed', error);
       }
-      if (labelEl) {
-        labelEl.style.opacity = '1';
-        labelEl.style.transform = 'translateX(0)';
-      }
-      return;
+    }, 90);
+    const scroller = stackHeaderScrollParent(section);
+
+    // How far apart the halves start: ~10% of the header's own width (not the
+    // window — the dashboard preview is narrower), kept within a range where
+    // the travel reads as a deliberate move without dragging the text across
+    // the whole column. Read at play time so a resize is picked up.
+    const spread = () => Math.round(Math.min(160, Math.max(48, section.clientWidth * 0.1)));
+    const LABEL_OFFSET = 18;
+
+    let ctx: gsap.Context | undefined;
+    try {
+      ctx = gsap.context(() => {
+        // Hidden "from" state until the header first reaches the viewport (set before paint: no flash).
+        if (italicEl) gsap.set(italicEl, { opacity: 0, x: -spread(), y: 8, skewX: -8 });
+        if (wordEls.length) gsap.set(wordEls, { opacity: 0, x: spread(), y: 8, skewX: 5 });
+        if (labelEl) gsap.set(labelEl, { opacity: 0, x: -LABEL_OFFSET });
+
+        // dir 1: arriving from below (scrolling down); -1: arriving from above (scrolling up).
+        const enter = (dir: 1 | -1) => {
+          const d = spread();
+          if (italicEl) {
+            gsap.fromTo(
+              italicEl,
+              { opacity: 0, x: -d, y: 8 * dir, skewX: -8 },
+              { opacity: 1, x: 0, y: 0, skewX: 0, duration: 1.15, ease: 'expo.out', overwrite: true }
+            );
+          }
+          if (wordEls.length) {
+            gsap.fromTo(
+              wordEls,
+              { opacity: 0, x: d, y: 8 * dir, skewX: 5 },
+              {
+                opacity: 1,
+                x: 0,
+                y: 0,
+                skewX: 0,
+                duration: 1.15,
+                ease: 'expo.out',
+                // Nearest word locks first, the tail closes up behind it.
+                stagger: 0.04,
+                delay: 0.05,
+                overwrite: true,
+              }
+            );
+          }
+          if (labelEl) {
+            // Waits until the halves have (visually) met, then comes from the heading's side.
+            gsap.fromTo(
+              labelEl,
+              { opacity: 0, x: -LABEL_OFFSET },
+              { opacity: 1, x: 0, duration: 0.8, ease: 'expo.out', delay: 0.5, overwrite: true }
+            );
+          }
+        };
+        // dir 1: out through the top; -1: out through the bottom. Faster than the entrance, label first.
+        const leave = (dir: 1 | -1) => {
+          const d = spread() * 0.6;
+          if (labelEl) {
+            gsap.to(labelEl, { opacity: 0, x: -LABEL_OFFSET * 0.6, duration: 0.3, ease: 'power3.in', overwrite: true });
+          }
+          if (italicEl) {
+            gsap.to(italicEl, {
+              opacity: 0,
+              x: -d,
+              y: -6 * dir,
+              skewX: -6,
+              duration: 0.5,
+              ease: 'power3.in',
+              delay: 0.08,
+              overwrite: true,
+            });
+          }
+          if (wordEls.length) {
+            gsap.to(wordEls, {
+              opacity: 0,
+              x: d,
+              y: -6 * dir,
+              skewX: 4,
+              duration: 0.5,
+              ease: 'power3.in',
+              // Outermost word peels off first.
+              stagger: { each: 0.03, from: 'end' },
+              delay: 0.08,
+              overwrite: true,
+            });
+          }
+        };
+
+        ScrollTrigger.create({
+          trigger: section,
+          scroller,
+          start: 'top 85%',
+          end: 'bottom 25%',
+          onEnter: () => enter(1),
+          onLeave: () => leave(1),
+          onEnterBack: () => enter(-1),
+          onLeaveBack: () => leave(-1),
+        });
+      }, section);
+    } catch (error) {
+      // Never leave the header invisible because the motion failed to initialise.
+      console.error('[StackHeaderSplitHeadingHeader] motion setup failed', error);
+      ctx?.revert();
     }
 
-    // Gated by IntersectionObserver, not fired on mount — a header mounted
-    // below the fold must stay in its hidden "from" state (set immediately
-    // via the inline styles below, no flash) until it actually scrolls into
-    // view, not play-then-finish off-screen and show up already static.
-    let hasAnimated = false;
-    const timers: ReturnType<typeof setTimeout>[] = [];
-
-    const triggerAnimation = () => {
-      if (hasAnimated) return;
-      hasAnimated = true;
-
-      if (titleEl) {
-        timers.push(
-          setTimeout(() => {
-            titleEl.style.transition = 'opacity 0.8s cubic-bezier(0.22, 1, 0.36, 1), transform 0.9s cubic-bezier(0.22, 1, 0.36, 1)';
-            titleEl.style.opacity = '1';
-            titleEl.style.transform = 'translateY(0)';
-          }, 150)
-        );
-      }
-      if (labelEl) {
-        timers.push(
-          setTimeout(() => {
-            labelEl.style.transition = 'opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
-            labelEl.style.opacity = '1';
-            labelEl.style.transform = 'translateX(0)';
-          }, 400)
-        );
-      }
-    };
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            triggerAnimation();
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: '50px' }
-    );
-    observer.observe(section);
-
     return () => {
-      observer.disconnect();
-      timers.forEach((t) => clearTimeout(t));
+      window.clearTimeout(refreshId);
+      ctx?.revert();
     };
-  }, [animationEnabled, title, label, showLabel]);
-
-  // ========== ANIMATION: Scroll — label slides right + fades fast ==========
-  useEffect(() => {
-    if (typeof window === 'undefined' || !animationEnabled) return;
-
-    const mediaQuery = window.matchMedia('(min-width: 768px)');
-    if (!mediaQuery.matches) return;
-
-    const section = sectionRef.current;
-    const labelEl = labelRef.current;
-    if (!section || !labelEl) return;
-
-    let sectionTop = 0;
-    let sectionHeight = 0;
-    const updateBounds = () => {
-      const rect = section.getBoundingClientRect();
-      sectionTop = rect.top + window.scrollY;
-      sectionHeight = rect.height;
-    };
-    const boundsTimer = setTimeout(updateBounds, 500);
-
-    const handleScroll = () => {
-      const relativeScroll = window.scrollY - sectionTop;
-      if (relativeScroll < 0) {
-        labelEl.style.transform = 'translateX(0)';
-        labelEl.style.opacity = '1';
-        return;
-      }
-      const scrollProgress = Math.min(1, relativeScroll / (sectionHeight * 2));
-      const fade = Math.max(0, 1 - scrollProgress * 3.5);
-      labelEl.style.transform = `translateX(${scrollProgress * 80}px)`;
-      labelEl.style.opacity = String(fade);
-    };
-
-    let ticking = false;
-    const throttledScroll = () => {
-      if (!ticking) {
-        requestAnimationFrame(() => {
-          handleScroll();
-          ticking = false;
-        });
-        ticking = true;
-      }
-    };
-
-    labelEl.style.willChange = 'transform, opacity';
-    window.addEventListener('scroll', throttledScroll, { passive: true });
-    window.addEventListener('resize', updateBounds, { passive: true });
-
-    return () => {
-      clearTimeout(boundsTimer);
-      window.removeEventListener('scroll', throttledScroll);
-      window.removeEventListener('resize', updateBounds);
-      labelEl.style.willChange = '';
-    };
-  }, [animationEnabled, showLabel]);
-
-  const initialOpacity = animationEnabled ? 0 : 1;
-  const initialTitleTransform = animationEnabled ? 'translateY(100%)' : 'translateY(0)';
-  const initialLabelTransform = animationEnabled ? 'translateX(20px)' : 'translateX(0)';
+  }, [animationEnabled, headingParts, label, showLabel]);
 
   return (
     <div
       ref={sectionRef}
       className="w-full"
-      style={{ marginBottom: `${STACK_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
+      // `overflow-x: clip` (not hidden) keeps the halves' horizontal travel from ever widening the page,
+      // without turning the header into a scroll container or clipping descenders vertically.
+      style={{
+        marginBottom: `${STACK_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem`,
+        overflowX: 'clip',
+      }}
       data-stack-header="split-heading"
     >
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
         {title ? (
-          <div className="overflow-hidden">
+          <div className="min-w-0">
             <h2
-              ref={titleRef}
               className={`max-w-4xl ${TITLE_SIZE_CLASS[presentation.headerSplitHeadingTitleSize ?? 'md']} leading-[1.06] tracking-tight`}
-              style={{ color: ink, opacity: initialOpacity, transform: initialTitleTransform }}
+              style={{ color: ink }}
             >
               {headingParts.italic ? (
-                <span style={{ fontStyle: 'italic', fontWeight: titleWeight.italic }}>{headingParts.italic}</span>
+                <span
+                  ref={italicRef}
+                  className="inline-block"
+                  style={{ fontStyle: 'italic', fontWeight: titleWeight.italic }}
+                >
+                  {headingParts.italic}
+                </span>
               ) : null}
-              {headingParts.regular ? (
-                <>
-                  {' '}
-                  <span style={{ fontWeight: titleWeight.regular }}>{headingParts.regular}</span>
-                </>
+              {headingParts.regular.length > 0 ? (
+                <span style={{ fontWeight: titleWeight.regular }}>
+                  {/* One inline-block per word (transforms need a box) — the spaces stay plain text, so the
+                      title still wraps word by word exactly as the single inline run did. */}
+                  {headingParts.regular.map((word, index) => (
+                    <span key={`${word}-${index}`}>
+                      {' '}
+                      <span
+                        ref={(node) => {
+                          regularWordRefs.current[index] = node;
+                        }}
+                        className="inline-block"
+                      >
+                        {word}
+                      </span>
+                    </span>
+                  ))}
+                </span>
               ) : null}
             </h2>
           </div>
@@ -246,12 +305,10 @@ export function StackHeaderSplitHeadingHeader({
         {showLabel ? (
           <span
             ref={labelRef}
-            className={`whitespace-nowrap uppercase ${LABEL_SIZE_CLASS[presentation.headerSplitHeadingLabelSize ?? 'md']} ${LABEL_WEIGHT_CLASS[presentation.headerSplitHeadingLabelWeight ?? 'regular']}`}
+            className={`inline-block whitespace-nowrap uppercase ${LABEL_SIZE_CLASS[presentation.headerSplitHeadingLabelSize ?? 'md']} ${LABEL_WEIGHT_CLASS[presentation.headerSplitHeadingLabelWeight ?? 'regular']}`}
             style={{
               color: muted,
               letterSpacing: '0.14em',
-              opacity: initialOpacity,
-              transform: initialLabelTransform,
             }}
           >
             {label}

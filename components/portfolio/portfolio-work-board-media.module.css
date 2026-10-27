@@ -1,0 +1,11 @@
+@media (min-width: 768px) {
+  .singleColumn[data-size] { aspect-ratio: auto; height: clamp(240px, 48svh, 560px); }
+  .singleColumn[data-size='compact'] { height: clamp(220px, 36svh, 400px); }
+  .singleColumn[data-size='large'] { height: clamp(300px, 64svh, 720px); }
+}
+.bareCard {
+  background: transparent !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}

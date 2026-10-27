@@ -1,3 +1,4 @@
+import { DEFAULT_CARDS_STYLE } from '@/components/portfolio/portfolio-cards-style';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
   applyToolsPaletteToSettings,
@@ -128,12 +129,13 @@ function resolveStackTagsHeaderAlignment(
 export function resolveStackTagsContentAlignment(
   presentation: Pick<
     PortfolioStackPresentationSettings,
-    'design' | 'contentAlignment'
+    'design' | 'contentAlignment' | 'stackTagsAutoCenter'
   >
 ): PortfolioToolsContentAlignment {
   if (presentation.design !== 'stack-tags') {
     return presentation.contentAlignment ?? 'center';
   }
+  if (presentation.stackTagsAutoCenter === true) return 'center';
   if (presentation.contentAlignment === 'right') return 'right';
   if (presentation.contentAlignment === 'left') return 'left';
   return 'center';
@@ -694,6 +696,8 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   asideTitleSticky: true,
   asideTitlePlacement: 'center',
   stackTagsSize: 'medium',
+  stackTagsAutoCenter: false,
+  stackTagsFill: false,
   titleSize: 'md',
   subtitleSize: 'md',
   titlePreset: 'core-stack',
@@ -713,6 +717,7 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   descriptionColor: '#737373',
   cardBackgroundColor: '#ffffff',
   cardBorderColor: '#e5e5e5',
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   chipBackgroundColor: '#f4f4f5',
   chipTextColor: '#525252',
   levelAccentColor: '#ea580c',
@@ -725,6 +730,7 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   levelBarSize: 'small',
   workflowRailContentAlignment: 'left',
   workflowRailLogoTreatment: 'vivid',
+  workflowRailLayout: 'wrap',
   brandCardsColumnsPerRow: 1,
   brandCardsContentAlignment: 'left',
   brandCardsIconPlacement: 'top',
@@ -754,6 +760,7 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   toolsColorBindings: { ...DEFAULT_TOOLS_COLOR_BINDINGS },
   activeColorMode: 'light',
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
 };
 
 Object.assign(DEFAULT_STACK_PRESENTATION, applyToolsPaletteToSettings(DEFAULT_STACK_PRESENTATION));
@@ -814,7 +821,7 @@ function normalizeStackTagsAlignments(
     };
   }
   const headerAlignment = resolveStackTagsHeaderAlignment(presentation);
-  const contentAlignment = resolveStackTagsContentAlignment(presentation);
+  const contentAlignment = resolveStackTagsContentAlignment({ ...presentation, stackTagsAutoCenter: false });
   return { headerAlignment, contentAlignment };
 }
 

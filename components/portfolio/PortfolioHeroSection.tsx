@@ -1,10 +1,15 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import type { ReactNode } from 'react';
+import { formatInfoBio } from './portfolio-info-bio';
+import bioStyles from './portfolio-hero-bio-format.module.css';
+import type { CSSProperties, ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
-import { heroSectionBackgroundStyle } from '@/components/portfolio/portfolio-hero-background-settings';
+import { heroSectionBackgroundFields } from './portfolio-hero-section-background';
+import { sectionBackgroundStyle } from './portfolio-section-background-settings';
 import { usePortfolioHeroGeomFade } from '@/components/portfolio/use-portfolio-hero-geom-fade';
+import { PortfolioHeroAdaptiveBackground } from './PortfolioHeroAdaptiveBackground';
+import { DEFAULT_HERO_PALETTE, mergeHeroPalette } from './portfolio-hero-palette-settings';
 
 /** The section renders one Hero variant, so each variant is its own chunk. */
 const PortfolioHeroSwissEditorial = dynamic(() =>
@@ -49,6 +54,9 @@ const PortfolioHeroWorkDuo = dynamic(() =>
 const PortfolioHeroBowlIntro = dynamic(() =>
   import('@/components/portfolio/hero-variants/PortfolioHeroBowlIntro').then((m) => m.PortfolioHeroBowlIntro)
 );
+const PortfolioHeroStatementOverlap = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroStatementOverlap').then((m) => m.PortfolioHeroStatementOverlap)
+);
 const PortfolioHeroColophon = dynamic(() =>
   import('@/components/portfolio/hero-variants/PortfolioHeroColophon').then((m) => m.PortfolioHeroColophon)
 );
@@ -62,17 +70,38 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
   // the variant's own Fond layer is suppressed (every variant already reads
   // `data.suppressBackground` for exactly this).
   const bgFill = heroData.presentation.heroSectionBackgroundFill;
-  const customBackgroundStyle = heroSectionBackgroundStyle(heroData.presentation);
-  const heroDataForVariant: PortfolioHeroData =
-    bgFill && bgFill !== 'none' ? { ...heroData, suppressBackground: true } : heroData;
+  const background=heroSectionBackgroundFields(heroData.presentation);
+  const art = heroData.presentation.heroSectionBackgroundArt;
+  const adaptiveArt = art && art !== 'none' && background.sectionBackgroundEnabled ? art : null;
+  const customBackgroundStyle = adaptiveArt ? undefined : sectionBackgroundStyle(background);
+  const heroDataForVariant: PortfolioHeroData = {
+    ...heroData,
+    description: formatInfoBio(heroData.presentation.heroBioCustom?.trim() || heroData.description, heroData.presentation.bioCase),
+    suppressBackground: adaptiveArt || heroData.presentation.heroSectionBackgroundEnabled === false || (bgFill && bgFill !== 'none')
+      ? true
+      : heroData.suppressBackground,
+  };
 
   const shell = (children: ReactNode) => (
-    <section id="hero" ref={sectionRef} className="relative isolate overflow-x-clip">
+    <section id="hero" ref={sectionRef} className={`relative isolate overflow-x-clip ${bioStyles.root}`}
+      data-bio-bold={heroData.presentation.bioBold === true}
+      data-bio-italic={heroData.presentation.bioItalic === true}
+      data-bio-spacing={heroData.presentation.bioLineHeight != null}
+      data-availability-style={heroData.presentation.availabilityStyleOverride}
+      data-availability-hidden={heroData.presentation.showAvailabilityBadge === false ? 'true' : undefined}
+      style={{
+        '--hero-bio-line-height': heroData.presentation.bioLineHeight,
+        '--hero-status-ink': heroData.presentation.palette?.texteFort ?? '#171717',
+        '--hero-status-accent': heroData.presentation.palette?.secondaire ?? DEFAULT_HERO_PALETTE.secondaire,
+        '--hero-status-surface': heroData.presentation.palette?.fond ?? '#ffffff',
+      } as CSSProperties}
+    >
+      {adaptiveArt ? <div className="pointer-events-none absolute inset-0 z-0" style={background.sectionBackgroundEdgeFade ? { maskImage: 'linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent)' } : undefined}><PortfolioHeroAdaptiveBackground art={adaptiveArt} palette={mergeHeroPalette(DEFAULT_HERO_PALETTE, heroData.presentation.palette)} opacity={heroData.presentation.heroSectionBackgroundOpacity} /></div> : null}
       {customBackgroundStyle ? (
         <div
           aria-hidden
           className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
-          style={customBackgroundStyle}
+          style={{...customBackgroundStyle,...(background.sectionBackgroundEdgeFade?{maskImage:'linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent)',WebkitMaskImage:'linear-gradient(to bottom,transparent,#000 12%,#000 88%,transparent)'}:{})}}
         />
       ) : null}
       {children}
@@ -120,6 +149,9 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
   }
   if (design === 'colophon') {
     return shell(<PortfolioHeroColophon data={heroDataForVariant} />);
+  }
+  if (design === 'statement-overlap') {
+    return shell(<PortfolioHeroStatementOverlap data={heroDataForVariant} />);
   }
 
   // Default + legacy Classic → Swiss editorial (Classic permanently removed).

@@ -1,0 +1,13 @@
+.root { container-type: inline-size; min-width: 0; overflow-wrap: anywhere; }
+.layout { display: grid; align-items: stretch; }
+.media { order: 2; position: relative; min-width: 0; aspect-ratio: 16 / 10; max-height: 360px; overflow: hidden; }
+.media > img { position: absolute; inset: 0; }
+.copy { order: 1; display: flex; flex-direction: column; align-items: flex-start; min-width: 0; padding: clamp(24px, 5cqw, 48px); }
+@media (max-width: 1023px) { .root { width: 100% !important; } }
+@container (min-width: 900px) {
+  .layout[data-split='true'] { grid-template-columns: minmax(0, 0.9fr) minmax(0, 1.1fr); }
+  .layout[data-split='true'][data-media-left='false'] { grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr); }
+  .media { aspect-ratio: auto; min-height: 400px; max-height: none; }
+  .layout[data-media-left='true'] > .media { order: 1; }
+  .layout[data-media-left='true'] > .copy { order: 2; }
+}

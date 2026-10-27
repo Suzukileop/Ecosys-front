@@ -1,0 +1,69 @@
+.canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: var(--stack-skeleton-background);
+  box-shadow: none;
+  border: 0;
+  border-radius: 8px;
+}
+
+.canvas :global(.pf-stack-mini) {
+  display: block;
+  width: 100%;
+  height: 100% !important;
+}
+
+/* The catalogue frame is the canvas: no second large rounded panel inside it. */
+.canvas :global(.pf-stack-mini-stage) {
+  fill: transparent !important;
+  stroke: none !important;
+}
+
+.canvas :global(.pf-stack-mini-ink),
+.canvas :global(.pf-stack-mini-accent) {
+  fill: var(--stack-skeleton-strong) !important;
+}
+
+.canvas :global(.pf-stack-mini-mute) {
+  fill: var(--stack-skeleton-soft) !important;
+}
+
+.canvas :global(.pf-stack-mini-ring) {
+  fill: none !important;
+  stroke: var(--stack-skeleton-strong) !important;
+}
+
+.canvas :global(.pf-stack-mini-type) {
+  fill: var(--stack-skeleton-strong) !important;
+}
+
+/* Animate only the silhouettes: the opaque canvas never fades to gray. */
+.canvas :global(.pf-stack-mini-ink),
+.canvas :global(.pf-stack-mini-accent),
+.canvas :global(.pf-stack-mini-mute),
+.canvas :global(.pf-stack-mini-ring),
+.canvas :global(.pf-stack-mini-type) {
+  animation: stack-skeleton-breathe 1.9s ease-in-out infinite;
+}
+
+.canvas :global(.pf-stack-mini-mute) {
+  animation-delay: -0.35s;
+}
+
+@keyframes stack-skeleton-breathe {
+  0%, 100% { opacity: 0.7; }
+  50% { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .canvas :global(.pf-stack-mini-ink),
+  .canvas :global(.pf-stack-mini-accent),
+  .canvas :global(.pf-stack-mini-mute),
+  .canvas :global(.pf-stack-mini-ring),
+  .canvas :global(.pf-stack-mini-type) {
+    animation: none;
+    opacity: 1;
+  }
+}

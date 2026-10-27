@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import { BowlPortraitMotif } from './bowl-portrait-motif';
 import { useMemo, useRef, useEffect, type MouseEvent } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
@@ -17,6 +18,12 @@ import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/p
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
 import { useT } from '@/lib/i18n/I18nProvider';
+import {
+  hasPortraitShapeOverride,
+  portraitShapeAspect,
+  portraitShapeOverlayStyle,
+  portraitShapeRadius,
+} from '@/components/portfolio/hero-variants/portrait-shape';
 
 const FALLBACK_BIO =
   'Ingénieur informatique passionné par les solutions innovantes et les expériences numériques claires.';
@@ -27,20 +34,7 @@ const AVAILABLE_PILL_FG = '#1F7A3A';
 const UNAVAILABLE_PILL_BG = '#F3F3F3';
 const UNAVAILABLE_PILL_FG = '#6B6B6B';
 
-/**
- * Bowl intro — Clean Floating Design (Refactored per Google/Awwwards critique)
- * 
- * Key changes:
- * - REMOVED problematic bowl/half-circle motif that caused visual conflict
- * - Portrait floats cleanly on the dark background
- * - Name positioned closer to portrait with increased size and letter-spacing
- * - Horizontal alignment: top of title aligns with top of portrait
- * - Ghost-style buttons with thin border (minimal, prestigious)
- * 
- * GSAP Animation hooks:
- * - On Load: Photo + name fade in with micro-scale → Title line-by-line → Bio/buttons cascade
- * - Scroll: Asymmetric parallax - left (0.75x slow), right (1.3x fast + fade out)
- */
+/** Portrait geometry and decorative motif are independent; both remain visible together. */
 export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
   const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
@@ -51,6 +45,9 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
   const imageBw = data.presentation.heroImageGrayscale === true;
   const motif = data.presentation.heroBowlIntroMotif ?? 'bowl';
+  const portraitShape = data.presentation.heroPortraitShape;
+  const shapeOverride = hasPortraitShapeOverride(portraitShape);
+  const shapeOverlay = shapeOverride ? portraitShapeOverlayStyle(portraitShape, principal, fond) : undefined;
 
   // Refs for GSAP animations
   const sectionRef = useRef<HTMLElement>(null);
@@ -371,47 +368,10 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
             data-gsap-left-column
           >
             <div className="relative w-full px-[5%] pb-8 pt-5 lg:px-[8%]">
-              {motif === 'bowl' ? (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-0 bottom-0 z-0 h-[47%] border"
-                  style={{
-                    backgroundColor: `color-mix(in srgb, ${principal} 12%, ${fond})`,
-                    borderColor: `color-mix(in srgb, ${principal} 34%, transparent)`,
-                    borderRadius: '50% 50% 16% 16% / 100% 100% 20% 20%',
-                  }}
-                />
-              ) : null}
-              {motif === 'hug' ? (
-                <span
-                  aria-hidden
-                  className="absolute inset-x-[1%] bottom-2 top-0 z-0 border"
-                  style={{
-                    borderColor: `color-mix(in srgb, ${principal} 46%, transparent)`,
-                    borderRadius: '2.75rem 2.75rem 48% 48% / 2.75rem 2.75rem 18% 18%',
-                  }}
-                />
-              ) : null}
-              {motif === 'orbs-top' ? (
-                <>
-                  <span aria-hidden className="absolute -left-[4%] top-[4%] z-0 size-[36%] rounded-full" style={{ backgroundColor: `color-mix(in srgb, ${principal} 28%, ${fond})` }} />
-                  <span aria-hidden className="absolute right-0 top-[15%] z-0 size-[22%] rounded-full border" style={{ borderColor: `color-mix(in srgb, ${principal} 54%, transparent)` }} />
-                </>
-              ) : null}
-              {motif === 'orbs-bottom' ? (
-                <span
-                  aria-hidden
-                  className="absolute -bottom-1 -left-[1%] z-0 aspect-[3/4] w-[86%] border"
-                  style={{
-                    borderColor: `color-mix(in srgb, ${principal} 45%, transparent)`,
-                    borderRadius: '2.25rem 2.25rem 45% 2.25rem',
-                  }}
-                />
-              ) : null}
 
             {/* Availability badge - anchored to the portrait composition */}
             {showAvailability ? (
-              <div
+              <div data-hero-availability
                 className="absolute left-[10%] top-0 z-[4] inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-sm"
                 style={{
                   backgroundColor: isAvailable ? AVAILABLE_PILL_BG : UNAVAILABLE_PILL_BG,
@@ -437,21 +397,26 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
             ) : null}
 
             {/* Portrait held by the selected sculptural motif. */}
+            <div className="relative w-full">
+            <BowlPortraitMotif motif={motif} shape={portraitShape} principal={principal} fond={fond} />
+            {portraitShape === 'offset' ? <span aria-hidden className="pointer-events-none absolute inset-0 translate-x-[0.9rem] translate-y-[0.9rem] border" style={{ borderColor: principal }} /> : null}
             <div
               ref={portraitRef}
-              className="relative z-[2] aspect-[3/4] w-full overflow-hidden border"
-              style={{ 
+              className={`relative z-[2] w-full overflow-hidden border ${shapeOverride && portraitShape === 'circle' ? '' : 'aspect-[3/4]'}`}
+              style={{
                 backgroundColor: neutre,
                 borderColor: `color-mix(in srgb, ${ink} 14%, transparent)`,
-                borderRadius:
-                  motif === 'bowl' || motif === 'hug'
+                ...(shapeOverride && portraitShapeAspect(portraitShape) ? { aspectRatio: portraitShapeAspect(portraitShape) } : null),
+                borderRadius: shapeOverride
+                  ? portraitShapeRadius(portraitShape)
+                  : motif === 'bowl' || motif === 'hug'
                     ? '2rem 2rem 42% 42% / 2rem 2rem 16% 16%'
                     : motif === 'orbs-bottom'
                       ? '2rem 2rem 46% 2rem'
                       : '2rem',
-                // INITIAL HIDDEN STATE - micro-scale
-                opacity: 0,
-                transform: 'scale(0.92)',
+                // Shape changes must never hide the image after the entry effect has run.
+                opacity: 1,
+                transform: 'scale(1)',
               }}
               data-gsap-portrait
             >
@@ -472,6 +437,10 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
                   {initials}
                 </div>
               )}
+              {shapeOverlay ? (
+                <span aria-hidden className="pointer-events-none absolute inset-0 z-[3]" style={shapeOverlay} />
+              ) : null}
+            </div>
             </div>
             </div>
 
@@ -513,7 +482,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
               {specialtyLines.map((line, index) => (
                 <span
                   key={index}
-                  className="block"
+                  className="block [overflow-wrap:anywhere]"
                   style={{
                     // INITIAL HIDDEN STATE
                     opacity: 0,
@@ -541,7 +510,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
             <div className="relative z-[1] mt-6 w-full lg:mt-auto">
 
             {/* Bio - line-height 1.6 for editorial magazine feel */}
-            <p
+            <p data-hero-bio
               className="m-0 max-w-[35rem] font-sans font-normal tracking-[-0.01em] [text-wrap:pretty]"
               style={{
                 color: muted,
@@ -556,59 +525,30 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
               {bio}
             </p>
 
-            {/* CTAs - PREMIUM GHOST STYLE */}
-            <div className="mt-6 flex w-full flex-wrap items-center justify-start gap-3 sm:mt-8 sm:gap-4">
-              {/* Primary CTA - Ghost: transparent, WHITE text, 1px RED border */}
-              {/* Hover: fills RED, text turns BLACK */}
-              {data.showWorkCta !== false ? <a
-                href={workHref}
-                onClick={onNavClick(workHref)}
-                className="inline-flex h-12 items-center justify-center rounded-full px-7 font-sans text-[0.92rem] font-semibold tracking-[-0.01em] transition-all duration-300"
-                style={{ 
-                  border: `1px solid ${principal}`, 
-                  color: ink, // White/light text at rest
-                  backgroundColor: 'transparent',
-                  // INITIAL HIDDEN STATE
-                  opacity: 0,
-                  transform: 'translateY(20px)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = principal;
-                  e.currentTarget.style.color = fond; // Black/dark text on hover
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                  e.currentTarget.style.color = ink;
-                }}
-                data-gsap-cta="primary"
-              >
-                {t('View my work')}
-              </a> : null}
-              {/* Secondary CTA - Ghost style with subtle ink border */}
-              {data.showContactCta !== false ? <a
-                href={contactHref}
-                onClick={onNavClick(contactHref)}
-                className="inline-flex h-12 items-center justify-center rounded-full px-7 font-sans text-[0.92rem] font-semibold tracking-[-0.01em] transition-all duration-300"
-                style={{ 
-                  border: `1px solid color-mix(in srgb, ${ink} 40%, transparent)`, 
-                  color: ink, 
-                  backgroundColor: 'transparent',
-                  // INITIAL HIDDEN STATE
-                  opacity: 0,
-                  transform: 'translateY(20px)',
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.borderColor = ink;
-                  e.currentTarget.style.backgroundColor = `color-mix(in srgb, ${ink} 8%, transparent)`;
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.borderColor = `color-mix(in srgb, ${ink} 40%, transparent)`;
-                  e.currentTarget.style.backgroundColor = 'transparent';
-                }}
-                data-gsap-cta="secondary"
-              >
-                {t('Contact me')}
-              </a> : null}
+            <div className="mt-6 flex w-full flex-wrap items-center gap-3 sm:mt-8 sm:gap-4">
+              {[
+                { visible: data.showWorkCta !== false, href: workHref, label: t('View my work'), primary: true },
+                { visible: data.showContactCta !== false, href: contactHref, label: t('Contact me'), primary: false },
+              ].filter(button => button.visible).map(button => (
+                <a
+                  key={button.href + button.label}
+                  href={button.href}
+                  onClick={onNavClick(button.href)}
+                  className="pf-bowl-cta"
+                  data-shape={data.presentation.heroBowlIntroButtonShape ?? 'rectangle'}
+                  data-pf-no-color-transition=""
+                  style={{
+                    color: ink,
+                    borderColor: button.primary ? principal : `color-mix(in srgb, ${ink} 32%, transparent)`,
+                  }}
+                >
+                  <span className="pf-bowl-cta-fill" aria-hidden data-pf-no-color-transition="" style={{ backgroundColor: button.primary ? principal : ink }} />
+                  <span className="pf-bowl-cta-label">{button.label}</span>
+                  <span className="pf-bowl-cta-arrow" aria-hidden data-pf-no-color-transition="">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5"><path d="M5 19 19 5M5 5h14v14" /></svg>
+                  </span>
+                </a>
+              ))}
             </div>
             </div>
           </div>

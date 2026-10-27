@@ -1,4 +1,5 @@
 'use client';
+import { portfolioEditorialGutterNegativeX } from '@/components/portfolio/portfolio-editorial-layout';
 
 import gsap from 'gsap';
 import Image from 'next/image';
@@ -92,7 +93,7 @@ function NumberedRow({
 
   const id = `pf-narrative-${registration.name}`;
   const fieldClassName =
-    'w-full border-0 bg-transparent pb-4 pt-2 text-[clamp(1.25rem,2vw,1.75rem)] outline-hidden ring-0 focus:outline-hidden focus:ring-0';
+    'w-full border-0 bg-transparent pb-4 pt-2 text-[calc(clamp(1.25rem,2vw,1.75rem)*var(--pf-contact-font-scale,1))] outline-hidden ring-0 focus:outline-hidden focus:ring-0';
 
   return (
     <div className="relative py-10 sm:py-12" data-pf-no-color-transition="">
@@ -272,7 +273,7 @@ export function ContactDesignNumberedNarrative({
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
+      className={`relative overflow-hidden ${portfolioEditorialGutterNegativeX(contentGutter)}`}
       data-pf-no-color-transition=""
     >
       <div
@@ -280,7 +281,7 @@ export function ContactDesignNumberedNarrative({
       >
         <div className="order-2 flex flex-col md:order-1">
           <h2
-            className="m-0 mb-16 select-none font-sans text-[clamp(3rem,7vw,6rem)] font-black leading-[0.88] tracking-[-0.02em] sm:mb-20"
+            className="m-0 mb-16 select-none font-sans text-[calc(clamp(3rem,7vw,6rem)*var(--pf-contact-font-scale,1))] font-black leading-[0.88] tracking-[-0.02em] sm:mb-20"
             style={{ color: tokens.ink }}
           >
             {title}
@@ -349,7 +350,7 @@ export function ContactDesignNumberedNarrative({
               </div>
               <span
                 aria-hidden
-                className="text-2xl font-light"
+                className="text-[calc(1.5rem*var(--pf-contact-font-scale,1))] font-light"
                 style={{ color: tokens.muted, transform: 'rotate(20deg)', display: 'inline-block' }}
               >
                 ↘

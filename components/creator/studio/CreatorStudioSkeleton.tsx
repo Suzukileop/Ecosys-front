@@ -450,48 +450,6 @@ function CreatorStudioImagesTabSkeleton() {
   );
 }
 
-/** General Info (PortfolioGeneralInfoStudio): small-caps block titles over outlined fields. */
-function InformationFieldBlocks() {
-  const field = 'h-10 w-full rounded-md border border-[#CFD9DE] dark:border-[#333639]';
-  return (
-    <>
-      <section className="grid grid-cols-1 gap-x-6 gap-y-6 pb-6 pt-2">
-        <SoftLine className="h-3 w-16" />
-        <div className="grid grid-cols-1 gap-x-8 gap-y-6 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
-          {['w-12', 'w-16'].map((width) => (
-            <div key={width} className="space-y-2">
-              <SoftLine className={`h-3.5 ${width}`} />
-              <div className={field} />
-            </div>
-          ))}
-        </div>
-        <div className="space-y-2">
-          <SoftLine className="h-3.5 w-8" />
-          <div className={`${field} !h-[76px]`} />
-        </div>
-      </section>
-      <section className="grid grid-cols-1 gap-x-6 gap-y-6 py-6 sm:grid-cols-2 lg:grid-cols-3">
-        <SoftLine className="col-span-full h-3 w-14" />
-        {['w-12', 'w-14', 'w-20'].map((width) => (
-          <div key={width} className="space-y-2">
-            <SoftLine className={`h-3.5 ${width}`} />
-            <div className={field} />
-          </div>
-        ))}
-      </section>
-      <section className="grid grid-cols-1 gap-x-6 gap-y-6 pb-8 pt-6 sm:grid-cols-2">
-        <SoftLine className="col-span-full h-3 w-24" />
-        {['w-28', 'w-20'].map((width) => (
-          <div key={width} className="space-y-2">
-            <SoftLine className={`h-3.5 ${width}`} />
-            <div className={field} />
-          </div>
-        ))}
-      </section>
-    </>
-  );
-}
-
 /* ── My Profile → Profile, read mode (ProfileSectionsOverview) ───────────────────────────────── */
 
 /**
@@ -643,64 +601,146 @@ export function CreatorStudioProfileTabSkeleton({ layout = 'pills' }: { layout?:
       </div>
     );
   }
-  /* My Portfolio's editor, shape for shape: the identity block and the form block in the main column,
-     the News rail on the right from md (the "Sections" box, then "Your page"). */
+  /* My Portfolio's editor, shape for shape (CreatorStudioProfileTab, portfolio layout): from xl the
+     page's actions in a 232px column on the left; the identity block over the form block in the middle;
+     the "Sections" box, then Preview, in the right rail (the actions drop under them below xl). */
   return (
     <div
       className="grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_16.5rem] md:gap-8 lg:grid-cols-[minmax(0,1fr)_300px] lg:gap-10 xl:grid-cols-[232px_minmax(0,1fr)_300px]"
       aria-busy="true"
       aria-label="Loading profile information"
     >
-      <div className="hidden flex-col xl:flex">
-        {Array.from({ length: 4 }, (_, i) => (
-          <div key={i} className="flex h-12 items-center gap-4 px-3">
-            <SoftLine className="h-5 w-5" />
-            <SoftLine className="h-3.5 w-28" />
-          </div>
-        ))}
+      <div className="hidden pb-6 xl:block">
+        <PortfolioActionsSkeleton />
       </div>
 
       <div className="flex min-w-0 flex-col gap-6">
-        <div className="flex items-center gap-4 bg-[color:var(--gn-surface)] p-5 sm:p-6">
-          <div className={`h-14 w-14 shrink-0 !rounded-full sm:h-16 sm:w-16 ${softBlock}`} />
-          <div className="flex flex-col gap-2.5">
-            <SoftLine className="h-5 w-48" />
-            <SoftLine className="h-3 w-64" />
+        <div className="flex flex-col gap-4 bg-[color:var(--gn-surface)] p-5 sm:flex-row sm:items-center sm:justify-between sm:gap-6 sm:p-6">
+          <div className="flex min-w-0 items-center gap-4">
+            <div className={`h-14 w-14 shrink-0 !rounded-full sm:h-16 sm:w-16 ${softBlock}`} />
+            <div className="flex min-w-0 flex-col gap-2.5">
+              <SoftLine className="h-5 w-48 max-w-full" />
+              <div className="flex items-center gap-2">
+                <SoftLine className="h-1.5 w-1.5 shrink-0 !rounded-full" />
+                <SoftLine className="h-3.5 w-24" />
+              </div>
+            </div>
           </div>
+          <SoftLine className="h-10 w-28 shrink-0 !rounded-full" />
         </div>
-        <div className="bg-[color:var(--gn-surface)]">
+
+        <div className="min-h-[420px] bg-[color:var(--gn-surface)]">
           <div className="flex gap-2 overflow-hidden px-5 pt-4 md:hidden">
             {['w-24', 'w-16', 'w-24', 'w-16'].map((width, i) => (
               <SoftLine key={i} className={`h-10 shrink-0 !rounded-full ${width}`} />
             ))}
           </div>
-          <div className="px-5 sm:px-7">
-            <InformationFieldBlocks />
+          <div className="px-5 pt-5 sm:px-7 sm:pt-7">
+            <PortfolioGeneralInfoSkeleton />
           </div>
         </div>
       </div>
 
-      <div className="hidden flex-col gap-6 md:flex">
-        <div className="gn-rail-box flex flex-col px-px pb-3 pt-5">
-          <SoftLine className="mx-6 mb-3 h-5 w-28" />
-          {Array.from({ length: 9 }, (_, i) => (
-            <div key={i} className="flex items-center gap-3 px-6 py-2.5">
-              <SoftLine className="h-5 w-5" />
-              <SoftLine className="h-3.5 w-28" />
+      <div className="hidden flex-col gap-6 pb-6 md:flex">
+        <div className="gn-rail-box flex flex-col px-px pb-2 pt-5">
+          <div className="flex items-center justify-between gap-3 px-6 pb-1 pt-1">
+            <SoftLine className="h-6 w-24" />
+            <div className="flex items-center gap-2.5">
+              <SoftLine className="h-3.5 w-20" />
+              <SoftLine className="h-4 w-4" />
+            </div>
+          </div>
+          {[
+            ['w-14', ['w-24', 'w-14', 'w-20']],
+            ['w-32', ['w-24', 'w-12', 'w-12']],
+            ['w-10', ['w-20', 'w-16']],
+            ['w-16', ['w-10', 'w-12', 'w-16']],
+          ].map(([kicker, rows], g) => (
+            <div key={g} className="flex flex-col pt-3">
+              <SoftLine className={`mx-6 mb-2 mt-1 h-3 ${kicker as string}`} />
+              {(rows as string[]).map((width, i) => (
+                <div key={i} className="flex items-center gap-3 px-6 py-2.5">
+                  <SoftLine className="h-5 w-5 shrink-0" />
+                  <SoftLine className={`h-4 ${width}`} />
+                </div>
+              ))}
             </div>
           ))}
         </div>
         <SoftLine className="h-12 w-full !rounded-full" />
-        <div className="flex flex-col xl:hidden">
-          {Array.from({ length: 4 }, (_, i) => (
-            <div key={i} className="flex h-12 items-center gap-4 px-3">
-              <SoftLine className="h-5 w-5" />
-              <SoftLine className="h-3.5 w-28" />
-            </div>
-          ))}
+        <div className="xl:hidden">
+          <PortfolioActionsSkeleton />
         </div>
       </div>
     </div>
+  );
+}
+
+/** The page's actions (MyPortfolioWorkspace's PortfolioActionList): three 48px rows, a hairline, Share. */
+function PortfolioActionsSkeleton() {
+  return (
+    <div className="flex flex-col">
+      {['w-28', 'w-24', 'w-28'].map((width, i) => (
+        <div key={i} className="flex h-12 items-center gap-4 px-3">
+          <SoftLine className="h-5 w-5 shrink-0" />
+          <SoftLine className={`h-4 ${width}`} />
+        </div>
+      ))}
+      <div className="mx-3 mb-4 mt-3 h-px bg-[color:var(--gn-line)]" aria-hidden />
+      <div className="h-10 w-full rounded-full shadow-[inset_0_0_0_1px_var(--gn-line)]" />
+    </div>
+  );
+}
+
+/** General Info (PortfolioGeneralInfoStudio): kicker blocks of full-width filled fields, 28px label lines. */
+function PortfolioGeneralInfoSkeleton() {
+  const field = 'h-11 w-full bg-[color:var(--gn-field,#EFF3F4)]';
+  const kicker = (width: string) => (
+    <div className="flex items-center gap-2.5">
+      <span aria-hidden className="h-1.5 w-1.5 shrink-0 bg-black/[0.12] dark:bg-white/[0.14]" />
+      <SoftLine className={`h-3 ${width}`} />
+    </div>
+  );
+  const label = (width: string, aside = false) => (
+    <div className="mb-2 flex min-h-7 items-center gap-2">
+      <SoftLine className={`h-3.5 ${width}`} />
+      {aside ? <SoftLine className="h-7 w-[4.5rem] !rounded-full" /> : null}
+    </div>
+  );
+  return (
+    <>
+      <section className="grid grid-cols-1 gap-y-6 pb-6 pt-2">
+        {kicker('w-16')}
+        {['w-10', 'w-16'].map((width) => (
+          <div key={width}>
+            {label(width)}
+            <div className={field} />
+          </div>
+        ))}
+        <div>
+          {label('w-6')}
+          <div className={`${field} !h-[76px]`} />
+        </div>
+      </section>
+      <section className="grid grid-cols-1 gap-y-6 pb-8 pt-6">
+        {kicker('w-14')}
+        <div>
+          {label('w-10')}
+          <div className="flex min-h-[44px] items-center gap-3">
+            <SoftLine className="h-4 w-7 shrink-0 !rounded-full" />
+            <SoftLine className="h-4 w-28" />
+          </div>
+        </div>
+        <div>
+          {label('w-12', true)}
+          <div className={field} />
+        </div>
+        <div>
+          {label('w-20')}
+          <div className={field} />
+        </div>
+      </section>
+    </>
   );
 }
 

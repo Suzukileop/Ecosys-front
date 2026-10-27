@@ -97,6 +97,7 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
     ink,
     neutre,
     imageBw,
+    showBorder: data.presentation.heroImageBorder !== false,
   };
 
   useLayoutEffect(() => {
@@ -433,8 +434,8 @@ function SwissStatement({
   className?: string;
 }) {
   return (
-    <p
-      className={`pf-swiss-editorial-serif m-0 max-w-[34.5rem] text-[clamp(1.32rem,1.02rem+2.1vw,2.15rem)] font-medium italic leading-[1.28] tracking-[-0.016em] [text-wrap:pretty] ${className}`.trim()}
+    <p data-hero-bio
+      className={`pf-swiss-editorial-serif m-0 max-w-[34.5rem] text-[clamp(1.32rem,1.02rem+2.1vw,2.15rem)] font-normal leading-[1.28] tracking-[-0.016em] [text-wrap:pretty] ${className}`.trim()}
       style={{
         color: ink,
         fontFamily: SWISS_SERIF,
@@ -555,6 +556,7 @@ function SwissInfoBlock({
       </p>
       <p
         className="mt-2.5 text-[0.92rem] font-normal leading-snug tracking-[0.01em] sm:text-[1rem]"
+        data-hero-availability={showMark ? '' : undefined}
         style={{ color: `color-mix(in srgb, ${ink} 92%, ${muted})` }}
       >
         {showMark ? (
@@ -579,6 +581,7 @@ function SwissPortrait({
   ink,
   neutre,
   imageBw,
+  showBorder,
   className,
   radius,
 }: {
@@ -587,6 +590,7 @@ function SwissPortrait({
   ink: string;
   neutre: string;
   imageBw: boolean;
+  showBorder: boolean;
   className: string;
   radius: string;
 }) {
@@ -597,7 +601,7 @@ function SwissPortrait({
         style={{
           backgroundColor: neutre,
           borderRadius: radius,
-          boxShadow: `inset 0 0 0 1px ${SWISS_EDGE}`,
+          boxShadow: showBorder ? `inset 0 0 0 1px ${SWISS_EDGE}` : undefined,
         }}
       >
         {avatarUrl ? (

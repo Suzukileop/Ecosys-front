@@ -1,47 +1,25 @@
 'use client';
 
 /**
- * Profile cards — the Team design where the portrait is the card and everything else floats on it.
- *
- * Extracted out of portfolio-team-designs.tsx into its own module, like the other reworked
- * designs, and built in layers:
- *
- *  1. **Depth without a box.** The frame is a gradient hairline (bright at the top-left corner,
- *     gone across the middle, back at the bottom-right) and the shadow is wide and diffuse, so a
- *     card reads as lit rather than outlined — the demarcation a dark page needs.
- *  2. **A glass caption.** The name/role block is a frosted pane (`backdrop-blur`) floating inset
- *     over the portrait's lower edge, seated on a gradient foot so the blur has something to sit
- *     against. It opens on hover — a `0fr → 1fr` grid row, the only way to transition to a
- *     content-driven height — to release the social row on a per-icon stagger.
- *  3. **Light that follows you.** A radial bloom tracks the cursor across the card, screened on a
- *     dark surface and soft-lit on a light one, with a white specular core so it reads whatever
- *     the accent hue is.
- *  4. **Two navigations, one design.** `Opens on` picks the view the section loads with and the
- *     visitor switches freely: a rail that scrolls natively (trackpad and touch keep their
- *     momentum) and steps one card at a time from two chevrons, or an asymmetric grid that breaks
- *     its own baseline. The grid can also hold back the long tail of a large team behind a
- *     magnetic `View all` pill, so the section never becomes a wall of faces.
- *  5. **One curve.** Every transition here runs on `cubic-bezier(0.16, 1, 0.3, 1)`.
- *
- * Site-wide trap respected throughout: any node that animates transform/opacity/grid-template
- * through CSS carries `data-pf-no-color-transition`, otherwise the global color-mode transition
- * rule in globals.css replaces its `transition-property` and the motion silently disappears.
+ * Profile cards keep portraits prominent with solid, contrast-safe inset captions.
+ * Caption and photo share a grid cell: long copy can grow the card instead of being clipped.
+ * Rail/grid, initial visibility, optional hover panels and reduced motion remain supported.
  */
 
+import { cardsRadiusClass, cardsStyleCss } from '@/components/portfolio/portfolio-cards-style';
 import {
   useCallback,
   useEffect,
   useRef,
   useState,
   type CSSProperties,
+  type ReactNode,
   type PointerEvent as ReactPointerEvent,
 } from 'react';
 import gsap from 'gsap';
 import {
   EASE_CLS,
-  HOVER_CLS,
   META_CLS,
-  TOUCH_REVEAL_CLS,
   TeamMemberImage,
   TeamSocialLinks,
   TeamViewToggleIcon,
@@ -52,10 +30,10 @@ import {
   teamPrefersReducedMotion,
 } from '@/components/portfolio/portfolio-team-design-motion';
 import {
+  TEAM_PROFILE_GUTTER_PX,
   teamCardFooterPaddingClass,
   teamContentAlignClass,
   teamListAlignClass,
-  teamReadableCardText,
   teamSocialAlignClass,
   type PortfolioTeamAvatarSize,
   type PortfolioTeamCardMaxWidth,
@@ -67,31 +45,14 @@ import {
   type PortfolioTeamProfileView,
   type PortfolioTeamRailColumns,
 } from '@/components/portfolio/portfolio-team-settings';
-import { servicesColorLuminance } from '@/components/portfolio/portfolio-services-settings';
+import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
+import { TeamHoverVeilCard } from '@/components/portfolio/portfolio-team-design-hover-veil';
 import type { ProfileTeamMember } from '@/types/profile';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 /* ---------------------------------------------------------------------- */
 /* Proportions                                                             */
 /* ---------------------------------------------------------------------- */
-
-/**
- * Fades get their own curve. The family easing (`cubic-bezier(0.16,1,0.3,1)`) is an expo-out: it
- * is already ~90% done at a third of its duration, which is exactly right for something that
- * MOVES and reads as a pop for something that only changes alpha (measured on the filmstrip: the
- * pane looked fully opaque 160ms into a 420ms fade). Opacity therefore rides a standard ease.
- */
-const FADE_EASE_CLS = `ease-[cubic-bezier(0.4,0,0.2,1)]`;
-
-/**
- * `Info panel: On hover` — the frosted glass is switched on only in the revealed state.
- * `backdrop-filter` is not free while it is invisible: the browser still samples and blurs the
- * region behind every pane it finds, so a grid of twelve hidden ones taxes every frame of a
- * cursor sweep. Declared through the Tailwind utilities (never a raw `[backdrop-filter:…]`) so the
- * `-webkit-` pair is emitted for Safari.
- */
-const TEAM_PROFILE_GLASS_ON_REVEAL =
-  'group-hover:backdrop-blur-[22px] group-hover:backdrop-saturate-150 group-focus-within:backdrop-blur-[22px] group-focus-within:backdrop-saturate-150 [@media(hover:none)]:backdrop-blur-[22px] [@media(hover:none)]:backdrop-saturate-150';
 
 /** Height ÷ width for each step of `Card ratio`, widest first. */
 const TEAM_PROFILE_RATIO_FACTOR: Record<PortfolioTeamProfileRatio, number> = {
@@ -159,23 +120,9 @@ function teamProfileRailWidthClass(width: PortfolioTeamCardMaxWidth | undefined)
   return 'sm:w-[18rem]';
 }
 
-/**
- * `Column spacing`, from `lg` up only. Below that the grid keeps one comfortable gap whatever the
- * setting says: a phone has no air to spend, and spending it there is how a two-column grid ends
- * up with cards too narrow to read.
- */
+/** Shared visible spacing scale for the grid and rail, including tablet widths. */
 function teamProfileGutterClass(gutter: PortfolioTeamProfileGutter | undefined, kind: 'grid' | 'rail'): string {
-  const step = gutter ?? 'md';
-  if (kind === 'rail') {
-    if (step === 'sm') return 'lg:gap-6';
-    if (step === 'lg') return 'lg:gap-16';
-    if (step === 'xl') return 'lg:gap-24';
-    return 'lg:gap-10';
-  }
-  if (step === 'sm') return 'lg:gap-x-6';
-  if (step === 'lg') return 'lg:gap-x-20';
-  if (step === 'xl') return 'lg:gap-x-28';
-  return 'lg:gap-x-12';
+  return `team-profile-${kind}-gap-${gutter ?? 'md'}`;
 }
 
 /**
@@ -189,12 +136,15 @@ function teamProfileGridClass(
   align: PortfolioTeamListAlign,
   gutter: PortfolioTeamProfileGutter | undefined
 ): string {
-  const cols =
-    columns === 2 ? 'sm:grid-cols-2' : columns === 4 ? 'sm:grid-cols-2 xl:grid-cols-4' : 'sm:grid-cols-2 lg:grid-cols-3';
+  const cols = columns === 2
+    ? 'sm:grid-cols-[repeat(2,minmax(0,var(--team-profile-card-max)))]'
+    : columns === 4
+      ? 'sm:grid-cols-[repeat(2,minmax(0,var(--team-profile-card-max)))] xl:grid-cols-[repeat(4,minmax(0,var(--team-profile-card-max)))]'
+      : 'sm:grid-cols-[repeat(2,minmax(0,var(--team-profile-card-max)))] lg:grid-cols-[repeat(3,minmax(0,var(--team-profile-card-max)))]';
   const rows = gap === 'sm' ? 'gap-y-10' : gap === 'md' ? 'gap-y-14' : gap === 'xl' ? 'gap-y-24' : 'gap-y-20';
   const justify =
     align === 'left' ? 'justify-items-start' : align === 'right' ? 'justify-items-end' : 'justify-items-center';
-  return `grid grid-cols-1 items-start ${cols} gap-x-6 sm:gap-x-8 ${teamProfileGutterClass(
+  return `team-profile-grid grid grid-cols-1 ${cols} items-start ${teamProfileGutterClass(
     gutter,
     'grid'
   )} ${rows} ${justify}`;
@@ -202,9 +152,9 @@ function teamProfileGridClass(
 
 /** Diffuse, wide-radius drop shadows — the depth cue that lifts a card off a flat ground. */
 function teamProfileShadowClass(shadow: PortfolioTeamPresentationSettings['cardShadow']): string {
-  if (shadow === 'soft') return 'shadow-[0_18px_44px_-30px_rgba(0,0,0,0.55)]';
-  if (shadow === 'medium') return 'shadow-[0_26px_60px_-34px_rgba(0,0,0,0.7)]';
-  if (shadow === 'strong') return 'shadow-[0_34px_80px_-36px_rgba(0,0,0,0.85)]';
+  if (shadow === 'soft') return 'shadow-[0_2px_6px_rgba(0,0,0,0.06)]';
+  if (shadow === 'medium') return 'shadow-[0_6px_18px_-8px_rgba(0,0,0,0.16)]';
+  if (shadow === 'strong') return 'shadow-[0_10px_26px_-10px_rgba(0,0,0,0.24)]';
   return '';
 }
 
@@ -229,234 +179,58 @@ function teamProfileVisibleCount(value: PortfolioTeamPresentationSettings['profi
 /* ---------------------------------------------------------------------- */
 
 function TeamProfileCard({
-  member,
-  presentation,
-  index,
-  widthClass,
+  member, presentation, index, widthClass, renderPortrait,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   index: number;
-  /** The view owns the width: a cap in the grid, none in the rail (its track sets an exact one). */
   widthClass: string;
+  renderPortrait?: (member: ProfileTeamMember, index: number) => ReactNode;
 }) {
-  const cardRef = useRef<HTMLDivElement | null>(null);
-  const readable = teamReadableCardText(presentation);
   const align = presentation.listAlign ?? 'center';
-  const fillOn = presentation.cardBackgroundEnabled !== false;
-  const surface = presentation.cardBackgroundColor;
-  const border = presentation.cardBorder ?? 'thin';
-  const accent = presentation.teamPalette?.principal?.trim() || presentation.socialIconColor;
-  const darkSurface = servicesColorLuminance(surface) < 0.5;
-  const radius = teamProfileRadiusClass(presentation.cardRadius);
-  /** The portrait is the panel's backdrop — without one there is nothing to blur, so it sits in flow. */
   const overlay = presentation.showImage;
-  /**
-   * `Info panel: On hover` only makes sense over a portrait — with no image the panel IS the card,
-   * and hiding it would leave an empty box. On a pointer that cannot hover the reveal is simply
-   * the resting state, so a phone never loses the name and role.
-   */
-  const panelOnHover = overlay && (presentation.profileCardsPanel ?? 'always') === 'hover';
-  const height = teamProfileCardHeight(presentation.avatarSize, presentation.profileCardsRatio);
-
-  /**
-   * The glow follows the pointer through two custom properties rather than React state: a
-   * re-render per pointermove would drop frames across a grid of cards, and the shared entrance's
-   * `clearProps` only clears the properties it set, never custom ones.
-   */
-  const trackGlow = (event: ReactPointerEvent<HTMLElement>) => {
-    const node = cardRef.current;
-    if (!node || event.pointerType !== 'mouse') return;
-    const rect = node.getBoundingClientRect();
-    if (rect.width <= 0 || rect.height <= 0) return;
-    node.style.setProperty('--team-card-glow-x', `${((event.clientX - rect.left) / rect.width) * 100}%`);
-    node.style.setProperty('--team-card-glow-y', `${((event.clientY - rect.top) / rect.height) * 100}%`);
+  const panelOnHover = overlay && presentation.profileCardsPanel === 'hover';
+  const surface = presentation.cardBackgroundColor;
+  const readable = {
+    strong: readableMix(presentation.nameColor, 100, surface),
+    muted: readableMix(presentation.responsibilityColor, 100, surface),
   };
-
-  const caption = (
-    <div
-      className={`${
-        overlay
-          ? `absolute inset-x-3 bottom-3 z-20 border ${
-              presentation.cardRadius === 'none' ? 'rounded-none' : 'rounded-xl'
-            } ${
-              panelOnHover
-                ? // The blur is declared only in the revealed state, so a grid of hidden panes
-                  // costs nothing while the cursor travels across it: `backdrop-filter` samples
-                  // and blurs its backdrop every frame it exists, visible or not.
-                  // Asymmetric on purpose: the long duration lives in the hover rule, so leaving
-                  // falls back to the short one. A panel that takes as long to go as to arrive is
-                  // what reads as lag when the cursor is already two cards away.
-                  `${TEAM_PROFILE_GLASS_ON_REVEAL} pointer-events-none opacity-0 transition-opacity duration-[220ms] ${FADE_EASE_CLS} group-hover:pointer-events-auto group-hover:opacity-100 group-hover:duration-[420ms] group-focus-within:pointer-events-auto group-focus-within:opacity-100 group-focus-within:duration-[420ms] [@media(hover:none)]:pointer-events-auto [@media(hover:none)]:opacity-100`
-                : 'backdrop-blur-[22px] backdrop-saturate-150'
-            }`
-          : 'relative z-20 flex-1 border-t'
-      } ${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)}`}
-      data-team-panel=""
-      data-pf-no-color-transition=""
-      style={{
-        backgroundColor: overlay
-          ? `color-mix(in srgb, ${surface} ${fillOn ? 72 : 52}%, transparent)`
-          : fillOn
-            ? surface
-            : 'transparent',
-        borderColor: `color-mix(in srgb, ${readable.strong} 12%, transparent)`,
-        boxShadow: overlay ? '0 20px 40px -32px rgba(0,0,0,0.9)' : undefined,
-      }}
-    >
-      {/* The pane fades in place; the copy is what rises. Only unblurred nodes move, so the whole
-          reveal stays on the compositor — moving the glass itself re-blurs the portrait behind it
-          on every frame (measured: 21 fps sweeping a row of cards, against 61 idle). */}
-      <div
-        className={
-          panelOnHover
-            ? `translate-y-3 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-[240ms] ${EASE_CLS} group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[60ms] group-hover:duration-[520ms] group-focus-within:translate-y-0 group-focus-within:opacity-100 group-focus-within:duration-[520ms] ${TOUCH_REVEAL_CLS}`
-            : ''
-        }
-        data-pf-no-color-transition=""
-      >
-        {presentation.showName ? (
-          <h3
-            className="text-[calc(clamp(1.15rem,1.25vw,1.4rem)*var(--pf-team-font-scale,1))] font-semibold leading-[1.08] tracking-[-0.03em]"
-            style={{ color: readable.strong }}
-          >
-            {member.name}
-          </h3>
-        ) : null}
-        {presentation.showResponsibility ? (
-          <p
-            // Wider tracking than the family's small-caps default: at this size the role is a
-            // label, not a sentence. The lead indent compensates the trailing letter-space when
-            // the copy is centred.
-            className={`mt-2.5 min-h-[0.7rem] text-[calc(0.62rem*var(--pf-team-font-scale,1))] font-medium uppercase leading-none tracking-[0.3em] ${
-              align === 'center' ? 'pl-[0.3em]' : ''
-            }`}
-            style={{ color: readable.muted }}
-          >
-            {member.responsibility.trim() || ' '}
-          </p>
-        ) : null}
-      </div>
-      {presentation.showSocials ? (
-        // The row opens the panel instead of sitting in permanently reserved empty space: a
-        // 0fr → 1fr grid row is the only way to transition to a content-driven height. When the
-        // panel itself is the reveal there is nothing left to open — the links ride in with it.
-        <div
-          className={`grid ${
-            overlay && !panelOnHover
-              ? 'grid-rows-[0fr] group-hover:grid-rows-[1fr] group-focus-within:grid-rows-[1fr] [@media(hover:none)]:grid-rows-[1fr]'
-              : 'grid-rows-[1fr]'
-          } transition-[grid-template-rows] duration-[620ms] ${EASE_CLS}`}
-          data-pf-no-color-transition=""
-        >
-          <div className="min-h-0 overflow-hidden">
-            <div className="pt-4">
-              <TeamSocialLinks
-                member={member}
-                presentation={presentation}
-                align={teamSocialAlignClass(align)}
-                // No per-icon stagger when the panel itself is the reveal: that stagger is an
-                // inline `transition-delay`, so it applies on the way OUT too — the pane fades
-                // while the icons are still waiting 90-200ms to begin. They ride the panel's own
-                // rise instead, and the exit stays in one piece.
-                revealOnHover={overlay && !panelOnHover}
-              />
-            </div>
-          </div>
-        </div>
-      ) : null}
-    </div>
-  );
-
+  const hasSocials = presentation.showSocials && member.socialLinks?.some(link => link.url.trim());
+  const socialSurface = ['minimal', 'outline'].includes(presentation.socialIconStyle) ? surface : presentation.socialBackgroundColor;
+  const socialPresentation = { ...presentation, socialIconColor: readableMix(presentation.socialIconColor, 100, socialSurface) };
+  const height = teamProfileCardHeight(presentation.avatarSize, presentation.profileCardsRatio);
+  const factor = TEAM_PROFILE_RATIO_FACTOR[presentation.profileCardsRatio ?? 'portrait'];
+  const radius = cardsRadiusClass(presentation.cardsStyle) ?? teamProfileRadiusClass(presentation.cardRadius);
+  const border = presentation.cardBorder ?? 'thin';
   return (
-    <article
-      className={`group relative w-full ${widthClass} ${teamListAlignClass(align)}`}
-      data-team-reveal=""
-    >
-      <div
-        ref={cardRef}
-        onPointerMove={trackGlow}
-        className={`relative isolate flex w-full flex-col ${radius} ${teamProfileShadowClass(
-          presentation.cardShadow
-        )} ${border === 'medium' ? 'p-[2px]' : border === 'none' ? '' : 'p-px'} ${HOVER_CLS} group-hover:-translate-y-2`}
-        data-pf-no-color-transition=""
-        style={{
-          // A gradient hairline instead of a flat border: bright at the top-left corner, gone
-          // across the middle, back at the bottom-right — the frame reads as a lit edge.
-          backgroundImage:
-            border === 'none'
-              ? undefined
-              : `linear-gradient(145deg, color-mix(in srgb, ${presentation.cardBorderColor} 95%, transparent) 0%, color-mix(in srgb, ${presentation.cardBorderColor} 12%, transparent) 42%, color-mix(in srgb, ${presentation.cardBorderColor} 70%, transparent) 100%)`,
-        }}
-      >
-        <div
-          className="relative flex w-full flex-col overflow-hidden rounded-[inherit]"
-          style={{ backgroundColor: fillOn ? surface : 'transparent' }}
-        >
-          {overlay ? (
-            <div
-              // No `will-change` on the zoom layer: an interleaved A/B (4 sweeps per variant in one
-              // page, so recompiles hit both) put it at 18 fps median against 17 with it — Chrome
-              // already promotes an element with a running transform transition, and pinning a
-              // layer per portrait only costs memory.
-              className={`relative w-full overflow-hidden ${height.className}`}
-              style={{ minHeight: height.minHeight }}
-              data-team-reveal-media=""
-            >
-              <TeamMemberImage
-                member={member}
-                presentation={{ ...presentation, imageAspect: 'portrait' }}
-                fill
-                zoom
-              />
-              {/* Seats the glass panel: without a darker foot the blur has nothing to sit against.
-                  With the panel on hover the foot arrives with it, so the resting card is pure
-                  portrait. */}
-              <span
-                aria-hidden
-                className={`pointer-events-none absolute inset-x-0 bottom-0 z-[5] block h-2/5 ${
-                  panelOnHover
-                    ? `opacity-0 transition-opacity duration-[220ms] ${FADE_EASE_CLS} group-hover:opacity-100 group-hover:duration-[460ms] group-focus-within:opacity-100 group-focus-within:duration-[460ms] [@media(hover:none)]:opacity-100`
-                    : ''
-                }`}
-                data-pf-no-color-transition=""
-                style={{
-                  backgroundImage:
-                    'linear-gradient(to top, rgba(0,0,0,0.38) 0%, rgba(0,0,0,0.12) 55%, rgba(0,0,0,0) 100%)',
-                }}
-              />
+    <article className={`team-profile-card group relative w-full ${widthClass} ${teamListAlignClass(align)}`}
+      tabIndex={panelOnHover ? 0 : undefined} aria-label={panelOnHover ? member.name : undefined}
+      data-panel-hover={panelOnHover} data-with-image={overlay} data-team-reveal="">
+      <div className={`team-profile-frame relative w-full ${radius} ${teamProfileShadowClass(presentation.cardShadow)}`}
+        style={{ borderStyle: border === 'none' ? 'none' : 'solid', borderWidth: border === 'none' ? 0 : border === 'medium' ? 2 : 1,
+          borderColor: presentation.cardBorderColor, backgroundColor: surface,
+          ...cardsStyleCss(presentation.cardsStyle, presentation.teamPalette) }} data-pf-no-color-transition="">
+        <div className="team-profile-stack">
+          {overlay && (
+            <div className={`team-profile-media ${height.className}`}
+              style={{ minHeight: `min(${height.minHeight}, calc(100cqw * ${factor}))` }}>
+              {renderPortrait ? renderPortrait(member, index) : <TeamMemberImage member={member} presentation={presentation} fill
+                sizes="(max-width: 639px) 100vw, (max-width: 1023px) 50vw, 33vw" />}
             </div>
-          ) : null}
-          <span
-            aria-hidden
-            className={`pointer-events-none absolute inset-0 z-10 block opacity-0 transition-opacity duration-[520ms] ${EASE_CLS} group-hover:opacity-100`}
-            data-pf-no-color-transition=""
-            style={{
-              // Deliberately no `mix-blend-mode`: a blended layer forces its own render surface and
-              // re-composites the whole card on every frame any hover transition runs. Measured
-              // over three sweeps per variant — screen 35 fps median against 45 without it, for a
-              // difference in the bloom nobody can see. The alphas below are tuned to land in the
-              // same place unblended.
-              background: [
-                `radial-gradient(9rem circle at var(--team-card-glow-x, 50%) var(--team-card-glow-y, 0%), ${
-                  darkSurface ? 'rgba(255,255,255,0.14)' : 'rgba(255,255,255,0.22)'
-                } 0%, transparent 72%)`,
-                `radial-gradient(17rem circle at var(--team-card-glow-x, 50%) var(--team-card-glow-y, 0%), color-mix(in srgb, ${accent} ${
-                  darkSurface ? 38 : 26
-                }%, transparent) 0%, transparent 70%)`,
-              ].join(', '),
-            }}
-          />
-          {overlay ? (
-            <span
-              className={`${META_CLS} pointer-events-none absolute left-5 top-5 z-[15] font-semibold tabular-nums text-[rgba(255,255,255,0.85)] drop-shadow-[0_1px_8px_rgba(0,0,0,0.65)] transition-opacity duration-[520ms] ${EASE_CLS} group-hover:opacity-0`}
-              data-pf-no-color-transition=""
-              aria-hidden
-            >
-              {teamIndexLabel(index)}
-            </span>
-          ) : null}
-          {caption}
+          )}
+          <div className={`team-profile-caption ${teamCardFooterPaddingClass(presentation.cardPadding)} ${teamContentAlignClass(align)}`}
+            data-team-panel="" data-align={align} data-pf-no-color-transition=""
+            style={{ backgroundColor: surface, color: readable.strong }}>
+            <span className="team-profile-accent" aria-hidden="true" />
+            {presentation.showName && <h3 className="team-profile-name" style={{ color: readable.strong }}>{member.name}</h3>}
+            {presentation.showResponsibility && member.responsibility.trim() && (
+              <p className="team-profile-role" style={{ color: readable.muted }}>{member.responsibility}</p>
+            )}
+            {hasSocials && <div className="team-profile-socials">
+              <TeamSocialLinks member={member} presentation={socialPresentation} align={teamSocialAlignClass(align)} />
+            </div>}
+          </div>
+          {overlay && presentation.profileCardsShowNumbers !== false && <span className="team-profile-index" aria-hidden="true">{teamIndexLabel(index)}</span>}
         </div>
       </div>
     </article>
@@ -492,13 +266,13 @@ function TeamProfileRevealPill({
 
   const magnetize = (event: ReactPointerEvent<HTMLButtonElement>) => {
     const node = pillRef.current;
-    if (!node || event.pointerType !== 'mouse') return;
+    if (!node || event.pointerType !== 'mouse' || teamPrefersReducedMotion()) return;
     const rect = node.getBoundingClientRect();
     if (rect.width <= 0) return;
     const dx = (event.clientX - (rect.left + rect.width / 2)) / (rect.width / 2);
     const dy = (event.clientY - (rect.top + rect.height / 2)) / (rect.height / 2);
-    node.style.setProperty('--team-magnet-x', `${(dx * 7).toFixed(2)}px`);
-    node.style.setProperty('--team-magnet-y', `${(dy * 5).toFixed(2)}px`);
+    node.style.setProperty('--team-magnet-x', `${(dx * 3).toFixed(2)}px`);
+    node.style.setProperty('--team-magnet-y', `${(dy * 2).toFixed(2)}px`);
   };
 
   const release = () => {
@@ -542,7 +316,7 @@ function TeamProfileRevealPill({
         style={{ color: readable.strong }}
       >
         <span className="group-hover/pill:![color:var(--team-pill-ink)] group-focus-visible/pill:![color:var(--team-pill-ink)]">
-          {expanded ? t('Show less') : `View all — ${total}`}
+          {expanded ? t('Show less') : `${t('View all')} — ${total}`}
         </span>
       </span>
       <svg
@@ -573,10 +347,15 @@ function TeamProfileRevealPill({
 export function TeamProfileCardsGallery({
   members,
   presentation,
+  variant = 'profile',
+  renderPortrait,
 }: {
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
+  variant?: 'profile' | 'veil';
+  renderPortrait?: (member: ProfileTeamMember, index: number) => ReactNode;
 }) {
+  const Card = variant === 'veil' ? TeamHoverVeilCard : TeamProfileCard;
   const t = useT();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -585,7 +364,8 @@ export function TeamProfileCardsGallery({
   const [lastOpensOn, setLastOpensOn] = useState<PortfolioTeamProfileView>(opensOn);
   const [expanded, setExpanded] = useState(false);
   const [bounds, setBounds] = useState({ atStart: true, atEnd: false, scrollable: false });
-  const readable = teamReadableCardText(presentation);
+  const sectionSurface = presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#fff');
+  const readable = { strong: readableMix(presentation.nameColor, 100, sectionSurface), muted: readableMix(presentation.responsibilityColor, 100, sectionSurface) };
   const align = presentation.listAlign ?? 'center';
   const stagger = presentation.profileCardsStagger !== false;
   const columns = presentation.profileCardsColumns ?? 3;
@@ -676,7 +456,7 @@ export function TeamProfileCardsGallery({
         : [...cards].reverse().find((card) => leftOf(card) < current - 4);
     const travel = scroller.scrollWidth - scroller.clientWidth;
     const target = next ? leftOf(next) : direction === 1 ? travel : 0;
-    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: 'smooth' });
+    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: teamPrefersReducedMotion() ? 'auto' : 'smooth' });
   };
 
   const toolbarAlign =
@@ -686,7 +466,7 @@ export function TeamProfileCardsGallery({
   return (
     // `min-w-0` on the root and the scroller both: a horizontally scrollable flex row otherwise
     // reports its full content width to an auto-sized parent and stretches the whole page.
-    <div className="w-full min-w-0">
+    <div className="team-profile w-full min-w-0" style={{ '--team-profile-column-gap': `${TEAM_PROFILE_GUTTER_PX[presentation.profileCardsGutter ?? 'md']}px` } as CSSProperties}>
       {members.length > 1 ? (
         <div className={`mb-10 flex w-full flex-wrap items-center gap-4 ${toolbarAlign}`}>
           <div
@@ -703,9 +483,7 @@ export function TeamProfileCardsGallery({
                   type="button"
                   onClick={() => setView(option)}
                   aria-pressed={selected}
-                  className={`${META_CLS} inline-flex items-center gap-2 rounded-full px-4 py-2.5 transition-[background-color,color,opacity] duration-[420ms] ${EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
-                    selected ? '' : 'opacity-55 hover:opacity-100'
-                  }`}
+                  className="team-profile-view-button inline-flex items-center gap-2 rounded-full px-4 py-2.5 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                   data-pf-no-color-transition=""
                   style={{
                     color: selected ? readable.strong : readable.muted,
@@ -767,6 +545,10 @@ export function TeamProfileCardsGallery({
         <>
           <div
             ref={gridRef}
+            style={{
+              '--team-profile-card-max': { xs: '15rem', sm: '20rem', md: '23rem', lg: '26rem', xl: '30rem', full: '1fr' }[presentation.cardMaxWidth] ?? '20rem',
+              justifyContent: align === 'left' ? 'start' : align === 'right' ? 'end' : 'center',
+            } as CSSProperties}
             className={`w-full ${teamProfileGridClass(
               columns,
               presentation.gap,
@@ -776,11 +558,12 @@ export function TeamProfileCardsGallery({
           >
             {shown.map((member, index) => (
               <div key={member.id} className={`w-full ${stagger && index % 2 === 1 ? 'lg:mt-14' : ''}`}>
-                <TeamProfileCard
+                <Card
                   member={member}
                   presentation={presentation}
                   index={index}
                   widthClass={teamProfileGridWidthClass(presentation.cardMaxWidth)}
+                  renderPortrait={renderPortrait}
                 />
               </div>
             ))}
@@ -801,6 +584,19 @@ export function TeamProfileCardsGallery({
       ) : (
         <div
           ref={scrollerRef}
+          role="region"
+          aria-label={t('Team members')}
+          tabIndex={0}
+          onKeyDown={event => {
+            if (event.target !== event.currentTarget) return;
+            if (event.key === 'ArrowRight' || event.key === 'ArrowLeft') {
+              event.preventDefault(); stepRail(event.key === 'ArrowRight' ? 1 : -1);
+            } else if (event.key === 'Home' || event.key === 'End') {
+              event.preventDefault();
+              event.currentTarget.scrollTo({left:event.key === 'Home' ? 0 : event.currentTarget.scrollWidth,
+                behavior:teamPrefersReducedMotion() ? 'auto' : 'smooth'});
+            }
+          }}
           onScroll={syncBounds}
           // The card lifts on hover and its shadow spills, but an `overflow-x-auto` row cannot
           // keep `overflow-y: visible` — the room for both has to be padding, not overflow.
@@ -816,11 +612,12 @@ export function TeamProfileCardsGallery({
                 stagger && index % 2 === 1 ? 'sm:pt-12' : ''
               }`}
             >
-              <TeamProfileCard
+              <Card
                 member={member}
                 presentation={presentation}
                 index={index}
                 widthClass="max-w-none"
+                renderPortrait={renderPortrait}
               />
             </div>
           ))}

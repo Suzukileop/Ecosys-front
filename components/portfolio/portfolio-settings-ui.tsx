@@ -80,15 +80,8 @@ export function FieldLabel({ children }: { children: ReactNode }) {
 /** The switch every panel uses (same track as Global — see .pf-global-switch-* in globals.css). */
 export function SettingsSwitch({ checked }: { checked: boolean }) {
   return (
-    <span
-      data-checked={checked ? 'true' : 'false'}
-      className="pf-global-switch-track relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-    >
-      <span
-        data-checked={checked ? 'true' : 'false'}
-        className="pf-global-switch-thumb absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{ left: checked ? '1.125rem' : '0.125rem' }}
-      />
+    <span className="np-switch" aria-checked={checked} aria-hidden data-switch-track="">
+      <span className="np-switch-knob" />
     </span>
   );
 }
@@ -142,15 +135,6 @@ export function SectionHiddenNotice({ onEnable }: { onEnable: () => void }) {
 
 /** The one "selected" mark on picker cards: ink disc, check in the page colour. */
 export function SelectedBadge() {
-  return (
-    <span
-      aria-hidden
-      className="absolute right-2 top-2 flex h-[18px] w-[18px] items-center justify-center rounded-full bg-[color:var(--pf-palette-texte-fort)]"
-    >
-      <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-        <path d="M4 10.5l3.5 3.5L16 6" stroke="var(--pf-palette-fond, #ffffff)" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-      </svg>
-    </span>
-  );
+  return null;
 }
 

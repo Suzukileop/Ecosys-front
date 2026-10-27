@@ -1,0 +1,15 @@
+.root { container-type: inline-size; min-width: 0; overflow-wrap: anywhere; }
+.header { display: grid; gap: 20px; align-items: start; }
+.image { aspect-ratio: 16 / 10; max-height: 360px; }
+.lower { display: grid; gap: 36px; align-items: start; }
+.tasks { display: grid; align-content: start; gap: 28px 32px; }
+@container (min-width: 640px) {
+  .image { aspect-ratio: 2.4 / 1; }
+  .tasks[data-multiple='true'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@container (min-width: 960px) {
+  .header[data-label='true'] { grid-template-columns: minmax(0, 0.65fr) minmax(0, 2.35fr); gap: 48px; }
+  .header > p { padding-top: 10px; }
+  .image { aspect-ratio: 3.2 / 1; }
+  .lower[data-split='true'] { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 48px; }
+}

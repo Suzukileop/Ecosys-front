@@ -399,8 +399,8 @@ export function AboutTerminalLayout({
       : 'inset 0 1px 0 rgba(255,255,255,0.72)';
   const shellShadow =
     colorMode === 'dark'
-      ? `0 0 0 1px color-mix(in srgb, ${accent} 16%, ${cardBorder}), 0 28px 80px -36px rgba(0,0,0,0.62), ${insetHighlight}`
-      : `0 0 0 1px color-mix(in srgb, ${accent} 12%, ${cardBorder}), 0 24px 64px -32px rgba(15,15,15,0.18), ${insetHighlight}`;
+      ? `0 8px 28px -20px rgba(0,0,0,0.25), ${insetHighlight}`
+      : `0 8px 28px -20px rgba(15,15,15,0.1), ${insetHighlight}`;
 
   return (
     <div

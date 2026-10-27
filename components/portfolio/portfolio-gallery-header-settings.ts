@@ -7,6 +7,7 @@ import { msg } from '@/lib/i18n/config';
  * layouts). Independent of Design's `design` (which grid layout the gallery renders in).
  */
 export type PortfolioGalleryHeaderDesign =
+  | 'none'
   | 'editorial'
   | 'marquee'
   | 'index'
@@ -42,6 +43,7 @@ export type PortfolioGalleryHeaderAccentCountAlignment = 'left' | 'center' | 'ri
 export type PortfolioGalleryHeaderBillboardWordStyle = 'outline' | 'fill' | 'simple';
 
 export const GALLERY_HEADER_DESIGNS: PortfolioGalleryHeaderDesign[] = [
+  'none',
   'editorial',
   'marquee',
   'index',
@@ -87,6 +89,11 @@ export const PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  {
+    value: 'none',
+    label: msg('None'),
+    description: msg('No header — the gallery starts right away.'),
+  },
   {
     value: 'editorial',
     label: msg('Editorial'),

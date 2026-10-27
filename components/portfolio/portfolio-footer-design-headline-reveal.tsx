@@ -20,6 +20,16 @@ const HEADLINE_REVEAL_CSS = `
 .pf-hlreveal-link {
   transition: color 0.35s cubic-bezier(0.16, 1, 0.3, 1), transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
+.pf-hlreveal-link:focus-visible {
+  transform: translateX(4px);
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 2px;
+}
+a.pf-hlreveal-mode:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+}
 .pf-hlreveal-mode {
   transition: background-color 0.5s cubic-bezier(0.16, 1, 0.3, 1), color 0.5s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -116,7 +126,7 @@ function HeadlineRevealContactButton({
         onMouseEnter={handleEnter}
         onMouseLeave={handleLeave}
         data-pf-no-color-transition=""
-        className="pf-hlreveal-mode inline-flex items-center gap-3 rounded-full px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.14em] sm:px-8 sm:py-4"
+        className="pf-hlreveal-mode inline-flex items-center gap-3 rounded-full px-7 py-3.5 text-[length:calc(var(--pf-footer-body-size)*0.9*var(--pf-footer-font-scale,1))] font-semibold uppercase tracking-[0.14em] sm:px-8 sm:py-4"
         style={{ backgroundColor: ink, color: inkContrast }}
       >
         {label}
@@ -235,15 +245,15 @@ export function FooterDesignHeadlineReveal({
     >
       <HeadlineRevealStyles />
 
-      <div className={`relative z-[1] w-full pb-12 pt-20 sm:pt-24 lg:pb-16 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
+      <div className={`relative z-[1] w-full pb-12 pt-16 sm:pt-24 lg:pb-16 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
         {/* Borderless grid — whitespace is the only separator. */}
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-3 md:gap-16 lg:gap-24">
+        <div className="grid grid-cols-1 gap-10 md:grid-cols-2 md:gap-x-12 md:gap-y-12 lg:grid-cols-3 lg:gap-24 [&>*]:min-w-0">
           <div className="flex flex-col gap-4">
             {showName ? (
               <p
                 data-pf-no-color-transition=""
                 className="pf-hlreveal-mode font-semibold"
-                style={{ color: ink, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
+                style={{ color: ink, fontSize: 'calc(var(--pf-footer-body-size) * 1.25 * var(--pf-footer-font-scale, 1))' }}
               >
                 {creatorName}
               </p>
@@ -258,15 +268,16 @@ export function FooterDesignHeadlineReveal({
             ) : null}
           </div>
 
-          <nav aria-label={t('Footer')} className="flex flex-col gap-4">
+          <nav aria-label={t('Footer')} className="flex flex-col gap-0">
             {navLinks.map((link) => (
               <a
                 key={link.id}
                 href={link.url}
+                  {...(/^https?:\/\//i.test(link.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                 data-pf-no-color-transition=""
                 onMouseEnter={handleLinkEnter}
                 onMouseLeave={handleLinkLeave}
-                className="pf-hlreveal-link w-fit font-normal uppercase tracking-[0.12em]"
+                className="pf-hlreveal-link inline-flex min-h-11 w-fit items-center font-normal uppercase tracking-[0.12em]"
                 style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {link.label}
@@ -274,14 +285,14 @@ export function FooterDesignHeadlineReveal({
             ))}
           </nav>
 
-          <div className="flex flex-col gap-6">
+          <div className="flex flex-col gap-0">
             {phoneDisplay ? (
               <a
                 href={`tel:${phoneTrimmed!.replace(/\s+/g, '')}`}
                 data-pf-no-color-transition=""
                 onMouseEnter={handleLinkEnter}
                 onMouseLeave={handleLinkLeave}
-                className="pf-hlreveal-link w-fit"
+                className="pf-hlreveal-link inline-flex min-h-11 w-fit max-w-full items-center [overflow-wrap:anywhere]"
                 style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {phoneDisplay}
@@ -293,7 +304,7 @@ export function FooterDesignHeadlineReveal({
                 data-pf-no-color-transition=""
                 onMouseEnter={handleLinkEnter}
                 onMouseLeave={handleLinkLeave}
-                className="pf-hlreveal-link w-fit"
+                className="pf-hlreveal-link inline-flex min-h-11 w-fit max-w-full items-center [overflow-wrap:anywhere]"
                 style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {emailTrimmed}
@@ -301,18 +312,18 @@ export function FooterDesignHeadlineReveal({
             ) : null}
             {locationTrimmed ? (
               <p
-                className="w-fit max-w-[16rem]"
+                className="w-fit max-w-[20rem]"
                 style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
               >
                 {locationTrimmed}
               </p>
             ) : null}
             {links.length > 0 ? (
-              <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-2.5" aria-label={t('Social')}>
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-5 gap-y-0" role="group" aria-label={t('Social')}>
                 {links.map((link, index) => (
                   <span key={link.id} className="inline-flex items-baseline gap-1.5">
                     {index > 0 ? (
-                      <span aria-hidden className="select-none text-xs" style={{ opacity: 0.25 }}>
+                      <span aria-hidden className="hidden select-none text-xs" style={{ opacity: 0.25 }}>
                         •
                       </span>
                     ) : null}
@@ -323,7 +334,7 @@ export function FooterDesignHeadlineReveal({
                       data-pf-no-color-transition=""
                       onMouseEnter={handleLinkEnter}
                       onMouseLeave={handleLinkLeave}
-                      className="pf-hlreveal-link w-fit"
+                      className="pf-hlreveal-link inline-flex min-h-11 w-fit max-w-full items-center [overflow-wrap:anywhere]"
                       style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                     >
                       {link.label}
@@ -335,7 +346,7 @@ export function FooterDesignHeadlineReveal({
           </div>
         </div>
 
-        <div className="h-16 sm:h-20 lg:h-24" />
+        <div className="h-10 sm:h-16 lg:h-20" />
 
         {/* 3. Magnetic contact pill — no rule above it, pure whitespace close. Copyright removed
             from this design at the user's request (2026-09-24). */}

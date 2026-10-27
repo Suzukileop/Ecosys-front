@@ -1,0 +1,62 @@
+.preview :global(header),
+.preview :global([data-work-header]) {
+  margin-bottom: 0 !important;
+}
+
+.preview[data-work-header-preview='editorial'] h2,
+.preview[data-work-header-preview='index'] h2,
+.preview[data-work-header-preview='split-heading'] h2 {
+  font-size: 112px !important;
+  line-height: 1.08 !important;
+}
+
+.preview[data-work-header-preview='serif-lead'] h2 {
+  font-size: 88px !important;
+  line-height: 1.1 !important;
+}
+
+.preview[data-work-header-preview='masthead'] h2 {
+  font-size: 96px !important;
+  line-height: 1.1 !important;
+}
+
+.preview :global(.pf-work-editorial-kicker) {
+  font-size: 32px !important;
+}
+
+.preview :global(.pf-work-editorial-sub),
+.preview[data-work-header-preview='index'] p,
+.preview[data-work-header-preview='serif-lead'] p {
+  font-size: 34px !important;
+  line-height: 1.5 !important;
+}
+
+.preview :global([data-work-badge]) {
+  font-size: 34px !important;
+}
+
+.preview :global([data-work-lead]) {
+  font-size: 80px !important;
+  line-height: 1.15 !important;
+}
+
+.preview[data-work-header-preview='marquee'] :global(.whitespace-nowrap.uppercase.leading-none) {
+  font-size: 128px !important;
+}
+
+.preview[data-work-header-preview='split-heading'] :global(.whitespace-nowrap.uppercase) {
+  font-size: 30px !important;
+}
+
+.preview[data-work-header-preview='billboard'] h2 {
+  font-size: 64px !important;
+}
+
+/* Fit the decorative word above the unchanged title in the compact catalogue canvas. */
+.preview[data-work-header-preview='billboard'] :global([data-work-gsap-big-title]) span[aria-hidden] {
+  font-size: 240px !important;
+}
+
+.preview a {
+  font-size: 24px !important;
+}

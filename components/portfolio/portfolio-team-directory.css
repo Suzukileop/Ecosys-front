@@ -1,0 +1,47 @@
+.team-directory-row { display: grid; grid-template-columns: 2.5ch minmax(0, 1fr) auto; align-items: center; column-gap: 24px; row-gap: 12px; min-width: 0; padding: 24px 0; opacity: 1; transition: opacity 280ms ease; }
+.team-directory-row[data-detached='true'] { padding: 24px; }
+.team-directory-row[data-padding='none'] { padding: 16px 0; }
+.team-directory-row[data-detached='true'][data-padding='none'] { padding: 16px; }
+.team-directory-row[data-padding='sm'] { padding-block: 20px; }
+.team-directory-row[data-padding='lg'] { padding-block: 36px; }
+.team-directory-row[data-detached='true'][data-padding='lg'] { padding-inline: 32px; }
+.team-directory-index { grid-column: 1; grid-row: 1; font-size: 13px; font-weight: 400; line-height: 1.5; font-variant-numeric: tabular-nums; }
+.team-directory-copy { grid-column: 2; grid-row: 1; min-width: 0; transition: transform 380ms cubic-bezier(.22, 1, .36, 1); }
+.team-directory .team-directory-name { font-size: calc(clamp(1.375rem, 2.5vw, 2.25rem) * var(--pf-team-font-scale, 1)); font-weight: 500; line-height: 1.2; letter-spacing: -.025em; overflow-wrap: anywhere; text-wrap: pretty; margin: 0; }
+.team-directory-role { margin: 8px 0 0; max-width: 42ch; font-size: calc(clamp(.875rem, 1vw, 1rem) * var(--pf-team-font-scale, 1)); font-weight: 400; line-height: 1.55; overflow-wrap: anywhere; }
+.team-directory-socials { grid-column: 3; grid-row: 1; max-width: 12rem; }
+.team-directory-socials a { min-width: 44px; min-height: 44px; }
+.team-directory-socials a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.team-directory-portrait { position: relative; overflow: hidden; grid-row: 1; grid-column: 2; transition: transform 450ms ease; }
+.team-directory-row[data-portrait='left'], .team-directory-row[data-portrait='inline'] { grid-template-columns: 2.5ch auto minmax(0, 1fr) auto; }
+.team-directory-row[data-portrait='left'] .team-directory-copy, .team-directory-row[data-portrait='inline'] .team-directory-copy { grid-column: 3; }
+.team-directory-row[data-portrait='left'] .team-directory-socials, .team-directory-row[data-portrait='inline'] .team-directory-socials { grid-column: 4; }
+.team-directory-row[data-portrait='right'] { grid-template-columns: 2.5ch minmax(0, 1fr) auto auto; }
+.team-directory-row[data-portrait='right'] .team-directory-portrait { grid-column: 4; }
+.team-directory-accent { position: absolute; left: 0; bottom: 0; width: 22px; height: 2px; background: var(--pf-palette-principal, currentColor); transition: width 380ms ease; }
+.team-directory-row[data-detached='true'] .team-directory-accent { left: 24px; bottom: 10px; }
+@media (max-width: 767px) {
+  .team-directory-row { column-gap: 12px; }
+  .team-directory-copy { display: contents; }
+  .team-directory-name { grid-column: 2 / -1; grid-row: 1; }
+  .team-directory-role { grid-column: 2 / -1; grid-row: 2; margin-top: 0; }
+  .team-directory-socials { grid-column: 2 / -1; grid-row: 3; }
+  .team-directory-row[data-portrait='left'], .team-directory-row[data-portrait='inline'] { grid-template-columns: 2.5ch auto minmax(0, 1fr); }
+  .team-directory-row[data-portrait='right'] { grid-template-columns: 2.5ch minmax(0, 1fr) auto; }
+  .team-directory-row[data-portrait='right'] .team-directory-portrait { grid-column: 3; }
+  .team-directory-row[data-portrait='left'] .team-directory-name, .team-directory-row[data-portrait='inline'] .team-directory-name { grid-column: 3; }
+  .team-directory-row[data-portrait='right'] .team-directory-name { grid-column: 2; }
+  .team-directory-row[data-portrait='left'] .team-directory-socials, .team-directory-row[data-portrait='inline'] .team-directory-socials { grid-column: 2 / -1; }
+  .team-directory-portrait { max-width: 64px; max-height: 80px; align-self: start; }
+}
+@media (hover: hover) and (pointer: fine) {
+  .team-directory:has(.team-directory-row:hover) .team-directory-row:not(:hover):not(:focus-within) { opacity: .7; }
+  .team-directory-row:hover .team-directory-copy { transform: translateX(4px); }
+  .team-directory-row:hover .team-directory-portrait { transform: scale(1.025); }
+  .team-directory-row:hover .team-directory-accent { width: 40px; }
+}
+.team-directory-row:focus-within .team-directory-accent { width: 40px; }
+@media (prefers-reduced-motion: reduce) {
+  .team-directory [data-pf-no-color-transition], .team-directory-accent, .team-directory-portrait { transition: none !important; }
+  .team-directory-row:hover .team-directory-copy, .team-directory-row:hover .team-directory-portrait { transform: none; }
+}

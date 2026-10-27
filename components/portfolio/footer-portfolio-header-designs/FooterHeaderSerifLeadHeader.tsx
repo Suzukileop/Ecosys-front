@@ -85,6 +85,7 @@ export function FooterHeaderSerifLeadHeader({
   const alignRight = align === 'right';
   const title = (presentation.headerSerifLeadTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.headerSerifLeadLabelText || DEFAULT_LABEL_TEXT).trim();
+  const subtitleText = (presentation.headerSerifLeadSubtitleText || subtitle || '').trim();
   const lines = splitSerifLeadLines(title);
 
   const labelTone = footerHeaderPaletteTokenColor(presentation.headerSerifLeadLabelColor ?? 'texteFort');
@@ -149,12 +150,12 @@ export function FooterHeaderSerifLeadHeader({
               ))}
             </h2>
           ) : null}
-          {show('subtitle') && subtitle ? (
+          {show('subtitle') && subtitleText ? (
             <p
               className="mb-0 mt-3 max-w-xl leading-relaxed"
               style={{ color: subtitleTone, fontSize: subtitleFontSize, fontWeight: subtitleFontWeight }}
             >
-              {subtitle}
+              {subtitleText}
             </p>
           ) : null}
         </div>

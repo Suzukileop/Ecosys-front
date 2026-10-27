@@ -1,0 +1,5 @@
+.controls { display: flex; flex-direction: column; gap: 22px; }
+.group { display: flex; flex-direction: column; gap: 18px; min-width: 0; }
+.controls > section + section { padding-top: 20px; border-top: 1px solid var(--np-border); }
+.controls button[aria-pressed] { min-height:68px; gap:8px; padding:10px 6px; }
+.controls button[aria-pressed] > svg { width:64px; height:32px; }

@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import gsap from 'gsap';
@@ -10,12 +11,20 @@ import {
   resolveHeroSpecialtyValue,
   type PortfolioHeroEditorialOverlapAlign,
   type PortfolioHeroEditorialOverlapWidth,
+  type PortfolioHeroPortraitShape,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   DEFAULT_HERO_PALETTE,
   mergeHeroPalette,
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
+import {
+  PortraitOffsetOutline,
+  hasPortraitShapeOverride,
+  portraitShapeAspect,
+  portraitShapeOverlayStyle,
+  portraitShapeRadius,
+} from '@/components/portfolio/hero-variants/portrait-shape';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { isPortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 import { useT } from '@/lib/i18n/I18nProvider';
@@ -37,6 +46,7 @@ type EditorialOverlapHeroProps = {
   width: PortfolioHeroEditorialOverlapWidth;
   align: PortfolioHeroEditorialOverlapAlign;
   imageBw: boolean;
+  portraitShape?: PortfolioHeroPortraitShape;
   suppressBackground?: boolean;
 };
 
@@ -80,6 +90,7 @@ function EditorialOverlapHero({
   width,
   align,
   imageBw,
+  portraitShape,
   suppressBackground = false,
 }: EditorialOverlapHeroProps) {
   const t = useT();
@@ -102,6 +113,59 @@ function EditorialOverlapHero({
   ) : (
     <div className="size-full" style={{ backgroundColor: mediaSurface }} aria-hidden />
   );
+
+  const shapeOverride = hasPortraitShapeOverride(portraitShape);
+  const shapeOverlay = portraitShapeOverlayStyle(portraitShape, principal, fond);
+
+  /** Photo frame. `auto` renders exactly the design's own figure; other shapes override radius/aspect. */
+  const renderFigure = (density: Density, sizes: string) => {
+    const base: Record<Density, string> = {
+      desktop: 'absolute left-[3%] top-1/2 m-0 h-[80%] w-[44%] -translate-y-1/2',
+      tablet: 'relative m-0 ml-[2%] h-[clamp(24rem,57vh,32rem)] w-[49%]',
+      mobile: 'relative m-0 aspect-[5/4] w-full md:aspect-[16/10] md:w-[74%]',
+    };
+    const media = renderMedia(sizes);
+    if (!shapeOverride) {
+      return (
+        <figure
+          className={`pf-overlap-media ${base[density]} overflow-hidden border`}
+          style={{ backgroundColor: mediaSurface, borderColor: panelBorder }}
+        >
+          {media}
+        </figure>
+      );
+    }
+    const isOffset = portraitShape === 'offset';
+    const aspect = portraitShapeAspect(portraitShape);
+    // Circle: square box kept inside the design's own zone (desktop: width follows the 80% height; tablet: height follows the width).
+    const squareStyle: CSSProperties = aspect
+      ? density === 'desktop'
+        ? { aspectRatio: aspect, width: 'auto' }
+        : density === 'tablet'
+          ? { aspectRatio: aspect, height: 'auto' }
+          : { aspectRatio: aspect }
+      : {};
+    const figure = (
+      <figure
+        className={`pf-overlap-media ${isOffset ? 'relative m-0 size-full' : base[density]} overflow-hidden border`}
+        style={{
+          backgroundColor: mediaSurface,
+          borderColor: panelBorder,
+          borderRadius: portraitShapeRadius(portraitShape),
+          ...(isOffset ? null : squareStyle),
+        }}
+      >
+        {media}
+        {shapeOverlay ? <span aria-hidden className="pointer-events-none absolute inset-0 z-[1]" style={shapeOverlay} /> : null}
+      </figure>
+    );
+    if (!isOffset) return figure;
+    return (
+      <PortraitOffsetOutline enabled principal={principal} className={base[density].replace('absolute', 'absolute!').replace(' relative', '')}>
+        {figure}
+      </PortraitOffsetOutline>
+    );
+  };
 
   const renderIdentity = (density: Density) => {
     const titleSize = density === 'desktop'
@@ -135,7 +199,7 @@ function EditorialOverlapHero({
         paddingTop: density === 'mobile' ? '1rem' : 'clamp(1.1rem,1.7vw,1.5rem)',
       }}
     >
-      <p
+      <p data-hero-bio
         className="pf-overlap-desc m-0 font-sans font-normal tracking-[-0.01em]"
         style={{
           color: muted,
@@ -216,12 +280,7 @@ function EditorialOverlapHero({
         style={{ paddingTop: 'calc(5.25rem + env(safe-area-inset-top, 0px))', paddingBottom: 'clamp(2rem,4vh,3.25rem)' }}
       >
         <div className={`relative ${alignClass}`} style={{ ...widthStyle, minHeight: 'clamp(32rem, 70vh, 43rem)' }}>
-          <figure
-            className="pf-overlap-media absolute left-[3%] top-1/2 m-0 h-[80%] w-[44%] -translate-y-1/2 overflow-hidden border"
-            style={{ backgroundColor: mediaSurface, borderColor: panelBorder }}
-          >
-            {renderMedia('(min-width: 1280px) 43vw, 100vw')}
-          </figure>
+          {renderFigure('desktop', '(min-width: 1280px) 43vw, 100vw')}
           <div
             className="pf-overlap-panel absolute left-[49%] top-1/2 z-[2] w-[48%] -translate-y-1/2 pl-[clamp(1.5rem,2.5vw,3rem)]"
           >
@@ -239,12 +298,7 @@ function EditorialOverlapHero({
         style={{ paddingTop: 'calc(5rem + env(safe-area-inset-top, 0px))', paddingBottom: 'clamp(2rem,4vh,3rem)' }}
       >
         <div className={`relative ${alignClass}`} style={widthStyle}>
-          <figure
-            className="pf-overlap-media relative m-0 ml-[2%] h-[clamp(24rem,57vh,32rem)] w-[49%] overflow-hidden border"
-            style={{ backgroundColor: mediaSurface, borderColor: panelBorder }}
-          >
-            {renderMedia('(max-width: 1279px) 49vw, 100vw')}
-          </figure>
+          {renderFigure('tablet', '(max-width: 1279px) 49vw, 100vw')}
           <div
             className="pf-overlap-panel absolute left-[52%] top-1/2 z-[2] w-[46%] -translate-y-1/2 pl-[clamp(1.25rem,2.5vw,2.25rem)]"
           >
@@ -257,12 +311,7 @@ function EditorialOverlapHero({
       {/* Mobile: image, deep tuck, then readable editorial card. */}
       <div className={`pf-overlap-mobile relative z-[1] flex min-h-[100svh] flex-col pb-10 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] lg:hidden ${contentShellClass}`}>
         <div className={`relative ${alignClass}`} style={widthStyle}>
-          <figure
-            className="pf-overlap-media relative m-0 aspect-[5/4] w-full overflow-hidden border md:aspect-[16/10] md:w-[74%]"
-            style={{ backgroundColor: mediaSurface, borderColor: panelBorder }}
-          >
-            {renderMedia('100vw')}
-          </figure>
+          {renderFigure('mobile', '100vw')}
           <div
             className="pf-overlap-panel relative z-[2] -mt-10 ml-auto w-[94%] pt-3 md:-mt-24 md:w-[64%] md:pt-5"
             style={{ background: `linear-gradient(180deg, color-mix(in srgb, ${fond} 96%, transparent) 0%, ${fond} 38%)` }}
@@ -287,23 +336,13 @@ export function PortfolioHeroEditorialOverlap({ data }: { data: PortfolioHeroDat
 
   const displayName = (data.fullName || data.nameLead || '').trim() || 'there';
   const specialty = resolveHeroSpecialtyValue(data.specialite);
-  const image = data.presentation.heroEditorialOverlapImageUrl?.trim() || data.avatarUrl?.trim() || null;
+  const image = data.avatarUrl?.trim() || null;
   const imageBw = data.presentation.heroImageGrayscale === true;
   const customHeadline = data.presentation.heroEditorialOverlapHeadline?.trim() || '';
-  const greeting = customHeadline || `Hi, I'm ${displayName}.`;
+  const greeting = resolveHeroGreeting(data.presentation,customHeadline || `Hi, I'm ${displayName}.`,displayName,data.specialite??'');
 
-  const width =
-    data.presentation.heroEditorialOverlapWidth === 'medium' ||
-    data.presentation.heroEditorialOverlapWidth === 'large' ||
-    data.presentation.heroEditorialOverlapWidth === 'full'
-      ? data.presentation.heroEditorialOverlapWidth
-      : 'full';
-  const align =
-    data.presentation.heroEditorialOverlapAlign === 'left' ||
-    data.presentation.heroEditorialOverlapAlign === 'center' ||
-    data.presentation.heroEditorialOverlapAlign === 'right'
-      ? data.presentation.heroEditorialOverlapAlign
-      : 'left';
+  const width = 'full';
+  const align = 'left';
 
   const description = useMemo(() => {
     const cleaned = data.description?.replace(/\s+/g, ' ').trim() || '';
@@ -329,6 +368,7 @@ export function PortfolioHeroEditorialOverlap({ data }: { data: PortfolioHeroDat
       width={width}
       align={align}
       imageBw={imageBw}
+      portraitShape={data.presentation.heroPortraitShape}
       suppressBackground={data.suppressBackground}
     />
   );

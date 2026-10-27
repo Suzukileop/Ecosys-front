@@ -102,6 +102,7 @@ export function WorkEditorialHeader({
   const t = useT();
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
   const centered = presentation.headerAlignment === 'center';
+  const alignRight = presentation.headerAlignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const show = headerElementVisibility(presentation.headerHiddenElements, 'editorial');
@@ -201,10 +202,10 @@ export function WorkEditorialHeader({
   return (
     <header
       ref={headerRef}
-      className={`pf-work-editorial-header relative w-full ${centered ? 'text-center' : 'text-left'}`}
+      className={`pf-work-editorial-header relative w-full ${centered ? 'text-center' : alignRight ? 'text-right' : 'text-left'}`}
       style={{ marginBottom: `${WORK_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
     >
-      <div className={`pf-work-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
+      <div className={`pf-work-editorial-stage flex flex-col gap-6 ${centered ? 'items-center' : alignRight ? 'items-end' : 'sm:flex-row sm:items-end sm:justify-between'}`}>
         <div className="min-w-0 max-w-3xl">
           {showLabel ? (
             <p
@@ -230,7 +231,7 @@ export function WorkEditorialHeader({
           ) : null}
           {showSubtitle && subtitle ? (
             <p
-              className={`pf-work-editorial-sub mb-0 mt-6 max-w-xl ${workHeaderFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
+              className={`pf-work-editorial-sub mb-0 mt-6 max-w-xl ${centered ? 'mx-auto' : alignRight ? 'ml-auto' : ''} ${workHeaderFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
               style={{
                 color: subtitleMutedInk,
                 fontSize: SUBTITLE_SIZE[presentation.editorialSubtitleSize ?? 'md'],

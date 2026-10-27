@@ -1,0 +1,29 @@
+.content :global(.pf-about-banner-strength-badges) {
+  display:grid;
+  grid-template-columns:minmax(0, 1fr);
+  gap:0 2rem;
+  max-width:none;
+}
+.content :global(.pf-about-banner-strength-badge-cell) {
+  min-width:0;
+  padding:.75rem 0;
+  border-top:1px solid var(--banner-detail-border);
+}
+.content :global(.pf-about-banner-strength-badge) {
+  font-weight:400;
+  letter-spacing:0;
+}
+.content :global(.pf-about-banner-edu-item) {
+  display:grid;
+  gap:.5rem 1.5rem;
+  padding:1.25rem 0;
+  border-top:1px solid var(--banner-detail-border);
+  transition:none;
+}
+.content :global(.pf-about-banner-edu-item:hover) { transform:none; }
+.educationDetails { min-width:0; }
+.year { margin:0; font-variant-numeric:tabular-nums; line-height:1.65; }
+@media (min-width:640px) {
+  .content :global(.pf-about-banner-strength-badges) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .content :global(.pf-about-banner-edu-item) { grid-template-columns:8rem minmax(0,1fr); }
+}

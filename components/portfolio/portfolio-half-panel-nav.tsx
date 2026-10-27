@@ -445,7 +445,7 @@ export function PortfolioHalfPanelNav({
             key="half-panel-drawer"
             ref={drawerRef}
             id="portfolio-half-panel-drawer"
-            role="dialog"
+            role="dialog" data-pf-nav-typography=""
             aria-modal
             aria-label={t('Navigation menu')}
             tabIndex={-1}
@@ -544,6 +544,7 @@ export function PortfolioHalfPanelNav({
 
       <motion.div
         ref={triggerRef}
+        data-pf-page-palette="" data-pf-nav-typography=""
         data-portfolio-nav-clearance-box
         className={`fixed z-[120] transition-opacity duration-300 ${
           !visible || open ? 'pointer-events-none opacity-0' : 'pointer-events-auto opacity-100'

@@ -1,5 +1,7 @@
 'use client';
+import contentStyles from './portfolio-about-us-content.module.css';
 
+import { cardsStyleCss } from '@/components/portfolio/portfolio-cards-style';
 import { createContext, useContext, type CSSProperties, type MouseEvent } from 'react';
 import type { ProfileAboutUs } from '@/types/profile';
 import {
@@ -9,6 +11,7 @@ import {
   aboutUsCardSurfaceColor,
   aboutUsChrome,
   aboutUsContentPlacementClass,
+  aboutUsCustomTitleStyle,
   aboutUsIsDarkMode,
   aboutUsReadableInk,
   aboutUsTextScale,
@@ -28,6 +31,12 @@ import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker'
 import { resolveTaskListMarker } from '@/components/portfolio/portfolio-list-marker';
 import { mediaImageResponsive } from '@/lib/media-image-url';
 import { useT } from '@/lib/i18n/I18nProvider';
+import panoramaStyles from './portfolio-about-us-panorama.module.css';
+import editorialStyles from './portfolio-about-us-editorial.module.css';
+import splitQuoteStyles from './portfolio-about-us-split-quote.module.css';
+import framedStyles from './portfolio-about-us-framed.module.css';
+import splitImageStyles from './portfolio-about-us-split-image.module.css';
+import founderStyles from './portfolio-about-us-founder.module.css';
 
 /** Portraits and photos in this section are user uploads; serve a derivative, not the original. */
 const ABOUT_MEDIA_WIDTHS = [256, 384, 640, 828] as const;
@@ -560,38 +569,22 @@ function AboutUsEditorialDesign({
   // Numerals are the design's own list marker; any other bullet picked under List bullets replaces them.
   const numerals = !presentation.taskBulletStyle || presentation.taskBulletStyle === 'number';
 
-  // Manual headline colour / size (Design → Layout → Headline). The size is the desktop size: it steps
-  // down with the viewport so a large value never overflows a phone, and ignores Text size on purpose.
-  const customSize = presentation.editorialTitleSizePx;
-  const editorialTitleStyle: CSSProperties = {
-    color: presentation.editorialTitleColor ?? presentation.titleColor,
-    ...(customSize
-      ? { fontSize: `clamp(${Math.max(Math.min(customSize, 28), Math.round(customSize * 0.42))}px, ${((customSize / 1100) * 100).toFixed(2)}vw, ${customSize}px)` }
-      : null),
-  };
-
-  const gridCols = !twoColumns
-    ? ''
-    : mediaLeft
-      ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]'
-      : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]';
-  // On a phone the reading order is headline → lead + list → photo → quote; the side only applies from lg.
-  const visualOrder = mediaLeft ? 'max-lg:order-2 lg:order-1' : 'max-lg:order-2 lg:order-2';
-  const textOrder = mediaLeft ? 'max-lg:order-1 lg:order-2' : 'max-lg:order-1 lg:order-1';
+  // Manual headline colour / size (Design → Layout → Headline); ignores Text size on purpose.
+  const editorialTitleStyle: CSSProperties = aboutUsCustomTitleStyle(presentation);
 
   return (
-    <div className="w-full">
+    <div className={`${editorialStyles.root} w-full`}>
       {eyebrow || meta ? (
-        <div className="flex items-baseline justify-between gap-6">
+        <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-baseline sm:gap-6">
           {eyebrow ? (
-            <p className="text-[calc(13px*var(--pf-about-scale,1))] font-bold uppercase tracking-[0.18em]" style={{ color: accent }}>
+            <p className="text-[calc(13px*var(--pf-about-scale,1))] font-medium uppercase tracking-[0.14em]" style={{ color: accent }}>
               {eyebrow}
             </p>
           ) : (
             <span />
           )}
           {meta ? (
-            <p className="max-w-[60%] text-right text-[calc(13px*var(--pf-about-scale,1))] leading-snug sm:text-sm" style={{ color: presentation.descriptionColor }}>
+            <p className="max-w-full text-left text-[calc(13px*var(--pf-about-scale,1))] leading-relaxed sm:max-w-[55%] sm:text-right" style={{ color: presentation.descriptionColor }}>
               {meta}
             </p>
           ) : null}
@@ -600,7 +593,7 @@ function AboutUsEditorialDesign({
 
       {title ? (
         <h3
-          className={`max-w-[13em] text-balance text-[calc(clamp(2.25rem,6.6vw,5rem)*var(--pf-about-scale,1))] font-medium leading-[0.98] tracking-[-0.035em] ${
+          className={`max-w-[22ch] text-balance text-[calc(clamp(2rem,5.8cqw,4rem)*var(--pf-about-scale,1))] font-medium leading-[1.12] tracking-[-0.025em] ${
             eyebrow || meta ? 'mt-5 sm:mt-6' : ''
           }`}
           style={editorialTitleStyle}
@@ -610,9 +603,9 @@ function AboutUsEditorialDesign({
       ) : null}
 
       {twoColumns || hasVisualColumn || hasTextColumn ? (
-        <div className={`grid gap-12 lg:gap-14 xl:gap-20 ${title || eyebrow ? 'mt-10 sm:mt-12 lg:mt-14' : ''} ${gridCols}`}>
+        <div className={`${editorialStyles.layout} ${title || eyebrow || meta ? 'mt-8 sm:mt-10' : ''}`} data-split={twoColumns ? 'true' : undefined} data-media-left={mediaLeft ? 'true' : 'false'}>
           {hasVisualColumn ? (
-            <div className={`min-w-0 ${visualOrder}`}>
+            <div className={`${editorialStyles.visual} min-w-0`}>
               {src ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
@@ -620,13 +613,13 @@ function AboutUsEditorialDesign({
                   sizes="(min-width: 1024px) 58vw, 92vw"
                   alt=""
                   loading="lazy"
-                  className="aspect-[4/3] w-full rounded-sm object-cover sm:aspect-[16/9] lg:aspect-[2.45/1]"
+                  className="aspect-[4/3] max-h-[26rem] w-full rounded-sm object-cover sm:aspect-[16/10]"
                 />
               ) : null}
 
               {showQuote ? (
                 <blockquote
-                  className={`max-w-[44rem] text-pretty text-[calc(1.375rem*var(--pf-about-scale,1))] font-normal leading-[1.3] sm:text-[calc(1.75rem*var(--pf-about-scale,1))] ${src ? 'mt-8 sm:mt-9' : ''}`}
+                  className={`max-w-[40ch] text-pretty text-[calc(1.375rem*var(--pf-about-scale,1))] font-normal leading-[1.45] sm:text-[calc(1.5rem*var(--pf-about-scale,1))] ${src ? 'mt-6 sm:mt-7' : ''}`}
                   style={{ color: presentation.quoteColor }}
                 >
                   {'“'}
@@ -672,10 +665,10 @@ function AboutUsEditorialDesign({
           ) : null}
 
           {hasTextColumn ? (
-            <div className={`min-w-0 ${textOrder}`}>
+            <div className={`${editorialStyles.copy} min-w-0`}>
               {description ? (
                 <p
-                  className="max-w-[32rem] text-pretty text-lg font-normal leading-[1.55] sm:text-[calc(1.25rem*var(--pf-about-scale,1))]"
+                  className="max-w-[56ch] whitespace-pre-line text-pretty text-[calc(1.0625rem*var(--pf-about-scale,1))] font-normal leading-[1.65] sm:text-[calc(1.125rem*var(--pf-about-scale,1))]"
                   style={{ color: presentation.descriptionColor }}
                 >
                   {description}
@@ -697,13 +690,13 @@ function AboutUsEditorialDesign({
                         >
                           {String(index + 1).padStart(2, '0')}
                         </span>
-                      ) : (
+                      ) : presentation.taskBulletStyle !== 'none' ? (
                         <span className="flex w-7 shrink-0 justify-start self-start pt-1.5">
                           <AboutUsTaskMarker presentation={presentation} index={index} />
                         </span>
-                      )}
+                      ) : null}
                       <span
-                        className="min-w-0 text-xl font-normal leading-tight sm:text-[calc(1.5rem*var(--pf-about-scale,1))]"
+                        className="min-w-0 text-[calc(1.125rem*var(--pf-about-scale,1))] font-medium leading-[1.5] sm:text-[calc(1.25rem*var(--pf-about-scale,1))]"
                         style={{ color: presentation.taskColor }}
                       >
                         {task}
@@ -731,9 +724,568 @@ function AboutUsEditorialDesign({
   );
 }
 
+/**
+ * Panorama — a quiet one-page spread. A small label on the left and, beside it, a two-line headline and
+ * its lead; a full-width panoramic photograph; then the list in columns next to the quote and its author;
+ * and a hairline footer with the link on one side and the subtitle as a signature on the other. No box,
+ * fill or shadow anywhere: spacing and a three-step type scale do all the work, and the accent only
+ * touches the label, the numerals and the link.
+ */
+function AboutUsPanoramaDesign({
+  aboutUs,
+  presentation,
+  sectionTitle,
+  sectionSubtitle,
+}: {
+  aboutUs: ProfileAboutUs;
+  presentation: PortfolioAboutUsPresentationSettings;
+  sectionTitle: string;
+  sectionSubtitle: string;
+}) {
+  const t = useT();
+  const title = aboutUs.title?.trim() ?? '';
+  const description = aboutUs.description?.trim() ?? '';
+  const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
+  const src = filledImages(aboutUs.imageUrls)[0];
+  const quote = aboutUs.quote?.trim() ?? '';
+  const founderName = aboutUs.founder?.name?.trim() ?? '';
+  const founderFunction = aboutUs.founder?.function?.trim() ?? '';
+  const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
+  const eyebrow = sectionTitle.trim();
+  const signature =
+    sectionSubtitle.trim() && sectionSubtitle.trim() !== DEFAULT_ABOUT_US_SUBTITLE ? sectionSubtitle.trim() : '';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
+  const ctaLink = useAboutUsCtaLinkProps();
+  const accent = presentation.accentColor;
+  const dark = aboutUsIsDarkMode(presentation);
+  const chrome = aboutUsChrome(dark);
+  const showTasks = presentation.showTasks && tasks.length > 0;
+  const showQuote = presentation.showQuote && Boolean(quote);
+  const showFounder = presentation.showFounder && Boolean(founderName || founderFunction || founderLogo);
+  const hasQuoteColumn = showQuote || showFounder;
+  const hasFooter = presentation.showCta || Boolean(signature);
+  const numerals = !presentation.taskBulletStyle || presentation.taskBulletStyle === 'number';
+  const noBullet = presentation.taskBulletStyle === 'none';
+  const titleStyle = aboutUsCustomTitleStyle(presentation);
+  const hasHead = Boolean(eyebrow || title || description);
+
+  return (
+    <div className={`${panoramaStyles.root} w-full`}>
+      {hasHead ? (
+        <div className={panoramaStyles.header} data-label={eyebrow ? 'true' : undefined}>
+          {eyebrow ? (
+            <p
+              className="text-[calc(13px*var(--pf-about-scale,1))] font-medium uppercase tracking-[0.14em]"
+              style={{ color: accent }}
+            >
+              {eyebrow}
+            </p>
+          ) : null}
+          <div className="min-w-0">
+            {title ? (
+              <h3
+                className="max-w-[19ch] text-balance text-[calc(clamp(1.875rem,4.5cqw,3rem)*var(--pf-about-scale,1))] font-medium leading-[1.15] tracking-[-0.025em]"
+                style={titleStyle}
+              >
+                {title}
+              </h3>
+            ) : null}
+            {description ? (
+              <p
+                className={`max-w-[56ch] whitespace-pre-line text-pretty text-[calc(1.0625rem*var(--pf-about-scale,1))] font-normal leading-[1.65] sm:text-[calc(1.125rem*var(--pf-about-scale,1))] ${
+                  title ? 'mt-5 sm:mt-6' : ''
+                }`}
+                style={{ color: presentation.descriptionColor }}
+              >
+                {description}
+              </p>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {src ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
+          sizes="(min-width: 1024px) 92vw, 94vw"
+          alt=""
+          loading="lazy"
+          className={`${panoramaStyles.image} w-full rounded-sm object-cover ${hasHead ? 'mt-8 sm:mt-10' : ''}`}
+        />
+      ) : null}
+
+      {showTasks || hasQuoteColumn ? (
+        <div
+          className={`${panoramaStyles.lower} ${src || hasHead ? 'mt-8 sm:mt-10' : ''}`}
+          data-split={showTasks && hasQuoteColumn ? 'true' : undefined}
+        >
+          {showTasks ? (
+            <ol className={panoramaStyles.tasks} data-multiple={tasks.length > 1 ? 'true' : undefined}>
+              {tasks.map((task, index) => (
+                // Numerals sit above the title, as a small index; any other bullet stands in front of it.
+                <li key={`${index}-${task}`} className={numerals || noBullet ? 'min-w-0' : 'flex min-w-0 items-start gap-3'}>
+                  {numerals ? (
+                    <span
+                      className="block text-[calc(13px*var(--pf-about-scale,1))] font-medium tabular-nums tracking-wide"
+                      style={{ color: accent }}
+                      aria-hidden
+                    >
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                  ) : noBullet ? null : (
+                    <span className="flex shrink-0 items-start pt-[0.35rem]">
+                      <AboutUsTaskMarker presentation={presentation} index={index} />
+                    </span>
+                  )}
+                  <span
+                    className={`block text-[calc(1.25rem*var(--pf-about-scale,1))] font-medium leading-[1.45] ${numerals ? 'mt-2' : ''}`}
+                    style={{ color: presentation.taskColor }}
+                  >
+                    {task}
+                  </span>
+                </li>
+              ))}
+            </ol>
+          ) : null}
+
+          {hasQuoteColumn ? (
+            <div className="min-w-0">
+              {showQuote ? (
+                <blockquote
+                  className="max-w-[36ch] text-pretty text-[calc(1.5rem*var(--pf-about-scale,1))] font-normal leading-[1.45]"
+                  style={{ color: presentation.quoteColor }}
+                >
+                  {'“'}
+                  {quote}
+                  {'”'}
+                </blockquote>
+              ) : null}
+              {showFounder ? (
+                <div className={`flex items-center gap-4 ${showQuote ? 'mt-6' : ''}`}>
+                  {founderLogo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      {...mediaImageResponsive(founderLogo, ABOUT_MEDIA_WIDTHS)}
+                      sizes="64px"
+                      alt=""
+                      loading="lazy"
+                      className="h-12 w-12 shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-base font-medium ${chrome.avatar}`}
+                      aria-hidden
+                    >
+                      {(founderName || '?').slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    {founderName ? (
+                      <p className="text-[calc(1rem*var(--pf-about-scale,1))] font-medium leading-relaxed" style={{ color: presentation.founderNameColor }}>
+                        {founderName}
+                      </p>
+                    ) : null}
+                    {founderFunction ? (
+                      <p className="mt-0.5 text-[calc(0.875rem*var(--pf-about-scale,1))] leading-relaxed" style={{ color: presentation.founderFunctionColor }}>
+                        {founderFunction}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {hasFooter ? (
+        <div
+          className={`flex flex-wrap items-center justify-between gap-x-8 gap-y-3 border-t pt-5 ${chrome.divider} ${
+            src || hasHead || showTasks || hasQuoteColumn ? 'mt-10 lg:mt-12' : ''
+          }`}
+        >
+          {presentation.showCta ? (
+            <AboutUsCta
+              presentation={presentation}
+              label={ctaLabel}
+              linkProps={ctaLink}
+              solidClassName="inline-flex w-fit items-center justify-center rounded-full px-8 py-3.5 text-base font-semibold transition hover:opacity-90"
+              textClassName="text-[calc(1.0625rem*var(--pf-about-scale,1))]"
+            />
+          ) : (
+            <span />
+          )}
+          {signature ? (
+            <p className="min-w-0 max-w-[48ch] text-[calc(14px*var(--pf-about-scale,1))] leading-relaxed" style={{ color: presentation.descriptionColor }}>
+              {signature}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Folio — a ruled page, the quietest of the set. A hairline rail with the section label (and the
+ * subtitle, when the creator wrote one); beneath it a portrait with its caption on the left, and on the
+ * right the headline, the paragraphs, a plain list set between hairlines and a text link; a second
+ * hairline closes the page on the quote, set as a single line of larger type. No fills, no boxes, no
+ * accent but the link — size and rules alone carry the hierarchy.
+ */
+function AboutUsFolioDesign({
+  aboutUs,
+  presentation,
+  sectionTitle,
+  sectionSubtitle,
+}: {
+  aboutUs: ProfileAboutUs;
+  presentation: PortfolioAboutUsPresentationSettings;
+  sectionTitle: string;
+  sectionSubtitle: string;
+}) {
+  const t = useT();
+  const title = aboutUs.title?.trim() ?? '';
+  const paragraphs = (aboutUs.description ?? '')
+    .split(/\n{2,}/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
+  const founderName = aboutUs.founder?.name?.trim() ?? '';
+  const founderFunction = aboutUs.founder?.function?.trim() ?? '';
+  const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
+  // The portrait is the first image; with none, the founder's own photo stands in for it.
+  const portrait = filledImages(aboutUs.imageUrls)[0] || founderLogo;
+  const quote = aboutUs.quote?.trim() ?? '';
+  const label = sectionTitle.trim();
+  const aside =
+    sectionSubtitle.trim() && sectionSubtitle.trim() !== DEFAULT_ABOUT_US_SUBTITLE ? sectionSubtitle.trim() : '';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
+  const ctaLink = useAboutUsCtaLinkProps();
+  const chrome = aboutUsChrome(aboutUsIsDarkMode(presentation));
+  const showTasks = presentation.showTasks && tasks.length > 0;
+  const showQuote = presentation.showQuote && Boolean(quote);
+  const showCaption = presentation.showFounder && Boolean(founderName || founderFunction);
+  const hasLeft = Boolean(portrait) || showCaption;
+  const hasRight = Boolean(title) || paragraphs.length > 0 || showTasks || presentation.showCta;
+  // The list is plain by default; a bullet picked under List bullets stands in front of each row.
+  const bullet = presentation.taskBulletStyle;
+  const titleStyle = aboutUsCustomTitleStyle(presentation);
+
+  return (
+    <div className="w-full min-w-0 [overflow-wrap:anywhere]">
+      {label || aside ? (
+        <div className={`flex flex-col items-start justify-between gap-3 border-b pb-4 sm:flex-row sm:items-baseline sm:gap-6 ${chrome.divider}`}>
+          <p
+            className="text-[calc(12px*var(--pf-about-scale,1))] font-medium uppercase tracking-[0.18em] sm:text-[calc(13px*var(--pf-about-scale,1))]"
+            style={{ color: presentation.titleColor }}
+          >
+            {label}
+          </p>
+          {aside ? (
+            <p
+              className="max-w-full text-left text-[calc(13px*var(--pf-about-scale,1))] leading-relaxed sm:max-w-[60%] sm:text-right"
+              style={{ color: presentation.descriptionColor }}
+            >
+              {aside}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {hasLeft || hasRight ? (
+        <div
+          className={`grid gap-10 lg:gap-14 xl:gap-20 ${label || aside ? 'mt-10 lg:mt-12' : ''} ${
+            hasLeft && hasRight ? 'lg:grid-cols-[minmax(0,0.85fr)_minmax(0,2.15fr)]' : ''
+          }`}
+        >
+          {hasLeft ? (
+            <div className="min-w-0 max-lg:order-2">
+              {portrait ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  {...mediaImageResponsive(portrait, ABOUT_MEDIA_WIDTHS)}
+                  sizes="(min-width: 1024px) 26vw, 70vw"
+                  alt=""
+                  loading="lazy"
+                  className="aspect-[4/5] w-full max-w-[20rem] rounded-[2px] object-cover lg:max-w-none"
+                />
+              ) : null}
+              {showCaption ? (
+                <div className={portrait ? 'mt-4' : ''}>
+                  {founderName ? (
+                    <p
+                      className="text-[calc(1.0625rem*var(--pf-about-scale,1))] font-medium leading-snug"
+                      style={{ color: presentation.founderNameColor }}
+                    >
+                      {founderName}
+                    </p>
+                  ) : null}
+                  {founderFunction ? (
+                    <p
+                      className="mt-0.5 text-[calc(15px*var(--pf-about-scale,1))] leading-snug"
+                      style={{ color: presentation.founderFunctionColor }}
+                    >
+                      {founderFunction}
+                    </p>
+                  ) : null}
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {hasRight ? (
+            <div className="min-w-0 max-lg:order-1">
+              {title ? (
+                <h3
+                  className="max-w-[14em] text-balance text-[calc(clamp(1.875rem,4.2vw,3rem)*var(--pf-about-scale,1))] font-medium leading-[1.15] tracking-[-0.025em]"
+                  style={titleStyle}
+                >
+                  {title}
+                </h3>
+              ) : null}
+
+              {paragraphs.length > 0 ? (
+                <div className={`max-w-[38rem] space-y-4 ${title ? 'mt-7 sm:mt-8' : ''}`}>
+                  {paragraphs.map((paragraph, index) => (
+                    <p
+                      key={index}
+                      className="text-pretty text-[calc(1.0625rem*var(--pf-about-scale,1))] font-normal leading-[1.6] sm:text-[calc(1.1875rem*var(--pf-about-scale,1))]"
+                      style={{ color: presentation.descriptionColor }}
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              ) : null}
+
+              {showTasks ? (
+                <ul className={`max-w-[38rem] ${paragraphs.length > 0 || title ? 'mt-8 sm:mt-9' : ''}`}>
+                  {tasks.map((task, index) => (
+                    <li
+                      key={`${index}-${task}`}
+                      className={`flex items-baseline gap-4 border-b py-3.5 first:pt-0 last:border-b-0 ${chrome.divider}`}
+                    >
+                      {bullet === 'number' ? (
+                        <span
+                          className="w-6 shrink-0 text-[calc(13px*var(--pf-about-scale,1))] tabular-nums tracking-wide"
+                          style={{ color: presentation.accentColor }}
+                          aria-hidden
+                        >
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                      ) : bullet && bullet !== 'none' ? (
+                        <span className="flex shrink-0 items-start self-start pt-[0.3rem]">
+                          <AboutUsTaskMarker presentation={presentation} index={index} />
+                        </span>
+                      ) : null}
+                      <span
+                        className="min-w-0 text-[calc(1rem*var(--pf-about-scale,1))] font-normal leading-relaxed sm:text-[calc(1.125rem*var(--pf-about-scale,1))]"
+                        style={{ color: presentation.taskColor }}
+                      >
+                        {task}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : null}
+
+              {presentation.showCta ? (
+                <AboutUsCta
+                  presentation={presentation}
+                  label={ctaLabel}
+                  linkProps={ctaLink}
+                  className={title || paragraphs.length > 0 || showTasks ? 'mt-9 sm:mt-10' : ''}
+                  solidClassName="inline-flex w-fit items-center justify-center rounded-full px-8 py-3.5 text-base font-semibold transition hover:opacity-90"
+                  textClassName="text-[calc(1.0625rem*var(--pf-about-scale,1))]"
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {showQuote ? (
+        // The rule spans the whole page; only the line of text is held to a reading width.
+        <div className={`border-t ${chrome.divider} ${hasLeft || hasRight || label || aside ? 'mt-12 pt-8 lg:mt-14' : ''}`}>
+          <p
+            className="max-w-[44rem] text-pretty text-[calc(1.375rem*var(--pf-about-scale,1))] font-normal leading-[1.45] sm:text-[calc(1.625rem*var(--pf-about-scale,1))]"
+            style={{ color: presentation.quoteColor }}
+          >
+            {quote}
+          </p>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
+/**
+ * Centered — one quiet column on a single axis. A small label, a round portrait, a two-line headline
+ * and its lead, the quote set large with its author under it, then a short rule, the list as one
+ * line of words and a text link. No box, fill or shadow; centring and a four-step type scale do the
+ * work, and the accent touches the link alone.
+ */
+function AboutUsCenteredDesign({
+  aboutUs,
+  presentation,
+  sectionTitle,
+}: {
+  aboutUs: ProfileAboutUs;
+  presentation: PortfolioAboutUsPresentationSettings;
+  sectionTitle: string;
+}) {
+  const t = useT();
+  const title = aboutUs.title?.trim() ?? '';
+  const description = aboutUs.description?.trim() ?? '';
+  const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
+  const quote = aboutUs.quote?.trim() ?? '';
+  const founderName = aboutUs.founder?.name?.trim() ?? '';
+  const founderFunction = aboutUs.founder?.function?.trim() ?? '';
+  const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
+  // The portrait is the first image; with none, the founder's own photo stands in for it.
+  const portrait = filledImages(aboutUs.imageUrls)[0] || founderLogo;
+  const label = sectionTitle.trim();
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
+  const ctaLink = useAboutUsCtaLinkProps();
+  const chrome = aboutUsChrome(aboutUsIsDarkMode(presentation));
+  const showTasks = presentation.showTasks && tasks.length > 0;
+  const showQuote = presentation.showQuote && Boolean(quote);
+  const showFounder = presentation.showFounder && Boolean(founderName || founderFunction);
+  const titleStyle = aboutUsCustomTitleStyle(presentation);
+  // Words are told apart by a dot; a bullet picked under List bullets replaces it, "None" drops it.
+  const bullet = presentation.taskBulletStyle;
+  const customBullet = bullet && bullet !== 'none' && bullet !== 'number';
+
+  return (
+    <div className="mx-auto flex w-full min-w-0 max-w-[52rem] flex-col items-center text-center [overflow-wrap:anywhere]">
+      {label ? (
+        <p
+          className="text-[calc(12px*var(--pf-about-scale,1))] font-medium uppercase tracking-[0.22em] sm:text-[calc(13px*var(--pf-about-scale,1))]"
+          style={{ color: presentation.titleColor }}
+        >
+          {label}
+        </p>
+      ) : null}
+
+      {portrait ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          {...mediaImageResponsive(portrait, ABOUT_MEDIA_WIDTHS)}
+          sizes="128px"
+          alt=""
+          loading="lazy"
+          className={`h-28 w-28 rounded-full object-cover sm:h-32 sm:w-32 ${label ? 'mt-6 sm:mt-7' : ''}`}
+        />
+      ) : null}
+
+      {title ? (
+        <h3
+          className={`max-w-[15em] text-balance text-[calc(clamp(1.875rem,4.2vw,3rem)*var(--pf-about-scale,1))] font-medium leading-[1.15] tracking-[-0.025em] ${
+            portrait || label ? 'mt-8 sm:mt-9' : ''
+          }`}
+          style={titleStyle}
+        >
+          {title}
+        </h3>
+      ) : null}
+
+      {description ? (
+        <p
+          className={`max-w-[36rem] text-pretty text-[calc(1rem*var(--pf-about-scale,1))] font-normal leading-[1.65] sm:text-[calc(1.125rem*var(--pf-about-scale,1))] ${
+            title ? 'mt-5 sm:mt-6' : ''
+          }`}
+          style={{ color: presentation.descriptionColor }}
+        >
+          {description}
+        </p>
+      ) : null}
+
+      {showQuote ? (
+        <blockquote
+          className={`max-w-[25em] text-balance text-[calc(clamp(1.375rem,2.8vw,1.875rem)*var(--pf-about-scale,1))] font-normal leading-[1.4] tracking-[-0.015em] ${
+            title || description || portrait ? 'mt-12 sm:mt-14' : ''
+          }`}
+          style={{ color: presentation.quoteColor }}
+        >
+          {'“'}
+          {quote}
+          {'”'}
+        </blockquote>
+      ) : null}
+
+      {showFounder ? (
+        <div className={showQuote ? 'mt-6' : title || description || portrait ? 'mt-10' : ''}>
+          {founderName ? (
+            <p
+              className="text-[calc(1.0625rem*var(--pf-about-scale,1))] font-medium leading-snug"
+              style={{ color: presentation.founderNameColor }}
+            >
+              {founderName}
+            </p>
+          ) : null}
+          {founderFunction ? (
+            <p
+              className="mt-0.5 text-[calc(15px*var(--pf-about-scale,1))] leading-snug"
+              style={{ color: presentation.founderFunctionColor }}
+            >
+              {founderFunction}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {showTasks || presentation.showCta ? (
+        <div
+          className={`w-full max-w-[46rem] ${
+            title || description || portrait || showQuote || showFounder ? `mt-12 border-t pt-7 sm:mt-14 ${chrome.divider}` : ''
+          }`}
+        >
+          {showTasks ? (
+            <ul className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 sm:gap-x-7">
+              {tasks.map((task, index) => (
+                <li key={`${index}-${task}`} className="flex min-w-0 max-w-full items-start gap-x-5 sm:gap-x-7">
+                  {index > 0 && !bullet ? (
+                    <span aria-hidden className="hidden h-[3px] w-[3px] shrink-0 rounded-full bg-current opacity-50 sm:block" style={{ color: presentation.taskColor }} />
+                  ) : null}
+                  {customBullet ? (
+                    <span className="-mr-3 flex items-center">
+                      <AboutUsTaskMarker presentation={presentation} index={index} />
+                    </span>
+                  ) : null}
+                  <span
+                    className="min-w-0 text-[calc(15px*var(--pf-about-scale,1))] leading-relaxed sm:text-[calc(16px*var(--pf-about-scale,1))]"
+                    style={{ color: presentation.taskColor }}
+                  >
+                    {bullet === 'number' ? `${String(index + 1).padStart(2, '0')} ` : ''}
+                    {task}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : null}
+
+          {presentation.showCta ? (
+            <div className={`flex justify-center ${showTasks ? 'mt-6' : ''}`}>
+              <AboutUsCta
+                presentation={presentation}
+                label={ctaLabel}
+                linkProps={ctaLink}
+                solidClassName="inline-flex w-fit items-center justify-center rounded-full px-8 py-3.5 text-base font-semibold transition hover:opacity-90"
+                textClassName="text-[calc(1rem*var(--pf-about-scale,1))]"
+              />
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function AboutUsMediaLeftSingleVisual({ src }: { src: string }) {
   return (
-    <div className="h-full min-h-[22rem] overflow-hidden rounded-[1.75rem] lg:min-h-0 lg:rounded-[2rem]">
+    <div className={splitImageStyles.single}>
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" className="h-full w-full object-cover" />
     </div>
@@ -745,7 +1297,12 @@ function AboutUsMediaLeftVisual({ images, dark }: { images: string[]; dark: bool
   const back = images[1];
   if (!front) return null;
   if (!back) return <AboutUsMediaLeftSingleVisual src={front} />;
-  return <AboutUsSplitPairVisual front={front} back={back} dark={dark} />;
+  return <div className={splitImageStyles.pair}>
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img {...mediaImageResponsive(front, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" />
+    {/* eslint-disable-next-line @next/next/no-img-element */}
+    <img {...mediaImageResponsive(back, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" />
+  </div>;
 }
 
 function AboutUsSplitMediaLeftDesign({
@@ -775,28 +1332,24 @@ function AboutUsSplitMediaLeftDesign({
   const mediaLeft = aboutUsMediaIsLeft(presentation);
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10 [overflow-wrap:anywhere]">
       <div
-        className={`${aboutUsContentPlacementClass(presentation.contentPlacement)} w-full max-lg:!w-full`}
+        className={`${splitImageStyles.root} ${aboutUsContentPlacementClass(presentation.contentPlacement)} w-full`}
         style={{ width: `${widthPercent}%`, maxWidth: '100%' }}
       >
         <div
-          className={`grid items-stretch gap-10 sm:gap-12 lg:gap-16 xl:gap-20 ${aboutUsSplitCols(
-            hasImages,
-            mediaLeft,
-            'overlap'
-          )}`}
+          className={splitImageStyles.layout} data-split={hasImages ? 'true' : undefined} data-media-left={mediaLeft ? 'true' : 'false'}
         >
           {hasImages ? (
-            <div className={`relative min-h-[22rem] lg:min-h-full ${aboutUsSplitOrderClass('media', mediaLeft)}`}>
-              <div className="h-full min-h-[22rem] lg:absolute lg:inset-0">
+            <div className={splitImageStyles.media}>
+              <div className="w-full">
                 <AboutUsMediaLeftVisual images={images} dark={aboutUsIsDarkMode(presentation)} />
               </div>
             </div>
           ) : null}
 
           <div
-            className={`${hasImages ? 'max-w-xl justify-self-start lg:max-w-[36rem]' : 'max-w-xl'} ${aboutUsSplitOrderClass('copy', mediaLeft)}`}
+            className={splitImageStyles.copy}
           >
             {eyebrow ? (
               <p
@@ -809,7 +1362,7 @@ function AboutUsSplitMediaLeftDesign({
 
             {title ? (
               <h3
-                className={`max-w-[13.5em] text-[calc(2.05rem*var(--pf-about-scale,1))] font-semibold leading-[1.14] tracking-tight sm:text-[calc(2.55rem*var(--pf-about-scale,1))] lg:text-[calc(2.95rem*var(--pf-about-scale,1))] ${
+                className={`max-w-[22ch] text-balance text-[calc(clamp(1.875rem,4cqw,2.75rem)*var(--pf-about-scale,1))] font-medium leading-[1.18] tracking-tight ${
                   eyebrow ? 'mt-4' : ''
                 }`}
                 style={{ color: presentation.titleColor } satisfies CSSProperties}
@@ -820,7 +1373,7 @@ function AboutUsSplitMediaLeftDesign({
 
             {description ? (
               <p
-                className={`max-w-[36rem] text-lg leading-[1.8] sm:text-[calc(1.2rem*var(--pf-about-scale,1))] ${title || eyebrow ? 'mt-6' : ''}`}
+                className={`max-w-[54ch] whitespace-pre-line text-[calc(1.0625rem*var(--pf-about-scale,1))] leading-[1.7] ${title || eyebrow ? 'mt-6' : ''}`}
                 style={{ color: presentation.descriptionColor }}
               >
                 {description}
@@ -832,7 +1385,7 @@ function AboutUsSplitMediaLeftDesign({
                 {tasks.map((task, index) => (
                   <li
                     key={`${index}-${task}`}
-                    className="flex items-start gap-3.5 text-lg leading-relaxed sm:text-[calc(1.2rem*var(--pf-about-scale,1))]"
+                    className="flex items-start gap-3 text-[calc(1.0625rem*var(--pf-about-scale,1))] leading-relaxed"
                     style={{ color: presentation.taskColor }}
                   >
                     <AboutUsTaskMarker presentation={presentation} index={index} />
@@ -855,6 +1408,7 @@ function AboutUsSplitMediaLeftDesign({
         </div>
       </div>
 
+      <div className={splitImageStyles.closing}>
       <AboutUsQuoteFounder
         quote={quote}
         founderName={founderName}
@@ -862,6 +1416,7 @@ function AboutUsSplitMediaLeftDesign({
         founderLogo={founderLogo}
         presentation={presentation}
       />
+      </div>
     </div>
   );
 }
@@ -902,6 +1457,7 @@ function AboutUsFounderCard({
   nameColor,
   roleColor,
   dark,
+  compact = false,
 }: {
   name: string;
   role: string;
@@ -912,17 +1468,18 @@ function AboutUsFounderCard({
   nameColor: string;
   roleColor: string;
   dark: boolean;
+  compact?: boolean;
 }) {
   if (!name && !role && !photo) return null;
   const chrome = aboutUsChrome(dark);
   return (
-    <div className={`mt-10 flex items-center gap-5 border-t pt-8 ${chrome.divider}`}>
+    <div className={`${compact ? 'mt-6 flex-wrap gap-3 pt-5' : 'mt-10 gap-5 pt-8'} flex items-center border-t ${chrome.divider}`}>
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img {...mediaImageResponsive(photo, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" className="h-[5.75rem] w-[5.75rem] rounded-2xl object-cover" />
+        <img {...mediaImageResponsive(photo, ABOUT_MEDIA_WIDTHS)} sizes={compact ? '48px' : ABOUT_MEDIA_SIZES} alt="" loading="lazy" className={`${compact ? 'h-12 w-12 rounded-full' : 'h-[5.75rem] w-[5.75rem] rounded-2xl'} shrink-0 object-cover`} />
       ) : (
         <span
-          className={`flex h-[5.75rem] w-[5.75rem] items-center justify-center rounded-2xl text-xl font-semibold ${chrome.founderAvatar}`}
+          className={`${compact ? 'h-12 w-12 rounded-full text-base font-medium' : 'h-[5.75rem] w-[5.75rem] rounded-2xl text-xl font-semibold'} flex shrink-0 items-center justify-center ${chrome.founderAvatar}`}
           aria-hidden
         >
           {(name || '?').slice(0, 1).toUpperCase()}
@@ -930,7 +1487,7 @@ function AboutUsFounderCard({
       )}
       <div className="min-w-0 flex-1">
         {name ? (
-          <p className="text-base font-bold tracking-tight sm:text-lg" style={{ color: nameColor }}>
+          <p className={compact ? 'text-base font-medium leading-relaxed' : 'text-base font-bold tracking-tight sm:text-lg'} style={{ color: nameColor }}>
             {name}
           </p>
         ) : null}
@@ -940,7 +1497,7 @@ function AboutUsFounderCard({
           </p>
         ) : null}
       </div>
-      {showRating && typeof rating === 'number' ? <AboutUsFounderStars rating={rating} dark={dark} /> : null}
+      {showRating && typeof rating === 'number' ? <div className={compact ? 'basis-full pl-[3.75rem]' : ''}><AboutUsFounderStars rating={rating} dark={dark} /></div> : null}
     </div>
   );
 }
@@ -1106,17 +1663,11 @@ function AboutUsSplitFounderDesign({
 
   return (
     <div
-      className={`${aboutUsContentPlacementClass(presentation.contentPlacement)} w-full max-lg:!w-full`}
+      className={`${founderStyles.root} ${aboutUsContentPlacementClass(presentation.contentPlacement)} w-full`}
       style={{ width: `${widthPercent}%`, maxWidth: '100%' }}
     >
-      <div
-        className={`grid items-stretch gap-10 sm:gap-12 lg:gap-16 xl:gap-20 ${aboutUsSplitCols(
-          hasImages,
-          mediaLeft,
-          'balanced'
-        )}`}
-      >
-        <div className={`${hasImages ? 'max-w-xl lg:max-w-[36rem]' : 'max-w-xl'} ${aboutUsSplitOrderClass('copy', mediaLeft)}`}>
+      <div className={founderStyles.layout} data-split={hasImages ? 'true' : undefined} data-media-left={mediaLeft ? 'true' : 'false'}>
+        <div className={founderStyles.copy}>
           {eyebrow ? (
             <p
               className="text-[calc(13px*var(--pf-about-scale,1))] font-bold uppercase tracking-[0.18em] sm:text-sm"
@@ -1128,7 +1679,7 @@ function AboutUsSplitFounderDesign({
 
           {title ? (
             <h3
-              className={`max-w-[13.5em] text-[calc(2.05rem*var(--pf-about-scale,1))] font-semibold leading-[1.14] tracking-tight sm:text-[calc(2.55rem*var(--pf-about-scale,1))] lg:text-[calc(2.95rem*var(--pf-about-scale,1))] ${
+              className={`max-w-[22ch] text-balance text-[calc(clamp(1.875rem,4cqw,2.75rem)*var(--pf-about-scale,1))] font-medium leading-[1.18] tracking-tight ${
                 eyebrow ? 'mt-4' : ''
               }`}
               style={{ color: presentation.titleColor } satisfies CSSProperties}
@@ -1139,7 +1690,7 @@ function AboutUsSplitFounderDesign({
 
           {description ? (
             <p
-              className={`max-w-[36rem] text-lg leading-[1.8] sm:text-[calc(1.2rem*var(--pf-about-scale,1))] ${title || eyebrow ? 'mt-6' : ''}`}
+              className={`max-w-[54ch] whitespace-pre-line text-[calc(1.0625rem*var(--pf-about-scale,1))] leading-[1.7] ${title || eyebrow ? 'mt-6' : ''}`}
               style={{ color: presentation.descriptionColor }}
             >
               {description}
@@ -1147,11 +1698,11 @@ function AboutUsSplitFounderDesign({
           ) : null}
 
           {showTasks ? (
-            <ul className={`max-w-[36rem] space-y-5 ${description || title ? 'mt-8' : 'mt-8'}`}>
+            <ul className={`max-w-[36rem] space-y-4 ${description || title ? 'mt-7' : ''}`}>
               {tasks.map((task, index) => (
                 <li
                   key={`${index}-${task}`}
-                  className="flex items-start gap-3.5 text-lg leading-relaxed sm:text-[calc(1.2rem*var(--pf-about-scale,1))]"
+                  className="flex items-start gap-3 text-[calc(1.0625rem*var(--pf-about-scale,1))] leading-relaxed"
                   style={{ color: presentation.taskColor }}
                 >
                   <AboutUsTaskMarker presentation={presentation} index={index} />
@@ -1178,6 +1729,7 @@ function AboutUsSplitFounderDesign({
               photo={founderLogo}
               rating={founderRating}
               showRating={presentation.showFounderRating}
+              compact
               nameColor={presentation.founderNameColor}
               roleColor={presentation.founderFunctionColor}
               dark={aboutUsIsDarkMode(presentation)}
@@ -1186,7 +1738,7 @@ function AboutUsSplitFounderDesign({
         </div>
 
         {hasImages ? (
-          <div className={`h-full min-h-[20rem] ${aboutUsSplitOrderClass('media', mediaLeft)}`}>
+          <div className={founderStyles.media}>
             <AboutUsFounderMedia
               images={images}
               frame={presentation.imageFrame ?? 'layered'}
@@ -1232,7 +1784,7 @@ function AboutUsSplitCardDesign({
 
   return (
     <div
-      className={`${aboutUsContentPlacementClass(presentation.contentPlacement)} w-full max-lg:!w-full`}
+      className={`${framedStyles.root} ${aboutUsContentPlacementClass(presentation.contentPlacement)} w-full`}
       style={{ width: `${widthPercent}%`, maxWidth: '100%' }}
     >
       <div
@@ -1240,18 +1792,19 @@ function AboutUsSplitCardDesign({
         style={{
           backgroundColor: aboutUsCardSurfaceColor(presentation),
           ...aboutUsCardBorderStyle(presentation.cardBorder, presentation.cardBorderColor),
+          ...cardsStyleCss(presentation.cardsStyle),
         }}
       >
-        <div className={`grid items-stretch ${src ? 'lg:grid-cols-2' : ''}`}>
+        <div className={framedStyles.layout} data-split={src ? 'true' : undefined} data-media-left={mediaLeft ? 'true' : 'false'}>
           {src ? (
-            <div className={`min-h-[18rem] sm:min-h-[22rem] lg:min-h-[28rem] ${aboutUsSplitOrderClass('media', mediaLeft)}`}>
+            <div className={framedStyles.media}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" className="h-full w-full object-cover" />
             </div>
           ) : null}
 
           <div
-            className={`flex flex-col justify-center px-8 py-10 sm:px-12 sm:py-14 lg:px-14 lg:py-16 ${aboutUsSplitOrderClass('copy', mediaLeft)}`}
+            className={framedStyles.copy}
           >
             {eyebrow ? (
               <p
@@ -1264,7 +1817,7 @@ function AboutUsSplitCardDesign({
 
             {title ? (
               <h3
-                className={`max-w-[13.5em] text-[calc(1.85rem*var(--pf-about-scale,1))] font-semibold leading-[1.18] tracking-tight sm:text-[calc(2.25rem*var(--pf-about-scale,1))] lg:text-[calc(2.55rem*var(--pf-about-scale,1))] ${
+                className={`max-w-[22ch] text-balance text-[calc(clamp(1.75rem,3.8cqw,2.5rem)*var(--pf-about-scale,1))] font-medium leading-[1.2] tracking-tight ${
                   eyebrow ? 'mt-4' : ''
                 }`}
                 style={{ color: presentation.titleColor } satisfies CSSProperties}
@@ -1275,7 +1828,7 @@ function AboutUsSplitCardDesign({
 
             {description ? (
               <p
-                className={`max-w-[34rem] text-base leading-[1.8] sm:text-lg ${title || eyebrow ? 'mt-5' : ''}`}
+                className={`max-w-[54ch] whitespace-pre-line text-[calc(1.0625rem*var(--pf-about-scale,1))] leading-[1.7] ${title || eyebrow ? 'mt-5' : ''}`}
                 style={{ color: presentation.descriptionColor }}
               >
                 {description}
@@ -1284,7 +1837,7 @@ function AboutUsSplitCardDesign({
 
             {showQuote ? (
               <blockquote
-                className={`max-w-[34rem] border-l-2 pl-4 text-base italic leading-relaxed sm:text-lg ${
+                className={`max-w-[54ch] border-l-2 pl-4 text-[calc(1.125rem*var(--pf-about-scale,1))] italic leading-[1.65] ${
                   description || title ? 'mt-6' : eyebrow ? 'mt-6' : ''
                 }`}
                 style={{ color: presentation.quoteColor, borderColor: accent }}
@@ -1298,7 +1851,7 @@ function AboutUsSplitCardDesign({
                 {tasks.map((task, index) => (
                   <li
                     key={`${index}-${task}`}
-                    className="flex items-start gap-3 text-base leading-relaxed sm:text-lg"
+                    className="flex items-start gap-3 text-[calc(1.0625rem*var(--pf-about-scale,1))] leading-relaxed"
                     style={{ color: presentation.taskColor }}
                   >
                     <AboutUsTaskMarker presentation={presentation} index={index} />
@@ -1325,6 +1878,7 @@ function AboutUsSplitCardDesign({
                 photo={founderLogo}
                 rating={founderRating}
                 showRating={presentation.showFounderRating}
+                compact
                 nameColor={presentation.founderNameColor}
                 roleColor={presentation.founderFunctionColor}
                 dark={aboutUsIsDarkMode(presentation)}
@@ -1526,7 +2080,7 @@ function AboutUsQuoteSvgFigure({
 
   return (
     <div
-      className={`min-h-[22rem] overflow-hidden rounded-[1.75rem] border lg:min-h-[28rem] lg:rounded-[2rem] ${aboutUsSplitOrderClass('media', mediaLeft)}`}
+      className={splitQuoteStyles.figure}
       style={{
         backgroundColor: fill,
         borderColor: border,
@@ -1539,8 +2093,8 @@ function AboutUsQuoteSvgFigure({
         // eslint-disable-next-line @next/next/no-img-element
         <img {...mediaImageResponsive(custom, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
-        <div className="flex h-full min-h-[22rem] w-full items-center justify-center p-8 sm:p-10 lg:min-h-[28rem] lg:p-12">
-          <AboutUsQuoteSvg id={id} className="max-h-[22rem]" />
+        <div className="flex aspect-square w-full items-center justify-center p-6 sm:p-8">
+          <AboutUsQuoteSvg id={id} className="max-h-[22rem] w-full" />
         </div>
       )}
     </div>
@@ -1591,24 +2145,21 @@ function AboutUsSplitQuoteDesign({
         ? 'transparent'
         : aboutUsCardSurfaceColor(presentation),
     ...aboutUsCardBorderStyle(presentation.cardBorder, presentation.cardBorderColor),
+    ...cardsStyleCss(presentation.cardsStyle),
   } satisfies CSSProperties;
 
   return (
     <div
-      className={`${aboutUsContentPlacementClass(presentation.contentPlacement)} w-full max-lg:!w-full`}
+      className={`${splitQuoteStyles.root} ${aboutUsContentPlacementClass(presentation.contentPlacement)} w-full`}
       style={{ width: `${widthPercent}%`, maxWidth: '100%' }}
     >
       <div
-        className={`grid items-center gap-10 sm:gap-12 lg:gap-16 xl:gap-20 ${aboutUsSplitCols(
-          hasMedia,
-          mediaLeft,
-          'balanced'
-        )}`}
+        className={splitQuoteStyles.layout} data-split={hasMedia ? 'true' : undefined} data-media-left={mediaLeft ? 'true' : 'false'}
       >
-        <div className={`${hasMedia ? 'max-w-xl lg:max-w-[36rem]' : 'max-w-xl'} ${aboutUsSplitOrderClass('copy', mediaLeft)}`}>
+        <div className={splitQuoteStyles.copy}>
           {eyebrow ? (
             <p
-              className="text-[calc(13px*var(--pf-about-scale,1))] font-bold uppercase tracking-[0.18em] sm:text-sm"
+              className="text-[calc(13px*var(--pf-about-scale,1))] font-medium uppercase tracking-[0.14em]"
               style={{ color: accent }}
             >
               {eyebrow}
@@ -1617,7 +2168,7 @@ function AboutUsSplitQuoteDesign({
 
           {title ? (
             <h3
-              className={`max-w-[14em] text-[calc(2.05rem*var(--pf-about-scale,1))] font-semibold leading-[1.14] tracking-tight sm:text-[calc(2.45rem*var(--pf-about-scale,1))] lg:text-[calc(2.75rem*var(--pf-about-scale,1))] ${
+              className={`max-w-[20ch] text-balance text-[calc(clamp(1.875rem,4cqw,2.75rem)*var(--pf-about-scale,1))] font-medium leading-[1.18] tracking-tight ${
                 eyebrow ? 'mt-6' : ''
               }`}
               style={{ color: presentation.titleColor }}
@@ -1628,7 +2179,7 @@ function AboutUsSplitQuoteDesign({
 
           {kicker ? (
             <p
-              className={`text-lg font-medium tracking-tight sm:text-xl ${title || eyebrow ? 'mt-8' : ''}`}
+              className={`text-[calc(1.125rem*var(--pf-about-scale,1))] font-medium leading-relaxed ${title || eyebrow ? 'mt-6' : ''}`}
               style={{ color: presentation.titleColor, fontWeight: 500 }}
             >
               {kicker}
@@ -1637,7 +2188,7 @@ function AboutUsSplitQuoteDesign({
 
           {description ? (
             <p
-              className={`max-w-[34rem] text-base leading-[1.8] sm:text-lg ${
+              className={`max-w-[54ch] whitespace-pre-line text-[calc(1.0625rem*var(--pf-about-scale,1))] leading-[1.7] ${
                 kicker ? 'mt-3' : title || eyebrow ? 'mt-8' : ''
               }`}
               style={{ color: presentation.descriptionColor }}
@@ -1647,11 +2198,11 @@ function AboutUsSplitQuoteDesign({
           ) : null}
 
           {showTasks ? (
-            <ul className={`max-w-[34rem] space-y-5 ${description || kicker || title ? 'mt-10' : 'mt-10'}`}>
+            <ul className={`max-w-[34rem] space-y-4 ${description || kicker || title ? 'mt-7' : ''}`}>
               {tasks.map((task, index) => (
                 <li
                   key={`${index}-${task}`}
-                  className="flex items-start gap-3 text-base leading-relaxed sm:text-lg"
+                  className="flex items-start gap-3 text-[calc(1.0625rem*var(--pf-about-scale,1))] leading-relaxed"
                   style={{ color: presentation.taskColor }}
                 >
                   <AboutUsTaskMarker presentation={presentation} index={index} />
@@ -1672,14 +2223,13 @@ function AboutUsSplitQuoteDesign({
           ) : null}
 
           {showQuote ? (
-            <blockquote className={`relative ${description || kicker || title || showTasks ? 'mt-14 sm:mt-16' : 'mt-10'}`}>
-              <AboutUsQuoteMark color={accent} />
+            <blockquote className={`relative ${description || kicker || title || showTasks ? 'mt-10' : 'mt-6'}`}>
               <div
-                className={`px-7 pb-8 pt-10 sm:px-8 ${aboutUsCardRadiusClass(presentation.cardRadius)} ${aboutUsCardShadowClass(presentation.cardShadow, dark)}`}
+                className={`p-5 sm:p-6 ${aboutUsCardRadiusClass(presentation.cardRadius)} ${aboutUsCardShadowClass(presentation.cardShadow, dark)}`}
                 style={quoteCardStyle}
               >
                 <p
-                  className="text-base italic leading-relaxed sm:text-lg"
+                  className="text-[calc(1.125rem*var(--pf-about-scale,1))] italic leading-[1.65]"
                   style={{ color: presentation.quoteColor }}
                 >
                   {quote}
@@ -1695,6 +2245,7 @@ function AboutUsSplitQuoteDesign({
               photo={founderLogo}
               rating={founderRating}
               showRating={false}
+              compact
               nameColor={presentation.founderNameColor}
               roleColor={presentation.founderFunctionColor}
               dark={dark}
@@ -1705,14 +2256,14 @@ function AboutUsSplitQuoteDesign({
         {useSvgMedia ? (
           <AboutUsQuoteSvgFigure presentation={presentation} mediaLeft={mediaLeft} />
         ) : src ? (
-          <div className={`min-h-[22rem] lg:min-h-[28rem] ${aboutUsSplitOrderClass('media', mediaLeft)}`}>
+          <div className={splitQuoteStyles.figure}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
               sizes={ABOUT_MEDIA_SIZES}
               alt=""
               loading="lazy"
-              className="h-full w-full rounded-[1.75rem] object-cover lg:rounded-[2rem]"
+              className="aspect-square h-full w-full object-cover"
             />
           </div>
         ) : null}
@@ -1724,7 +2275,7 @@ function AboutUsSplitQuoteDesign({
 export function EditorialAboutUsSection(props: EditorialAboutUsSectionProps) {
   return (
     <div
-      className="pf-about-scale"
+      className={`pf-about-scale ${contentStyles.content}`}
       style={{ '--pf-about-scale': aboutUsTextScale(props.presentation.textSize) } as CSSProperties}
     >
       <AboutUsDesignSwitch {...props} />
@@ -1826,6 +2377,34 @@ function AboutUsDesign({
         presentation={presentation}
         sectionTitle={sectionTitle}
         founderRating={founderRating}
+      />
+    );
+  }
+
+  if (presentation.design === 'centered') {
+    return (
+      <AboutUsCenteredDesign aboutUs={aboutUs} presentation={presentation} sectionTitle={sectionTitle} />
+    );
+  }
+
+  if (presentation.design === 'folio') {
+    return (
+      <AboutUsFolioDesign
+        aboutUs={aboutUs}
+        presentation={presentation}
+        sectionTitle={sectionTitle}
+        sectionSubtitle={sectionSubtitle}
+      />
+    );
+  }
+
+  if (presentation.design === 'panorama') {
+    return (
+      <AboutUsPanoramaDesign
+        aboutUs={aboutUs}
+        presentation={presentation}
+        sectionTitle={sectionTitle}
+        sectionSubtitle={sectionSubtitle}
       />
     );
   }

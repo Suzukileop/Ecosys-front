@@ -486,6 +486,7 @@ export function PortfolioCaseOverlayNav({
     >
     <>
       <nav
+        data-pf-page-palette="" data-pf-nav-typography=""
         ref={navRootRef}
         className={`pointer-events-none fixed inset-x-0 top-0 transition-opacity duration-300 ${
           open ? 'z-[240]' : 'z-[120]'
@@ -516,7 +517,7 @@ export function PortfolioCaseOverlayNav({
           <motion.div
             ref={panelRef}
             id="portfolio-case-overlay-panel"
-            role="dialog"
+            role="dialog" data-pf-nav-typography=""
             aria-modal="true"
             aria-label={t('Navigation menu')}
             tabIndex={-1}

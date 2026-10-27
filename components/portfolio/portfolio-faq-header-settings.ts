@@ -9,6 +9,7 @@ import { msg } from '@/lib/i18n/config';
  * that design places it, not a replacement for the design itself.
  */
 export type PortfolioFaqHeaderDesign =
+  | 'none'
   | 'editorial'
   | 'marquee'
   | 'index'
@@ -28,9 +29,10 @@ export type PortfolioFaqHeaderDesign =
  *  — still fully rendered for any account that already has one saved, but not selectable from
  *  this UI. 'signal'/'query'/'dialogue' are 3 newer, purpose-built designs (see
  *  faq-header-tab-3-new-designs memory), not a restoration of the old set. */
-export type PortfolioFaqHeaderDesignSelectable = 'editorial' | 'signal' | 'query' | 'dialogue';
+export type PortfolioFaqHeaderDesignSelectable = 'none' | 'editorial' | 'signal' | 'query' | 'dialogue';
 
 export const FAQ_HEADER_DESIGNS_SELECTABLE: PortfolioFaqHeaderDesignSelectable[] = [
+  'none',
   'editorial',
   'signal',
   'query',
@@ -63,6 +65,7 @@ export type PortfolioFaqHeaderAccentCountAlignment = 'left' | 'center' | 'right'
 export type PortfolioFaqHeaderBillboardWordStyle = 'outline' | 'fill' | 'simple';
 
 export const FAQ_HEADER_DESIGNS: PortfolioFaqHeaderDesign[] = [
+  'none',
   'editorial',
   'marquee',
   'index',
@@ -118,6 +121,7 @@ export const PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  { value: 'none', label: msg('None'), description: '' },
   {
     value: 'editorial',
     label: msg('Editorial'),

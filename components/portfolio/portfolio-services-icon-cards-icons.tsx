@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { msg } from '@/lib/i18n/config';
+import { SERVICE_ICON_FILLED } from '@/components/portfolio/portfolio-services-icon-filled';
 
 /**
  * The icon set of the Services "Icon Cards" design. Hand-drawn 24×24 stroke icons (no icon
@@ -56,7 +57,51 @@ export type ServiceIconKey =
   | 'utensils'
   | 'dumbbell';
 
-export type ServiceIconChoice = ServiceIconKey | 'auto';
+/**
+ * Icons beyond the hand-drawn set are stored as self-contained strings, so the public page never
+ * loads the (large) icon catalogue:
+ *  - `lib:<name>|<w>|<h>|<path>`: a catalogue glyph (filled, Font Awesome Free), path data inline;
+ *  - `img:<url>`: the creator's own uploaded picture.
+ */
+export type ServiceCustomIcon = `lib:${string}` | `img:${string}`;
+/** Any icon a service can end up showing. */
+export type ServiceIconRef = ServiceIconKey | ServiceCustomIcon;
+
+export type ServiceIconChoice = ServiceIconRef | 'auto';
+
+/** Outline draws every icon as strokes; Filled as solid shapes. */
+export type ServiceIconStyle = 'outline' | 'filled';
+
+/** Largest picture a creator may upload as a service icon. */
+export const SERVICE_ICON_UPLOAD_MAX_BYTES = 200 * 1024;
+
+const LIB_PATH_RE = /^[MmLlHhVvCcSsQqTtAaZz0-9eE+\-.,\s]+$/;
+const IMG_URL_RE = /^(https?:\/\/|\/)[^\s"'<>\\]+$/;
+
+export function buildLibraryIcon(name: string, width: number, height: number, path: string): ServiceCustomIcon {
+  return `lib:${name}|${width}|${height}|${path}`;
+}
+
+export function buildImageIcon(url: string): ServiceCustomIcon {
+  return `img:${url}`;
+}
+
+export function parseLibraryIcon(ref: string): { name: string; width: number; height: number; path: string } | null {
+  if (!ref.startsWith('lib:')) return null;
+  const [name, w, h, ...rest] = ref.slice(4).split('|');
+  const path = rest.join('|');
+  const width = Number(w);
+  const height = Number(h);
+  if (!/^[a-z0-9-]{1,40}$/.test(name ?? '') || !(width > 0 && width <= 1024) || !(height > 0 && height <= 1024)) return null;
+  if (path.length === 0 || path.length > 4000 || !LIB_PATH_RE.test(path)) return null;
+  return { name, width, height, path };
+}
+
+export function parseImageIcon(ref: string): string | null {
+  if (!ref.startsWith('img:')) return null;
+  const url = ref.slice(4);
+  return url.length <= 600 && IMG_URL_RE.test(url) ? url : null;
+}
 
 const PATHS: Record<ServiceIconKey, ReactNode> = {
   bolt: <path d="M13 2 4 14h7l-1 8 9-12h-7l1-8Z" />,
@@ -289,7 +334,9 @@ export const SERVICE_ICON_OPTIONS: { value: ServiceIconKey; label: string }[] = 
 const ICON_KEYS = new Set<string>(SERVICE_ICON_OPTIONS.map((option) => option.value));
 
 export function isServiceIconChoice(value: unknown): value is ServiceIconChoice {
-  return value === 'auto' || (typeof value === 'string' && ICON_KEYS.has(value));
+  if (value === 'auto') return true;
+  if (typeof value !== 'string') return false;
+  return ICON_KEYS.has(value) || parseLibraryIcon(value) !== null || parseImageIcon(value) !== null;
 }
 
 /** Title keywords (English + French) → icon, tried in order; the first match wins. */
@@ -340,7 +387,7 @@ const KEYWORD_ICONS: [RegExp, ServiceIconKey][] = [
 /** Fallback rotation when nothing matches — the four icons of the reference first. */
 const ROTATION: ServiceIconKey[] = ['bolt', 'heart', 'globe', 'smile', 'star', 'sparkles', 'target', 'rocket'];
 
-export function resolveServiceIconKey(choice: ServiceIconChoice | undefined, title: string, index: number): ServiceIconKey {
+export function resolveServiceIconKey(choice: ServiceIconChoice | undefined, title: string, index: number): ServiceIconRef {
   if (choice && choice !== 'auto') return choice;
   for (const [pattern, key] of KEYWORD_ICONS) {
     if (pattern.test(title)) return key;
@@ -348,9 +395,28 @@ export function resolveServiceIconKey(choice: ServiceIconChoice | undefined, tit
   return ROTATION[index % ROTATION.length];
 }
 
+/** Catalogue glyphs are solid; the Outline style traces their silhouette instead. */
+export function libraryPaint(viewBoxWidth: number, variant: ServiceIconStyle) {
+  return variant === 'filled'
+    ? ({ fill: 'currentColor' } as const)
+    : ({
+        fill: 'none',
+        stroke: 'currentColor',
+        strokeWidth: (viewBoxWidth / 24) * 1.7,
+        strokeLinejoin: 'round',
+        strokeLinecap: 'round',
+      } as const);
+}
+
 /** The icon's strokes, to drop inside any `<svg viewBox="0 0 24 24">` (the settings tiles reuse it). */
 export function serviceIconPaths(key: ServiceIconKey): ReactNode {
   return PATHS[key];
+}
+
+/** The solid twin of a hand-drawn icon, for the Filled style. */
+export function serviceIconFilled(key: ServiceIconKey): { width: number; height: number; path: string } | null {
+  const twin = SERVICE_ICON_FILLED[key];
+  return twin ? { width: twin[0], height: twin[1], path: twin[2] } : null;
 }
 
 export function ServiceIcon({
@@ -358,13 +424,50 @@ export function ServiceIcon({
   className,
   size,
   strokeWidth = 2,
+  variant = 'outline',
 }: {
-  name: ServiceIconKey;
+  name: ServiceIconRef;
+  variant?: ServiceIconStyle;
   className?: string;
   /** Width and height in px (otherwise size it with `className`). */
   size?: number;
   strokeWidth?: number;
 }) {
+  const image = parseImageIcon(name);
+  if (image) {
+    // eslint-disable-next-line @next/next/no-img-element
+    return <img src={image} alt="" className={className} width={size} height={size} style={{ objectFit: 'contain' }} />;
+  }
+  const library = parseLibraryIcon(name);
+  if (library) {
+    return (
+      <svg
+        viewBox={`0 0 ${library.width} ${library.height}`}
+        className={className}
+        width={size}
+        height={size}
+        {...libraryPaint(library.width, variant)}
+        aria-hidden
+      >
+        <path d={library.path} />
+      </svg>
+    );
+  }
+  const filled = variant === 'filled' ? serviceIconFilled(name as ServiceIconKey) : null;
+  if (filled) {
+    return (
+      <svg
+        viewBox={`0 0 ${filled.width} ${filled.height}`}
+        className={className}
+        width={size}
+        height={size}
+        fill="currentColor"
+        aria-hidden
+      >
+        <path d={filled.path} />
+      </svg>
+    );
+  }
   return (
     <svg
       viewBox="0 0 24 24"
@@ -378,7 +481,7 @@ export function ServiceIcon({
       strokeLinejoin="round"
       aria-hidden
     >
-      {PATHS[name]}
+      {PATHS[name as ServiceIconKey]}
     </svg>
   );
 }

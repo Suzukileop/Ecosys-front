@@ -1,5 +1,7 @@
 'use client';
 
+import { ColorSwatchRow } from '@/components/portfolio/portfolio-color-swatch-row';
+import { BackgroundSwatchesContext } from './portfolio-background-swatches';
 import { useId, type ReactNode } from 'react';
 import { PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS, type PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
 import { PortfolioBackgroundImageUpload } from '@/components/portfolio/portfolio-background-image-upload';
@@ -34,9 +36,9 @@ function ColorField({
   render?: BackgroundColorFieldRenderer;
 }) {
   if (render) {
-    return <>{render({ label, value, onChange })}</>;
+    return <BackgroundSwatchesContext.Provider value={true}>{render({ label, value, onChange })}</BackgroundSwatchesContext.Provider>;
   }
-  return <DefaultColorField label={label} value={value} onChange={onChange} />;
+  return <BackgroundSwatchesContext.Provider value={true}><DefaultColorField label={label} value={value} onChange={onChange} /></BackgroundSwatchesContext.Provider>;
 }
 
 /** Fixed neutral spread — light to dark, pairs cleanly with any accent palette. No free-form
@@ -58,33 +60,14 @@ function DefaultColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const t = useT();
-  const id = useId();
-  const activeHex = value.trim().toLowerCase();
+      const activeHex = value.trim().toLowerCase();
   return (
-    <div className="np-field">
-      <p id={id} className="np-field-label">
-        {label}
-      </p>
-      <div role="group" aria-labelledby={id} className="np-chips">
-        {BACKGROUND_COLOR_PRESETS.map((preset) => (
-          <button
-            key={preset.hex}
-            type="button"
-            onClick={() => onChange(preset.hex)}
-            aria-pressed={preset.hex.toLowerCase() === activeHex}
-            className="np-chip"
-          >
-            <span
-              aria-hidden
-              className="h-3 w-3 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)]"
-              style={{ backgroundColor: preset.hex }}
-            />
-            {t(preset.label)}
-          </button>
-        ))}
-      </div>
-    </div>
+    <ColorSwatchRow
+      label={label}
+      options={BACKGROUND_COLOR_PRESETS.map((preset) => ({ value: preset.hex, label: preset.label, color: preset.hex }))}
+      value={BACKGROUND_COLOR_PRESETS.find((preset) => preset.hex.toLowerCase() === activeHex)?.hex ?? ''}
+      onChange={onChange}
+    />
   );
 }
 

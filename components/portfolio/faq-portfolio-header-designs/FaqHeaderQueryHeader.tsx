@@ -1,5 +1,6 @@
 'use client';
 
+import { faqHeaderRoleStyle, faqHeaderTextOverride } from '@/components/portfolio/portfolio-faq-header-layout';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
@@ -62,9 +63,9 @@ export function FaqHeaderQueryHeader({
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
-  const titleText = title.trim();
-  const subtitleText = subtitle?.trim() || '';
-  const titleInk = faqTitleColorStyle(presentation.titleColor).color as string;
+  const titleText = faqHeaderTextOverride(presentation, 'title') || title.trim();
+  const subtitleText = faqHeaderTextOverride(presentation, 'subtitle') || subtitle?.trim() || '';
+  const titleInk = (faqHeaderRoleStyle(presentation, 'title').color as string | undefined) ?? (faqTitleColorStyle(presentation.titleColor).color as string);
   const layout = createFaqHeaderLayoutResolver(presentation, 'query');
   const showGlyph = layout.isVisible('glyph');
   // A short mark only — anything longer than 3 characters would stop reading as a glyph.
@@ -192,7 +193,7 @@ export function FaqHeaderQueryHeader({
           {showTitle ? (
             <h2
               className={`pf-faq-header-query-title mb-0 ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
-              style={faqTitleColorStyle(presentation.titleColor)}
+              style={{ ...faqTitleColorStyle(presentation.titleColor), ...faqHeaderRoleStyle(presentation, 'title') }}
             >
               {titleText}
             </h2>
@@ -200,7 +201,7 @@ export function FaqHeaderQueryHeader({
           {showSubtitle && subtitleText ? (
             <p
               className={`pf-faq-header-query-sub mb-0 mt-6 max-w-md ${faqHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
-              style={faqSubtitleColorStyle(presentation.subtitleColor)}
+              style={{ ...faqSubtitleColorStyle(presentation.subtitleColor), ...faqHeaderRoleStyle(presentation, 'subtitle') }}
             >
               {subtitleText}
             </p>

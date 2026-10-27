@@ -1,0 +1,12 @@
+.controls { gap:22px; }
+.controls > section { gap:18px; }
+.controls > section + section { padding-top:20px; }
+.controls button[aria-pressed]:has(>svg) { min-height:68px; gap:8px; padding:10px 6px; }
+.controls button[aria-pressed] > svg { width:64px; height:32px; }
+
+/* Keep design groups aligned with the collapsible sections in General. */
+.groupedSections { gap:0; }
+.groupedSections > section { display:block; }
+.groupedSections > section + section { padding-top:0; }
+.groupedSections > section > h3 { margin:0; }
+.groupedSections :global(.np-section-content) > div { gap:18px; }

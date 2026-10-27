@@ -159,9 +159,8 @@ export function mediaImageResponsive(
   url: string | null | undefined,
   widths: readonly number[],
   /**
-   * Resize from the stored original instead of a backend rendition. The renditions are JPEG q78
-   * shrunk with a bilinear filter, and the optimizer then re-encodes them — two lossy generations
-   * that visibly soften a picture. Large hero/cover media that is the point of its section opts out
+   * Resize from the stored source instead of a backend rendition. Re-encoding an already lossy
+   * delivery copy adds another compression generation. Large hero/cover media opts out
    * of them: the optimizer resamples the original once (Lanczos) and the result stays crisp.
    */
   fromOriginal = false,

@@ -1,30 +1,28 @@
 'use client';
+import { workButtonColor } from './portfolio-work-button-color';
 
 import {
   useEffect,
   useLayoutEffect,
   useRef,
   type CSSProperties,
-  type ReactNode,
   type RefObject,
 } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faArrowUp } from '@fortawesome/free-solid-svg-icons';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
-  PortfolioWorkProjectsSpecConsultDesign,
   PortfolioWorkProjectsSpecSettings,
 } from '@/components/portfolio/portfolio-work-settings';
 import {
   DEFAULT_PROJECTS_SPEC_SETTINGS,
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsSpecSettings,
+  workPaletteTokenColor,
 } from '@/components/portfolio/portfolio-work-settings';
+import { WorkConsultButtonLink } from '@/components/portfolio/portfolio-work-consult-link';
 import { aboutBannerScrollParent } from '@/components/portfolio/portfolio-about-scroll-utils';
 import { useT } from '@/lib/i18n/I18nProvider';
 
@@ -65,9 +63,8 @@ const SPEC_MOTION_CSS = `
   }
 }
 /* Everything below this line is a static/idle state only — GSAP (see
-   useSpecChoreography, SpecHoverPreview, SpecBracketConsult) owns every
-   transition: scroll reveal, scrub parallax, hover image, focus/blur, and the
-   consult brackets. No CSS transitions compete with GSAP's per-frame writes. */
+   useSpecChoreography, SpecHoverPreview) owns every
+   transition: scroll reveal, scrub parallax, hover image and focus/blur. No CSS transitions compete with GSAP's per-frame writes. */
 .pf-work-spec-rule {
   width: min(44%, 12rem);
   opacity: 0.22;
@@ -158,246 +155,6 @@ function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-function SpecConsultAnchor({
-  href,
-  className,
-  style,
-  children,
-  noColorTransition = false,
-  onMouseEnter,
-  onMouseLeave,
-}: {
-  href: string;
-  className: string;
-  style?: CSSProperties;
-  children: ReactNode;
-  /** True when `className` carries a transition (e.g. opacity) that the global
-   * .pf-theme-root color-transition rule would otherwise clobber. */
-  noColorTransition?: boolean;
-  onMouseEnter?: () => void;
-  onMouseLeave?: () => void;
-}) {
-  const external = /^https?:\/\//i.test(href);
-  if (external) {
-    return (
-      <a
-        href={href}
-        target="_blank"
-        rel="noopener noreferrer"
-        className={className}
-        style={style}
-        onMouseEnter={onMouseEnter}
-        onMouseLeave={onMouseLeave}
-        {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : null)}
-      >
-        {children}
-      </a>
-    );
-  }
-  return (
-    <Link
-      href={href}
-      className={className}
-      style={style}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      {...(noColorTransition ? { 'data-pf-no-color-transition': '' } : null)}
-    >
-      {children}
-    </Link>
-  );
-}
-
-/**
- * "[ Consult this project → ]" — a paused GSAP timeline built once per instance:
- * brackets spread outward, the arrow sweeps right with a spring (back.out) on
- * mouseenter, and reverses cleanly on mouseleave (GSAP timelines reverse from
- * wherever they currently are, so a fast in/out never stutters or snaps back).
- */
-function SpecBracketConsult({
-  href,
-  label,
-  ink,
-  focusClass,
-}: {
-  href: string;
-  label: string;
-  ink: string;
-  focusClass: string;
-}) {
-  const openRef = useRef<HTMLSpanElement>(null);
-  const closeRef = useRef<HTMLSpanElement>(null);
-  const arrowRef = useRef<HTMLSpanElement>(null);
-  const timelineRef = useRef<gsap.core.Timeline | null>(null);
-
-  useLayoutEffect(() => {
-    const open = openRef.current;
-    const close = closeRef.current;
-    const arrow = arrowRef.current;
-    if (!open || !close || !arrow || prefersReducedMotion()) return undefined;
-
-    const tl = gsap.timeline({ paused: true })
-      .to(open, { x: -8, duration: 0.35, ease: 'power2.out' }, 0)
-      .to(close, { x: 8, duration: 0.35, ease: 'power2.out' }, 0)
-      .to(arrow, { x: 10, duration: 0.45, ease: 'back.out(1.7)' }, 0);
-    timelineRef.current = tl;
-
-    return () => {
-      tl.kill();
-      timelineRef.current = null;
-    };
-  }, []);
-
-  return (
-    <SpecConsultAnchor
-      href={href}
-      className={`pf-work-spec-consult group/consult inline-flex items-center gap-1.5 font-mono text-[12px] tracking-[0.02em] ${focusClass}`}
-      style={{ color: ink }}
-      noColorTransition
-      onMouseEnter={() => timelineRef.current?.play()}
-      onMouseLeave={() => timelineRef.current?.reverse()}
-    >
-      <span ref={openRef} aria-hidden className="inline-block opacity-45">
-        [
-      </span>
-      <span className="tracking-[-0.015em]">{label}</span>
-      <span ref={arrowRef} aria-hidden className="inline-block opacity-55" data-pf-no-color-transition="">
-        →
-      </span>
-      <span ref={closeRef} aria-hidden className="inline-block opacity-45">
-        ]
-      </span>
-    </SpecConsultAnchor>
-  );
-}
-
-function SpecConsultControl({
-  href,
-  label,
-  design,
-  accent,
-  ink,
-  surface,
-}: {
-  href: string;
-  label: string;
-  design: PortfolioWorkProjectsSpecConsultDesign;
-  accent: string;
-  ink: string;
-  surface: string;
-}) {
-  const focusClass =
-    'focus:outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4';
-
-  if (design === 'underline') {
-    return (
-      <SpecConsultAnchor
-        href={href}
-        className={`group/consult relative inline-block text-[0.9375rem] tracking-[-0.015em] ${focusClass}`}
-        style={{ color: ink }}
-      >
-        <span>{label}</span>
-        <span
-          aria-hidden
-          data-pf-no-color-transition=""
-          className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-100 transition-transform duration-400 ease-out group-hover/consult:scale-x-0"
-          style={{ backgroundColor: ink, opacity: 0.28 }}
-        />
-        <span
-          aria-hidden
-          data-pf-no-color-transition=""
-          className="absolute bottom-0 left-0 h-px w-full origin-left scale-x-0 transition-transform duration-400 ease-out group-hover/consult:scale-x-100"
-          style={{ backgroundColor: accent }}
-        />
-      </SpecConsultAnchor>
-    );
-  }
-
-  if (design === 'bracket') {
-    return <SpecBracketConsult href={href} label={label} ink={ink} focusClass={focusClass} />;
-  }
-
-  if (design === 'footer') {
-    return (
-      <SpecConsultAnchor
-        href={href}
-        className={`group/consult inline-flex items-center gap-3 text-[0.9375rem] font-medium tracking-[-0.015em] transition-opacity duration-300 hover:opacity-65 ${focusClass}`}
-        style={{ color: ink }}
-        noColorTransition
-      >
-        <span>{label}</span>
-        <span
-          className="inline-block h-px w-7 origin-left transition-transform duration-500 ease-out group-hover/consult:scale-x-[1.85]"
-          style={{ backgroundColor: accent, opacity: 0.85 }}
-          aria-hidden
-          data-pf-no-color-transition=""
-        />
-      </SpecConsultAnchor>
-    );
-  }
-
-  if (design === 'pill' || design === 'outline' || design === 'ghost' || design === 'solid') {
-    const buttonStyle =
-      design === 'outline'
-        ? {
-            color: ink,
-            backgroundColor: 'transparent',
-            border: `1px solid color-mix(in srgb, ${ink} 22%, transparent)`,
-          }
-        : design === 'ghost'
-          ? {
-              color: ink,
-              backgroundColor: `color-mix(in srgb, ${accent} 8%, transparent)`,
-              border: '1px solid transparent',
-            }
-          : design === 'solid'
-            ? {
-                color: surface,
-                backgroundColor: ink,
-                border: `1px solid ${ink}`,
-              }
-            : {
-                color: '#ffffff',
-                backgroundColor: accent,
-                border: `1px solid ${accent}`,
-              };
-
-    return (
-      <SpecConsultAnchor
-        href={href}
-        className={`group/consult inline-flex items-center gap-2 px-2.5 py-1 text-[13px] font-medium tracking-[-0.015em] transition-opacity duration-300 hover:opacity-75 ${focusClass}`}
-        style={buttonStyle}
-        noColorTransition
-      >
-        <span>{label}</span>
-        <FontAwesomeIcon
-          icon={faArrowUp}
-          className="size-2.5 rotate-45 opacity-70 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
-          aria-hidden
-          data-pf-no-color-transition=""
-        />
-      </SpecConsultAnchor>
-    );
-  }
-
-  return (
-    <SpecConsultAnchor
-      href={href}
-      className={`group/consult inline-flex items-center gap-2 text-[0.9375rem] tracking-[-0.015em] transition-opacity duration-300 hover:opacity-65 ${focusClass}`}
-      style={{ color: accent }}
-      noColorTransition
-    >
-      <span>{label}</span>
-      <FontAwesomeIcon
-        icon={faArrowUp}
-        className="size-2.5 rotate-45 opacity-70 transition-transform duration-300 group-hover/consult:translate-x-0.5 group-hover/consult:-translate-y-0.5"
-        aria-hidden
-        data-pf-no-color-transition=""
-      />
-    </SpecConsultAnchor>
-  );
-}
-
 function SpecThumbnail({
   url,
   alt,
@@ -432,8 +189,8 @@ function SpecThumbnail({
 function SpecFieldLabel({ children, ink }: { children: string; ink: string }) {
   return (
     <p
-      className="mb-2 font-mono text-[10px] font-normal uppercase tracking-[0.16em] sm:text-[11px]"
-      style={{ color: ink, opacity: 0.55 }}
+      className="mb-2 font-mono text-[11px] font-normal uppercase tracking-[0.14em] sm:text-[12px]"
+      style={{ color: ink, opacity: 0.8 }}
     >
       {children}
     </p>
@@ -447,8 +204,8 @@ function SpecStack({ tools, ink }: { tools: string[]; ink: string }) {
       {tools.map((tool, toolIndex) => (
         <li
           key={tool}
-          className="flex items-baseline text-[11px] font-normal uppercase tracking-[0.08em] sm:text-[11.5px]"
-          style={{ color: ink, opacity: 0.55 }}
+          className="flex items-baseline text-[12px] font-normal uppercase tracking-[0.08em] sm:text-[12.5px]"
+          style={{ color: ink, opacity: 0.9 }}
         >
           {toolIndex > 0 ? (
             <span className="mx-2 select-none opacity-60" aria-hidden>
@@ -502,12 +259,9 @@ function SpecHoverPreview({ galleryRef }: { galleryRef: RefObject<HTMLElement | 
 
     const hits = Array.from(root.querySelectorAll<HTMLElement>('[data-spec-title-hit]'));
     const titleEls = Array.from(root.querySelectorAll<HTMLElement>('[data-spec-title-text]'));
-    const baseColors = new Map<HTMLElement, string>();
-    titleEls.forEach((el) => baseColors.set(el, getComputedStyle(el).color));
 
-    // Focus/blur — the hovered title snaps to pure white; every other title in
-    // the list dims to near-invisible with a light kinetic blur, isolating the
-    // active project. Reverses to each title's own original color on leave.
+    // Preserve the configured title color in both light and dark themes.
+    // Only opacity and blur isolate the active project.
     const onEnter = (hit: HTMLElement) => {
       const src = hit.dataset.specHoverSrc;
       if (src) {
@@ -517,7 +271,7 @@ function SpecHoverPreview({ galleryRef }: { galleryRef: RefObject<HTMLElement | 
       const hoveredText = hit.querySelector<HTMLElement>('[data-spec-title-text]');
       titleEls.forEach((el) => {
         if (el === hoveredText) {
-          gsap.to(el, { color: '#ffffff', duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
+          gsap.to(el, { opacity: 1, filter: 'blur(0px)', duration: 0.4, ease: 'power2.out', overwrite: 'auto' });
         } else {
           gsap.to(el, {
             opacity: 0.1,
@@ -534,7 +288,6 @@ function SpecHoverPreview({ galleryRef }: { galleryRef: RefObject<HTMLElement | 
       revealTl.reverse();
       titleEls.forEach((el) => {
         gsap.to(el, {
-          color: baseColors.get(el),
           opacity: 1,
           filter: 'blur(0px)',
           duration: 0.4,
@@ -607,8 +360,6 @@ function SpecSheet({
     presentation.cardBackgroundColor ||
     presentation.toolsIconBackgroundColor ||
     '#fafafa';
-  const solidInk =
-    presentation.elementStyles?.toolsList?.color || presentation.titleColor || ink;
   const stackInk = presentation.elementStyles?.toolsList?.color || muted;
   const tagSurface = presentation.cardBorderColor || rule;
 
@@ -631,12 +382,27 @@ function SpecSheet({
   const showFieldLabels = settings.showFieldLabels !== false;
   const descriptionLabel = settings.descriptionLabel?.trim() || t('Summary');
   const stackLabel = settings.stackLabel?.trim() || t('Stack');
-  const consultDesign = settings.consultDesign ?? 'bracket';
+  const consultStyle = settings.consultDesign ?? 'underline';
   const sheetFrame = settings.sheetFrame ?? 'none';
   const framed = sheetFrame !== 'none';
-  const frameBorderColor = sheetFrame === 'accent' ? accent : rule;
+  const specColor = (token: 'principal' | 'secondaire' | 'texteFort' | 'muted') =>
+    token === 'muted' ? muted : workPaletteTokenColor(token);
+  const percentMix = (color: string, percent: number) =>
+    percent >= 100 ? color : `color-mix(in srgb, ${color} ${percent}%, transparent)`;
+  const frameColorSetting = settings.frameColor ?? 'auto';
+  const frameBorderBase =
+    frameColorSetting === 'auto' ? (sheetFrame === 'accent' ? accent : rule) : specColor(frameColorSetting);
+  const frameBorderColor = percentMix(frameBorderBase, settings.frameOpacity ?? 100);
   const frameBorderWidth =
     sheetFrame === 'solid' ? 2 : sheetFrame === 'thin' || sheetFrame === 'accent' ? 1 : 0;
+  const frameFillSetting = settings.frameFill ?? 'none';
+  const frameFillColor =
+    frameFillSetting === 'none' ? undefined : percentMix(specColor(frameFillSetting), settings.frameFillOpacity ?? 8);
+  const padded = framed || frameFillColor !== undefined;
+  const categoryInk =
+    !settings.categoryColor || settings.categoryColor === 'muted' ? muted : workPaletteTokenColor(settings.categoryColor);
+  // Category and role share one colour.
+  const roleInk = categoryInk;
 
   const titleFontSize = showThumb
     ? 'clamp(1.55rem, 2.35vw, 2.2rem)'
@@ -647,27 +413,33 @@ function SpecSheet({
   const body = (
     <>
       <div className="flex items-end justify-between gap-6">
+        {settings.showIndex !== false ? (
         <div className="flex min-w-0 items-center gap-3">
           <span
             data-spec-index=""
-            className="font-mono text-[10px] font-normal tabular-nums tracking-[0.16em] sm:text-[11px]"
-            style={{ color: muted, opacity: 0.42 }}
+            className="font-mono text-[11px] font-normal tabular-nums tracking-[0.14em] sm:text-[12px]"
+            style={{ color: muted, opacity: 0.85 }}
             data-pf-no-color-transition=""
           >
             {formatSpecIndex(index)}
           </span>
+          {/* Neutral rule: the main color on every sheet's index repeated the accent six
+              times; it now lives on the hover bar and the link underline. */}
           <span
             aria-hidden
             className="hidden h-px w-7 shrink-0 sm:block sm:w-9"
-            style={{ backgroundColor: accent, opacity: 0.7 }}
+            style={{ backgroundColor: `color-mix(in srgb, ${muted} 45%, transparent)` }}
           />
         </div>
+        ) : null}
+        {/* Phones: category / role move under the title (see below), next to what they
+            describe instead of right-aligned above the index. */}
         {(showCategory || showRole) && (
-          <div className="min-w-0 max-w-[62%] text-right">
+          <div className="ml-auto hidden min-w-0 max-w-[62%] text-right sm:block">
             {showCategory ? (
               <p
-                className="truncate text-xs font-normal tracking-[0.06em] sm:text-sm"
-                style={{ color: muted, opacity: 0.6 }}
+                className="truncate text-xs font-medium tracking-[0.06em] sm:text-sm"
+                style={{ color: categoryInk }}
               >
                 {category}
               </p>
@@ -677,7 +449,7 @@ function SpecSheet({
                 className={`truncate text-sm font-normal tracking-[-0.01em] sm:text-[0.9375rem] ${
                   showCategory ? 'mt-1' : ''
                 }`}
-                style={{ color: muted, opacity: 0.5 }}
+                style={{ color: roleInk }}
               >
                 {role}
               </p>
@@ -705,6 +477,14 @@ function SpecSheet({
         </span>
       </h3>
 
+      {showCategory || showRole ? (
+        <p className="mt-2 text-sm sm:hidden">
+          {showRole ? <span style={{ color: roleInk }}>{role}</span> : null}
+          {showRole && showCategory ? <span style={{ color: muted }}> · </span> : null}
+          {showCategory ? <span style={{ color: categoryInk }}>{category}</span> : null}
+        </p>
+      ) : null}
+
       {showStack ? (
         <div data-spec-body="" className="mt-4 sm:mt-5" data-pf-no-color-transition="">
           {showFieldLabels ? <SpecFieldLabel ink={muted}>{stackLabel}</SpecFieldLabel> : null}
@@ -726,14 +506,7 @@ function SpecSheet({
 
       {showConsult && href ? (
         <div data-spec-body="" className="mt-7 sm:mt-8" data-pf-no-color-transition="">
-          <SpecConsultControl
-            href={href}
-            label={consultLabel}
-            design={consultDesign}
-            accent={accent}
-            ink={consultDesign === 'solid' ? solidInk : ink}
-            surface={surface}
-          />
+          <WorkConsultButtonLink href={href} label={consultLabel} ink={workButtonColor(settings.buttonColor ? workPaletteTokenColor(settings.buttonColor) : ink, settings.buttonColorOpacity)} variant={consultStyle} />
         </div>
       ) : null}
     </>
@@ -764,14 +537,15 @@ function SpecSheet({
       ) : null}
 
       <article
-        className={`relative min-w-0 flex-1 ${framed ? 'p-5 sm:p-6 lg:p-8' : ''}`}
+        className={`relative min-w-0 flex-1 ${padded ? 'p-5 sm:p-6 lg:p-8' : ''}`}
         data-pf-no-color-transition=""
         style={
-          framed
+          padded
             ? {
-                borderWidth: frameBorderWidth,
-                borderStyle: 'solid',
-                borderColor: frameBorderColor,
+                ...(framed
+                  ? { borderWidth: frameBorderWidth, borderStyle: 'solid', borderColor: frameBorderColor }
+                  : null),
+                backgroundColor: frameFillColor,
               }
             : undefined
         }
@@ -790,18 +564,51 @@ function SpecSheet({
   );
 }
 
-function specSheetGapClass(gap: PortfolioWorkProjectsSpecSettings['sheetGap']): string {
-  if (gap === 'tight') return 'mt-12 sm:mt-14 lg:mt-16';
-  if (gap === 'md') return 'mt-20 sm:mt-24 lg:mt-28';
-  if (gap === '2xl') return 'mt-36 sm:mt-44 lg:mt-52';
-  return 'mt-28 sm:mt-32 lg:mt-36';
+/** Sets `--spec-gap` (vertical space between sheets): the separator sits at half of it. */
+function specSheetGapVarClass(gap: PortfolioWorkProjectsSpecSettings['sheetGap']): string {
+  if (gap === 'tight') return '[--spec-gap:3rem] sm:[--spec-gap:3.5rem] lg:[--spec-gap:4rem]';
+  // Strictly increasing steps (Large used to be no bigger than Medium on wide screens).
+  if (gap === 'md') return '[--spec-gap:6rem] sm:[--spec-gap:7rem] lg:[--spec-gap:8rem]';
+  if (gap === '2xl') return '[--spec-gap:11rem] sm:[--spec-gap:13.5rem] lg:[--spec-gap:16rem]';
+  return '[--spec-gap:8rem] sm:[--spec-gap:9.5rem] lg:[--spec-gap:11rem]';
 }
 
 function specSheetGridGapClass(gap: PortfolioWorkProjectsSpecSettings['sheetGap']): string {
-  if (gap === 'tight') return 'gap-y-12 sm:gap-y-14 lg:gap-y-16 gap-x-8 sm:gap-x-10 lg:gap-x-12 xl:gap-x-16';
-  if (gap === 'md') return 'gap-y-20 sm:gap-y-24 lg:gap-y-28 gap-x-10 sm:gap-x-12 lg:gap-x-14 xl:gap-x-20';
-  if (gap === '2xl') return 'gap-y-36 sm:gap-y-44 lg:gap-y-52 gap-x-12 sm:gap-x-14 lg:gap-x-16 xl:gap-x-24';
-  return 'gap-y-28 sm:gap-y-32 lg:gap-y-36 gap-x-10 sm:gap-x-12 lg:gap-x-16 xl:gap-x-20';
+  if (gap === 'tight') return '[--spec-gap:3rem] sm:[--spec-gap:3.5rem] lg:[--spec-gap:4rem] gap-x-8 sm:gap-x-10 lg:gap-x-12 xl:gap-x-16';
+  if (gap === 'md') return '[--spec-gap:6rem] sm:[--spec-gap:7rem] lg:[--spec-gap:8rem] gap-x-10 sm:gap-x-12 lg:gap-x-14 xl:gap-x-20';
+  if (gap === '2xl') return '[--spec-gap:11rem] sm:[--spec-gap:13.5rem] lg:[--spec-gap:16rem] gap-x-12 sm:gap-x-14 lg:gap-x-16 xl:gap-x-24';
+  return '[--spec-gap:8rem] sm:[--spec-gap:9.5rem] lg:[--spec-gap:11rem] gap-x-10 sm:gap-x-12 lg:gap-x-16 xl:gap-x-20';
+}
+
+/** Line between two sheets, centered in the `--spec-gap` above its (relative) sheet wrapper. */
+function SpecSheetSeparator({
+  settings,
+  color,
+  className = '',
+}: {
+  settings: PortfolioWorkProjectsSpecSettings;
+  color: string;
+  className?: string;
+}) {
+  const style = settings.metaDivider ?? 'none';
+  if (style === 'none') return null;
+  const thickness = settings.metaDividerSize === 'lg' ? 3 : settings.metaDividerSize === 'sm' ? 1 : 2;
+  const length = settings.metaDividerSize === 'lg' ? '9rem' : settings.metaDividerSize === 'sm' ? '4rem' : '6rem';
+  return (
+    <span
+      aria-hidden
+      className={`pointer-events-none absolute block -translate-y-1/2 ${
+        style === 'short' ? 'left-1/2 -translate-x-1/2' : 'left-0'
+      } ${className}`}
+      style={{
+        top: 'calc(var(--spec-gap) / -2)',
+        height: thickness,
+        width: style === 'short' ? length : '100%',
+        backgroundColor: color,
+      }}
+      data-pf-no-color-transition=""
+    />
+  );
 }
 
 /**
@@ -908,8 +715,12 @@ export function ProjectsSpecGallery({
   );
   const thumbnailForcesSingle = settings.showThumbnail === true;
   const twoColumn = !thumbnailForcesSingle && (settings.columnsPerRow ?? 1) === 2;
-  const gapClass = specSheetGapClass(settings.sheetGap ?? 'xl');
+  const gapVarClass = specSheetGapVarClass(settings.sheetGap ?? 'xl');
   const gridGapClass = specSheetGridGapClass(settings.sheetGap ?? 'xl');
+  const separatorColor =
+    !settings.metaDividerColor || settings.metaDividerColor === 'muted'
+      ? `color-mix(in srgb, ${presentation.subtitleColor || presentation.titleColor} 45%, transparent)`
+      : workPaletteTokenColor(settings.metaDividerColor);
   const rootRef = useSpecChoreography(items.length);
 
   if (items.length === 0) return null;
@@ -918,13 +729,17 @@ export function ProjectsSpecGallery({
     return (
       <section
         ref={rootRef}
-        className={`pf-work-spec grid w-full grid-cols-1 lg:grid-cols-2 ${gridGapClass}`}
+        className={`pf-work-spec grid w-full grid-cols-1 gap-y-[var(--spec-gap)] lg:grid-cols-2 ${gridGapClass}`}
         aria-label={t('Project specifications')}
         data-pf-no-color-transition=""
       >
         <style>{SPEC_MOTION_CSS}</style>
         {items.map((item, index) => (
-          <div key={item.id} className="min-w-0">
+          <div key={item.id} className="relative min-w-0">
+            {/* First row on wide screens has nothing above it: the second sheet sits beside the first. */}
+            {index > 0 ? (
+              <SpecSheetSeparator settings={settings} color={separatorColor} className={index === 1 ? 'lg:hidden' : ''} />
+            ) : null}
             <SpecSheet
               item={item}
               index={index}
@@ -942,20 +757,23 @@ export function ProjectsSpecGallery({
   return (
     <section
       ref={rootRef}
-      className="pf-work-spec w-full"
+      className={`pf-work-spec w-full ${gapVarClass}`}
       aria-label={t('Project specifications')}
       data-pf-no-color-transition=""
     >
       <style>{SPEC_MOTION_CSS}</style>
       {items.map((item, index) => (
-        <div key={item.id} className={index > 0 ? gapClass : ''}>
+        <div key={item.id} className={index > 0 ? 'relative mt-[var(--spec-gap)]' : 'relative'}>
+          {index > 0 ? <SpecSheetSeparator settings={settings} color={separatorColor} /> : null}
           <SpecSheet
             item={item}
             index={index}
             presentation={presentation}
             settings={settings}
             compactTitle={false}
-            applyShift
+            /* One shared left edge: the 0/9/3/12/6vw zig-zag offsets read as misalignment,
+               not rhythm (they followed no grid). */
+            applyShift={false}
           />
         </div>
       ))}

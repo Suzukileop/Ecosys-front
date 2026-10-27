@@ -7,6 +7,7 @@ import { msg } from '@/lib/i18n/config';
  * layouts). Independent of Design's `cardDesign` (which layout the info card renders in).
  */
 export type PortfolioInfoHeaderDesign =
+  | 'none'
   | 'editorial'
   | 'marquee'
   | 'index'
@@ -44,6 +45,7 @@ export type PortfolioInfoHeaderAccentCountAlignment = 'left' | 'center' | 'right
 export type PortfolioInfoHeaderBillboardWordStyle = 'outline' | 'fill' | 'simple';
 
 export const INFO_HEADER_DESIGNS: PortfolioInfoHeaderDesign[] = [
+  'none',
   'editorial',
   'marquee',
   'index',
@@ -91,6 +93,7 @@ export const PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  { value: 'none', label: msg('None'), description: '' },
   {
     value: 'editorial',
     label: msg('Editorial'),

@@ -1,5 +1,12 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
+import {
+  DEFAULT_CARDS_STYLE,
+  cardsStyleCss,
+  mergeCardsStyle,
+  type PortfolioCardsStyle,
+} from '@/components/portfolio/portfolio-cards-style';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
@@ -200,6 +207,8 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   cardBackgroundEnabled: boolean;
   cardBackgroundColor: string;
   cardBorderColor: string;
+  /** Shared Design → Cards block; `auto` keeps each design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   /** Directory: separate member cards instead of one list frame. */
   directoryDetachedCards: boolean;
   /** Portrait rail: how the viewer moves through the members (Design → Layout settings). */
@@ -224,12 +233,23 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   profileCardsColumns: PortfolioTeamRailColumns;
   /** Profile cards: the card's proportion, from square to 9:16. */
   profileCardsRatio: PortfolioTeamProfileRatio;
-  /** Profile cards: horizontal spacing between cards, applied from `lg` up. */
+  /** Profile cards: visible horizontal spacing between cards in grid and rail views. */
   profileCardsGutter: PortfolioTeamProfileGutter;
+  /** Profile cards: optional member index badge over the portrait. */
+  profileCardsShowNumbers: boolean;
   /** Profile cards: info panel always on the portrait, or revealed on hover. */
   profileCardsPanel: PortfolioTeamProfilePanel;
   /** Profile cards: how many the grid shows before `View all`. */
   profileCardsVisible: PortfolioTeamProfileVisible;
+  /** Hover veil has independent layout controls; switching designs never overwrites Profile cards. */
+  hoverVeilView: PortfolioTeamProfileView;
+  hoverVeilColumns: PortfolioTeamRailColumns;
+  hoverVeilRatio: PortfolioTeamProfileRatio;
+  hoverVeilGutter: PortfolioTeamProfileGutter;
+  hoverVeilPanel: PortfolioTeamProfilePanel;
+  hoverVeilVisible: PortfolioTeamProfileVisible;
+  hoverVeilStagger: boolean;
+  hoverVeilShowNumbers: boolean;
   /** Floating cards: the navigation the section opens on (the visitor can still switch). */
   floatCardsView: PortfolioTeamProfileView;
   /** Floating cards, grid view only: cards per row on large screens (never more than four). */
@@ -451,6 +471,8 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
 };
 
 export type PortfolioTeamSectionSettings = PortfolioSectionCopy & PortfolioTeamPresentationSettings;
@@ -464,9 +486,9 @@ export const PORTFOLIO_TEAM_LAYOUT_OPTIONS: {
   { value: 'spotlight', label: msg('Spotlight'), description: msg('One featured portrait with clear typography and a gently animated member selector.') },
   { value: 'split-screen', label: msg('Split screen'), description: msg('A readable editorial roster beside a large portrait, with a subtle crossfade between members.') },
   { value: 'editorial-rhythm', label: msg('Editorial rhythm'), description: msg('An asymmetric portrait grid with clear captions and a larger featured member.') },
-  { value: 'directory', label: msg('Directory'), description: msg('A monumental numbered index; the portrait follows the cursor or sits in every row.') },
+  { value: 'directory', label: msg('Directory'), description: msg('A readable numbered roster with visible links; portraits follow the cursor or sit within each row.') },
   { value: 'polaroid', label: msg('Polaroid'), description: msg('Grained instant prints on a dark table — drag/chevron rail, monochrome-to-color hover, a grid toggle.') },
-  { value: 'profile-cards', label: msg('Profile cards'), description: msg('Portrait on top, name and socials centered below.') },
+  { value: 'profile-cards', label: msg('Profile cards'), description: msg('Portrait cards with readable inset captions, in a grid or horizontal rail.') },
   { value: 'cover-cards', label: msg('Hover veil'), description: msg('Portrait only — a dark veil reveals name, role, and links on hover.') },
   { value: 'avatar-cards', label: msg('Avatar cards'), description: msg('Haloed avatars that morph out of their circle on hover — rail or staggered grid.') },
   { value: 'float-cards', label: msg('Floating cards'), description: msg('A portrait floating over a card that tilts in 3D; the accent washes in from the cursor.') },
@@ -589,6 +611,9 @@ const PORTFOLIO_TEAM_PROFILE_GUTTERS = [
   'lg',
   'xl',
 ] as const satisfies readonly PortfolioTeamProfileGutter[];
+
+/** Actual edge-to-edge distance, shared by the renderer and the settings control. */
+export const TEAM_PROFILE_GUTTER_PX: Record<PortfolioTeamProfileGutter, number> = { sm: 12, md: 48, lg: 96, xl: 160 };
 
 export const PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS: {
   value: PortfolioTeamProfileGutter;
@@ -836,6 +861,7 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   cardBackgroundEnabled: true,
   cardBackgroundColor: '#ffffff',
   cardBorderColor: '#e5e5e5',
+  cardsStyle: { ...DEFAULT_CARDS_STYLE },
   directoryDetachedCards: true,
   railNavigation: 'drag',
   railColumns: 3,
@@ -849,8 +875,17 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   profileCardsColumns: 3,
   profileCardsRatio: 'portrait',
   profileCardsGutter: 'md',
+  profileCardsShowNumbers: true,
   profileCardsPanel: 'always',
   profileCardsVisible: 'all',
+  hoverVeilView: 'grid',
+  hoverVeilColumns: 3,
+  hoverVeilRatio: 'soft',
+  hoverVeilGutter: 'md',
+  hoverVeilPanel: 'hover',
+  hoverVeilVisible: 'all',
+  hoverVeilStagger: false,
+  hoverVeilShowNumbers: true,
   floatCardsView: 'grid',
   floatCardsColumns: 3,
   floatCardsStagger: true,
@@ -991,6 +1026,7 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   teamColorBindings: { ...DEFAULT_TEAM_COLOR_BINDINGS },
   activeColorMode: 'light',
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
 };
 
 Object.assign(DEFAULT_TEAM_PRESENTATION, applyTeamPaletteToSettings(DEFAULT_TEAM_PRESENTATION));
@@ -1261,6 +1297,7 @@ export function teamCardStyle(settings: PortfolioTeamPresentationSettings): CSSP
   return {
     backgroundColor: fillOn ? sanitizeHex(settings.cardBackgroundColor, '#ffffff') : 'transparent',
     borderColor: border === 'none' ? 'transparent' : sanitizeHex(settings.cardBorderColor, '#e5e5e5'),
+    ...cardsStyleCss(settings.cardsStyle, settings.teamPalette),
   };
 }
 
@@ -1319,6 +1356,7 @@ export function mergeTeamPresentation(
         : (base.cardBackgroundEnabled ?? true),
     cardBackgroundColor: sanitizeHex(record.cardBackgroundColor, base.cardBackgroundColor),
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     directoryDetachedCards:
       typeof record.directoryDetachedCards === 'boolean'
         ? record.directoryDetachedCards
@@ -1375,6 +1413,7 @@ export function mergeTeamPresentation(
       PORTFOLIO_TEAM_PROFILE_GUTTERS,
       base.profileCardsGutter ?? 'md'
     ),
+    profileCardsShowNumbers: typeof record.profileCardsShowNumbers === 'boolean' ? record.profileCardsShowNumbers : (base.profileCardsShowNumbers ?? true),
     profileCardsPanel: pick(
       record.profileCardsPanel,
       PORTFOLIO_TEAM_PROFILE_PANELS,
@@ -1385,6 +1424,14 @@ export function mergeTeamPresentation(
       PORTFOLIO_TEAM_PROFILE_VISIBLES,
       base.profileCardsVisible ?? 'all'
     ),
+    hoverVeilView: pick(record.hoverVeilView, PORTFOLIO_TEAM_PROFILE_VIEWS, base.hoverVeilView ?? 'grid'),
+    hoverVeilColumns: record.hoverVeilColumns === 2 || record.hoverVeilColumns === 3 || record.hoverVeilColumns === 4 ? record.hoverVeilColumns : (base.hoverVeilColumns ?? 3),
+    hoverVeilRatio: pick(record.hoverVeilRatio, PORTFOLIO_TEAM_PROFILE_RATIOS, base.hoverVeilRatio ?? 'soft'),
+    hoverVeilGutter: pick(record.hoverVeilGutter, PORTFOLIO_TEAM_PROFILE_GUTTERS, base.hoverVeilGutter ?? 'md'),
+    hoverVeilPanel: pick(record.hoverVeilPanel, PORTFOLIO_TEAM_PROFILE_PANELS, base.hoverVeilPanel ?? 'hover'),
+    hoverVeilVisible: pick(record.hoverVeilVisible, PORTFOLIO_TEAM_PROFILE_VISIBLES, base.hoverVeilVisible ?? 'all'),
+    hoverVeilStagger: typeof record.hoverVeilStagger === 'boolean' ? record.hoverVeilStagger : (base.hoverVeilStagger ?? false),
+    hoverVeilShowNumbers: typeof record.hoverVeilShowNumbers === 'boolean' ? record.hoverVeilShowNumbers : (base.hoverVeilShowNumbers ?? true),
     floatCardsView: pick(
       record.floatCardsView,
       PORTFOLIO_TEAM_PROFILE_VIEWS,
@@ -1909,6 +1956,7 @@ export function mergeTeamPresentation(
     ),
     activeColorMode: record.activeColorMode === 'dark' || record.activeColorMode === 'light' ? record.activeColorMode : base.activeColorMode,
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
   };
   return merged.useHeroPalette === false
     ? merged

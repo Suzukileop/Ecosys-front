@@ -8,13 +8,50 @@
  * specificity — the `.pf-theme-root .text-orange-600` overrides below rely on specificity.)
  */
 @import 'tailwindcss/theme.css' layer(theme);
+@import 'lenis/dist/lenis.css';
 @import './tailwind-theme.css';
+
 @import './tailwind-compat.css';
 @import './tailwind-preflight.css';
 @import '../components/portfolio/portfolio-team-portrait-rail.css';
 @import '../components/portfolio/portfolio-team-spotlight.css';
 @import '../components/portfolio/portfolio-team-split-screen.css';
 @import '../components/portfolio/portfolio-team-editorial-rhythm.css';
+@import '../components/portfolio/portfolio-team-directory.css';
+@import '../components/portfolio/portfolio-team-polaroid.css';
+@import '../components/portfolio/portfolio-team-profile-cards.css';
+@import '../components/portfolio/portfolio-team-hover-veil.css';
+@import '../components/portfolio/portfolio-team-avatar-cards.css';
+@import '../components/portfolio/portfolio-team-float-cards.css';
+@import '../components/portfolio/portfolio-team-floating-canvas.css';
+@import '../components/portfolio/portfolio-media-loading.css';
+@import '../components/portfolio/portfolio-mobile-drawer.css';
+
+/* Hero placeholders follow the portfolio palette independently of the editor chrome. */
+.pf-info-bio-custom-color :is(.pf-about-classic-bio, .pf-about-banner-bio, .pf-about-manifesto-bio, .pf-about-terminal-bio, .pf-about-platform-bio, .pf-about-portrait-bio, .pf-about-split-lede, .pf-about-values-intro-p, [data-info-bio]) {
+  color:color-mix(in srgb, var(--info-bio-color) calc(var(--info-bio-opacity, 1) * 100%), transparent) !important;
+}
+.pf-info-bio-format[data-info-bio-font='serif'] { --info-bio-font-family: Georgia, 'Times New Roman', serif; }
+.pf-info-bio-format[data-info-bio-font='sans'] { --info-bio-font-family: ui-sans-serif, system-ui, sans-serif; }
+.pf-info-bio-format[data-info-bio-font='default'] { --info-bio-font-family: var(--info-default-font-family, inherit); }
+.pf-info-bio-custom-size :is(.pf-about-classic-bio, .pf-about-banner-bio, .pf-about-manifesto-bio, .pf-about-terminal-bio, .pf-about-platform-bio, .pf-about-portrait-bio, .pf-about-split-lede, .pf-about-values-intro-p, [data-info-bio]) {
+  font-size: clamp(12px, 8vw, var(--info-bio-font-size)) !important;
+  overflow-wrap:anywhere;
+}
+.pf-info-bio-format[data-info-bio-font] :is(.pf-about-classic-bio, .pf-about-banner-bio, .pf-about-manifesto-bio, .pf-about-terminal-bio, .pf-about-platform-bio, .pf-about-portrait-bio, .pf-about-split-lede, .pf-about-values-intro-p, [data-info-bio]) {
+  font-family: var(--info-bio-font-family) !important;
+}
+.pf-info-bio-format[data-info-bio-font]:not(.pf-info-bio-italic) :is(.pf-about-classic-bio, .pf-about-banner-bio, .pf-about-manifesto-bio, .pf-about-terminal-bio, .pf-about-platform-bio, .pf-about-portrait-bio, .pf-about-split-lede, .pf-about-values-intro-p, [data-info-bio]) {
+  font-style: normal !important;
+}
+.pf-info-bio-bold :is(.pf-about-classic-bio, .pf-about-banner-bio, .pf-about-manifesto-bio, .pf-about-terminal-bio, .pf-about-platform-bio, .pf-about-portrait-bio, .pf-about-split-lede, .pf-about-values-intro-p, [data-info-bio]) { font-weight: 700 !important; }
+.pf-info-bio-italic :is(.pf-about-classic-bio, .pf-about-banner-bio, .pf-about-manifesto-bio, .pf-about-terminal-bio, .pf-about-platform-bio, .pf-about-portrait-bio, .pf-about-split-lede, .pf-about-values-intro-p, [data-info-bio]) { font-style: italic !important; }
+.pf-info-bio-spacing :is(.pf-about-classic-bio, .pf-about-banner-bio, .pf-about-manifesto-bio, .pf-about-terminal-bio, .pf-about-platform-bio, .pf-about-portrait-bio, .pf-about-split-lede, .pf-about-values-intro-p, [data-info-bio]) { line-height: var(--info-bio-line-height) !important; }
+
+.hero-skeleton-theme .bg-neutral-950 { background-color: var(--hero-sk-canvas) !important; }
+.hero-skeleton-theme .bg-neutral-900 { background-color: var(--hero-sk-soft) !important; }
+.hero-skeleton-theme .bg-neutral-800 { background-color: var(--hero-sk-block) !important; }
+.hero-skeleton-theme .bg-neutral-700 { background-color: var(--hero-sk-image) !important; }
 
 /* Classes are read from the folders v3 scanned (context/, hooks/ and stores/ stay out). */
 @source '../app/**/*.{js,ts,jsx,tsx,mdx}';
@@ -1897,50 +1934,36 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   z-index: 1;
 }
 
-/* Right editorial: staggered fade + micro-slide + soft blur (Awwwards handoff).
-   Exit is faster and unstaggered so the outgoing project clears before the new one lands. */
+/* Right editorial: one simple, fluid hand-off. The outgoing project fades out quickly, then the new one
+   fades in with a small rise — same easing for every line, no blur, no per-line stagger (the earlier
+   blur + four staggered delays took ~0.9s to settle and read as busy). */
 .pf-duotone-story-layer {
   opacity: 0;
-  transform: translate3d(0, 12px, 0);
-  filter: blur(2.5px);
-  will-change: opacity, transform, filter;
+  transform: translate3d(0, 8px, 0);
+  will-change: opacity, transform;
   transition:
-    opacity 0.58s cubic-bezier(0.22, 1, 0.36, 1),
-    transform 0.68s cubic-bezier(0.22, 1, 0.36, 1),
-    filter 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+    opacity 0.45s cubic-bezier(0.22, 1, 0.36, 1),
+    transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
 }
 .pf-duotone-right-panel[data-active='true'] .pf-duotone-story-layer {
   opacity: 1;
   transform: translate3d(0, 0, 0);
-  filter: blur(0);
-}
-.pf-duotone-right-panel[data-active='true'] .pf-duotone-story-layer[data-layer='0'] {
-  transition-delay: 0.05s;
-}
-.pf-duotone-right-panel[data-active='true'] .pf-duotone-story-layer[data-layer='1'] {
-  transition-delay: 0.16s;
-}
-.pf-duotone-right-panel[data-active='true'] .pf-duotone-story-layer[data-layer='2'] {
-  transition-delay: 0.28s;
-}
-.pf-duotone-right-panel[data-active='true'] .pf-duotone-story-layer[data-layer='3'] {
-  transition-delay: 0.4s;
+  /* Wait for the outgoing text to clear, once, for the whole block. */
+  transition-delay: 0.14s;
 }
 
 .pf-duotone-right-panel[data-active='false'] .pf-duotone-story-layer {
   transition-delay: 0s;
-  transition-duration: 0.28s, 0.32s, 0.26s;
-  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 0.2s, 0.25s;
+  transition-timing-function: ease-out;
 }
 .pf-duotone-right-panel[data-active='false'][data-lane='above'] .pf-duotone-story-layer {
   opacity: 0;
-  transform: translate3d(0, -10px, 0);
-  filter: blur(2px);
+  transform: translate3d(0, -6px, 0);
 }
 .pf-duotone-right-panel[data-active='false'][data-lane='below'] .pf-duotone-story-layer {
   opacity: 0;
-  transform: translate3d(0, 14px, 0);
-  filter: blur(2.5px);
+  transform: translate3d(0, 8px, 0);
 }
 
 /* Chrome is layout only — motion lives on story layers inside it. */
@@ -1987,8 +2010,10 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-legacy-thumb-zoom {
   transition: transform 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.group:hover .pf-legacy-thumb-zoom {
-  transform: scale(1.025);
+@media (hover: hover) and (pointer: fine) {
+  .group:hover .pf-legacy-thumb-zoom {
+    transform: scale(1.025);
+  }
 }
 
 /* Legacy design: task-row em-dash marker and repo link — dynamic (per-theme) hover colors
@@ -2011,6 +2036,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-legacy-repo-link:hover {
   color: var(--pf-legacy-accent);
 }
+.pf-legacy-repo-link:focus-visible {
+  color: var(--pf-legacy-accent);
+  outline: 2px solid var(--pf-legacy-accent);
+  outline-offset: 4px;
+}
 .pf-legacy-repo-link-rule {
   background: color-mix(in srgb, var(--pf-legacy-muted) 45%, transparent);
   transform: scaleX(0.32);
@@ -2030,15 +2060,16 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-reel-bento {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  column-gap: 2.75rem;
-  row-gap: 2.5rem;
+  column-gap: clamp(2.5rem, 5vw, 5rem);
+  row-gap: 3rem;
   align-items: start;
 }
 .pf-reel-bento-lead {
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
+  gap: 2.5rem;
+  min-width: 0;
 }
 .pf-reel-bento-card {
   grid-column: 1 / -1;
@@ -2046,20 +2077,30 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   flex-direction: column;
   border-width: 1px;
   border-style: solid;
-  border-radius: 1.5rem;
-  padding: 2rem 1.75rem;
+  border-radius: 1rem;
+  padding: 1.75rem 1.25rem;
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
-@media (min-width: 640px) {
+@media (min-width: 960px) {
   .pf-reel-bento {
     grid-template-columns: repeat(12, minmax(0, 1fr));
   }
   .pf-reel-bento-lead {
-    grid-column: span 4 / span 4;
+    grid-column: span 5 / span 5;
   }
   .pf-reel-bento-card {
-    grid-column: span 8 / span 8;
-    padding: 2.5rem 2.75rem;
+    grid-column: span 7 / span 7;
+    padding: clamp(1.75rem, 3vw, 3rem);
   }
+}
+
+.pf-reel-detail-footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1.5rem 2rem;
 }
 
 /* Reel design: task timeline — one continuous vertical rule with the index isolated to its
@@ -2144,7 +2185,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 /* Locked title frame — absolute so hairlines never reflow; optically centered lower. */
 .pf-reel-sticky-v-title-frame {
   position: absolute;
-  top: 28vh;
+  top: 24vh;
   left: 0;
   right: 0;
   width: 100%;
@@ -2202,15 +2243,22 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 /* Story band sits under the locked frame, closer to optical center. */
 .pf-reel-sticky-v-footer {
   box-sizing: border-box;
-  padding-top: calc(28vh + clamp(3.2rem, 7.2vw, 5.4rem) + 5.5rem);
-  padding-bottom: 8vh;
+  padding-top: calc(24vh + clamp(3.2rem, 7.2vw, 5.4rem) + 4.5rem);
+  padding-bottom: 4vh;
 }
 /* Tighter lead|card gutter for sticky-vertical — no extra internal padding. */
 .pf-reel-sticky-v-pin .pf-reel-bento {
   column-gap: 1.25rem;
   row-gap: 1.75rem;
 }
+.pf-reel-sticky-v-pin .pf-reel-bento-card {
+  padding-top: 1.75rem;
+  padding-bottom: 1.75rem;
+}
 @media (min-width: 640px) {
+  .pf-reel-sticky-v-pin .pf-reel-bento {
+    grid-template-columns: repeat(12, minmax(0, 1fr));
+  }
   .pf-reel-sticky-v-pin .pf-reel-bento-lead {
     grid-column: span 3 / span 3;
   }
@@ -2245,7 +2293,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   display: none;
 }
 .pf-exp-cards-stack-card {
-  box-shadow: 0 18px 36px rgba(0, 0, 0, 0.22);
+  box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.18);
   transform-origin: top center;
   will-change: transform, opacity;
 }
@@ -2375,8 +2423,8 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   position: relative;
   z-index: 2;
   margin-top: 1.5rem;
-  height: 0.75rem;
-  width: 0.75rem;
+  height: 0.5rem;
+  width: 0.5rem;
   flex-shrink: 0;
   border-radius: 999px;
   transition: background-color 0.35s ease, box-shadow 0.35s ease, transform 0.35s ease;
@@ -2397,33 +2445,62 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-press-thumb {
   transition: width 0.7s cubic-bezier(0.22, 1, 0.36, 1);
 }
-.pf-press-thumb:hover {
-  width: 20rem;
-}
-@media (min-width: 640px) {
+/* Widening on hover only where there is room and a real pointer: below that the row stacks. */
+@media (hover: hover) and (min-width: 640px) {
   .pf-press-thumb:hover {
     width: 24rem;
   }
 }
-@media (min-width: 1024px) {
+@media (hover: hover) and (min-width: 1024px) {
   .pf-press-thumb:hover {
     width: 28rem;
   }
 }
 .pf-press-stack {
   opacity: 0;
-  transition: opacity 0.5s ease-out;
+  visibility: hidden;
+  transition: opacity 0.5s ease-out, visibility 0s linear 0.5s;
 }
 .pf-press-reveal {
   display: grid;
   grid-template-rows: 0fr;
   transition: grid-template-rows 0.5s ease-out;
 }
-.pf-press-row:has(.pf-press-thumb:hover) .pf-press-stack {
+.pf-press-row:is(:has(.pf-press-thumb:hover), :has(a:focus-visible), :focus-within, .pf-press-open) .pf-press-stack {
   opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
 }
-.pf-press-row:has(.pf-press-thumb:hover) .pf-press-reveal {
+.pf-press-row:is(:has(.pf-press-thumb:hover), :has(a:focus-visible), :focus-within, .pf-press-open) .pf-press-reveal {
   grid-template-rows: 1fr;
+}
+/* Touch and narrow screens never hover: the description, tasks and stack are always shown. */
+@media (hover: none), (max-width: 1023px) {
+  .pf-press-reveal {
+    grid-template-rows: 1fr;
+  }
+  .pf-press-stack {
+    opacity: 1;
+    visibility: visible;
+  }
+}
+
+/* Legacy thumbnail: a 4/3 frame on small screens, the chosen ratio and width from lg up. */
+.pf-legacy-thumb {
+  aspect-ratio: 4 / 3;
+  max-width: 100%;
+}
+@media (min-width: 640px) {
+  .pf-legacy-thumb {
+    max-height: 32rem;
+  }
+}
+@media (min-width: 1024px) {
+  .pf-legacy-thumb {
+    aspect-ratio: var(--pf-lg-ar);
+    max-width: var(--pf-lg-mw);
+    max-height: none;
+  }
 }
 
 /* Loft detail modal: editorial em-dash markers + soft thumb zoom. */
@@ -2701,6 +2778,21 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-loft-hover-magnetic:focus-visible .pf-loft-card-title {
   transform: translate3d(0, -0.35rem, 0);
 }
+
+/* Touch has no hover: keep the cue visible and never leave the thumbnails dimmed. */
+@media (hover: none) {
+  .pf-loft-hover-magnetic .pf-loft-magnetic-cue {
+    opacity: 1;
+    transform: none;
+  }
+  .pf-loft-hover-curtain .pf-loft-card-media {
+    filter: none;
+    transform: none;
+  }
+  .pf-loft-hover-curtain .pf-loft-curtain-veil {
+    opacity: 0;
+  }
+}
 .pf-loft-hover-magnetic:hover .pf-loft-card-media,
 .pf-loft-hover-magnetic:focus-visible .pf-loft-card-media {
   transform: scale(1.06);
@@ -2710,7 +2802,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 /* Option 3 — Press In */
 .pf-loft-hover-press:hover .pf-loft-card-thumb,
 .pf-loft-hover-press:focus-visible .pf-loft-card-thumb {
-  transform: translate3d(0, 8px, 0);
+  transform: translate3d(0, 4px, 0);
   box-shadow: inset 0 0 0 1.5px var(--loft-rim);
 }
 .pf-loft-hover-press:hover .pf-loft-card-media,
@@ -2768,6 +2860,9 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
     transform: none;
   }
 
+  .pf-legacy-task-row:hover .pf-legacy-task-dash {
+    transform: none !important;
+  }
   .pf-legacy-thumb-zoom,
   .pf-legacy-task-dash,
   .pf-legacy-repo-link,
@@ -3501,6 +3596,11 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 .pf-theme-root[data-portfolio-force-font='true'] .pf-about-terminal .pf-about-terminal-lang {
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
     monospace !important;
+}
+
+.pf-theme-root[data-portfolio-force-font='true'] .pf-statement-serif,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-statement-serif *:not(svg):not(svg *) {
+  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
 }
 
 .pf-theme-root[data-portfolio-force-font='true'] .pf-swiss-editorial-serif,
@@ -4611,11 +4711,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 }
 
 @media (max-width: 639px) {
-  .pf-footer-shell-x {
-    padding-left: max(1.25rem, env(safe-area-inset-left, 0px)) !important;
-    padding-right: max(1.25rem, env(safe-area-inset-right, 0px)) !important;
-  }
-
   .pf-footer-content-pad {
     padding-left: 0;
     padding-right: 0;
@@ -4641,7 +4736,7 @@ footer#footer {
 }
 @media (max-width: 480px) {
   footer#footer {
-    --pf-footer-body-size: 0.95rem;
+    --pf-footer-body-size: 1rem;
   }
 }
 
@@ -4752,16 +4847,6 @@ footer#footer {
   font-size: calc(24px * var(--pf-gallery-font-scale, 1)) !important;
 }
 
-.pf-gallery-media-title--cinema {
-  font-size: calc(16px * var(--pf-gallery-font-scale, 1)) !important;
-  line-height: 1.35 !important;
-}
-
-.pf-gallery-cinema-view:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 4px;
-}
-
 .pf-gallery-media-title--tall {
   font-size: calc(20px * var(--pf-gallery-font-scale, 1)) !important;
   line-height: 1.3 !important;
@@ -4796,11 +4881,6 @@ footer#footer {
   font-size: calc(2.25rem * var(--pf-gallery-font-scale, 1)) !important;
   line-height: 1.3 !important;
   letter-spacing: 0;
-}
-
-.pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--plain.pf-gallery-media-title--cinema,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--plain.pf-gallery-media-title--cinema {
-  font-size: calc(20px * var(--pf-gallery-font-scale, 1)) !important;
 }
 
 .pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--plain.pf-gallery-media-title--tall,
@@ -5166,7 +5246,7 @@ footer#footer {
   --pf-cta-hover: #272c30;
 }
 .portfolio-studio-dock[data-color-mode='dark'] {
-  --pf-palette-fond: #0a0a0a;
+  --pf-palette-fond: #121212;
   --pf-palette-texte-fort: #fafafa;
   --pf-palette-texte-muted: #a3a3a3;
   --pf-palette-texte-faint: #737373;
@@ -5372,6 +5452,10 @@ footer#footer {
   --np-accent-ink: #fb923c;
   --np-accent-soft: rgb(249 115 22 / 0.14);
   --np-accent-halo: rgb(249 115 22 / 0.28);
+  --np-active-bg: #3a3a42;
+  --np-active-ink: #ffffff;
+  --np-idle-bg: #1f1f23;
+  --np-idle-hover: #29292e;
   --np-on-accent: #ffffff;
   --np-bg: #121214;
   --np-card: #18181b;
@@ -5417,6 +5501,10 @@ footer#footer {
   --np-accent-ink: #c2410c;
   --np-accent-soft: rgb(234 88 12 / 0.1);
   --np-accent-halo: rgb(234 88 12 / 0.22);
+  --np-active-bg: #dcdce0;
+  --np-active-ink: #111113;
+  --np-idle-bg: #f1f1f3;
+  --np-idle-hover: #e8e8eb;
   --np-bg: #ffffff;
   --np-card: #fafafa;
   --np-card-border: #e7e7ea;
@@ -5744,7 +5832,7 @@ footer#footer {
   left: 10px;
   height: 2px;
   border-radius: 2px;
-  background: var(--np-text);
+  background: var(--np-accent);
   transform: scaleX(0);
   transition: transform 180ms var(--np-ease);
 }
@@ -5847,6 +5935,11 @@ footer#footer {
 .np-stack {
   display: flex;
   flex-direction: column;
+}
+
+/* Keep mounted catalogues cached, but never let flex override inactive tabs. */
+.np-stack[hidden] {
+  display: none;
 }
 
 .np-stack > .np-toggle-card {
@@ -5954,8 +6047,9 @@ textarea.np-input {
 /* Toggle: 42×24, hit area stretched to 44px */
 .np-switch {
   position: relative;
-  width: 42px;
-  height: 24px;
+  display: inline-block;
+  width: 34px;
+  height: 20px;
   flex-shrink: 0;
   border-radius: 999px;
   background: var(--np-switch-off);
@@ -5976,8 +6070,8 @@ textarea.np-input {
   position: absolute;
   top: 3px;
   inset-inline-start: 3px;
-  width: 18px;
-  height: 18px;
+  width: 14px;
+  height: 14px;
   border-radius: 999px;
   background: #ffffff;
   box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
@@ -5985,11 +6079,11 @@ textarea.np-input {
 }
 
 .np-switch[aria-checked='true'] .np-switch-knob {
-  transform: translateX(18px);
+  transform: translateX(14px);
 }
 
 [dir='rtl'] .np-switch[aria-checked='true'] .np-switch-knob {
-  transform: translateX(-18px);
+  transform: translateX(-14px);
 }
 
 /* Collapsible sections */
@@ -6055,6 +6149,80 @@ textarea.np-input {
 }
 
 /* Segmented control: 44px hit areas, the active pill drawn inset */
+.np-section--content-shown > .np-section-body > .np-section-clip > .np-section-content {
+  gap: 10px;
+}
+
+.np-visibility-btn {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: var(--np-muted);
+  transition: color 150ms, background-color 150ms;
+}
+.np-visibility-btn[aria-pressed='true'] { color: var(--np-accent); }
+.np-visibility-btn:hover { background: var(--np-hover); }
+.np-visibility-btn:focus-visible { outline: 2px solid var(--np-accent); outline-offset: 2px; }
+
+.np-bio-format-button {
+  display: inline-flex;
+  width: 32px;
+  height: 32px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 6px;
+  color: var(--np-text);
+  font-size: 15px;
+  transition: background-color 150ms, color 150ms;
+}
+.np-panel .np-bio-format-button > svg {
+  display:block;
+  width:14px !important;
+  height:14px !important;
+  flex:none;
+}
+.np-bio-size-reset { min-height:32px; padding:4px 8px; font-size:12px; color:var(--np-muted); }
+.np-bio-size-reset:hover { color:var(--np-text); }
+.np-bio-size-reset:focus-visible { outline:2px solid var(--np-text); outline-offset:2px; }
+.np-bio-format-button:hover,
+.np-bio-format-button[aria-expanded='true'] { background: var(--np-hover); }
+.np-bio-format-button[aria-pressed='true'] { background: var(--np-accent-soft); color: var(--np-accent); }
+.np-bio-format-button:focus-visible,
+.np-bio-format-menu-option:focus-visible { outline: 2px solid var(--np-accent); outline-offset: 2px; }
+.np-bio-format-menu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 30;
+  width: 200px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px 4px;
+  border: 1px solid var(--np-card-border);
+  border-radius: 10px;
+  background: var(--np-card);
+  box-shadow: 0 8px 28px rgb(0 0 0 / 0.22);
+}
+.np-bio-format-menu-option {
+  display: flex;
+  width: 100%;
+  min-height: 36px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: var(--np-text);
+  font-size: 13px;
+  text-align: left;
+}
+.np-bio-format-menu-option:hover { background: var(--np-hover); }
+.np-bio-format-menu-option[aria-pressed='true'] { color: var(--np-accent); }
+
 .np-seg {
   display: grid;
   border: 1px solid var(--np-well-border);
@@ -6134,15 +6302,31 @@ textarea.np-input {
   border-color: var(--np-illus-strong);
 }
 
+/* Selected: thin orange border + a soft 1px halo (box-shadow, so the grid never shifts). */
 .np-option[aria-pressed='true'] {
-  border-color: var(--np-accent);
-  box-shadow: inset 0 0 0 1px var(--np-accent);
+  border-color: #f97316;
+  background: var(--np-active-bg);
+  box-shadow: 0 0 0 1px color-mix(in srgb, #f97316 35%, transparent);
+}
+
+.np-option[aria-pressed='true']:hover {
+  border-color: #fb923c;
 }
 
 .np-option-illus {
   display: block;
   height: 60px;
   margin-bottom: 10px;
+}
+
+.np-option[data-large-illustration='true'] .np-option-illus {
+  height: 144px;
+  overflow: hidden;
+  border-radius: 8px;
+}
+
+.np-option[data-large-illustration='true'] .np-option-illus .pf-stack-mini {
+  height: 100%;
 }
 
 .np-option-title {
@@ -6365,7 +6549,7 @@ textarea.np-input {
 }
 
 .np-panel input[type='range']:not(.np-range) {
-  accent-color: var(--np-accent);
+  accent-color: var(--np-text);
 }
 
 /* Short note in place of settings that don't apply */
@@ -6392,8 +6576,9 @@ textarea.np-input {
 }
 
 .np-panel .pf-stack-design-card[data-active='true'] {
-  border-color: var(--np-accent);
-  box-shadow: inset 0 0 0 1px var(--np-accent);
+  border-color: transparent;
+  background: var(--np-active-bg);
+  box-shadow: none;
 }
 
 /* Hero's live catalogue uses the outer edge as its only selected state. The preview therefore sits
@@ -6861,9 +7046,9 @@ textarea.np-input {
   align-items: center;
   gap: 8px;
   padding: 0 12px;
-  border: 1px solid var(--np-well-border);
+  border: 1px solid transparent;
   border-radius: 999px;
-  background: var(--np-well);
+  background: var(--np-idle-bg);
   font-size: 13px;
   font-weight: 500;
   color: var(--np-label);
@@ -6874,14 +7059,15 @@ textarea.np-input {
 }
 
 .np-chip:hover:not(:disabled) {
-  border-color: var(--np-illus-strong);
+  background: var(--np-idle-hover);
   color: var(--np-text);
 }
 
-.np-chip[aria-pressed='true'] {
-  border-color: var(--np-accent);
-  background: var(--np-accent-soft);
-  color: var(--np-accent-ink);
+.np-chip[aria-pressed='true'],
+.np-chip[aria-pressed='true']:hover:not(:disabled) {
+  border-color: transparent;
+  background: var(--np-active-bg);
+  color: var(--np-active-ink);
 }
 
 .np-chip:disabled {
@@ -6901,9 +7087,9 @@ textarea.np-input {
   aspect-ratio: 1;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--np-well-border);
+  border: 1px solid transparent;
   border-radius: 10px;
-  background: var(--np-well);
+  background: var(--np-idle-bg);
   color: var(--np-label);
   transition:
     border-color 150ms ease,
@@ -6912,14 +7098,15 @@ textarea.np-input {
 }
 
 .np-icon-choice:hover {
-  border-color: var(--np-illus-strong);
+  background: var(--np-idle-hover);
   color: var(--np-text);
 }
 
-.np-icon-choice[aria-checked='true'] {
-  border-color: var(--np-accent);
-  background: var(--np-accent-soft);
-  color: var(--np-accent-ink);
+.np-icon-choice[aria-checked='true'],
+.np-icon-choice[aria-checked='true']:hover {
+  border-color: transparent;
+  background: var(--np-active-bg);
+  color: var(--np-active-ink);
 }
 
 /* A small card grouping a few controls (a dropdown menu, the palette's colours) */
@@ -8310,18 +8497,18 @@ textarea.np-input {
    section's picker yet. */
 .pf-team-design-card {
   position: relative;
-  border: none;
-  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 2%, transparent);
-  transition: background-color 0.28s ease, transform 0.28s ease;
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 12%, transparent);
+  background-color: transparent;
+  transition: border-color 0.28s ease, transform 0.28s ease;
 }
 
 .pf-team-design-card:hover {
-  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 4.5%, transparent);
+  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 28%, transparent);
   transform: translateY(-1px);
 }
 
 .pf-team-design-card[data-active='true'] {
-  background-color: color-mix(in srgb, var(--pf-palette-principal, #f97316) 6%, transparent);
+  border-color: var(--pf-palette-principal, #f97316);
 }
 
 .pf-team-design-card .pf-stack-mini {
@@ -8332,6 +8519,16 @@ textarea.np-input {
 .pf-team-design-card:hover .pf-stack-mini,
 .pf-team-design-card[data-active='true'] .pf-stack-mini {
   opacity: 1;
+}
+
+/* Team design catalogue — cards drawn with a thin border only, no fill. */
+/* Design / header catalogues — thin border only: no card fill, no check badge. */
+.np-option-group .np-option {
+  background: transparent;
+}
+
+.np-option-group .np-option-badge {
+  display: none;
 }
 
 .pf-team-card-label {
@@ -9327,8 +9524,8 @@ textarea.np-input {
 .portfolio-studio-dock-surface
   :is(.pf-exp-segment-btn, .pf-stack-segment-btn, .pf-work-segment-btn)[data-active='true'],
 .portfolio-studio-dock-surface .pf-choice.pf-choice--active {
-  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 45%, transparent);
-  background: color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 5%, transparent);
+  border-color: transparent;
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 14%, transparent);
   box-shadow: none;
   color: var(--pf-palette-texte-fort, #171717) !important;
   -webkit-text-fill-color: currentColor !important;
@@ -10204,21 +10401,6 @@ textarea.np-input {
     background-color 0.45s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.pf-stack-brand-cards-surface::before {
-  position: absolute;
-  top: -1px;
-  right: -1px;
-  left: -1px;
-  height: 2px;
-  content: '';
-  background: var(--pf-stack-brand-cards-accent, currentColor);
-  opacity: 0.72;
-  transform: scaleX(0.16);
-  transform-origin: left center;
-  transition:
-    opacity 0.5s ease,
-    transform 0.65s cubic-bezier(0.22, 1, 0.36, 1);
-}
 
 .pf-stack-brand-cards[data-icon='left'] .pf-stack-brand-cards-surface {
   flex-direction: row;
@@ -10416,6 +10598,26 @@ textarea.np-input {
   background: color-mix(in srgb, var(--pf-stack-rail-surface, transparent) 12%, transparent);
 }
 
+.pf-stack-rail-container { width: 100%; min-width: 0; }
+.pf-stack-rail[data-pf-stack-rail-layout] {
+  --pf-stack-rail-cell: var(--pf-stack-rail-compact-cell, 112px);
+  width: 100%;
+  max-width: 100%;
+  padding-inline: 0;
+  row-gap: var(--pf-stack-rail-gap);
+}
+.pf-stack-rail[data-pf-stack-rail-layout='wrap'] { flex-wrap: wrap; overflow: visible; mask-image: none; -webkit-mask-image: none; }
+.pf-stack-rail[data-pf-stack-rail-layout] .pf-stack-rail-item {
+  flex: 0 0 min(100%, var(--pf-stack-rail-cell));
+  min-width: 0;
+  max-width: 100%;
+  padding-inline: 8px;
+}
+.pf-stack-rail[data-pf-stack-rail-layout='wrap'] .pf-stack-rail-item::before { display: none; }
+.pf-stack-rail-controls { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+.pf-stack-rail-controls button { display: grid; place-items: center; width: 40px; height: 40px; border: 1px solid color-mix(in srgb, currentColor 25%, transparent); border-radius: 50%; background: transparent; cursor: pointer; }
+.pf-stack-rail-controls button:disabled { opacity: 0.25; cursor: default; }
+.pf-stack-rail-controls button:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
 .pf-stack-rail[data-pf-stack-rail-align='center'] {
   justify-content: safe center;
 }
@@ -10634,6 +10836,12 @@ textarea.np-input {
     background-color 0.38s ease;
 }
 
+.pf-stack-tags[data-tags-fill='true'] .pf-stack-tags-chip {
+  background-color: color-mix(in srgb, var(--pf-stack-tags-fill) 80%, var(--pf-stack-tags-ink));
+}
+.pf-stack-tags[data-tags-fill='false'] .pf-stack-tags-chip {
+  background-color: transparent;
+}
 .pf-stack-tags[data-size='compact'] .pf-stack-tags-chip {
   border-radius: 1px;
   padding: 0.2em 0.56em;
@@ -10702,33 +10910,18 @@ textarea.np-input {
 }
 @media (min-width: 640px) {
   .pf-stack-circular-root {
-    --pf-stack-circular-columns: 3;
-    --pf-circular-gap: var(--pf-circular-gap-sm, 1.5rem);
+    --pf-stack-circular-columns: 2;
+    --pf-circular-gap: var(--pf-circular-gap-sm, 1rem);
   }
-  .pf-stack-circular-root[data-columns='1'],
-  .pf-stack-circular-root[data-columns='2'] { --pf-stack-circular-columns: 2; }
 }
 @media (min-width: 1024px) {
   .pf-stack-circular-root {
-    --pf-stack-circular-columns: 4;
-    --pf-circular-gap: var(--pf-circular-gap-lg, 1.75rem);
+    --pf-circular-gap: var(--pf-circular-gap-lg, 1rem);
   }
-  .pf-stack-circular-root[data-columns='1'],
-  .pf-stack-circular-root[data-columns='2'] { --pf-stack-circular-columns: 3; }
-}
-@media (min-width: 1280px) {
-  .pf-stack-circular-root { --pf-stack-circular-columns: 5; }
-  .pf-stack-circular-root[data-columns='2'] { --pf-stack-circular-columns: 4; }
-}
-@media (min-width: 1536px) {
-  .pf-stack-circular-root:not([data-columns='1']):not([data-columns='2']) { --pf-stack-circular-columns: 6; }
-}
-
-/* Six marks form two balanced rows instead of an orphaned 4 + 2 or 5 + 1. */
-@media (min-width: 640px) {
-  .pf-stack-circular-root[data-balanced-six='true'] {
-    --pf-stack-circular-columns: 3;
-  }
+  .pf-stack-circular-root[data-columns='1'] { --pf-stack-circular-columns: 1; }
+  .pf-stack-circular-root[data-columns='2'] { --pf-stack-circular-columns: 2; }
+  .pf-stack-circular-root[data-columns='3'] { --pf-stack-circular-columns: 3; }
+  .pf-stack-circular-root[data-columns='4'] { --pf-stack-circular-columns: 4; }
 }
 
 .pf-stack-circular-item {
@@ -11804,7 +11997,7 @@ textarea.np-input {
   border-radius: 0;
   background-color: transparent;
   box-shadow: none;
-  padding: 0.95rem 1.6rem;
+  padding: calc(0.95rem * var(--pf-stack-stars-scale, 1)) calc(1.6rem * var(--pf-stack-stars-scale, 1));
 }
 
 .pf-stack-stars-card[data-framed='true'] {
@@ -11819,7 +12012,7 @@ textarea.np-input {
   align-items: center;
   justify-content: space-between;
   gap: 0.85rem 1.15rem;
-  font-size: 0.9375rem;
+  font-size: calc(0.9375rem * var(--pf-stack-stars-scale, 1));
   line-height: 1;
 }
 
@@ -11831,7 +12024,7 @@ textarea.np-input {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-family: ui-sans-serif, system-ui, sans-serif;
-  font-size: 1rem;
+  font-size: calc(1rem * var(--pf-stack-stars-scale, 1));
   font-weight: 500;
   /* line-height:1 clipped descenders (p, y, g, j) against overflow:hidden — needs headroom. */
   line-height: 1.3;
@@ -11874,11 +12067,11 @@ textarea.np-input {
 
 @media (min-width: 640px) {
   .pf-stack-stars-card {
-    padding: 1.05rem 1.95rem;
+    padding: calc(1.05rem * var(--pf-stack-stars-scale, 1)) calc(1.95rem * var(--pf-stack-stars-scale, 1));
   }
 
   .pf-stack-stars-row {
-    font-size: 1rem;
+    font-size: calc(1rem * var(--pf-stack-stars-scale, 1));
   }
 }
 
@@ -12673,13 +12866,14 @@ textarea.np-input {
  * Defaults stay visible if JS never hydrates; reduced-motion hard-resets.
  */
 .pf-about-trait-root {
+  container-type: inline-size;
   --pf-about-trait-ease: cubic-bezier(0.16, 1, 0.3, 1);
   --pf-about-trait-gap-ease: cubic-bezier(0.25, 1, 0.5, 1);
   --pf-about-trait-edu-fluid: cubic-bezier(0.65, 0, 0.35, 1);
   --pf-about-trait-hover-dur: 0.42s;
   --pf-about-trait-fade-dur: 0.28s;
   --pf-about-trait-list-gap: cubic-bezier(0.25, 1, 0.5, 1);
-  padding-bottom: max(120px, 15vh);
+  padding-bottom: clamp(3rem, 6vw, 5rem);
 }
 
 .pf-about-trait-masthead {
@@ -12784,10 +12978,11 @@ textarea.np-input {
 /* Palette surfaces (Neutral fill, Border line) so the cards read in light and dark alike;
    static — they are not links. */
 .pf-about-trait-card {
-  border-radius: 1.1rem;
-  border: 1px solid var(--pf-about-trait-card-border, rgba(38, 38, 38, 0.9));
-  background-color: color-mix(in srgb, var(--pf-about-trait-card-bg, #171717) 55%, transparent);
-  padding: 1.9rem 1.75rem 2.1rem;
+  border-radius: 0;
+  border: 0;
+  border-top: 1px solid var(--pf-about-trait-card-border, rgba(38, 38, 38, 0.9));
+  background-color: transparent;
+  padding: 1.5rem 0 0;
 }
 
 .pf-about-trait-block {
@@ -12798,7 +12993,7 @@ textarea.np-input {
   --pf-about-trait-hover-ease: cubic-bezier(0.25, 1, 0.5, 1);
   display: flex;
   flex-direction: column;
-  margin: 1.45rem 0 0;
+  margin: 1rem 0 0;
   padding: 0;
   list-style: none;
 }
@@ -12831,8 +13026,8 @@ textarea.np-input {
 }
 
 .pf-about-trait-lang-code {
-  letter-spacing: 0.08em;
-  font-weight: 600;
+  letter-spacing: 0.02em;
+  font-weight: 500;
 }
 
 .pf-about-trait-lang-level {
@@ -12858,8 +13053,8 @@ textarea.np-input {
 
 .pf-about-trait-edu-row {
   position: relative;
-  padding-top: clamp(1.75rem, 3.5vw, 2.5rem);
-  padding-bottom: clamp(1.75rem, 3.5vw, 2.5rem);
+  padding-top: clamp(1.25rem, 2.5vw, 1.75rem);
+  padding-bottom: clamp(1.25rem, 2.5vw, 1.75rem);
   border-bottom: 1px solid var(--pf-about-trait-card-border, rgba(38, 38, 38, 0.9));
 }
 
@@ -12998,6 +13193,7 @@ textarea.np-input {
  */
 
 .pf-stack-bento {
+  grid-template-columns: minmax(0, 1fr);
   --pf-stack-bento-ink: currentColor;
   --pf-stack-bento-line: currentColor;
   --pf-stack-bento-fill: transparent;
@@ -13030,7 +13226,7 @@ textarea.np-input {
 
 .pf-stack-bento[data-framed='false'] .pf-stack-bento-panel {
   background-color: transparent;
-  border-color: color-mix(in srgb, var(--pf-stack-bento-line) 38%, transparent);
+  border: 0 !important;
 }
 
 .pf-stack-bento-panel[data-featured='true'] {
@@ -13041,7 +13237,10 @@ textarea.np-input {
   );
 }
 
-@media (min-width: 768px) {
+@media (min-width: 1024px) {
+  .pf-stack-bento[data-columns='2'] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pf-stack-bento[data-columns='3'] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .pf-stack-bento[data-columns='4'] { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .pf-stack-bento-panel[data-span='2'] {
     grid-column: span 2;
   }
@@ -13065,6 +13264,10 @@ textarea.np-input {
 .pf-stack-bento[data-align='right'] .pf-stack-bento-kicker-title {
   text-align: right;
 }
+
+.pf-stack-bento[data-align='left'] .pf-stack-bento-name { text-align: left; }
+.pf-stack-bento[data-align='center'] .pf-stack-bento-name { text-align: center; }
+.pf-stack-bento[data-align='right'] .pf-stack-bento-name { text-align: right; }
 
 .pf-stack-bento-kicker-title {
   margin: 0;
@@ -13174,7 +13377,7 @@ textarea.np-input {
 .pf-stack-bento-level-label {
   white-space: normal;
   overflow-wrap: anywhere;
-  font-size: 0.8125rem;
+  font-size: calc(0.8125rem * var(--pf-stack-bento-level-scale, 1));
   font-weight: 600;
   letter-spacing: 0;
   line-height: 1.3;
@@ -13183,7 +13386,6 @@ textarea.np-input {
 }
 
 .pf-stack-bento-bar {
-  height: 5px !important;
   max-height: none;
 }
 
@@ -13196,7 +13398,7 @@ textarea.np-input {
 
 .pf-stack-bento-percent {
   color: var(--pf-stack-bento-ink);
-  font-size: 0.8125rem;
+  font-size: calc(0.8125rem * var(--pf-stack-bento-level-scale, 1));
   font-weight: 600;
   font-variant-numeric: tabular-nums;
   text-align: right;
@@ -13219,8 +13421,8 @@ textarea.np-input {
 }
 
 .pf-stack-bento-stars {
-  gap: 0.14rem !important;
-  font-size: 0.78rem !important;
+  gap: calc(0.14rem * var(--pf-stack-bento-level-scale, 1)) !important;
+  font-size: calc(0.78rem * var(--pf-stack-bento-level-scale, 1)) !important;
   line-height: 1 !important;
 }
 
@@ -13234,8 +13436,8 @@ textarea.np-input {
 
 .pf-stack-bento-dot {
   display: block;
-  width: 0.5rem;
-  height: 0.5rem;
+  width: calc(0.5rem * var(--pf-stack-bento-level-scale, 1));
+  height: calc(0.5rem * var(--pf-stack-bento-level-scale, 1));
   border-radius: 50%;
   background-color: color-mix(in srgb, var(--pf-stack-bento-ink) 16%, transparent);
 }
@@ -13310,10 +13512,6 @@ textarea.np-input {
   position: relative;
 }
 
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-banner-bio,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-banner-bio * {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
-}
 
 .pf-about-banner-pair {
   column-gap: clamp(2rem, 5.5vw, 3.25rem);
@@ -13350,13 +13548,14 @@ textarea.np-input {
 .pf-about-banner-bio {
   will-change: transform, opacity;
   backface-visibility: hidden;
-  margin-bottom: -0.26em;
+  margin-bottom: 0;
+  line-height: 1.5;
   letter-spacing: 0.008em;
 }
 
 @supports (margin-bottom: 1lh) {
   .pf-about-banner-bio {
-    margin-bottom: calc((1lh - 1em) * -0.42);
+    margin-bottom: 0;
   }
 }
 
@@ -13369,10 +13568,10 @@ textarea.np-input {
 .pf-about-banner-folio {
   display: flex;
   flex-direction: column;
-  gap: clamp(3.25rem, 5.4vw, 5.25rem);
+  gap: clamp(2rem, 3.5vw, 3rem);
   margin-top: clamp(2.35rem, 3.8vw, 3.75rem);
-  padding-top: clamp(3rem, 4.8vw, 4.75rem);
-  padding-bottom: clamp(2.75rem, 5vw, 5rem);
+  padding-top: clamp(2rem, 3vw, 3rem);
+  padding-bottom: clamp(2rem, 3vw, 3rem);
   border-top-width: 1px;
   border-top-style: solid;
 }
@@ -13413,7 +13612,7 @@ textarea.np-input {
   flex-wrap: wrap;
   align-items: center;
   align-content: flex-start;
-  column-gap: 0.7rem;
+  column-gap: 1.5rem;
   row-gap: 0.7rem;
   max-width: 46rem;
 }
@@ -13428,12 +13627,14 @@ textarea.np-input {
 .pf-about-banner-strength-badge {
   display: inline-flex;
   align-items: center;
-  padding: 0.48rem 0.95rem;
-  border: 1px solid color-mix(in srgb, currentColor 16%, transparent);
+  padding: 0;
+  border: 0;
   background: transparent;
-  border-radius: 999px;
-  line-height: 1.3;
-  white-space: nowrap;
+  border-radius: 0;
+  line-height: 1.65;
+  white-space: normal;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   transition: border-color 0.4s var(--pf-about-banner-ease);
 }
 
@@ -13640,12 +13841,12 @@ textarea.np-input {
 
 @media (hover: hover) and (pointer: fine) {
   .pf-about-banner-portrait-frame:hover {
-    transform: translateY(-3px);
-    filter: drop-shadow(0 0 18px color-mix(in srgb, var(--pf-about-banner-glow) 28%, transparent));
+    transform: none;
+    filter: none;
   }
 
   .pf-about-banner-portrait-frame:hover .pf-about-banner-portrait {
-    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pf-about-banner-glow) 52%, transparent);
+    box-shadow: none;
   }
 
   .pf-about-banner-strength-badge:hover {
@@ -13731,10 +13932,24 @@ textarea.np-input {
  * entry pieces until Framer hydrates; if JS never runs, the safety keyframes
  * restore visibility. Prefix: pf-about-classic-
  */
+/* Shared navigation typography; do not alter geometry, active markers or CTA styling. */
+[data-pf-nav-typography] :where(p,span,small)[class~='uppercase'] {
+  text-transform:none;
+  letter-spacing:.02em;
+}
+[data-pf-nav-typography] :where(p,span,small)[class~='font-mono'] {
+  font-family:inherit;
+  letter-spacing:.02em;
+}
+[data-pf-nav-typography] :where(p,small)[class~='font-bold'] {
+  font-weight:500;
+}
+
 .pf-about-classic {
+  container-type: inline-size;
   --pf-about-classic-ease: cubic-bezier(0.16, 1, 0.3, 1);
-  --pf-about-classic-rail: clamp(9rem, 15vw, 14rem);
-  --pf-about-classic-gutter: clamp(2rem, 4.5vw, 4.5rem);
+  --pf-about-classic-rail: clamp(8rem, 16cqw, 11rem);
+  --pf-about-classic-gutter: clamp(1.5rem, 4cqw, 3.5rem);
   --pf-about-classic-rule: color-mix(in srgb, var(--pf-about-classic-border) 70%, transparent);
   width: 100%;
 }
@@ -13748,11 +13963,11 @@ textarea.np-input {
 .pf-about-classic-blocks {
   display: flex;
   flex-direction: column;
-  gap: clamp(2.75rem, 5.5vw, 4.25rem);
+  gap: clamp(2rem, 4vw, 3rem);
 }
 
 .pf-about-classic-bio + .pf-about-classic-blocks {
-  margin-top: clamp(3.25rem, 6vw, 4.75rem);
+  margin-top: clamp(2.5rem, 4vw, 3.5rem);
 }
 
 .pf-about-classic-block {
@@ -13771,6 +13986,7 @@ textarea.np-input {
 
 .pf-about-classic-block-body {
   min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 /* Education — CV-style rows: a quiet date column (full years, body size) beside the bright
@@ -13808,14 +14024,15 @@ textarea.np-input {
   /* Body color as is (≥ 4.5:1 on both palettes): quiet through size and weight, not fading. */
   color: var(--pf-about-classic-body);
   line-height: 1.5;
-  white-space: nowrap;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .pf-about-classic-edu-range:empty {
   display: none;
 }
 
-@media (min-width: 640px) {
+@container (min-width: 640px) {
   .pf-about-classic-edu-row {
     grid-template-columns: 9.5rem minmax(0, 1fr);
     column-gap: clamp(1.5rem, 4vw, 3rem);
@@ -13829,11 +14046,13 @@ textarea.np-input {
 
 .pf-about-classic-edu-title {
   margin-top: 0;
+  letter-spacing:-.01em;
+  line-height:1.5;
 }
 
 .pf-about-classic-edu-school {
   margin-top: 0.3rem;
-  color: color-mix(in srgb, var(--pf-about-classic-body) 82%, transparent);
+  color: var(--pf-about-classic-body);
 }
 
 /* Rows are informational, not links: hover only clarifies the muted text —
@@ -13854,7 +14073,7 @@ textarea.np-input {
    space actually available, so three languages stay on one row even at 320px. */
 .pf-about-classic-langs {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 5.5rem), 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
   gap: 1.5rem clamp(1.25rem, 4vw, 3.5rem);
   margin: 0;
   padding: 0;
@@ -13869,25 +14088,25 @@ textarea.np-input {
 }
 
 .pf-about-classic-lang-code {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-weight: 700;
+  font-family: inherit;
+  font-weight: 500;
   font-style: normal;
-  font-size: clamp(2rem, 4.2vw, 3.15rem);
+  font-size: 0.8125rem;
   letter-spacing: -0.01em;
-  line-height: 1;
+  line-height: 1.5;
 }
 
 .pf-about-classic-lang-meta {
   font-size: 0.92rem;
   font-weight: 400;
   font-style: normal;
-  letter-spacing: 0.03em;
-  line-height: 1.4;
+  letter-spacing: 0;
+  line-height: 1.6;
   overflow-wrap: break-word;
 }
 
 .pf-about-classic-lang-meta-level {
-  opacity: 0.85;
+  opacity: 1;
 }
 
 /* Strengths / Systems & tools — plain floating keywords in one even tone. */
@@ -13903,7 +14122,10 @@ textarea.np-input {
 }
 
 .pf-about-classic-keyword {
-  font-size: 1rem;
+  font-size: inherit;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
   letter-spacing: 0.01em;
 }
 
@@ -13968,7 +14190,7 @@ textarea.np-input {
   }
 }
 
-@media (min-width: 1024px) {
+@container (min-width: 900px) {
   .pf-about-classic-bio {
     margin-left: calc(var(--pf-about-classic-rail) + var(--pf-about-classic-gutter));
   }
@@ -14201,12 +14423,24 @@ textarea.np-input {
 }
 
 .pf-about-split-section-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
   margin: 0;
-  font-size: 0.75rem;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  line-height: 1.2;
-  text-transform: uppercase;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  line-height: 1.4;
+  text-transform: none;
+}
+
+.pf-about-split-section-title::before {
+  content: '';
+  width: 0.6rem;
+  height: 1px;
+  flex: none;
+  background: var(--pf-about-split-accent);
+  opacity: 0.75;
 }
 
 .pf-about-split-section-meta {
@@ -14226,13 +14460,18 @@ textarea.np-input {
    only, on purpose, so it can never reflow the sections after this list. */
 .pf-about-split-skill {
   position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0;
+  align-items: baseline;
   margin: 0;
-  padding: calc(var(--pf-about-split-skill-pad) * 0.6) 0;
+  padding: max(1rem, calc(var(--pf-about-split-skill-pad) * 0.6)) 0;
   border: 0;
+  border-bottom: 1px solid color-mix(in srgb, var(--pf-about-split-soft) 8%, transparent);
 }
 
 .pf-about-split-skill::before {
-  content: '';
+  content: none;
   position: absolute;
   left: calc(-1 * (var(--pf-about-split-mark-w) + 0.75rem));
   top: 22%;
@@ -14246,28 +14485,42 @@ textarea.np-input {
 }
 
 .pf-about-split-skill-index {
+  display: none;
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
   font-style: italic;
   font-weight: 500;
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.06em;
-  opacity: 0.32;
+  color: var(--pf-about-split-muted);
+  font-size: 0.75rem;
+  opacity: 1;
   transition: opacity 0.3s ease, color 0.3s ease;
 }
 
 .pf-about-split-skill-title {
   font-weight: 500;
-  letter-spacing: -0.02em;
-  line-height: 1.28;
+  letter-spacing: -0.01em;
+  line-height: 1.45;
   transition: opacity 0.3s ease;
+}
+
+.pf-about-split-skill-description {
+  margin: 0.4rem 0 0;
+  max-width: 52ch;
+  color: var(--pf-about-split-muted);
+  font-size: 0.9em;
+  font-weight: 400;
+  line-height: 1.65;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
 }
 
 .pf-about-split-strengths {
   display: flex;
   flex-wrap: wrap;
   align-items: baseline;
-  column-gap: 2rem;
-  row-gap: 0.9rem;
+  column-gap: 1.4rem;
+  row-gap: 0.75rem;
   max-width: none;
   margin: 0;
   padding: 0;
@@ -14277,27 +14530,32 @@ textarea.np-input {
 .pf-about-split-strength {
   position: relative;
   margin: 0;
-  padding: 0.2rem 0 0.22rem;
+  padding: 0 0 0 0.8rem;
   border: 0;
   border-radius: 0;
-  background: transparent;
+  background: none;
+  overflow-wrap: anywhere;
+  min-width: 0;
   color: var(--pf-about-split-muted);
   font-size: 0.944em;
   font-weight: 400;
-  letter-spacing: -0.014em;
-  line-height: 1.25;
+  letter-spacing: 0;
+  line-height: 1.6;
   transition: color 0.35s ease;
 }
 
 .pf-about-split-strength::before {
   content: '';
   position: absolute;
-  left: -0.75rem;
-  top: 22%;
-  bottom: 22%;
-  width: 1.5px;
-  background: var(--pf-about-split-accent);
-  transform: scaleY(0);
+  left: 0;
+  top: 0.7em;
+  bottom: auto;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: currentColor;
+  opacity: 0.45;
+  transform: none;
   transform-origin: center;
   pointer-events: none;
   transition: transform 0.42s var(--pf-about-split-ease);
@@ -14307,8 +14565,8 @@ textarea.np-input {
   display: flex;
   flex-wrap: wrap;
   align-items: flex-start;
-  column-gap: 64px;
-  row-gap: 2rem;
+  column-gap: clamp(1.5rem, 3vw, 3rem);
+  row-gap: 1.25rem;
   width: 100%;
   max-width: none;
   margin: 0;
@@ -14340,6 +14598,7 @@ textarea.np-input {
 }
 
 .pf-about-split-lang-code {
+  display: none;
   font-weight: 600;
   color: var(--pf-about-split-ink);
 }
@@ -14356,12 +14615,12 @@ textarea.np-input {
 }
 
 .pf-about-split-lang-level {
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.8em;
+  font-weight: 400;
   font-style: normal;
-  letter-spacing: 0.08em;
-  line-height: 1.2;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  line-height: 1.5;
+  text-transform: none;
   color: var(--pf-about-split-muted);
 }
 
@@ -14625,7 +14884,7 @@ textarea.np-input {
 }
 
 .pf-about-terminal-titlebar::after {
-  content: '';
+  content: none;
   position: absolute;
   left: 0;
   right: 0;
@@ -14643,7 +14902,7 @@ textarea.np-input {
 }
 
 .pf-about-terminal-tab::after {
-  content: '';
+  content: none;
   position: absolute;
   left: 12px;
   right: 12px;
@@ -14667,25 +14926,36 @@ textarea.np-input {
 }
 
 .pf-about-terminal-name {
-  font-family: var(--pf-about-terminal-serif);
+  font-family: inherit;
   font-weight: 500;
   letter-spacing: -0.02em;
 }
 
 .pf-about-terminal-block--cascade {
-  margin-top: calc(1.75rem + (var(--pf-about-terminal-i, 1) * 0.38rem));
-  padding-top: calc(1.05rem + (var(--pf-about-terminal-i, 1) * 0.2rem));
-  padding-left: calc((var(--pf-about-terminal-i, 1) % 3) * 0.62rem);
+  margin-top: 1.75rem;
+  padding-top: 1.5rem;
+  padding-left: 0;
   border-top: 1px solid color-mix(in srgb, var(--pf-about-terminal-border) 78%, transparent);
 }
 
 .pf-about-terminal-block--cascade .pf-about-terminal-output {
-  max-width: calc(100% - ((var(--pf-about-terminal-i, 1) % 4) * 0.4rem));
+  max-width: 100%;
 }
 
 .pf-about-terminal-bio {
   padding-left: 0.15rem;
 }
+
+.pf-about-terminal-boot { display:none; }
+.pf-about-terminal-comment {
+  font-family:inherit;
+  font-size:.9em;
+  line-height:1.65;
+  max-width:65ch;
+}
+.pf-about-terminal-comment > span[aria-hidden] { display:none; }
+.pf-about-terminal-prompt { margin-bottom:1rem; }
+.pf-about-terminal-cmd { font-weight:500; }
 
 .pf-about-terminal-langs {
   display: flex;
@@ -14702,8 +14972,7 @@ textarea.np-input {
   align-items: baseline;
   gap: 0.45rem 0.85rem;
   margin: 0;
-  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New',
-    monospace;
+  font-family: inherit;
   font-size: 0.95rem;
   line-height: 1.35;
   letter-spacing: 0.01em;
@@ -14711,8 +14980,8 @@ textarea.np-input {
 
 .pf-about-terminal-lang-code {
   min-width: 2.1ch;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   text-transform: uppercase;
 }
 
@@ -14734,6 +15003,7 @@ textarea.np-input {
 }
 
 .pf-about-terminal-scan {
+  display: none;
   pointer-events: none;
   position: absolute;
   inset: 0 8px 0 0;
@@ -15080,6 +15350,21 @@ textarea.np-input {
  * Skills & Strengths keyword lines: hovering one word dims its row siblings
  * (opacity only) and brightens the hovered word from bodyColor to subtitleColor.
  */
+/* Info — Block label size: every element drawn in the block-label colour carries --pf-info-label-ink in its
+   inline style (infoBlockLabelColor), so one rule scales the labels of all Info designs. */
+[style*='--pf-info-label-ink'] {
+  zoom: var(--pf-info-label-scale, 1);
+}
+
+/* About index — every text size follows the section's Text size (--pf-about-index-scale). */
+.pf-about-index .pf-ai-xs { font-size: calc(0.75rem * var(--pf-about-index-scale, 1)); }
+.pf-about-index .pf-ai-sm { font-size: calc(0.875rem * var(--pf-about-index-scale, 1)); }
+.pf-about-index .pf-ai-base { font-size: calc(1rem * var(--pf-about-index-scale, 1)); }
+.pf-about-index .pf-ai-lg { font-size: calc(1rem * var(--pf-about-index-scale, 1)); }
+@media (min-width: 640px) {
+  .pf-about-index .pf-ai-lg { font-size: calc(1.125rem * var(--pf-about-index-scale, 1)); }
+}
+
 .pf-about-index-keyword {
   color: var(--pf-about-index-muted, currentColor);
   transition:
@@ -15104,6 +15389,8 @@ textarea.np-input {
  * Armed/in states only hide under prefers-reduced-motion: no-preference, with a 2s safety reveal.
  */
 .pf-about-platform-root {
+  container-type: inline-size;
+  overflow-x: clip;
   --pf-about-platform-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --pf-about-platform-accent: currentColor;
   --pf-about-platform-ink: currentColor;
@@ -15249,7 +15536,7 @@ textarea.np-input {
   gap: 1rem;
 }
 
-@media (min-width: 640px) {
+@container (min-width: 640px) {
   /* 640–1279px always caps at 2 columns, whatever the skill count — cramming
      3-4 cards into a tablet width looks mediocre. */
   .pf-about-platform-skills-grid:not([data-count='1']) {
@@ -15262,7 +15549,7 @@ textarea.np-input {
    the same fraction (equal width) and every card in a row stretched to the
    row's tallest (equal height, via align-items: stretch above), instead of
    the earlier asymmetric per-count widths + cascading Y-offset. */
-@media (min-width: 1280px) {
+@container (min-width: 1280px) {
   .pf-about-platform-skills-grid {
     column-gap: 0.875rem;
     row-gap: 1.75rem;
@@ -15292,8 +15579,8 @@ textarea.np-input {
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  background: color-mix(in srgb, var(--pf-about-platform-fill) 70%, transparent);
-  border-color: var(--pf-about-platform-line);
+  background: transparent;
+  border-color: color-mix(in srgb, var(--pf-about-platform-line) 60%, transparent);
 }
 
 .pf-about-platform-card-mark,
@@ -15305,6 +15592,10 @@ textarea.np-input {
 
 .pf-about-platform-card-title {
   color: var(--pf-about-platform-ink);
+  overflow-wrap: anywhere;
+  font-weight:500;
+  letter-spacing:-0.01em;
+  line-height:1.5;
 }
 
 /* Always the full description — no clamp. Cards in a row stretch to the tallest one. */
@@ -15318,16 +15609,16 @@ textarea.np-input {
 
 .pf-about-platform-card-mark {
   display: inline-flex;
-  width: 2.35rem;
-  height: 2.35rem;
+  width: 1.25rem;
+  height: 1.25rem;
   align-items: center;
   justify-content: center;
   color: var(--pf-about-platform-muted);
 }
 
 .pf-about-platform-split-title {
-  font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
-  font-style: italic;
+  font-family: inherit;
+  font-style: normal;
   font-weight: 500;
   text-wrap: balance;
 }
@@ -15336,7 +15627,7 @@ textarea.np-input {
 
 .pf-about-platform-langs {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 8rem), 1fr));
   column-gap: 1.5rem;
   row-gap: 2.5rem;
   margin: 0;
@@ -15355,12 +15646,12 @@ textarea.np-input {
 .pf-about-platform-lang-code {
   font-family: inherit;
   font-style: normal;
-  font-weight: 600;
+  font-weight: 500;
   /* A display accent, but below the block titles so the codes never outweigh them; eases
      down on narrow columns so 3-across never forces a horizontal scroll. */
-  font-size: clamp(2rem, 6vw, 2.75rem);
+  font-size: 0.8125rem;
   letter-spacing: -0.01em;
-  line-height: 1;
+  line-height: 1.5;
 }
 
 .pf-about-platform-lang-name {
@@ -15373,9 +15664,9 @@ textarea.np-input {
 .pf-about-platform-lang-level {
   display: block;
   font-size: 0.86rem;
-  font-weight: 600;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-weight: 400;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--pf-about-platform-muted);
 }
 
@@ -15383,7 +15674,7 @@ textarea.np-input {
 @media (max-width: 639px) {
   .pf-about-platform-lang-level {
     font-size: 0.75rem;
-    letter-spacing: 0.06em;
+    letter-spacing: 0;
     overflow-wrap: anywhere;
   }
 }
@@ -15399,8 +15690,8 @@ textarea.np-input {
   display: inline-block;
   color: var(--pf-about-platform-ink);
   font-weight: 400;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
 }
 
 /* ── "Background" — airy timeline, drift parallax + spring hover reveal ──── */
@@ -15419,7 +15710,7 @@ textarea.np-input {
   column-gap: clamp(1.15rem, 3.2vw, 2.75rem);
   align-items: baseline;
   /* No divider line — rows are separated by pure whitespace instead. */
-  padding-block: 2.75rem;
+  padding-block: 1.75rem;
   will-change: transform, opacity;
   backface-visibility: hidden;
 }
@@ -15456,7 +15747,7 @@ textarea.np-input {
 
 @media (min-width: 1024px) {
   .pf-about-platform-edu-row {
-    padding-block: 3.5rem;
+    padding-block: 2rem;
   }
 
   .pf-about-platform-edu-row:first-child {
@@ -15617,7 +15908,10 @@ textarea.np-input {
 }
 
 .pf-theme-root[data-portfolio-force-font='true'] .pf-about-platform-headline,
-.pf-theme-root[data-portfolio-force-font='true'] .pf-about-platform-headline *,
+.pf-theme-root[data-portfolio-force-font='true'] .pf-about-platform-headline * {
+  font-family: var(--platform-headline-font, 'Playfair Display', Georgia, serif) !important;
+}
+
 .pf-theme-root[data-portfolio-force-font='true'] .pf-about-platform-split-title {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif !important;
 }
@@ -15746,8 +16040,8 @@ textarea.np-input {
   padding: 0.04em 0.15rem 0.04em 1.25rem;
   border: 0;
   background: none;
-  color: var(--pf-about-portrait-muted);
-  opacity: 0.85;
+  color: var(--pf-about-portrait-soft);
+  opacity: 1;
   text-align: left;
   cursor: pointer;
   transform: translate3d(0, 0, 0);
@@ -15861,9 +16155,10 @@ textarea.np-input {
   flex-direction: column;
   align-items: flex-start;
   width: 100%;
-  border-radius: 1.75rem;
-  background: color-mix(in srgb, var(--pf-about-portrait-ink) 4%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 8%, transparent);
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--pf-about-portrait-soft) 18%, transparent);
   padding: 2rem 1.5rem 1.5rem;
 }
 
@@ -15902,11 +16197,12 @@ textarea.np-input {
 .pf-about-portrait-bring-title {
   flex: 1;
   min-width: 0;
-  line-height: 1.2;
+  line-height: 1.5;
   transition: transform 0.4s var(--pf-about-portrait-ease);
 }
 
 .pf-about-portrait-bring-arrow {
+  display:none;
   flex: 0 0 auto;
   width: 1.1rem;
   height: 1.1rem;
@@ -15928,9 +16224,10 @@ textarea.np-input {
 .pf-about-portrait-meta-col {
   min-width: 0;
   width: 100%;
-  border-radius: 1.75rem;
-  background: color-mix(in srgb, var(--pf-about-portrait-ink) 3%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 7%, transparent);
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--pf-about-portrait-soft) 18%, transparent);
   padding: 1.65rem 1.5rem;
   will-change: transform, opacity;
   backface-visibility: hidden;
@@ -15940,18 +16237,18 @@ textarea.np-input {
   margin: 0 0 0.85rem;
   padding: 0;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.35;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  text-transform: none;
   color: inherit;
 }
 
 .pf-about-portrait-meta-interests {
   margin: 0;
   max-width: 26rem;
-  font-weight: 500;
-  line-height: 1.4;
+  font-weight: 400;
+  line-height: 1.65;
   letter-spacing: -0.012em;
 }
 
@@ -15980,10 +16277,10 @@ textarea.np-input {
 
 .pf-about-portrait-lang-code {
   flex: 0 0 auto;
-  font-weight: 600;
-  font-size: clamp(1.85rem, 4.5vw, 2.5rem);
-  line-height: 1;
-  letter-spacing: -0.02em;
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.5;
+  letter-spacing: 0;
 }
 
 .pf-about-portrait-lang-meta {
@@ -15997,10 +16294,10 @@ textarea.np-input {
 
 .pf-about-portrait-lang-level {
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 400;
   font-style: normal;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  letter-spacing: 0;
+  text-transform: none;
   color: var(--pf-about-portrait-muted);
   white-space: nowrap;
 }
@@ -16034,9 +16331,10 @@ textarea.np-input {
   align-items: flex-start;
   width: 100%;
   margin-top: 1rem;
-  border-radius: 1.75rem;
-  background: color-mix(in srgb, var(--pf-about-portrait-ink) 4%, transparent);
-  border: 1px solid color-mix(in srgb, var(--pf-about-portrait-ink) 8%, transparent);
+  border-radius: 0;
+  background: transparent;
+  border: 0;
+  border-top: 1px solid color-mix(in srgb, var(--pf-about-portrait-soft) 18%, transparent);
   padding: 2rem 1.5rem 1.5rem;
 }
 
@@ -16086,7 +16384,7 @@ textarea.np-input {
 .pf-about-portrait-edu-title {
   flex: 1;
   min-width: 0;
-  line-height: 1.25;
+  line-height: 1.5;
 }
 
 .pf-about-portrait-edu-meta {
@@ -16239,11 +16537,11 @@ textarea.np-input {
   }
 
   .pf-about-portrait-after {
-    justify-content: space-between;
-    min-height: min(78dvh, 46rem);
-    padding-top: 6.25rem;
-    padding-bottom: 3.75rem;
-    gap: 4.75rem;
+    justify-content: flex-start;
+    min-height: 0;
+    padding-top: 4rem;
+    padding-bottom: 2rem;
+    gap: 3rem;
   }
 
   /* Asymmetric bento: tall "What I bring" card + a stacked Languages /
@@ -17057,15 +17355,15 @@ textarea.np-input {
   margin: 0;
   min-width: 0;
   font-weight: 500;
-  letter-spacing: 0.22em;
-  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  text-transform: none;
 }
 
 .pf-about-manifesto-kicker-index {
   flex-shrink: 0;
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.18em;
-  opacity: 0.78;
+  letter-spacing: 0.02em;
+  opacity: 0.5;
 }
 
 .pf-about-manifesto-kicker-label {
@@ -17090,15 +17388,15 @@ textarea.np-input {
   font-family: 'Playfair Display', Georgia, 'Times New Roman', serif;
   font-style: italic;
   font-weight: 500;
-  letter-spacing: -0.042em;
-  line-height: 1.04;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
   overflow: visible;
 }
 
 .pf-about-manifesto-statement--long {
   max-width: min(100%, 24ch);
-  letter-spacing: -0.03em;
-  line-height: 1.1;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
 }
 
 .pf-theme-root[data-portfolio-force-font='true'] .pf-about-manifesto-statement,
@@ -17198,9 +17496,9 @@ textarea.np-input {
 
 .pf-about-manifesto-lang-code {
   font-style: normal;
-  font-weight: 700;
+  font-weight: 500;
   font-size: 0.92em;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.02em;
 }
 
 .pf-about-manifesto-lang-name {
@@ -17249,8 +17547,8 @@ textarea.np-input {
 
 .pf-about-manifesto-langs--iso .pf-about-manifesto-lang-code {
   font-variant-numeric: tabular-nums;
-  font-weight: 600;
-  letter-spacing: 0.08em;
+  font-weight: 500;
+  letter-spacing: 0.02em;
   text-align: left;
 }
 
@@ -17330,18 +17628,23 @@ textarea.np-input {
   max-width: 18rem;
   font-size: 0.75rem;
   font-weight: 500;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
+  letter-spacing: 0.01em;
+  text-transform: none;
 }
 
 .pf-about-manifesto-folio {
-  margin-top: clamp(3rem, 6vw, 5.25rem);
-  padding-top: clamp(2.35rem, 4.4vw, 3.5rem);
+  margin-top: clamp(2.5rem, 4vw, 3.5rem);
+  padding-top: clamp(1.75rem, 3vw, 2.5rem);
   border-top: 1px solid var(--pf-about-manifesto-line);
 }
 
 .pf-about-manifesto-label {
   margin: 0;
+}
+
+.pf-about-manifesto .pf-about-manifesto-label {
+  letter-spacing:0.02em;
+  text-transform:none;
 }
 
 .pf-about-manifesto-line-mask {
@@ -17383,8 +17686,9 @@ textarea.np-input {
   font-variant-numeric: tabular-nums;
   font-size: 0.78em;
   font-weight: 400;
-  letter-spacing: 0.14em;
-  color: color-mix(in srgb, var(--pf-about-manifesto-accent) 58%, white);
+  letter-spacing: 0.02em;
+  color: var(--pf-about-manifesto-body, currentColor);
+  opacity:0.6;
 }
 
 .pf-about-manifesto-item-text {
@@ -17842,14 +18146,14 @@ textarea.np-input {
 /* ============================================================
    FAQ — nine bespoke, self-contained designs (see each component's own
    file under components/portfolio/portfolio-faq-*.tsx): Kinetic Split,
-   Floating Gallery, Editorial Masonry, Prism Cards, Star Scroll, Tri Grid,
+   Floating Gallery, Editorial Masonry, Prism Cards, Tri Grid,
    Split Index, Centered Focus and Bento Dual. All stay monochrome except
    Bento Dual's own vivid accent — none of the rest read the section's
    accent hue — but two different ways of handling light/dark coexist:
    Kinetic Split, Floating Gallery and Editorial Masonry track the site's
    own Global → Theme toggle live via `--pf-palette-fond`/
    `--pf-palette-texte-fort` (paper/ink swap on mode change, tinted by
-   whatever palette family is active). Prism Cards, Star Scroll, Tri Grid,
+   whatever palette family is active). Prism Cards, Tri Grid,
    Split Index, Centered Focus and Bento Dual instead read a
    `[data-pf-faq-mode]` attribute set from a resolved `activeColorMode`
    prop — a fixed light recipe / fixed dark recipe pair per design, chosen
@@ -17918,7 +18222,6 @@ textarea.np-input {
 .pf-faq-gallery,
 .pf-faq-masonry,
 .pf-faq-prism,
-.pf-faq-star,
 .pf-faq-tri,
 .pf-faq-split,
 .pf-faq-focus,
@@ -17938,8 +18241,7 @@ textarea.np-input {
   .pf-faq-gallery,
   .pf-faq-masonry,
   .pf-faq-prism,
-  .pf-faq-star,
-  .pf-faq-tri,
+    .pf-faq-tri,
   .pf-faq-split,
   .pf-faq-focus,
   .pf-faq-bento {
@@ -17970,7 +18272,7 @@ textarea.np-input {
   gap: 22px;
   width: 100%;
   text-align: left;
-  padding-block: 22px;
+  padding-block: calc(22px * var(--pf-faq-gap-m, 1));
   opacity: 0.82;
   background: none;
   border: 0;
@@ -17990,15 +18292,17 @@ textarea.np-input {
 }
 .pf-faq-kinetic-text {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 300;
+  font-weight: var(--pf-faq-q-weight, 300);
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   letter-spacing: 0.01em;
   color: var(--pf-faq-q-color, var(--pfk-mist));
   will-change: font-size, color;
+  /* Colour crossfades with the size change instead of flipping at its start. */
+  transition: color 0.6s ease;
 }
 .pf-faq-kinetic-item.is-open .pf-faq-kinetic-text {
   font-family: 'Fraunces', Georgia, serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
   color: var(--pf-faq-q-color, var(--pfk-paper));
 }
 .pf-faq-kinetic-panel { height: 0; overflow: hidden; }
@@ -18008,7 +18312,7 @@ textarea.np-input {
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   color: var(--pf-faq-a-color, var(--pfk-answer-ink));
-  font-weight: 300;
+  font-weight: var(--pf-faq-a-weight, 300);
 }
 .pf-faq-kinetic-line-mask { display: inline-block; overflow: hidden; vertical-align: top; }
 .pf-faq-kinetic-line-inner { display: inline-block; will-change: transform; }
@@ -18041,6 +18345,8 @@ textarea.np-input {
 
 /* ---------- Floating Gallery (Concept 02) ---------- */
 .pf-faq-gallery-head { margin-bottom: clamp(28px, 6vw, 48px); }
+/* No header of its own (title placed beside the questions): no empty band above the list. */
+.pf-faq-gallery-head:empty { display: none; }
 .pf-faq-gallery-eyebrow {
   font-size: calc(var(--pf-faq-label-size) * var(--pf-faq-font-scale, 1));
   font-weight: 500;
@@ -18051,7 +18357,7 @@ textarea.np-input {
 }
 .pf-faq-gallery-row {
   position: relative;
-  padding-block: 26px;
+  padding-block: calc(26px * var(--pf-faq-gap-m, 1));
   border-top: 1px solid var(--pfk-ghost);
 }
 .pf-faq-gallery-list .pf-faq-gallery-row:last-child { border-bottom: 1px solid var(--pfk-ghost); }
@@ -18070,7 +18376,7 @@ textarea.np-input {
 }
 .pf-faq-gallery-q {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 300;
+  font-weight: var(--pf-faq-q-weight, 300);
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pf-faq-q-color, var(--pfk-mist));
   transition: color 0.4s ease;
@@ -18078,7 +18384,7 @@ textarea.np-input {
 .pf-faq-gallery-row.is-open .pf-faq-gallery-q {
   color: var(--pf-faq-q-color, var(--pfk-paper));
   font-family: 'Fraunces', Georgia, serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
 }
 .pf-faq-gallery-plus {
   flex: none;
@@ -18132,7 +18438,7 @@ textarea.np-input {
 .pf-faq-gallery-close:hover { color: var(--pfk-paper); border-color: var(--pfk-paper); }
 .pf-faq-gallery-glass h3 {
   font-family: 'Fraunces', Georgia, serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
   /* Deliberately larger than --pf-faq-q-size — this is a big modal-only display
      repeat of the question, not the inline list question itself (no other design
      has an equivalent element), so it isn't held to the cross-design "q" match. */
@@ -18147,7 +18453,7 @@ textarea.np-input {
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.7;
   color: var(--pf-faq-a-color, var(--pfk-answer-ink));
-  font-weight: 300;
+  font-weight: var(--pf-faq-a-weight, 300);
   max-width: 58ch;
   margin: 0;
 }
@@ -18225,7 +18531,7 @@ textarea.np-input {
   gap: 18px;
   width: 100%;
   text-align: left;
-  padding-block: 22px;
+  padding-block: calc(22px * var(--pf-faq-gap-m, 1));
   background: none;
   border: 0;
   cursor: pointer;
@@ -18246,7 +18552,7 @@ textarea.np-input {
   flex: 1;
   min-width: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.45;
   color: var(--pfm-q-rest);
@@ -18304,7 +18610,7 @@ textarea.np-input {
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
   color: var(--pf-faq-a-color, var(--pfm-slate));
-  font-weight: 400;
+  font-weight: var(--pf-faq-a-weight, 400);
 }
 @media (prefers-reduced-motion: reduce) {
   .pf-faq-masonry .pf-faq-masonry-index,
@@ -18342,7 +18648,7 @@ textarea.np-input {
 }
 .pf-faq-prism * { box-sizing: border-box; }
 .pf-faq-prism-head { margin-bottom: clamp(28px, 5vw, 48px); max-width: 56ch; }
-.pf-faq-prism-list { display: flex; flex-direction: column; gap: 12px; }
+.pf-faq-prism-list { display: flex; flex-direction: column; gap: calc(12px * var(--pf-faq-gap-m, 1)); }
 .pf-faq-prism-card {
   position: relative;
   overflow: hidden;
@@ -18401,7 +18707,7 @@ textarea.np-input {
   flex: 1;
   min-width: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
   line-height: 1.45;
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   color: var(--pf-faq-q-color, var(--pfp-ink));
@@ -18413,6 +18719,10 @@ textarea.np-input {
   .pf-faq-prism-trigger:hover .pf-faq-prism-q { transform: translateX(6px); }
   .pf-faq-prism-card:hover { border-color: color-mix(in srgb, var(--pfp-ink) 28%, var(--pfp-card)); }
 }
+/* Prism cards carry no outline: the border stays (transparent) so the cards keep their exact size, and the surface
+   alone separates them. */
+.pf-faq-prism .pf-faq-prism-card,
+.pf-faq-prism .pf-faq-prism-card:hover { border-color: transparent; }
 .pf-faq-prism-icon {
   flex: none;
   width: 36px;
@@ -18458,7 +18768,7 @@ textarea.np-input {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.65;
-  font-weight: 400;
+  font-weight: var(--pf-faq-a-weight, 400);
   color: var(--pf-faq-a-color, var(--pfp-muted));
 }
 @media (max-width: 768px) {
@@ -18478,131 +18788,85 @@ textarea.np-input {
   .pf-faq-prism .pf-faq-prism-q { transform: none; }
 }
 
-/* ---------- Star Scroll (Concept 05) ----------
-   Quiet rounded rows and a restrained section-driven star. */
-.pf-faq-star {
-  --pfs-fond: #fafafa;
-  --pfs-ink: #0a0a0a;
-  --pfs-accent: var(--pf-palette-principal, var(--pfs-ink));
-  --pfs-card: color-mix(in srgb, var(--pfs-ink) 3%, var(--pfs-fond));
-  --pfs-card-hover: color-mix(in srgb, var(--pfs-ink) 6%, var(--pfs-fond));
-  --pfs-border: color-mix(in srgb, var(--pfs-ink) 13%, var(--pfs-fond));
-  --pfs-muted: color-mix(in srgb, var(--pfs-ink) 76%, var(--pfs-fond));
-  color: var(--pfs-ink);
-  isolation: isolate;
-}
-.pf-faq-star[data-pf-faq-mode='dark'] { --pfs-fond: #050505; --pfs-ink: #fafafa; }
-.pf-faq-star * { box-sizing: border-box; }
-.pf-faq-star ::selection { background: var(--pfs-ink); color: var(--pfs-fond); }
-.pf-faq-star-head {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 24px;
-  margin-bottom: clamp(28px, 3vw, 44px);
-}
-.pf-faq-star-title { min-width: 0; max-width: 60ch; }
-.pf-faq-star-title > :last-child { margin-bottom: 0; }
-.pf-faq-star-mark {
+/* ---------- FAQ → General → List marker (all designs) ----------
+   `.pf-faq-marker` is the number every design either already drew (Kinetic, Masonry, Split index: their own index
+   element carries the class) or adds (`--added`: hidden on Auto, so those designs look as before). The kind is
+   `data-pf-faq-marker` on the frame wrapper: dot / dash redraw the element as a shape, none hides it, number
+   shows the zero-padded index. */
+.pf-faq-lead { display: flex; align-items: flex-start; gap: 14px; flex: 1; min-width: 0; }
+.pf-faq-lead > :last-child { flex: 1; min-width: 0; }
+.pf-faq-marker--added {
+  display: none;
   flex: none;
-  width: clamp(32px, 3.5vw, 48px);
-  height: clamp(32px, 3.5vw, 48px);
-  color: var(--pfs-accent);
-}
-.pf-faq-star-mark svg { width: 100%; height: 100%; display: block; }
-.pf-faq-star-list { display: flex; flex-direction: column; gap: 10px; }
-.pf-faq-star-row {
-  position: relative;
-  border-radius: 14px;
-  border: 1px solid var(--pfs-border);
-  background: var(--pfs-card);
-  transition: background-color 320ms ease, border-color 320ms ease;
-  overflow: hidden;
-}
-.pf-faq-star-row.is-open { background: var(--pfs-card-hover); }
-.pf-faq-star-row:has(.pf-faq-star-trigger:focus-visible) {
-  outline: 2px solid var(--pfs-ink);
-  outline-offset: 3px;
-}
-.pf-faq-star-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 24px;
-  width: 100%;
-  text-align: left;
-  padding: clamp(18px, 2vw, 24px) clamp(22px, 3vw, 32px);
-  background: none;
-  border: 0;
-  cursor: pointer;
-  color: inherit;
-  font: inherit;
-}
-.pf-faq-star-trigger:focus-visible { outline: none; }
-.pf-faq-star-q {
-  flex: 1;
-  min-width: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.72rem;
   font-weight: 500;
-  font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
-  line-height: 1.45;
-  color: var(--pf-faq-q-color, var(--pfs-ink));
-  overflow-wrap: anywhere;
-  transform: translateX(0);
-  transition: transform 420ms cubic-bezier(0.4, 0, 0.2, 1);
+  letter-spacing: 0.08em;
+  font-variant-numeric: tabular-nums;
+  opacity: 0.6;
+  /* First line of the question: half its line box, less half of the marker's own line. */
+  margin-top: calc(var(--pf-faq-q-size, 1.2rem) * var(--pf-faq-font-scale, 1) * 0.72 - 0.5em);
 }
-@media (hover: hover) and (pointer: fine) {
-  .pf-faq-star-row:hover { background: var(--pfs-card-hover); }
-  .pf-faq-star-trigger:hover .pf-faq-star-q { transform: translateX(8px); }
-}
-.pf-faq-star-icon {
+[data-pf-faq-marker='number'] .pf-faq-marker--added,
+[data-pf-faq-marker='dot'] .pf-faq-marker--added,
+[data-pf-faq-marker='dash'] .pf-faq-marker--added { display: inline-flex; }
+[data-pf-faq-marker='none'] .pf-faq-marker { display: none !important; }
+
+/* Dot / dash: the number is hidden (zero font size, fixed box) and a shape is drawn instead. */
+[data-pf-faq-marker='dot'] .pf-faq-marker,
+[data-pf-faq-marker='dash'] .pf-faq-marker {
+  display: inline-flex;
+  align-items: center;
   flex: none;
-  width: 32px;
-  height: 32px;
-  display: grid;
-  place-items: center;
-  color: var(--pfs-ink);
-  transition: transform 420ms cubic-bezier(0.4, 0, 0.2, 1);
+  height: 8px;
+  padding: 0;
+  font-size: 0 !important;
+  letter-spacing: 0;
+  opacity: 0.7;
+  align-self: flex-start;
+  margin-top: calc(var(--pf-faq-q-size, 1.2rem) * var(--pf-faq-font-scale, 1) * 0.72 - 4px);
 }
-.pf-faq-star-row.is-open .pf-faq-star-icon { transform: rotate(45deg); }
-.pf-faq-star-panel {
-  display: grid;
-  grid-template-rows: 0fr;
-  opacity: 0;
-  visibility: hidden;
-  transition: grid-template-rows 480ms cubic-bezier(0.4, 0, 0.2, 1), opacity 280ms ease, visibility 0s 480ms;
+[data-pf-faq-marker='dot'] .pf-faq-marker::before,
+[data-pf-faq-marker='dash'] .pf-faq-marker::before { content: ''; display: block; background: currentColor; }
+[data-pf-faq-marker='dot'] .pf-faq-marker { width: 8px; }
+[data-pf-faq-marker='dot'] .pf-faq-marker::before { width: 7px; height: 7px; border-radius: 50%; }
+[data-pf-faq-marker='dash'] .pf-faq-marker { width: 16px; }
+[data-pf-faq-marker='dash'] .pf-faq-marker::before { width: 16px; height: 2px; border-radius: 1px; }
+
+/* Layout exceptions: the Tri grid has no row (the marker sits above its question); Centered focus keeps it in
+   its left slot, centred on the question's first line. */
+.pf-faq-marker--block { margin-top: 0; margin-bottom: 12px; align-self: auto; }
+[data-pf-faq-marker] .pf-faq-marker--block { margin-top: 0; }
+.pf-faq-focus-spacer { display: flex; align-items: flex-start; justify-content: flex-start; }
+
+/* ---------- FAQ → Header → Title position (all designs) ----------
+   Used when the creator's position is not the design's native one. Beside the questions only while the box is
+   wide (> 1024px, like Kinetic split's own stacking rule); on tablet and phone the header always sits on top.
+   Inside a side layout the questions get a narrower column, so the designs that lay questions in several
+   columns drop to one. */
+.pf-faq-placement { container: pf-faq-placement / inline-size; }
+.pf-faq-placement-head, .pf-faq-placement-body { min-width: 0; }
+@container pf-faq-placement (min-width: 1025px) {
+  .pf-faq-placement-grid[data-position='left'] {
+    display: grid;
+    gap: clamp(40px, 6vw, 96px);
+    align-items: start;
+  }
+  .pf-faq-placement-grid[data-position='left'] { grid-template-columns: minmax(0, 0.8fr) minmax(0, 1.2fr); }
+  .pf-faq-placement-grid[data-position='left'] .pf-faq-placement-head {
+    position: sticky;
+    top: clamp(16px, 4vw, 40px);
+  }
+  /* The header's own bottom space belongs to the stacked layout. */
+  .pf-faq-placement-grid[data-position='left'] .pf-faq-placement-head > * { margin-bottom: 0 !important; }
+  .pf-faq-placement-grid[data-position='left'] .pf-faq-masonry-grid,
+  .pf-faq-placement-grid[data-position='left'] .pf-faq-bento-grid,
+  .pf-faq-placement-grid[data-position='left'] .pf-faq-tri-grid { grid-template-columns: minmax(0, 1fr); }
+  .pf-faq-placement-grid[data-position='left'] .pf-faq-masonry-col--right { margin-top: 0; }
 }
-.pf-faq-star-row.is-open .pf-faq-star-panel {
-  grid-template-rows: 1fr;
-  opacity: 1;
-  visibility: visible;
-  transition: grid-template-rows 480ms cubic-bezier(0.4, 0, 0.2, 1), opacity 320ms ease 80ms, visibility 0s;
-}
-.pf-faq-star-panel-clip { min-height: 0; overflow: hidden; }
-.pf-faq-star-panel-inner { padding: 0 clamp(22px, 3vw, 32px) 28px; max-width: 68ch; }
-.pf-faq-star-answer {
-  margin: 0;
-  white-space: pre-line;
-  overflow-wrap: anywhere;
-  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
-  line-height: 1.65;
-  font-weight: 400;
-  color: var(--pf-faq-a-color, var(--pfs-muted));
-}
-@media (max-width: 768px) {
-  .pf-faq-star-head { margin-bottom: 28px; gap: 16px; }
-  .pf-faq-star-row { border-radius: 12px; }
-  .pf-faq-star-trigger { padding: 20px; gap: 16px; }
-  .pf-faq-star-panel-inner { padding: 0 20px 24px; }
-}
-@media (prefers-reduced-motion: reduce) {
-  .pf-faq-star .pf-faq-star-row,
-  .pf-faq-star .pf-faq-star-q,
-  .pf-faq-star .pf-faq-star-icon,
-  .pf-faq-star .pf-faq-star-row .pf-faq-star-panel { transition: none; }
-  .pf-faq-star .pf-faq-star-q { transform: none; }
-}
+/* Kinetic split without a header of its own (title placed on top or right): its list takes the full width. */
+.pf-faq-kinetic-left:empty { display: none; }
+.pf-faq-kinetic-grid:has(> .pf-faq-kinetic-left:empty) { grid-template-columns: minmax(0, 1fr); gap: 0; }
 
 /* ---------- Tri Grid (Concept 06) ----------
    Always-visible answers in a responsive grid, with matching visual and DOM order. */
@@ -18622,7 +18886,8 @@ textarea.np-input {
 .pf-faq-tri-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr));
-  gap: clamp(32px, 4vw, 48px);
+  row-gap: calc(clamp(32px, 4vw, 48px) * var(--pf-faq-gap-m, 1));
+  column-gap: clamp(32px, 4vw, 48px);
   max-width: 76rem;
   align-items: start;
 }
@@ -18648,7 +18913,7 @@ textarea.np-input {
 .pf-faq-tri-block:first-child::before { background: var(--pft-accent); }
 .pf-faq-tri-q {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.45;
   color: var(--pf-faq-q-color, var(--pft-ink));
@@ -18658,7 +18923,7 @@ textarea.np-input {
 .pf-faq-tri-a {
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
-  font-weight: 400;
+  font-weight: var(--pf-faq-a-weight, 400);
   line-height: 1.7;
   color: var(--pf-faq-a-color, var(--pft-muted));
   white-space: pre-line;
@@ -18719,7 +18984,7 @@ textarea.np-input {
   gap: 16px;
   width: 100%;
   text-align: left;
-  padding: 22px 0;
+  padding: calc(22px * var(--pf-faq-gap-m, 1)) 0;
   background: none;
   border: 0;
   cursor: pointer;
@@ -18753,7 +19018,7 @@ textarea.np-input {
   flex: 1;
   min-width: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.45;
   color: var(--pf-faq-q-color, var(--pfsi-ink));
@@ -18796,7 +19061,7 @@ textarea.np-input {
   overflow-wrap: anywhere;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
-  font-weight: 400;
+  font-weight: var(--pf-faq-a-weight, 400);
   line-height: 1.65;
   color: var(--pf-faq-a-color, var(--pfsi-muted));
 }
@@ -18855,7 +19120,7 @@ textarea.np-input {
   width: 100%;
   min-height: 56px;
   text-align: center;
-  padding: 18px 8px;
+  padding: calc(18px * var(--pf-faq-gap-m, 1)) 8px;
   background: none;
   border: 0;
   cursor: pointer;
@@ -18870,7 +19135,7 @@ textarea.np-input {
 .pf-faq-focus-q {
   min-width: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.45;
   color: var(--pf-faq-q-color, var(--pff-ink));
@@ -18917,7 +19182,7 @@ textarea.np-input {
   overflow-wrap: anywhere;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
-  font-weight: 400;
+  font-weight: var(--pf-faq-a-weight, 400);
   line-height: 1.7;
   color: var(--pf-faq-a-color, var(--pff-muted));
 }
@@ -18948,7 +19213,8 @@ textarea.np-input {
   position: relative;
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: clamp(16px, 2vw, 24px);
+  row-gap: calc(clamp(16px, 2vw, 24px) * var(--pf-faq-gap-m, 1));
+  column-gap: clamp(16px, 2vw, 24px);
   align-items: start;
 }
 .pf-faq-bento-grid::before {
@@ -18964,7 +19230,7 @@ textarea.np-input {
 .pf-faq-bento-card {
   min-width: 0;
   border-radius: var(--pfbd-radius, 22px);
-  border: var(--pfbd-border-width, 1px) solid color-mix(in srgb, var(--pfbd-card-ink) var(--pfbd-border-strength, 16%), var(--pfbd-surface));
+  border: var(--pfbd-border-width, 1px) solid var(--pfbd-border-color, color-mix(in srgb, var(--pfbd-card-ink) var(--pfbd-border-strength, 16%), var(--pfbd-surface)));
   background: var(--pfbd-surface);
   overflow: hidden;
   box-shadow: none;
@@ -18992,7 +19258,7 @@ textarea.np-input {
 .pf-faq-bento-q {
   min-width: 0;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
-  font-weight: 500;
+  font-weight: var(--pf-faq-q-weight, 500);
   font-size: calc(var(--pf-faq-q-size) * var(--pf-faq-font-scale, 1));
   line-height: 1.45;
   color: var(--pf-faq-q-color, var(--pfbd-card-ink));
@@ -19034,7 +19300,7 @@ textarea.np-input {
   max-width: 58ch;
   font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
   font-size: calc(var(--pf-faq-a-size) * var(--pf-faq-font-scale, 1));
-  font-weight: 400;
+  font-weight: var(--pf-faq-a-weight, 400);
   line-height: 1.7;
   color: var(--pf-faq-a-color, var(--pfbd-answer-ink));
   white-space: pre-line;
@@ -19046,6 +19312,7 @@ textarea.np-input {
 }
 [data-pf-faq-text-custom] .pf-faq-bento-q {
   color: var(--pf-faq-q-color, var(--pf-palette-texte-fort, var(--pfbd-ink)));
+  font-weight: var(--pf-faq-q-weight, inherit);
 }
 @media (max-width: 768px) {
   .pf-faq-bento-grid { grid-template-columns: minmax(0, 1fr); gap: 16px; }
@@ -19068,9 +19335,6 @@ textarea.np-input {
   .pf-faq-prism-q,
   .pf-faq-prism-icon,
   .pf-faq-prism-answer,
-  .pf-faq-star-row,
-  .pf-faq-star-q,
-  .pf-faq-star-icon,
   .pf-faq-tri-block,
   .pf-faq-tri-q,
   .pf-faq-split-q,
@@ -19201,10 +19465,9 @@ textarea.np-input {
    selector to bolt a `calc()` onto per element — same shape as Experience — so instead these
    rules override each such utility class's OWN font-size specifically inside `#contact` (ID
    selector beats Tailwind's own `.text-*` utility on specificity), multiplying its literal
-   value by the scale. Values >= 1.5rem (≈ text-2xl) and any `clamp()`/`vw`-scaled value are
-   intentionally oversized "display" text (giant focal headlines, huge email/phone hero
-   numbers, brand-scale wordmarks) and deliberately left OUT of this list — do not add them
-   here without first checking they aren't a display element. If a NEW arbitrary `text-[...]`
+   value by the scale. Display text, including responsive headlines and email links, now
+   multiplies its own base size by this same variable directly in its utility class.
+   If a NEW arbitrary `text-[...]`
    value under 1.5rem is introduced in a Contact design in future work, add a matching
    override line here — otherwise that new text silently breaks the "same everywhere"
    promise this control makes. */
@@ -19229,6 +19492,17 @@ textarea.np-input {
   #contact .sm\:text-\[1\.05rem\] { font-size: calc(1.05rem * var(--pf-contact-font-scale, 1)); }
   #contact .sm\:text-\[0\.95rem\] { font-size: calc(0.95rem * var(--pf-contact-font-scale, 1)); }
   #contact .sm\:text-\[0\.9375rem\] { font-size: calc(0.9375rem * var(--pf-contact-font-scale, 1)); }
+}
+
+/* Persistent page navigation changes palette, never its layout or mount identity. */
+[data-pf-page-palette],
+[data-pf-page-palette] :is(a, button, span, div, svg) {
+  transition-property: color, background-color, border-color, fill, stroke, opacity, transform;
+  transition-duration: 280ms;
+  transition-timing-function: ease-out;
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-pf-page-palette], [data-pf-page-palette] * { transition-duration: 0ms; }
 }
 
 /* Spotlight (GlobalSearchModal): the veil fades, the rows arrive under it on a stagger.
@@ -20359,24 +20633,37 @@ body:has([data-dashboard-main]) {
 /* >>> SERVICES-CARD-HOVER START
    Hover effects for Services cards ([data-svc-card]). Driven by useServicesCardHover, which sets
    [data-hovered] and the --svc-gx/--svc-gy cursor vars. Nothing here ever touches a sibling card. */
-[data-svc-card][data-svc-hover='lift'][data-hovered='true'] {
-  box-shadow: 0 30px 50px -28px var(--svc-shadow, rgba(0, 0, 0, 0.5)) !important;
+[data-svc-card][data-svc-hover='lift'],
+[data-svc-card][data-svc-hover='tilt'],
+[data-svc-card][data-svc-hover='both'] {
+  transition: box-shadow 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: transform;
 }
-[data-svc-card][data-svc-hover='glow']::after {
+[data-svc-card][data-svc-hover='lift'][data-hovered='true'] {
+  box-shadow: 0 44px 70px -30px var(--svc-shadow, rgba(0, 0, 0, 0.5)) !important;
+}
+[data-svc-card][data-svc-hover='tilt'][data-hovered='true'],
+[data-svc-card][data-svc-hover='both'][data-hovered='true'] {
+  box-shadow: 0 36px 60px -28px var(--svc-shadow, rgba(0, 0, 0, 0.5)) !important;
+}
+/* Glow (alone, or combined with Tilt): a soft light under the cursor. */
+[data-svc-card][data-svc-hover='glow']::after,
+[data-svc-card][data-svc-hover='both']::after {
   content: '';
   position: absolute;
   inset: 0;
   border-radius: inherit;
   pointer-events: none;
   opacity: 0;
-  transition: opacity 0.35s ease;
+  transition: opacity 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   background: radial-gradient(
-    440px circle at var(--svc-gx, 50%) var(--svc-gy, 50%),
-    color-mix(in srgb, var(--svc-glow, #ffffff) 16%, transparent),
+    520px circle at var(--svc-gx, 50%) var(--svc-gy, 50%),
+    color-mix(in srgb, var(--svc-glow, #ffffff) var(--svc-glow-a, 22%), transparent),
     transparent 70%
   );
 }
-[data-svc-card][data-svc-hover='glow'][data-hovered='true']::after {
+[data-svc-card][data-svc-hover='glow'][data-hovered='true']::after,
+[data-svc-card][data-svc-hover='both'][data-hovered='true']::after {
   opacity: 1;
 }
 /* <<< SERVICES-CARD-HOVER END */
@@ -20506,9 +20793,9 @@ body:has([data-dashboard-main]) {
 /* Plain choice buttons: well-coloured, the chosen one in the accent (same as .np-chip). */
 .np-panel .pf-choice {
   min-height: 40px;
-  border: 1px solid var(--np-well-border);
+  border: 1px solid transparent;
   border-radius: 10px;
-  background: var(--np-well);
+  background: var(--np-idle-bg);
   box-shadow: none;
   color: var(--np-label);
   font-size: 13px;
@@ -20516,14 +20803,15 @@ body:has([data-dashboard-main]) {
 }
 
 .np-panel .pf-choice:hover {
-  border-color: var(--np-illus-strong);
+  background: var(--np-idle-hover);
   color: var(--np-text);
 }
 
-.np-panel .pf-choice.pf-choice--active {
-  border-color: var(--np-accent);
-  background: var(--np-accent-soft);
-  color: var(--np-accent-ink) !important;
+.np-panel .pf-choice.pf-choice--active,
+.np-panel .pf-choice.pf-choice--active:hover {
+  border-color: transparent;
+  background: var(--np-active-bg);
+  color: var(--np-active-ink) !important;
   font-weight: 600;
 }
 
@@ -20554,3 +20842,467 @@ body:has([data-dashboard-main]) {
   --text-4xl: calc(2.25rem * var(--pf-about-scale, 1));
   --text-4xl--line-height: calc(2.5rem * var(--pf-about-scale, 1));
 }
+
+
+/* Shared Design → Cards block (Tools / Stack): see portfolio-cards-style.ts `cardsStyleRootProps`. */
+[data-pf-cards-radius] :is(.pf-tools-float-card, .pf-tools-stat-card, .pf-stack-bento-panel, .pf-stack-stars-card, .pf-stack-circular-card, .pf-stack-svg-rings-item, .pf-stack-brand-cards-surface) {
+  border-radius: var(--pf-cards-radius) !important;
+}
+[data-pf-cards-border] :is(.pf-tools-float-card, .pf-tools-stat-card, .pf-stack-bento-panel, .pf-stack-stars-card, .pf-stack-circular-card, .pf-stack-svg-rings-item, .pf-stack-brand-cards-surface) {
+  border-style: solid !important;
+  border-width: var(--pf-cards-border-width) !important;
+}
+[data-pf-cards-border-color] :is(.pf-tools-float-card, .pf-tools-stat-card, .pf-stack-bento-panel, .pf-stack-stars-card, .pf-stack-circular-card, .pf-stack-svg-rings-item, .pf-stack-brand-cards-surface) {
+  border-color: var(--pf-cards-border-color) !important;
+}
+
+/* Sliders — rail + capsule handle. One look for every slider of the settings panels (plain ranges
+   and the stepped ones): a soft rail filled with the panel's ink, a slim capsule to grab, no halo,
+   no accent color. */
+.np-panel .np-range {
+  height: 28px;
+}
+.np-panel .np-range::-webkit-slider-runnable-track {
+  height: 10px;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--np-text) 86%, transparent) var(--np-fill),
+    var(--np-idle-bg) var(--np-fill)
+  );
+}
+.np-panel .np-range::-webkit-slider-thumb {
+  width: 8px;
+  height: 26px;
+  margin-top: -8px;
+  border-radius: 4px;
+  background: var(--np-text);
+  box-shadow:
+    0 0 0 3px var(--np-bg),
+    0 2px 6px rgb(0 0 0 / 0.35);
+}
+.np-panel .np-range:hover::-webkit-slider-thumb,
+.np-panel .np-range:active::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px var(--np-bg),
+    0 2px 8px rgb(0 0 0 / 0.45);
+}
+.np-panel .np-range:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 3px var(--np-bg),
+    0 0 0 5px var(--np-label);
+}
+.np-panel .np-range::-moz-range-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--np-idle-bg);
+}
+.np-panel .np-range::-moz-range-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--np-text) 86%, transparent);
+}
+.np-panel .np-range::-moz-range-thumb {
+  width: 8px;
+  height: 26px;
+  border-radius: 4px;
+  background: var(--np-text);
+  box-shadow:
+    0 0 0 3px var(--np-bg),
+    0 2px 6px rgb(0 0 0 / 0.35);
+}
+
+.np-panel .pf-exp-centered-slider,
+.np-panel .pf-exp-centered-slider.pf-exp-centered-slider--thick {
+  height: 10px;
+  margin: 1.1rem 0 0.7rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    to right,
+    color-mix(in srgb, var(--np-text) 86%, transparent) 0,
+    color-mix(in srgb, var(--np-text) 86%, transparent) var(--pf-exp-slider-fill),
+    var(--np-idle-bg) var(--pf-exp-slider-fill),
+    var(--np-idle-bg) 100%
+  );
+}
+.np-panel .pf-exp-centered-slider::-webkit-slider-runnable-track,
+.np-panel .pf-exp-centered-slider--thick::-webkit-slider-runnable-track {
+  height: 10px;
+  background: transparent;
+}
+.np-panel .pf-exp-centered-slider::-webkit-slider-thumb,
+.np-panel .pf-exp-centered-slider--thick::-webkit-slider-thumb {
+  width: 8px;
+  height: 26px;
+  margin-top: -8px;
+  border-radius: 4px;
+  background: var(--np-text);
+  box-shadow:
+    0 0 0 3px var(--np-bg),
+    0 2px 6px rgb(0 0 0 / 0.35);
+}
+.np-panel .pf-exp-centered-slider::-moz-range-thumb,
+.np-panel .pf-exp-centered-slider--thick::-moz-range-thumb {
+  width: 8px;
+  height: 26px;
+  border-radius: 4px;
+  background: var(--np-text);
+  box-shadow:
+    0 0 0 3px var(--np-bg),
+    0 2px 6px rgb(0 0 0 / 0.35);
+}
+.np-panel .pf-exp-centered-slider::-moz-range-track,
+.np-panel .pf-exp-centered-slider--thick::-moz-range-track {
+  height: 10px;
+  border-radius: 999px;
+  background: var(--np-idle-bg);
+}
+.np-panel .pf-exp-centered-slider::-moz-range-progress,
+.np-panel .pf-exp-centered-slider--thick::-moz-range-progress {
+  height: 10px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--np-text) 86%, transparent);
+}
+.np-panel .pf-exp-centered-slider-ticks button {
+  font-size: 11px;
+}
+.np-portrait-shapes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+.pf-circle-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 999px;
+}
+.pf-circle-cta[data-shape='rectangle'] { border-radius: 6px; }
+.pf-circle-cta-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.1;
+  border-radius: 50% 50% 0 0;
+  transform: translateY(102%);
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  .pf-circle-cta:hover .pf-circle-cta-fill { transform: translateY(0); border-radius: 0; }
+  .pf-circle-cta:hover .pf-bowl-cta-arrow { transform: translate(2px, -2px); }
+}
+.pf-circle-cta:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.pf-circle-cta:focus-visible .pf-circle-cta-fill { transform: translateY(0); border-radius: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .pf-circle-cta-fill { transition: none; }
+}
+.pf-bowl-cta {
+  position: relative;
+  isolation: isolate;
+  display: inline-flex;
+  min-height: 52px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 28px;
+  overflow: hidden;
+  border: 1px solid;
+  border-radius: 999px;
+  padding: 0 22px 0 25px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  line-height: 1.3;
+  letter-spacing: -0.015em;
+  text-decoration: none;
+  -webkit-tap-highlight-color: transparent;
+}
+.pf-bowl-cta[data-shape='rectangle'] { border-radius: 6px; }
+.pf-bowl-cta-fill {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  opacity: 0.1;
+  transform: translateY(102%);
+  border-radius: 50% 50% 0 0;
+  transition: transform 650ms cubic-bezier(0.22, 1, 0.36, 1), border-radius 650ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.pf-bowl-cta-arrow {
+  display: inline-flex;
+  transition: transform 550ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+@media (hover: hover) {
+  .pf-bowl-cta:hover .pf-bowl-cta-fill { transform: translateY(0); border-radius: 0; }
+  .pf-bowl-cta:hover .pf-bowl-cta-arrow { transform: translate(2px, -2px); }
+}
+.pf-bowl-cta:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+.pf-bowl-cta:focus-visible .pf-bowl-cta-fill { transform: translateY(0); border-radius: 0; }
+@media (prefers-reduced-motion: reduce) {
+  .pf-bowl-cta-fill, .pf-bowl-cta-arrow { transition: none; }
+}
+.np-portrait-shape-card {
+  min-width: 0;
+  padding: 8px 6px 10px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--np-card);
+  color: var(--np-label);
+  font-size: 12px;
+  line-height: 1.4;
+}
+.np-portrait-shape-card:hover { background: var(--np-hover); }
+.np-portrait-shape-card[aria-pressed='true'] {
+  background: var(--np-active-bg);
+}
+.np-portrait-shape-card:focus-visible { outline: 2px solid var(--np-accent); outline-offset: 2px; }
+.np-portrait-shape-stage {
+  display: flex;
+  height: 76px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.np-portrait-shape {
+  position: relative;
+  display: block;
+  width: 44px;
+  height: 56px;
+  background: var(--np-illus);
+  isolation: isolate;
+}
+.np-portrait-shape-head {
+  position: absolute;
+  left: 50%;
+  top: 10px;
+  width: 13px;
+  height: 13px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: var(--np-illus-strong);
+}
+.np-portrait-shape-body {
+  position: absolute;
+  left: 50%;
+  bottom: 7px;
+  width: 28px;
+  height: 21px;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 3px 3px;
+  background: var(--np-illus-strong);
+}
+.np-portrait-shape[data-shape='auto'] { border-radius: 7px; }
+.np-portrait-shape[data-shape='arch'] { border-radius: 24px 24px 0 0; }
+.np-portrait-shape[data-shape='circle'] { width: 56px; border-radius: 50%; box-shadow: inset 0 0 0 1px var(--np-illus-strong); }
+.np-portrait-shape[data-shape='asymmetric'] { border-radius: 23px 3px 23px 3px; }
+.np-portrait-shape[data-shape='frame']::after {
+  content: '';
+  position: absolute;
+  inset: 5px;
+  border: 1px solid var(--np-illus-strong);
+}
+.np-portrait-shape[data-shape='offset']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translate(5px, 5px);
+  border: 1px solid var(--np-illus-strong);
+  z-index: -1;
+}
+/* Opt-in availability styles shared by every Hero design; the original stays untouched by default. */
+#hero[data-availability-hidden='true'] [data-hero-availability] { display: none !important; }
+[data-availability-style] [data-hero-availability] {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 8px 12px;
+  border: 0 !important;
+  border-radius: 999px;
+  background: transparent !important;
+  color: var(--hero-status-accent) !important;
+  box-shadow: none !important;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+[data-availability-style] [data-hero-availability] > [aria-hidden] { display: none !important; }
+[data-availability-style] [data-hero-availability] > :is(p, span):not([aria-hidden]) {
+  color: inherit !important;
+  margin: 0;
+  flex-shrink: 1;
+}
+[data-availability-style] [data-hero-availability]::before {
+  content: '';
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background: var(--hero-status-accent);
+}
+[data-availability-style='pill-live'] [data-hero-availability] {
+  background: color-mix(in srgb, var(--hero-status-accent) 12%, var(--hero-status-surface)) !important;
+}
+[data-availability-style='pill-live'] [data-hero-availability]::before {
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--hero-status-accent) 16%, transparent);
+  animation: hero-status-pulse 2s ease-in-out infinite;
+}
+[data-availability-style='pill-minimal'] [data-hero-availability] { padding: 0; border-radius: 0; }
+[data-availability-style='bordered'] [data-hero-availability] {
+  border: 1px solid color-mix(in srgb, var(--hero-status-ink) 25%, transparent) !important;
+  border-radius: 4px;
+}
+[data-availability-style='soft'] [data-hero-availability] {
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--hero-status-ink) 7%, var(--hero-status-surface)) !important;
+}
+@keyframes hero-status-pulse {
+  50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--hero-status-accent) 5%, transparent); }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-availability-style] [data-hero-availability]::before { animation: none; }
+}
+.np-availability-style-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+.np-availability-style-card {
+  min-width: 0;
+  padding: 10px 8px 12px;
+  border: 1px solid transparent;
+  border-radius: 10px;
+  background: var(--np-card);
+  color: var(--np-label);
+  font-size: 12px;
+  text-align: left;
+}
+.np-availability-style-card:hover { background: var(--np-hover); }
+.np-availability-style-card[aria-pressed='true'] { border-color: var(--np-accent); background: var(--np-active-bg); }
+.np-availability-style-card:focus-visible { outline: 2px solid var(--np-accent); outline-offset: 2px; }
+.np-availability-style-stage {
+  --hero-status-ink: var(--np-text);
+  --hero-status-accent: var(--np-accent);
+  --hero-status-surface: var(--np-card);
+  display: flex;
+  min-height: 66px;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+}
+.np-availability-style-sample {
+  font-size: 11px;
+  line-height: 1.4;
+  text-align: center;
+}
+.np-availability-style-stage:not([data-availability-style]) .np-availability-style-sample {
+  color: var(--np-muted);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--np-sep);
+}
+/* Text size: round outlined handle, with neutral ink instead of the accent. */
+.np-panel .np-text-size-slider .pf-exp-centered-slider {
+  height: 6px;
+  margin: 1.5rem 0 0.8rem;
+}
+.np-panel .np-round-range .np-range::-webkit-slider-runnable-track,
+.np-panel .np-text-size-slider .pf-exp-centered-slider::-webkit-slider-runnable-track {
+  height: 6px;
+}
+.np-panel .np-round-range .np-range::-webkit-slider-thumb,
+.np-panel .np-round-range .np-range:hover::-webkit-slider-thumb,
+.np-panel .np-round-range .np-range:active::-webkit-slider-thumb,
+.np-panel .np-text-size-slider .pf-exp-centered-slider::-webkit-slider-thumb {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border: 3px solid var(--np-bg);
+  border-radius: 50%;
+  background: var(--np-text);
+  box-shadow: 0 0 0 2px var(--np-text);
+}
+.np-panel .np-round-range .np-range::-moz-range-thumb,
+.np-panel .np-text-size-slider .pf-exp-centered-slider::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--np-bg);
+  border-radius: 50%;
+  background: var(--np-text);
+  box-shadow: 0 0 0 2px var(--np-text);
+}
+.np-panel .np-round-range .np-range::-moz-range-track,
+.np-panel .np-round-range .np-range::-moz-range-progress,
+.np-panel .np-text-size-slider .pf-exp-centered-slider::-moz-range-track,
+.np-panel .np-text-size-slider .pf-exp-centered-slider::-moz-range-progress {
+  height: 6px;
+}
+/* Shared settings slider: neutral rail and outlined round handle for every
+   range, including plain opacity controls and older stepped slider variants. */
+.np-panel input[type='range'],
+.np-panel input[type='range'][min],
+.np-panel .np-text-size-slider input[type='range'] {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  height: 28px;
+  min-height: 28px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--np-text);
+  cursor: pointer;
+}
+.np-panel input[type='range']::-webkit-slider-runnable-track,
+.np-panel .np-text-size-slider input[type='range']::-webkit-slider-runnable-track {
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: linear-gradient(to right,
+    color-mix(in srgb, var(--np-text) 86%, transparent) var(--np-fill, var(--pf-exp-slider-fill, 0%)),
+    var(--np-idle-bg) var(--np-fill, var(--pf-exp-slider-fill, 0%)));
+}
+.np-panel input[type='range']::-webkit-slider-thumb,
+.np-panel input[type='range']:hover::-webkit-slider-thumb,
+.np-panel input[type='range']:active::-webkit-slider-thumb,
+.np-panel .np-text-size-slider input[type='range']::-webkit-slider-thumb {
+  appearance: none;
+  -webkit-appearance: none;
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  border: 3px solid var(--np-bg);
+  border-radius: 50%;
+  background: var(--np-text);
+  box-shadow: 0 0 0 2px var(--np-text);
+}
+.np-panel input[type='range']::-moz-range-track,
+.np-panel .np-text-size-slider input[type='range']::-moz-range-track {
+  height: 6px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--np-idle-bg);
+}
+.np-panel input[type='range']::-moz-range-progress,
+.np-panel .np-text-size-slider input[type='range']::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--np-text) 86%, transparent);
+}
+.np-panel input[type='range']::-moz-range-thumb,
+.np-panel .np-text-size-slider input[type='range']::-moz-range-thumb {
+  box-sizing: border-box;
+  width: 18px;
+  height: 18px;
+  border: 3px solid var(--np-bg);
+  border-radius: 50%;
+  background: var(--np-text);
+  box-shadow: 0 0 0 2px var(--np-text);
+}
+.np-panel input[type='range']:focus-visible {
+  outline: 2px solid var(--np-text);
+  outline-offset: 4px;
+  border-radius: 999px;
+}
+/* Keep embedded video / interactive media usable while portfolio smoothing is enabled. */
+html.lenis.lenis-smooth iframe,
+[data-pf-pages-scroll].lenis.lenis-smooth iframe { pointer-events: auto; }

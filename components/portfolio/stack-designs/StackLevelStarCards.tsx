@@ -11,7 +11,6 @@ import {
   resolveToolsCardSurfaceColor,
   resolveToolsLevelIndicatorCardFramed,
   resolveToolsShowLevel,
-  toolsBrandCardsGapClass,
   toolsLevelStarCardsGridClass,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
@@ -106,7 +105,9 @@ export function EditorialToolsLevelStarCards({ tools, presentation }: ToolsGalle
   const rule = presentation.cardBorderColor?.trim() || ink;
   const surface = resolveToolsCardSurfaceColor(presentation);
   const framed = resolveToolsLevelIndicatorCardFramed(presentation, 'level-star-cards');
-  const gridGapClass = toolsBrandCardsGapClass(presentation.cardGap);
+  const gap = presentation.cardGap;
+  const gapRem = gap === 'tight' ? 0.25 : gap === 'large' ? 2 : gap === 'xlarge' ? 3.5 : 1;
+  const cardScale = presentation.tileSize === 'sm' ? 0.85 : presentation.tileSize === 'lg' ? 1.15 : presentation.tileSize === 'xl' ? 1.3 : 1;
 
   const toolSignature = tools
     .map((tool) => (typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`))
@@ -155,13 +156,15 @@ export function EditorialToolsLevelStarCards({ tools, presentation }: ToolsGalle
   return (
     <ul
       ref={listRef}
-      className={`pf-stack-stars grid w-full list-none p-0 ${toolsLevelStarCardsGridClass()} ${gridGapClass}`}
+      className={`pf-stack-stars grid w-full list-none p-0 ${toolsLevelStarCardsGridClass()}`}
       role="list"
       data-balanced-six={tools.length === 6 ? 'true' : undefined}
       data-pf-no-color-transition=""
       style={
         {
           '--pf-stack-stars-fill': starFillColor,
+          '--pf-stack-stars-scale': cardScale,
+          gap: `${gapRem}rem`,
           '--pf-stack-stars-ink': ink,
           '--pf-stack-stars-rule': rule,
           '--pf-stack-stars-surface': framed ? surface : 'transparent',

@@ -92,12 +92,6 @@ export const PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS: {
   description: string;
 }[] = [
   { value: 'solid', label: msg('Solid'), description: msg('Single flat color — not combined with image.') },
-  { value: 'gradient', label: msg('Gradient'), description: msg('Blend two colors — linear or radial.') },
-  {
-    value: 'split',
-    label: msg('Split X / Y'),
-    description: msg('Two color zones separated by a geometric line — like card fills.'),
-  },
   { value: 'image', label: msg('Image'), description: msg('Uploaded photo only — replaces solid/gradient.') },
 ];
 
@@ -210,6 +204,7 @@ function sectionSplitBackgroundLayerStyle(
 export function sectionBackgroundStyle(
   settings: PortfolioSectionBackgroundSettings
 ): CSSProperties | undefined {
+  settings = mergeSectionBackground(settings, {});
   if (!settings.sectionBackgroundEnabled) return undefined;
 
   const opacity = settings.sectionBackgroundOpacity;
@@ -292,10 +287,9 @@ export function mergeSectionBackground(
   base: PortfolioSectionBackgroundSettings,
   patch: unknown
 ): PortfolioSectionBackgroundSettings {
-  if (!patch || typeof patch !== 'object') return base;
-  const record = patch as Record<string, unknown>;
+  const record = patch && typeof patch === 'object' ? patch as Record<string, unknown> : {};
 
-  const fill = record.sectionBackgroundFill;
+  const fill = record.sectionBackgroundFill ?? base.sectionBackgroundFill;
   const gradientType = record.sectionBackgroundGradientType;
   const imageSize = record.sectionBackgroundImageSize;
   const imagePosition = record.sectionBackgroundImagePosition;
@@ -307,11 +301,13 @@ export function mergeSectionBackground(
       typeof record.sectionBackgroundEnabled === 'boolean'
         ? record.sectionBackgroundEnabled
         : base.sectionBackgroundEnabled,
-    sectionBackgroundFill:
-      fill === 'solid' || fill === 'gradient' || fill === 'image' || fill === 'split'
-        ? fill
-        : base.sectionBackgroundFill,
-    sectionBackgroundColor: sanitizeHex(record.sectionBackgroundColor, base.sectionBackgroundColor),
+    sectionBackgroundFill: fill === 'image' ? 'image' : 'solid',
+    sectionBackgroundColor: sanitizeHex(
+      fill === 'gradient' ? record.sectionBackgroundGradientFrom ?? base.sectionBackgroundGradientFrom
+        : fill === 'split' ? record.sectionBackgroundColorA ?? base.sectionBackgroundColorA
+        : record.sectionBackgroundColor,
+      base.sectionBackgroundColor
+    ),
     sectionBackgroundOpacity: sanitizeOpacity(record.sectionBackgroundOpacity, base.sectionBackgroundOpacity),
     sectionBackgroundGradientType:
       gradientType === 'linear' || gradientType === 'radial'

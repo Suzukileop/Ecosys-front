@@ -87,7 +87,7 @@ export function PortfolioBackgroundImageUpload({
                   onClick={() => selectFromLibrary(item)}
                   className={`block w-full overflow-hidden rounded-xl border bg-[color:var(--np-well)] transition ${
                     selected
-                      ? 'border-[color:var(--np-accent)] ring-2 ring-[color:var(--np-accent-soft)]'
+                      ? 'border-[color:var(--np-label)] ring-2 ring-[color:var(--np-label)]'
                       : 'border-[color:var(--np-card-border)] hover:border-[color:var(--np-illus-strong)]'
                   }`}
                   aria-pressed={selected}

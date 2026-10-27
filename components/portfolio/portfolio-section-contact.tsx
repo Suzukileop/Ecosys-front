@@ -5,6 +5,7 @@
  * Split out of portfolio-section-primitives so the public portfolio only downloads the sections it
  * renders (each is loaded with next/dynamic by PublicCreatorPortfolioPage).
  */
+import { cardsStyleCss } from '@/components/portfolio/portfolio-cards-style';
 import dynamic from 'next/dynamic';
 import { Fragment, type CSSProperties } from 'react';
 import { normalizeSocialPlatformKey, SocialPlatformIcon, socialPlatformBrandClass } from '@/components/marketplace/creator-profile-social-icons';
@@ -108,9 +109,6 @@ const ContactDesignSequentialReveal = dynamic(() =>
 );
 const ContactDesignStudioOverlap = dynamic(() =>
   import('@/components/portfolio/portfolio-contact-design-studio-overlap').then((m) => m.ContactDesignStudioOverlap)
-);
-const ContactDesignBorderlessGrid = dynamic(() =>
-  import('@/components/portfolio/portfolio-contact-design-borderless-grid').then((m) => m.ContactDesignBorderlessGrid)
 );
 const ContactDesignBrokenGrid = dynamic(() =>
   import('@/components/portfolio/portfolio-contact-design-broken-grid').then((m) => m.ContactDesignBrokenGrid)
@@ -798,6 +796,7 @@ function ContactLinkIcon({
 }
 
 export function EditorialContactSection({
+  pageNavigation = false,
   creatorId,
   email,
   phone,
@@ -810,6 +809,7 @@ export function EditorialContactSection({
   heroImageAlt,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   globalColorMode = 'dark',
+  paletteCssVars,
   membersOnlyNode,
   renderSocialIcon,
   socialBrandClass,
@@ -826,7 +826,10 @@ export function EditorialContactSection({
   topSpacingStyle,
   bottomSpacingClass = 'pb-12 sm:pb-16 lg:pb-20',
   bottomSpacingStyle,
+  previewFontScale = 1,
 }: {
+  /** Page navigation uses a nested scroller; sequential Contact becomes a normal static layout. */
+  pageNavigation?: boolean;
   creatorId?: string;
   email?: string | null;
   phone?: string | null;
@@ -845,6 +848,8 @@ export function EditorialContactSection({
   /** The portfolio's real active appearance (settings.global.colorMode) — every premium
    *  Contact design mirrors it now (pure white / pure black canvas, synced text). */
   globalColorMode?: 'light' | 'dark';
+  /** Section-local tokens must follow Contact's override, not the surrounding site mode. */
+  paletteCssVars?: CSSProperties;
   membersOnlyNode?: React.ReactNode;
   renderSocialIcon?: (platform: string, className: string) => React.ReactNode;
   socialBrandClass?: (platform: string) => string;
@@ -865,10 +870,13 @@ export function EditorialContactSection({
   /** Global padding-bottom below section content. */
   bottomSpacingClass?: string;
   bottomSpacingStyle?: React.CSSProperties;
+  /** Small readability adjustment for the studio catalogue only. */
+  previewFontScale?: number;
 }) {
   const t = useT();
-  const contactFontScale = contactPremiumFontScale(presentation.premiumFontSize);
+  const contactFontScale = contactPremiumFontScale(presentation.premiumFontSize) * previewFontScale;
   const contactSectionStyle = {
+    ...paletteCssVars,
     ...topSpacingStyle,
     ...bottomSpacingStyle,
     '--pf-contact-font-scale': contactFontScale,
@@ -1072,6 +1080,10 @@ export function EditorialContactSection({
         {contactBackgroundLayer}
         <div className="relative z-[1]">
           <ContactDesignSplitGrid
+            contentGutter={contentGutter}
+            heroImageUrl={contactPhotoUrl}
+            heroImageAlt={heroImageAlt ?? ''}
+            accent={presentation.ctaColor}
             layout={createContactDesignLayoutResolver(presentation, 'split-grid')}
             email={visibleEmail}
             phone={visiblePhone}
@@ -1117,6 +1129,7 @@ export function EditorialContactSection({
         {contactBackgroundLayer}
         <div className="relative z-[1]">
           <ContactDesignSequentialReveal
+            staticLayout={pageNavigation}
             layout={createContactDesignLayoutResolver(presentation, 'sequential-reveal')}
             creatorId={creatorId}
             email={visibleEmail}
@@ -1150,30 +1163,6 @@ export function EditorialContactSection({
             locationLabel={visibleLocation}
             heroImageUrl={contactPhotoUrl}
             heroImageAlt={heroImageAlt ?? ''}
-            sectionTitle={sectionTitle}
-            contentGutter={contentGutter}
-            colorMode={globalColorMode}
-          />
-        </div>
-      </section>
-    );
-  }
-
-  if (presentation.cardDesign === 'borderless-grid') {
-    return (
-      <section
-        id="contact"
-        style={contactSectionStyle}
-        className={`relative ${topSpacingClass} ${bottomSpacingClass}`}
-      >
-        {contactBackgroundLayer}
-        <div className="relative z-[1]">
-          <ContactDesignBorderlessGrid
-            layout={createContactDesignLayoutResolver(presentation, 'borderless-grid')}
-            email={visibleEmail}
-            phone={visiblePhone}
-            locationLabel={visibleLocation}
-            links={visibleLinks}
             sectionTitle={sectionTitle}
             contentGutter={contentGutter}
             colorMode={globalColorMode}
@@ -1265,7 +1254,7 @@ export function EditorialContactSection({
   if (isInquiry) {
     const inquiryTitleClass =
       titleTypographyClass ??
-      'text-3xl font-bold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-4xl lg:text-[2.75rem]';
+      'text-[calc(1.875rem*var(--pf-contact-font-scale,1))] font-bold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-[calc(2.25rem*var(--pf-contact-font-scale,1))] lg:text-[calc(2.75rem*var(--pf-contact-font-scale,1))]';
     const inquirySubtitleClass =
       subtitleTypographyClass ??
       'mt-4 max-w-md text-base leading-relaxed text-[color:var(--contact-muted,#737373)] sm:text-lg';
@@ -1361,7 +1350,7 @@ export function EditorialContactSection({
     );
     const inquiryTitleClass =
       titleTypographyClass ??
-      'text-3xl font-semibold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-4xl lg:text-[2.65rem] lg:leading-[1.15]';
+      'text-[calc(1.875rem*var(--pf-contact-font-scale,1))] font-semibold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-[calc(2.25rem*var(--pf-contact-font-scale,1))] lg:text-[calc(2.65rem*var(--pf-contact-font-scale,1))] lg:leading-[1.15]';
     const inquirySubtitleClass =
       subtitleTypographyClass ??
       'mt-4 max-w-md text-base leading-relaxed text-[color:var(--contact-muted,#737373)] sm:text-[1.05rem]';
@@ -1697,7 +1686,7 @@ export function EditorialContactSection({
     );
     const infoTitleClass =
       titleTypographyClass ??
-      'text-2xl font-bold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-3xl lg:text-[2rem]';
+      'text-[calc(1.5rem*var(--pf-contact-font-scale,1))] font-bold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-[calc(1.875rem*var(--pf-contact-font-scale,1))] lg:text-[calc(2rem*var(--pf-contact-font-scale,1))]';
     const infoSubtitleClass =
       subtitleTypographyClass ??
       'mt-3 max-w-md text-sm leading-relaxed text-[color:var(--contact-muted,#737373)] sm:text-base';
@@ -1834,7 +1823,7 @@ export function EditorialContactSection({
   if (isChannelCards) {
     const hubTitleClass =
       titleTypographyClass ??
-      'text-3xl font-bold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-4xl lg:text-[2.65rem]';
+      'text-[calc(1.875rem*var(--pf-contact-font-scale,1))] font-bold tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] sm:text-[calc(2.25rem*var(--pf-contact-font-scale,1))] lg:text-[calc(2.65rem*var(--pf-contact-font-scale,1))]';
     const hubSubtitleClass =
       subtitleTypographyClass ??
       'mt-3 max-w-xl text-base leading-relaxed text-[color:var(--contact-muted,#737373)] sm:text-lg';
@@ -1912,7 +1901,7 @@ export function EditorialContactSection({
                     href={channel.href}
                     {...(channel.external ? { target: '_blank', rel: 'noreferrer' } : {})}
                     className={contactChannelCardsCardClass(presentation)}
-                    style={contactChannelCardsCardStyle(presentation)}
+                    style={{ ...contactChannelCardsCardStyle(presentation), ...cardsStyleCss(presentation.cardsStyle) }}
                   >
                     <span className={contactChannelCardsIconClass()}>
                       <ContactChannelGlyph kind={channel.kind} className="h-7 w-7" />

@@ -1,3 +1,5 @@
+import { mergeSectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import { DEFAULT_CARDS_STYLE, mergeCardsStyle } from '@/components/portfolio/portfolio-cards-style';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
@@ -662,6 +664,8 @@ export function mergeStackPresentationBase(
       ? record.asideTitlePlacement
       : resolveStackAsideTitlePlacement(base.asideTitlePlacement),
     stackTagsSize: pickStackTagsSize(record.stackTagsSize, base.stackTagsSize),
+    stackTagsAutoCenter: typeof record.stackTagsAutoCenter === 'boolean' ? record.stackTagsAutoCenter : base.stackTagsAutoCenter ?? false,
+    stackTagsFill: typeof record.stackTagsFill === 'boolean' ? record.stackTagsFill : base.stackTagsFill ?? false,
     titleSize: pickStackTitleSize(record.titleSize, base.titleSize),
     subtitleSize: pickStackSubtitleSize(record.subtitleSize, base.subtitleSize),
     titlePreset: pickStackTitlePreset(
@@ -701,6 +705,7 @@ export function mergeStackPresentationBase(
     descriptionColor: sanitizeHex(record.descriptionColor, base.descriptionColor ?? '#737373'),
     cardBackgroundColor: sanitizeHex(record.cardBackgroundColor, base.cardBackgroundColor ?? '#ffffff'),
     cardBorderColor: sanitizeHex(record.cardBorderColor, base.cardBorderColor ?? '#e5e5e5'),
+    cardsStyle: mergeCardsStyle(base.cardsStyle ?? DEFAULT_CARDS_STYLE, record.cardsStyle),
     chipBackgroundColor: sanitizeHex(
       record.chipBackgroundColor,
       base.chipBackgroundColor ?? '#f4f4f5'
@@ -740,6 +745,8 @@ export function mergeStackPresentationBase(
       ['tight', 'small', 'medium', 'large', 'xlarge'] as const,
       base.levelBarSize ?? 'small'
     ),
+    workflowRailAutoCenter: typeof record.workflowRailAutoCenter === 'boolean' ? record.workflowRailAutoCenter : base.workflowRailAutoCenter ?? false,
+    workflowRailLayout: pick(record.workflowRailLayout, ['wrap', 'carousel'] as const, base.workflowRailLayout ?? 'wrap'),
     workflowRailContentAlignment: pick(
       record.workflowRailContentAlignment,
       ['left', 'center', 'right'] as const,
@@ -865,6 +872,9 @@ export function mergeStackPresentationBase(
         ? record.activeColorMode
         : base.activeColorMode,
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    textSize: record.textSize === 'small' || record.textSize === 'medium' || record.textSize === 'large' || record.textSize === 'xlarge'
+      ? record.textSize : base.textSize ?? 'medium',
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
   };
 
   if (next.useHeroPalette !== false) {

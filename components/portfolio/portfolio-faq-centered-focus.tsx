@@ -1,5 +1,6 @@
 'use client';
 
+import { FaqQuestionMarker } from '@/components/portfolio/portfolio-faq-marker';
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import type { FaqItem } from '@/types/profile';
 
@@ -31,7 +32,9 @@ export function FaqCenteredFocusDesign({
               <button id={questionId} type="button" className="pf-faq-focus-trigger"
                 aria-expanded={open} aria-controls={answerId}
                 onClick={() => setOpenId(current => current === item.id ? null : item.id)}>
-                <span className="pf-faq-focus-spacer" aria-hidden="true" />
+                <span className="pf-faq-focus-spacer" aria-hidden="true">
+                  <FaqQuestionMarker index={index} />
+                </span>
                 <span className="pf-faq-focus-q" data-pf-no-color-transition>{item.question}</span>
                 <span className="pf-faq-focus-icon" aria-hidden="true" data-pf-no-color-transition>
                   <svg width="18" height="18" viewBox="0 0 18 18" fill="none">

@@ -25,6 +25,12 @@ const EDITORIAL_GRID_CSS = `
 .pf-egrid-link {
   transition: color 0.35s ease;
 }
+.pf-egrid-link:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+  border-radius: 2px;
+  text-decoration: underline;
+}
 @media (prefers-reduced-motion: reduce) {
   .pf-egrid-link {
     transition: none !important;
@@ -93,7 +99,7 @@ function EditorialGridMagnetButton({ href, ink, inkContrast }: { href: string; i
         href={href}
         aria-label={t('Get in touch')}
         data-pf-no-color-transition=""
-        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-base transition-transform duration-300 hover:scale-[1.06] sm:h-12 sm:w-12"
+        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-base transition-transform duration-300 hover:scale-[1.06] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4 motion-reduce:transition-none motion-reduce:hover:scale-100 sm:h-12 sm:w-12"
         style={{ backgroundColor: ink, color: inkContrast }}
       >
         <span aria-hidden>→</span>
@@ -159,8 +165,8 @@ export function FooterDesignEditorialGrid({
   const t = useT();
   const isLight = colorMode === 'light';
   const ink = isLight ? '#141210' : '#f7f5f0';
-  const muted = isLight ? 'rgba(20,18,16,0.52)' : 'rgba(247,245,240,0.5)';
-  const hairline = isLight ? 'rgba(20,18,16,0.14)' : 'rgba(247,245,240,0.16)';
+  const muted = isLight ? 'rgba(20,18,16,0.72)' : 'rgba(247,245,240,0.72)';
+  const hairline = isLight ? 'rgba(20,18,16,0.2)' : 'rgba(247,245,240,0.2)';
   // Card tint is deliberately the INVERSE of the page canvas — warm beige floating on black,
   // near-black floating on cream — per the brief's own "teinte inversée" spec.
   const cardBg = isLight ? '#171512' : '#e9e2d3';
@@ -196,15 +202,15 @@ export function FooterDesignEditorialGrid({
 
       <div className={`relative z-[1] w-full pb-12 pt-16 sm:pt-20 lg:pb-16 lg:pt-24 ${portfolioEditorialGutterX(contentGutter)}`}>
         {/* Suspended bento card + link grid, asymmetric. */}
-        <div className="grid grid-cols-1 gap-10 md:grid-cols-[1fr_1.15fr] md:gap-14 lg:gap-20">
+        <div className="grid grid-cols-1 gap-10 lg:grid-cols-[1fr_1.15fr] md:gap-14 lg:gap-20">
           <div
             className="flex min-h-[18rem] flex-col justify-between gap-10 rounded-[1.75rem] p-8 sm:min-h-[22rem] sm:p-10 lg:p-12"
             style={{ backgroundColor: cardBg, color: cardInk }}
           >
             {taglineLines.length > 0 ? (
               <p
-                className="font-serif italic leading-snug"
-                style={{ fontSize: 'clamp(1.5rem, 3vw, 2.35rem)' }}
+                className="font-serif leading-snug"
+                style={{ fontSize: 'calc(clamp(1.5rem, 3vw, 2.35rem) * var(--pf-footer-font-scale, 1))' }}
               >
                 {taglineLines.map((line, index) => (
                   <span key={index} className="block">
@@ -221,7 +227,7 @@ export function FooterDesignEditorialGrid({
                 <a
                   href={contactHref}
                   data-pf-no-color-transition=""
-                  className="font-semibold uppercase tracking-[0.14em] underline decoration-1 underline-offset-4 transition-opacity hover:opacity-70"
+                  className="inline-flex min-h-11 items-center font-semibold uppercase tracking-[0.14em] underline decoration-1 underline-offset-4 transition-opacity hover:opacity-70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4"
                   style={{ fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {ctaLabel}
@@ -234,13 +240,14 @@ export function FooterDesignEditorialGrid({
           </div>
 
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-8">
-            <nav aria-label={t('Footer')} className="flex flex-col gap-5">
+            <nav aria-label={t('Footer')} className="flex min-w-0 flex-col gap-1">
               {navLinks.map((link) => (
                 <a
                   key={link.id}
                   href={link.url}
+                  {...(/^https?:\/\//i.test(link.url) ? { target: '_blank', rel: 'noopener noreferrer' } : {})}
                   data-pf-no-color-transition=""
-                  className="pf-egrid-link w-fit py-1 font-medium uppercase tracking-[0.12em]"
+                  className="pf-egrid-link inline-flex min-h-11 w-fit max-w-full items-center font-medium uppercase tracking-[0.1em] break-words"
                   style={{ color: muted, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   onMouseEnter={(event) => {
                     (event.currentTarget as HTMLElement).style.color = ink;
@@ -254,12 +261,12 @@ export function FooterDesignEditorialGrid({
               ))}
             </nav>
 
-            <div className="flex flex-col gap-5">
+            <div className="flex min-w-0 flex-col gap-1">
               {phoneDisplay ? (
                 <a
                   href={`tel:${phoneTrimmed!.replace(/\s+/g, '')}`}
                   data-pf-no-color-transition=""
-                  className="pf-egrid-link w-fit py-1"
+                  className="pf-egrid-link inline-flex min-h-11 w-fit max-w-full items-center break-words"
                   style={{ color: muted, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   onMouseEnter={(event) => {
                     (event.currentTarget as HTMLElement).style.color = ink;
@@ -275,7 +282,7 @@ export function FooterDesignEditorialGrid({
                 <a
                   href={`mailto:${emailTrimmed}`}
                   data-pf-no-color-transition=""
-                  className="pf-egrid-link w-fit py-1"
+                  className="pf-egrid-link inline-flex min-h-11 w-fit max-w-full items-center break-words"
                   style={{ color: muted, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   onMouseEnter={(event) => {
                     (event.currentTarget as HTMLElement).style.color = ink;
@@ -302,7 +309,7 @@ export function FooterDesignEditorialGrid({
                   target="_blank"
                   rel="noreferrer"
                   data-pf-no-color-transition=""
-                  className="pf-egrid-link w-fit py-1"
+                  className="pf-egrid-link inline-flex min-h-11 w-fit max-w-full items-center break-words"
                   style={{ color: muted, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                   onMouseEnter={(event) => {
                     (event.currentTarget as HTMLElement).style.color = ink;
@@ -333,7 +340,7 @@ export function FooterDesignEditorialGrid({
                   {avatarUrl?.trim() ? (
                     <img src={avatarUrl} alt={creatorName} className="h-full w-full object-cover" />
                   ) : (
-                    <span className="text-xs font-semibold uppercase tracking-wide" style={{ color: muted }}>
+                    <span className="font-semibold uppercase tracking-wide" style={{ color: muted, fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))' }}>
                       {initials || '—'}
                     </span>
                   )}
@@ -342,7 +349,7 @@ export function FooterDesignEditorialGrid({
                 <span aria-hidden />
               )}
               {showYear ? (
-                <p className="font-serif" style={{ fontSize: 'clamp(1.5rem, 4vw, 2.75rem)' }}>
+                <p className="font-serif" style={{ fontSize: 'calc(clamp(1.5rem, 4vw, 2.75rem) * var(--pf-footer-font-scale, 1))' }}>
                   {year}
                 </p>
               ) : null}

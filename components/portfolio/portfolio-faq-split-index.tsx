@@ -37,7 +37,7 @@ export function FaqSplitIndexDesign({
                 <button id={questionId} type="button" className="pf-faq-split-trigger"
                   aria-expanded={open} aria-controls={answerId}
                   onClick={() => setOpenId(current => current === item.id ? null : item.id)}>
-                  <span className="pf-faq-split-badge" aria-hidden="true" data-pf-no-color-transition>
+                  <span className="pf-faq-split-badge pf-faq-marker" aria-hidden="true" data-pf-no-color-transition>
                     {String(index + 1).padStart(2, '0')}
                   </span>
                   <span className="pf-faq-split-q" data-pf-no-color-transition>{item.question}</span>

@@ -1,36 +1,8 @@
 'use client';
 
-/**
- * Floating canvas — the Team section's asymmetric "editorial board" design.
- *
- * Every rectilinear alignment the family's other layouts rely on is deliberately broken here:
- * each portrait sits at its own height (a repeating, never-matching offset pattern, not an arch
- * or a simple stagger), its caption alternates above or below the frame member by member, and one
- * slot mid-canvas is given over entirely to a pure editorial paragraph instead of a face — a rest
- * beat in an otherwise irregular rhythm. On a large screen a slow, continuous portrait zoom reads
- * as the one polished constant; on scroll, cards drift at slightly different speeds so the top and
- * bottom of the canvas never read as one flat sheet.
- *
- * The canvas is full-bleed: it cancels the site's editorial gutter with the exact negative margins
- * of `settings.global.contentGutter` and keeps a small optical inset of its own, so the cards use
- * the whole page width instead of a boxed column inside it.
- *
- * Because the caption alternates sides, two cards stacked in the same column can meet caption to
- * caption — which is exactly the case where nothing says which face each line belongs to. Two
- * devices keep that unambiguous and must stay in proportion to each other: a row gap far larger
- * than the caption/portrait gap (proximity), and a hairline on the caption's image-facing edge
- * bracketing the pair. Never let the row gap collapse back to the offset pattern alone — those
- * offsets go as low as 0.5rem.
- *
- * Below `lg` the whole composition flattens to a single, evenly spaced column: the offsets are
- * only ever declared behind an `lg:` prefix, so nothing needs to be undone for touch.
- *
- * Site-wide trap respected throughout: any node that animates transform/opacity through CSS needs
- * `data-pf-no-color-transition`, otherwise the global color-mode transition rule in globals.css
- * replaces its `transition-property` and the motion silently disappears.
- */
+/** An asymmetric portrait canvas, contained by the site's shared content margins. */
 
-import { useEffect, useRef, type CSSProperties } from 'react';
+import { useEffect, useRef, type CSSProperties, type ReactNode } from 'react';
 import gsap from 'gsap';
 import {
   META_CLS,
@@ -40,18 +12,15 @@ import {
 import {
   runTeamDesignMotion,
   teamIndexLabel,
-  teamPrefersReducedMotion,
 } from '@/components/portfolio/portfolio-team-design-motion';
-import {
-  teamReadableCardText,
-  type PortfolioTeamFloatAlign,
-  type PortfolioTeamPresentationSettings,
-  type PortfolioTeamRailColumns,
+import type {
+  PortfolioTeamFloatAlign,
+  PortfolioTeamPresentationSettings,
+  PortfolioTeamRailColumns,
 } from '@/components/portfolio/portfolio-team-settings';
-import {
-  portfolioEditorialGutterNegativeX,
-  type PortfolioContentGutter,
-} from '@/components/portfolio/portfolio-editorial-layout';
+import type { PortfolioContentGutter } from '@/components/portfolio/portfolio-editorial-layout';
+import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
+import { useT } from '@/lib/i18n/I18nProvider';
 import type { ProfileTeamMember } from '@/types/profile';
 
 const DEFAULT_EDITORIAL_TEXT =
@@ -76,13 +45,8 @@ const CANVAS_ASPECT_PATTERN = ['aspect-[3/4]', 'aspect-[4/5]', 'aspect-square', 
  * moving as one sheet. Keep the largest value well under the grid's row gap (`lg:gap-y-28`, 112px):
  * the drift must never close the gap that tells a caption which portrait it belongs to.
  */
-const CANVAS_PARALLAX_PATTERN = [38, -26, 46, -34, 22, -42] as const;
+const CANVAS_PARALLAX_PATTERN = [12, -8, 14, -10, 6, -12] as const;
 
-/**
- * The canvas' own optical inset, replacing the site gutter it cancels — deliberately smaller, so
- * the composition still reads as edge-to-edge rather than as a second, narrower frame.
- */
-const CANVAS_INSET_CLASS = 'px-5 sm:px-6 lg:px-8 xl:px-10 2xl:px-14';
 
 /**
  * Per-card ceiling for the aligned (non-`full`) composition widths, in rem — the one that stops
@@ -119,9 +83,9 @@ function canvasBlockAlignClass(align: PortfolioTeamFloatAlign): string {
 }
 
 function canvasColumnsClass(columns: PortfolioTeamRailColumns): string {
-  if (columns === 2) return 'lg:grid-cols-2';
-  if (columns === 4) return 'lg:grid-cols-4';
-  return 'lg:grid-cols-3';
+  if (columns === 2) return 'sm:grid-cols-2';
+  if (columns === 4) return 'sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4';
+  return 'sm:grid-cols-2 lg:grid-cols-3';
 }
 
 /**
@@ -129,8 +93,7 @@ function canvasColumnsClass(columns: PortfolioTeamRailColumns): string {
  * share of the available width, so one of the two always bites and the placement is always visible.
  *
  * It is applied through a CSS variable behind an `lg:` prefix, never as a plain inline `max-width`:
- * below `lg` the canvas is a single column at full width, and a percentage cap there would simply
- * shrink every card on a phone for no reason.
+ * below `lg` the composition remains full width so tablets and phones keep readable tracks.
  */
 function canvasAlignedMaxWidth(columns: PortfolioTeamRailColumns): string {
   const remCap = columns * CANVAS_CARD_MAX_REM + (columns - 1) * 4;
@@ -153,40 +116,39 @@ function CanvasCaption({
   memberIndex: number;
   textAbove: boolean;
 }) {
-  const readable = teamReadableCardText(presentation);
+  const surface = presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#fff');
+  const readable = { strong: readableMix(presentation.nameColor, 100, surface), muted: readableMix(presentation.responsibilityColor, 100, surface) };
   const hasSocials = presentation.showSocials && (member.socialLinks ?? []).some((link) => link.url.trim());
   const rule = (
     <span
       aria-hidden
       className="block h-px w-full"
-      style={{ backgroundColor: presentation.cardBorderColor, opacity: 0.45 }}
+      style={{ background: `linear-gradient(to right, ${presentation.teamPalette?.principal ?? presentation.socialIconColor} 0 22px, ${presentation.cardBorderColor} 22px)` }}
     />
   );
   return (
-    <div className="flex flex-col gap-2.5">
+    <div className="team-canvas-caption flex min-w-0 flex-col gap-3">
       {textAbove ? null : rule}
-      {presentation.showResponsibility ? (
-        <span className={META_CLS} style={{ color: readable.muted }}>
+      {presentation.showResponsibility && member.responsibility.trim() ? (
+        <span className="text-[calc(0.875rem*var(--pf-team-font-scale,1))] font-normal leading-relaxed [overflow-wrap:anywhere]" style={{ color: readable.muted }}>
           {member.responsibility}
         </span>
       ) : null}
-      <div className="flex w-full items-baseline justify-between gap-4">
-        <div className="flex min-w-0 items-center gap-3">
+      <div className="flex w-full min-w-0 items-start justify-between gap-3">
+        <div className="flex min-w-0 flex-1 flex-col items-start gap-2">
           {presentation.showName ? (
             <h3
-              className="min-w-0 truncate font-serif text-[calc(clamp(1.3rem,1.7vw,1.9rem)*var(--pf-team-font-scale,1))] font-semibold leading-none tracking-[-0.02em]"
+              className="min-w-0 w-full [overflow-wrap:anywhere] font-serif text-[calc(clamp(1.3rem,1.7vw,1.9rem)*var(--pf-team-font-scale,1))] font-medium leading-[1.25] tracking-[-0.02em]"
               style={{ color: readable.strong }}
             >
               {member.name}
             </h3>
           ) : null}
           {hasSocials ? (
-            /* The box stays compact because it sits inline on the name's baseline, but the glyph
-               itself is sized on its own — at the `sm` default it was a 12px mark next to a ~26px
-               name and read as decoration rather than a link. */
+            /* Separate links from the name so neither is squeezed or truncated. */
             <TeamSocialLinks
               member={member}
-              presentation={{ ...presentation, socialIconSize: 'md', socialIconStyle: 'minimal' }}
+              presentation={{ ...presentation, socialIconSize: 'md', socialIconStyle: 'minimal', socialIconColor: readableMix(presentation.socialIconColor, 100, surface) }}
               align="justify-start"
               glyphSizeClass="h-[1.15rem] w-[1.15rem]"
             />
@@ -208,11 +170,13 @@ function CanvasCaption({
  *  back to the built-in line rather than collapsing — the slot needs its kicker to read as a note
  *  rather than as a stray paragraph. */
 function TeamCanvasEditorial({ presentation }: { presentation: PortfolioTeamPresentationSettings }) {
-  const readable = teamReadableCardText(presentation);
-  const text = presentation.canvasEditorialText.trim() || DEFAULT_EDITORIAL_TEXT;
-  const label = (presentation.canvasEditorialLabel ?? '').trim() || DEFAULT_EDITORIAL_LABEL;
+  const surface = presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#fff');
+  const readable = { strong: readableMix(presentation.nameColor, 100, surface), muted: readableMix(presentation.responsibilityColor, 100, surface) };
+  const t = useT();
+  const text = presentation.canvasEditorialText.trim() || t(DEFAULT_EDITORIAL_TEXT);
+  const label = (presentation.canvasEditorialLabel ?? '').trim() || t(DEFAULT_EDITORIAL_LABEL);
   return (
-    <div className="flex h-full min-h-[14rem] flex-col justify-center gap-5 py-6" data-team-reveal="">
+    <div className="flex h-full min-h-[10rem] flex-col justify-center gap-5 py-6" data-team-reveal="">
       <span className={META_CLS} style={{ color: readable.muted }}>
         — {label}
       </span>
@@ -232,6 +196,8 @@ function TeamCanvasCard({
   memberIndex,
   slot,
   textAbove,
+  imageSizes,
+  portrait,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
@@ -239,6 +205,8 @@ function TeamCanvasCard({
   /** Position in the composition, not in the roster — the drift cycles on the canvas' rhythm. */
   slot: number;
   textAbove: boolean;
+  imageSizes: string;
+  portrait?: ReactNode;
 }) {
   const caption = (
     <CanvasCaption
@@ -249,7 +217,7 @@ function TeamCanvasCard({
     />
   );
   return (
-    <article className="group flex w-full flex-col" data-team-reveal="">
+    <article className="group flex w-full min-w-0 flex-col" data-team-reveal="">
       {/* The parallax wrapper is its own node, never the reveal or media one: the shared entrance
           clears its inline transform by name once it settles, which would take a scroll-driven
           transform on the same element down with it. */}
@@ -263,13 +231,13 @@ function TeamCanvasCard({
         {textAbove ? caption : null}
         {presentation.showImage ? (
           <div className={`relative w-full overflow-hidden ${canvasAspect(memberIndex)}`}>
-            <TeamMemberImage
+            {portrait ?? <TeamMemberImage
               member={member}
               presentation={{ ...presentation, imageFit: 'cover' }}
               fill
-              zoom
               reveal
-            />
+              sizes={imageSizes}
+            />}
           </div>
         ) : null}
         {textAbove ? null : caption}
@@ -285,30 +253,34 @@ type CanvasItem =
 export function TeamFloatingCanvas({
   members,
   presentation,
-  contentGutter,
+  renderPortrait,
 }: {
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
-  /** Site-wide editorial gutter — this design is full-bleed and cancels it, so it has to read the
-   *  real per-account value rather than assume the default. */
+  /** Kept for caller compatibility; the parent now owns the global content gutter. */
   contentGutter?: PortfolioContentGutter;
+  renderPortrait?: (member: ProfileTeamMember, index: number) => ReactNode;
 }) {
   const rootRef = useRef<HTMLDivElement | null>(null);
-  const columns = presentation.canvasColumns ?? 3;
+  const columns = Math.min(presentation.canvasColumns ?? 3, Math.max(2, members.length)) as PortfolioTeamRailColumns;
   const align = presentation.canvasAlign ?? 'center';
   const parallaxOn = presentation.canvasParallax !== false;
+  // Lazy images use their measured slot via sizes="auto" where supported. These viewport
+  // bounds remain safe on older browsers and follow the grid's actual column breakpoints.
+  const imageSizes = `(max-width: 639px) 100vw, (max-width: 1023px) 50vw, ${
+    columns === 2 ? '50vw' : columns === 4 ? '(max-width: 1279px) 33.34vw, 25vw' : '33.34vw'
+  }`;
 
   useEffect(() => {
     const root = rootRef.current;
-    if (!root || !parallaxOn || teamPrefersReducedMotion()) return undefined;
-    // Gated at `sm`, not `lg`: the drift is what the "Scroll parallax" toggle switches, and an
-    // `lg` gate made that toggle do nothing on a tablet — or in the studio's own live preview,
-    // whose iframe drops below 1024px as soon as the settings dock is open.
-    if (!window.matchMedia('(min-width: 640px)').matches) return undefined;
+    if (!root || !parallaxOn) return undefined;
+    // Rebuild/revert on viewport and reduced-motion changes, not only at initial mount.
     return runTeamDesignMotion(
       root,
       'Team floating canvas',
       (_observers) => {
+        const media = gsap.matchMedia();
+        media.add('(min-width: 1024px) and (prefers-reduced-motion: no-preference)', () => {
         const cards = Array.from(root.querySelectorAll<HTMLElement>('[data-pf-canvas-parallax]'));
         cards.forEach((card) => {
           // The slot comes off the element, not off this list's index: the editorial slot drifts
@@ -329,10 +301,12 @@ export function TeamFloatingCanvas({
             }
           );
         });
+        });
+        return () => media.revert();
       },
       '[data-pf-canvas-parallax]'
     );
-  }, [parallaxOn, members.length]);
+  }, [parallaxOn, members.length, columns, presentation.showImage]);
 
   if (members.length === 0) return null;
 
@@ -346,14 +320,12 @@ export function TeamFloatingCanvas({
   });
 
   return (
-    /* `w-auto`, not `w-full`: with an explicit width the negative gutter would only slide the
-       canvas left instead of widening it to the page edge. */
     <div
       ref={rootRef}
-      className={`w-auto min-w-0 ${portfolioEditorialGutterNegativeX(contentGutter)} ${CANVAS_INSET_CLASS}`}
+      className="team-floating-canvas w-full min-w-0"
     >
       <div
-        className={`grid w-full grid-cols-1 items-start gap-x-12 gap-y-20 sm:gap-y-24 lg:gap-x-16 lg:gap-y-28 ${canvasColumnsClass(
+        className={`grid w-full grid-cols-1 items-start gap-x-8 gap-y-14 sm:gap-y-20 lg:gap-x-12 lg:gap-y-24 ${canvasColumnsClass(
           columns
         )} ${canvasBlockAlignClass(align)} ${
           align === 'full' ? '' : 'lg:[max-width:var(--pf-canvas-max)]'
@@ -365,7 +337,7 @@ export function TeamFloatingCanvas({
             <div
               key="editorial"
               style={{ '--pf-canvas-offset': `${canvasOffset(slot)}rem` } as CSSProperties}
-              className="lg:[margin-top:var(--pf-canvas-offset)]"
+              className="min-w-0 lg:[margin-top:var(--pf-canvas-offset)]"
             >
               <div
                 data-pf-canvas-parallax={slot}
@@ -387,6 +359,8 @@ export function TeamFloatingCanvas({
                 memberIndex={item.memberIndex}
                 slot={slot}
                 textAbove={slot % 2 === 0}
+                imageSizes={imageSizes}
+                portrait={renderPortrait?.(item.member, item.memberIndex)}
               />
             </div>
           )

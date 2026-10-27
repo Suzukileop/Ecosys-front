@@ -1,0 +1,31 @@
+/* Compact demo content only; never changes the public service cards. */
+.preview[data-services-design-preview='services-pricing'] :global([data-svc-card]) {
+  padding: 22px !important;
+}
+.preview[data-services-design-preview='services-pricing-aurora'] :global([data-svc-card]) > div {
+  padding: 24px !important;
+  gap: 20px !important;
+}
+.preview :global([data-mc-card]) > div:first-child {
+  aspect-ratio: auto !important;
+  height: 200px !important;
+}
+.preview :global([data-index-row]) :global(.relative.w-full.overflow-hidden) {
+  aspect-ratio: auto !important;
+  height: 300px !important;
+}
+.preview :global([data-cc-card]) {
+  min-height: 0 !important;
+  padding: 24px !important;
+  gap: 32px !important;
+}
+.preview :global([data-cc-card]) h3 { margin-top: 16px !important; }
+.preview :global([data-cc-card]) p { margin-top: 12px !important; }
+.preview :global([data-cc-card]) :global(.mt-7),
+.preview :global([data-cc-card]) :global(.mt-8) { margin-top: 16px !important; }
+.preview :global([data-cc-card]) > div:last-child {
+  aspect-ratio: auto !important;
+}
+.preview :global([data-cc-item]) { margin-bottom: 0 !important; }
+.preview :global([data-cc-item]) { position:static !important; top:auto !important; }
+.preview :global([data-cc-item]) ~ div[aria-hidden] { display:none !important; }

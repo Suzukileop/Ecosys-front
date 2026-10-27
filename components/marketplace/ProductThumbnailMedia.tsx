@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
 import { mediaImageResponsive } from '@/lib/media-image-url';
+import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
 
 /**
  * Candidate widths, small card to full-bleed gallery. The ladder used to stop at 828, so any image
@@ -26,6 +27,8 @@ type ProductThumbnailMediaProps = {
   loading?: 'lazy' | 'eager';
   /** Rendered width hint for the `srcSet`. Left out, the image's real rendered width is measured. */
   sizes?: string;
+  /** Large portfolio visuals: original-source resize, decode gating and crop-aware density. */
+  crisp?: boolean;
 };
 
 export function ProductThumbnailMedia({
@@ -37,6 +40,7 @@ export function ProductThumbnailMedia({
   zoomOnHover = false,
   loading = 'lazy',
   sizes,
+  crisp = false,
 }: ProductThumbnailMediaProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const imgRef = useRef<HTMLImageElement>(null);
@@ -45,7 +49,7 @@ export function ProductThumbnailMedia({
      picture picks a wide file. Only ever grows the request: shrinking would re-download. */
   const [measuredPx, setMeasuredPx] = useState<number | null>(null);
   useLayoutEffect(() => {
-    if (sizes) return undefined;
+    if (sizes || crisp) return undefined;
     const img = imgRef.current;
     if (!img || typeof ResizeObserver === 'undefined') return undefined;
     const read = () => {
@@ -56,7 +60,7 @@ export function ProductThumbnailMedia({
     const observer = new ResizeObserver(read);
     observer.observe(img);
     return () => observer.disconnect();
-  }, [sizes, url]);
+  }, [sizes, url, crisp]);
   const fitClass = fit === 'contain' ? 'object-contain' : 'object-cover';
   const sizeClass = fit === 'cover' ? 'min-h-0 min-w-0 max-h-full max-w-full' : '';
   const hoverClass = zoomOnHover
@@ -100,6 +104,23 @@ export function ProductThumbnailMedia({
         preload={autoPlay ? 'metadata' : 'none'}
         aria-label={alt}
       />
+    );
+  }
+
+  if (crisp) {
+    return (
+      <div className={`relative ${className}`} data-pf-no-color-transition="">
+        <PortfolioDeferredMedia
+          src={url}
+          alt={alt}
+          objectFit={fit}
+          sizes={sizes}
+          eager={loading === 'eager'}
+          crisp
+          className={`${fitClass} ${sizeClass} ${hoverClass} ${className.split(/\s+/).filter((token) => /^object-(top|bottom|center|left|right)$/.test(token)).join(' ')}`.trim()}
+          noColorTransition
+        />
+      </div>
     );
   }
 

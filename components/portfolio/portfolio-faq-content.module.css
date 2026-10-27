@@ -1,0 +1,38 @@
+.content { min-width:0; width:100%; }
+.content :global(.pf-faq-kinetic-q),
+.content :global(.pf-faq-gallery-q),
+.content :global(.pf-faq-masonry-q),
+.content :global(.pf-faq-prism-q),
+.content :global(.pf-faq-star-q),
+.content :global(.pf-faq-tri-q),
+.content :global(.pf-faq-split-q),
+.content :global(.pf-faq-focus-q),
+.content :global(.pf-faq-bento-q),
+.content button[aria-expanded] {
+  font-weight:500;
+  letter-spacing:-.01em;
+  overflow-wrap:anywhere;
+}
+.content :global(.pf-faq-kinetic-answer),
+.content :global(.pf-faq-gallery-glass) p,
+.content :global(.pf-faq-masonry-answer),
+.content :global(.pf-faq-prism-answer),
+.content :global(.pf-faq-star-answer),
+.content :global(.pf-faq-tri-a),
+.content :global(.pf-faq-split-answer),
+.content :global(.pf-faq-focus-answer),
+.content :global(.pf-faq-bento-a),
+.content [role='region'] p {
+  font-weight:400;
+  letter-spacing:0;
+  line-height:1.7;
+  overflow-wrap:anywhere;
+}
+.content :global(.pf-faq-gallery-eyebrow),
+.content :global(.pf-faq-kinetic-index),
+.content :global(.pf-faq-masonry-index) {
+  font-family:inherit;
+  font-weight:400;
+  letter-spacing:.02em;
+  text-transform:none;
+}

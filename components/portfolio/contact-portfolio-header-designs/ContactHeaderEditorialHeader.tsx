@@ -78,6 +78,7 @@ export function ContactHeaderEditorialHeader({
   const t = useT();
   const presentation = presentationProp ?? DEFAULT_CONTACT_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
+  const alignRight = presentation.headerDesignAlignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const show = headerElementVisibility(presentation.headerHiddenElements, 'editorial');
@@ -111,7 +112,8 @@ export function ContactHeaderEditorialHeader({
     }, 90);
 
     let ctx: gsap.Context | undefined;
-    try {
+    let retryId = 0;
+    const build = () => {
       ctx = gsap.context(() => {
         const pick = (selector: string) =>
           [...header.querySelectorAll<HTMLElement>(selector)].filter(isLaidOut);
@@ -165,7 +167,8 @@ export function ContactHeaderEditorialHeader({
           );
         }
       }, header);
-    } catch (error) {
+    };
+    const failSafe = (error: unknown) => {
       // Observed intermittently on page load/reload: GSAP ScrollTrigger throws
       // "Cannot read properties of undefined (reading 'end')" from inside its own init-time
       // self.refresh() for this header's scroll-scrubbed stage effect. Uncaught, that crash
@@ -183,10 +186,27 @@ export function ContactHeaderEditorialHeader({
         ),
         { clearProps: 'all' }
       );
+    };
+    try {
+      build();
+    } catch {
+      // The crash comes from another section's `once` ScrollTrigger killing itself while this one refreshes the
+      // list (GSAP then reads a removed entry). It is a timing race, so a second attempt on the next frame,
+      // once that refresh is over, normally succeeds; only a second failure falls back to the static header.
+      ctx?.revert();
+      ctx = undefined;
+      retryId = window.requestAnimationFrame(() => {
+        try {
+          build();
+        } catch (error) {
+          failSafe(error);
+        }
+      });
     }
 
     return () => {
       window.clearTimeout(refreshId);
+      window.cancelAnimationFrame(retryId);
       ctx?.revert();
     };
   }, [animationEnabled, titleText, subtitleText, showLabel, showTitle, showSubtitle]);
@@ -194,10 +214,10 @@ export function ContactHeaderEditorialHeader({
   return (
     <header
       ref={headerRef}
-      className={`pf-contact-header-editorial-header relative w-full ${centered ? 'text-center' : 'text-left'}`}
+      className={`pf-contact-header-editorial-header relative w-full ${centered ? 'text-center' : alignRight ? 'text-right' : 'text-left'}`}
       style={{ marginBottom: `${CONTACT_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
     >
-      <div className={`pf-contact-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
+      <div className={`pf-contact-header-editorial-stage flex flex-col gap-6 ${centered ? 'items-center' : alignRight ? 'items-end' : 'sm:flex-row sm:items-end sm:justify-between'}`}>
         <div className="min-w-0 max-w-3xl">
           {showLabel ? (
             <p
@@ -219,7 +239,7 @@ export function ContactHeaderEditorialHeader({
           ) : null}
           {showSubtitle && subtitleText ? (
             <p
-              className={`pf-contact-header-editorial-sub mb-0 mt-6 max-w-xl ${contactHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
+              className={`pf-contact-header-editorial-sub mb-0 mt-6 max-w-xl ${centered ? 'mx-auto' : alignRight ? 'ml-auto' : ''} ${contactHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
               style={contactSubtitleColorStyle(presentation.subtitleColor)}
             >
               {subtitleText}

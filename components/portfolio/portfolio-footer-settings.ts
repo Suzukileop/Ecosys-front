@@ -1,3 +1,4 @@
+import { mergeSectionPaletteFamily, type SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
 import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -368,6 +369,9 @@ export type PortfolioFooterDesignLayout = {
   /** Selected section ids (`hero` + nav section keys). Absent → the design's default set.
    *  Ids of currently hidden sections are kept so they reappear when the section returns. */
   sectionLinks?: string[];
+  /** The creator's own links (label + address), shown after the section links. Centered minimal
+   *  keeps its own in `centeredLinks`. */
+  customLinks?: PortfolioFooterLinkItem[];
   elements?: Record<string, PortfolioFooterLayoutElementOverride>;
 };
 
@@ -544,6 +548,8 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   useHeroPalette: boolean;
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
   /** Type-size scale applied uniformly across every Footer design (General tab) — same
    *  mechanism as the FAQ section's own "Font size" control. */
   premiumFontSize: PortfolioFooterPremiumFontSize;
@@ -613,6 +619,7 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   headerEditorialTitleColor: PortfolioFooterHeaderPaletteToken;
   headerSerifLeadLabelText: string;
   headerSerifLeadTitleText: string;
+  headerSerifLeadSubtitleText: string;
   headerSerifLeadLabelColor: PortfolioFooterHeaderPaletteToken;
   headerSerifLeadTitleColor: PortfolioFooterHeaderPaletteToken;
   headerSerifLeadSubtitleColor: PortfolioFooterHeaderPaletteToken;
@@ -1001,6 +1008,20 @@ function normalizeFooterDesignLayouts(value: unknown): PortfolioFooterDesignLayo
       layout.sectionLinks = Array.from(new Set(ids)).slice(0, FOOTER_LAYOUT_SECTION_LINKS_MAX);
     }
 
+    if (Array.isArray(layoutRecord.customLinks)) {
+      const links: PortfolioFooterLinkItem[] = [];
+      for (const raw of layoutRecord.customLinks) {
+        if (!raw || typeof raw !== 'object') continue;
+        const record = raw as Record<string, unknown>;
+        const label = typeof record.label === 'string' ? record.label.trim().slice(0, 30) : '';
+        const href = typeof record.href === 'string' ? record.href.trim().slice(0, 500) : '';
+        // Same rule as the editor: web, mail, phone, a path or an anchor — never a script.
+        if (!label || !/^(https?:\/\/|mailto:|tel:|\/|#)/i.test(href) || /\s/.test(href)) continue;
+        links.push({ id: typeof record.id === 'string' && record.id ? record.id.slice(0, 40) : `link-${links.length}`, label, href });
+      }
+      if (links.length > 0) layout.customLinks = links.slice(0, 6);
+    }
+
     if (layoutRecord.elements && typeof layoutRecord.elements === 'object') {
       const elements: Record<string, PortfolioFooterLayoutElementOverride> = {};
       for (const [key, rawOverride] of Object.entries(layoutRecord.elements as Record<string, unknown>)) {
@@ -1026,7 +1047,7 @@ function normalizeFooterDesignLayouts(value: unknown): PortfolioFooterDesignLayo
       if (Object.keys(elements).length > 0) layout.elements = elements;
     }
 
-    if (layout.sectionLinks || layout.elements) {
+    if (layout.sectionLinks || layout.customLinks || layout.elements) {
       result[design as PortfolioFooterDesign] = layout;
     }
   }
@@ -1113,6 +1134,7 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   patternOpacity: 18,
   useHeroPalette: false,
   colorModeOverride: 'auto',
+  paletteFamily: 'global',
   premiumFontSize: 'medium',
   lockPaletteAcrossColorModes: false,
   footerPalette: DEFAULT_FOOTER_PALETTE,
@@ -1142,6 +1164,7 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   headerEditorialTitleColor: 'texteFort',
   headerSerifLeadLabelText: '',
   headerSerifLeadTitleText: '',
+  headerSerifLeadSubtitleText: '',
   headerSerifLeadLabelColor: 'texteFort',
   headerSerifLeadTitleColor: 'texteFort',
   headerSerifLeadSubtitleColor: 'texteFort',
@@ -1667,7 +1690,7 @@ export function footerLayoutClass(
 export function footerPresetCtaClass(design: PortfolioFooterCtaDesign = 'pill-outline'): string {
   /** Shared size so Contact me + Marketplace match exactly. */
   const base =
-    'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-full px-6 text-sm font-semibold transition hover:opacity-90';
+    'inline-flex min-h-11 max-w-full items-center justify-center gap-2 rounded-full px-6 py-2 text-sm font-semibold transition hover:opacity-90 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
   switch (design) {
     case 'pill-dark':
     case 'pill-accent':
@@ -1675,7 +1698,7 @@ export function footerPresetCtaClass(design: PortfolioFooterCtaDesign = 'pill-ou
     case 'pill-outline':
       return `${base} border-2 bg-transparent`;
     default:
-      return 'inline-flex h-11 shrink-0 items-center justify-center gap-2 text-sm font-semibold transition hover:opacity-80';
+      return 'inline-flex min-h-11 max-w-full items-center justify-center gap-2 py-2 text-sm font-semibold transition hover:opacity-80 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2';
   }
 }
 
@@ -2205,6 +2228,7 @@ export function mergeFooterPresentation(
         : base.patternOpacity,
     useHeroPalette: mergeUseHeroPalette(base.useHeroPalette, record),
     colorModeOverride: mergeSectionColorMode(record.colorModeOverride, base.colorModeOverride),
+    paletteFamily: mergeSectionPaletteFamily(record.paletteFamily, base.paletteFamily ?? 'global'),
     premiumFontSize: pick(record.premiumFontSize, FOOTER_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     lockPaletteAcrossColorModes:
       typeof record.lockPaletteAcrossColorModes === 'boolean'
@@ -2303,6 +2327,10 @@ export function mergeFooterPresentation(
       typeof record.headerSerifLeadTitleText === 'string'
         ? record.headerSerifLeadTitleText
         : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadSubtitleText:
+      typeof record.headerSerifLeadSubtitleText === 'string'
+        ? record.headerSerifLeadSubtitleText
+        : (base.headerSerifLeadSubtitleText ?? ''),
     headerSerifLeadLabelColor: pick(
       record.headerSerifLeadLabelColor,
       FOOTER_HEADER_PALETTE_TOKENS,

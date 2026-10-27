@@ -12,9 +12,18 @@ import {
   readHeroBannerDesignHint,
   resolveHeroBannerDesignFromSettings,
   writeHeroBannerDesignHint,
+  readHeroLoadingSettingsHint,
+  writeHeroLoadingSettingsHint,
 } from '@/components/portfolio/portfolio-hero-banner-hint';
 import { readLocalPortfolioSettings } from '@/lib/portfolio-settings-api';
 import api from '@/lib/api';
+import { mergePortfolioSettings, type PortfolioSettings } from './portfolio-settings-types';
+import type { DesignPreviewTarget } from '@/lib/portfolio-design-preview';
+import { PortfolioStackLoadingSkeleton } from './PortfolioStackLoadingSkeleton';
+import { PortfolioToolsLoadingSkeleton } from './PortfolioToolsLoadingSkeleton';
+import { PortfolioInfoLoadingSkeleton } from './PortfolioInfoLoadingSkeleton';
+import type { PortfolioInfoDesign } from './portfolio-info-settings';
+import type { PortfolioToolsDesign } from './portfolio-tools-settings';
 
 function resolveLocalDesign(creatorKey: string): PortfolioHeroBannerDesign | null {
   if (!creatorKey) return null;
@@ -35,9 +44,13 @@ function resolveLocalDesign(creatorKey: string): PortfolioHeroBannerDesign | nul
 export function PortfolioLoadingPage({
   creatorKey: creatorKeyProp,
   initialDesign = DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
+  initialMode,
+  designPreview,
 }: {
   creatorKey?: string;
   initialDesign?: PortfolioHeroBannerDesign;
+  initialMode?: 'light' | 'dark';
+  designPreview?: DesignPreviewTarget | null;
 } = {}) {
   const params = useParams();
   const creatorKey =
@@ -47,13 +60,13 @@ export function PortfolioLoadingPage({
   const [design, setDesign] = useState<PortfolioHeroBannerDesign>(() => {
     return resolveLocalDesign(creatorKey) ?? normalizePortfolioHeroBannerDesign(initialDesign);
   });
+  const [settings, setSettings] = useState<PortfolioSettings | null>(() => readHeroLoadingSettingsHint(creatorKey) ?? readLocalPortfolioSettings(creatorKey) ?? (initialMode ? mergePortfolioSettings({global:{colorMode:initialMode},hero:{colorModeOverride:initialMode}}) : null));
 
   useLayoutEffect(() => {
     if (!creatorKey) return;
     let cancelled = false;
 
     const local = resolveLocalDesign(creatorKey);
-    if (local) setDesign(local);
 
     void (async () => {
       try {
@@ -69,6 +82,11 @@ export function PortfolioLoadingPage({
         const fromUuid = profileId ? resolveLocalDesign(profileId) : null;
         const next = normalizePortfolioHeroBannerDesign(fromServer ?? fromUuid ?? local);
         if (cancelled) return;
+        if (profile.portfolioSettings && typeof profile.portfolioSettings === 'object') {
+          const resolved = mergePortfolioSettings(profile.portfolioSettings);
+          setSettings(resolved);
+          writeHeroLoadingSettingsHint([creatorKey, profileId, username], resolved);
+        }
 
         writeHeroBannerDesignHint([creatorKey, profileId, username], next);
         setDesign(next);
@@ -82,5 +100,14 @@ export function PortfolioLoadingPage({
     };
   }, [creatorKey]);
 
-  return <PublicCreatorPortfolioSkeleton heroBannerDesign={design} />;
+  if (designPreview?.section==='info') {
+    return <PortfolioInfoLoadingSkeleton design={designPreview.design as PortfolioInfoDesign} settings={settings}/>;
+  }
+  if (designPreview?.section==='tools') {
+    return <PortfolioToolsLoadingSkeleton design={designPreview.design as PortfolioToolsDesign} settings={settings}/>;
+  }
+  if (designPreview?.section==='stack' || designPreview?.section==='stackHeader') {
+    return <PortfolioStackLoadingSkeleton section={designPreview.section} design={designPreview.design} settings={settings}/>;
+  }
+  return <PublicCreatorPortfolioSkeleton heroBannerDesign={design} settings={settings} />;
 }

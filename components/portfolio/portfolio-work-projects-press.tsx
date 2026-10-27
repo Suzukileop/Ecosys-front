@@ -29,9 +29,9 @@ function workRoleLabel(item: MarketplaceContentItem): string {
 }
 
 const PRESS_EYEBROW_SIZE_CLASS: Record<PortfolioWorkProjectsPressSettings['eyebrowSize'], string> = {
-  sm: 'text-[0.62rem]',
-  md: 'text-[0.72rem]',
-  lg: 'text-[0.88rem]',
+  sm: 'text-[0.72rem]',
+  md: 'text-[0.8rem]',
+  lg: 'text-[0.92rem]',
 };
 
 function PressProjectRow({
@@ -109,14 +109,14 @@ function PressProjectRow({
           <div className="flex flex-wrap items-center gap-x-2.5 gap-y-1">
             {role ? (
               <span
-                className="text-[0.72rem] font-bold uppercase tracking-[0.08em]"
+                className="text-[0.8rem] font-bold uppercase tracking-[0.08em]"
                 style={{ color: labelColor }}
               >
                 {role}
               </span>
             ) : null}
             {category ? (
-              <span className="text-[0.72rem] uppercase tracking-[0.04em]" style={{ color: muted }}>
+              <span className="text-[0.8rem] uppercase tracking-[0.04em]" style={{ color: muted }}>
                 {category}
               </span>
             ) : null}
@@ -154,7 +154,7 @@ function PressProjectRow({
             {tools.map((tool) => (
               <span
                 key={tool}
-                className="rounded-none border px-3 py-1 text-[0.7rem] font-medium uppercase tracking-[0.04em]"
+                className="rounded-none border px-3 py-1 text-[0.78rem] font-medium uppercase tracking-[0.04em]"
                 style={{
                   borderColor: `color-mix(in srgb, ${muted} 45%, transparent)`,
                   color: toolColor,

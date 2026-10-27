@@ -2,14 +2,13 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { createPortal } from 'react-dom';
+import { FramesViewCursor } from './portfolio-project-view-cursor';
 import {
   forwardRef,
   useCallback,
   useLayoutEffect,
   useRef,
   useState,
-  useSyncExternalStore,
   type CSSProperties,
   type MouseEvent as ReactMouseEvent,
   type ReactNode,
@@ -279,7 +278,7 @@ function FramesStackList({ tools, ink }: { tools: string[]; ink: string }) {
       {tools.map((tool) => (
         <li
           key={tool}
-          className="whitespace-nowrap text-[11px] font-medium uppercase leading-none tracking-[0.18em]"
+          className="whitespace-nowrap text-[12px] font-medium uppercase leading-none tracking-[0.16em]"
           style={{ color: `color-mix(in srgb, ${ink} 85%, transparent)` }}
         >
           {tool}
@@ -334,100 +333,6 @@ const FramesProjectLink = forwardRef<
   );
 });
 
-/** Textured circle that replaces the OS cursor over the image/title — liquid-inertia follow,
- * dismissed the instant the pointer leaves the trigger's bounds. */
-function FramesViewCursor({
-  anchor,
-  containerRef,
-  onDismiss,
-  label = 'View',
-}: {
-  anchor: { x: number; y: number } | null;
-  containerRef: RefObject<HTMLElement | null>;
-  onDismiss: () => void;
-  label?: string;
-}) {
-  const elRef = useRef<HTMLDivElement>(null);
-  const target = useRef({ x: 0, y: 0 });
-  const current = useRef({ x: 0, y: 0 });
-  const rafId = useRef<number | null>(null);
-  const mounted = useSyncExternalStore(
-    () => () => {},
-    () => true,
-    () => false
-  );
-
-  useLayoutEffect(() => {
-    if (!anchor) return;
-    target.current = anchor;
-    current.current = anchor;
-    if (elRef.current) {
-      elRef.current.style.transform = `translate3d(${anchor.x}px, ${anchor.y}px, 0) translate(-50%, -50%)`;
-    }
-
-    const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const handleMove = (event: MouseEvent) => {
-      target.current = { x: event.clientX, y: event.clientY };
-    };
-    window.addEventListener('mousemove', handleMove);
-
-    const lerpFactor = reduceMotion ? 1 : 0.2;
-    const tick = () => {
-      const rect = containerRef.current?.getBoundingClientRect();
-      const stillInside =
-        rect &&
-        target.current.x >= rect.left &&
-        target.current.x <= rect.right &&
-        target.current.y >= rect.top &&
-        target.current.y <= rect.bottom;
-      if (!stillInside) {
-        onDismiss();
-        return;
-      }
-
-      current.current = {
-        x: current.current.x + (target.current.x - current.current.x) * lerpFactor,
-        y: current.current.y + (target.current.y - current.current.y) * lerpFactor,
-      };
-      if (elRef.current) {
-        elRef.current.style.transform = `translate3d(${current.current.x}px, ${current.current.y}px, 0) translate(-50%, -50%)`;
-      }
-      rafId.current = requestAnimationFrame(tick);
-    };
-    rafId.current = requestAnimationFrame(tick);
-
-    return () => {
-      window.removeEventListener('mousemove', handleMove);
-      if (rafId.current) cancelAnimationFrame(rafId.current);
-    };
-  }, [anchor, containerRef, onDismiss]);
-
-  if (!mounted) return null;
-
-  return createPortal(
-    <div
-      ref={elRef}
-      aria-hidden="true"
-      data-pf-no-color-transition=""
-      className="pointer-events-none fixed left-0 top-0 z-[999] transition-opacity duration-200 ease-out"
-      style={{ opacity: anchor ? 1 : 0 }}
-    >
-      <div
-        className="flex h-[6.25rem] w-[6.25rem] flex-col items-center justify-center gap-1 rounded-full border border-white/25 bg-white/92 text-neutral-900 shadow-[0_18px_44px_-16px_rgba(0,0,0,0.55)]"
-        style={{
-          backgroundImage: 'radial-gradient(circle at 1px 1px, rgba(0,0,0,0.08) 1px, transparent 0)',
-          backgroundSize: '5px 5px',
-        }}
-      >
-        <span className="text-[11px] font-medium uppercase tracking-[0.22em]">{label}</span>
-        <span aria-hidden className="text-sm leading-none">
-          ↗
-        </span>
-      </div>
-    </div>,
-    document.body
-  );
-}
 
 function FramesCard({
   item,
@@ -481,12 +386,20 @@ function FramesCard({
     transitionDelay: revealed ? `${Math.min(index, 3) * 95}ms` : '0ms',
   };
 
+  const simpleTitle = board.titleStyle === 'simple';
   const titleWords = item.title.trim().split(/\s+/).filter(Boolean);
 
   const titleNode = (
     <h3
-      className="pf-frames-title relative z-10 font-black leading-[0.92] tracking-[-0.045em] text-[clamp(2.1rem,11vw,3.25rem)] transition-[color,-webkit-text-stroke-width] duration-500 ease-out sm:text-[clamp(2.4rem,9vw,3.75rem)] md:text-[clamp(2.75rem,6vw,4.25rem)] lg:text-[clamp(3.25rem,6.5vw,6rem)] [color:var(--pf-frames-ink)] group-hover/frame:text-transparent group-hover/frame:[-webkit-text-stroke:1.5px_var(--pf-frames-ink)] group-focus-visible/frame:text-transparent group-focus-visible/frame:[-webkit-text-stroke:1.5px_var(--pf-frames-ink)]"
-      style={{ '--pf-frames-ink': titleColor } as CSSProperties}
+      className={`pf-frames-title relative z-10 transition-[color,-webkit-text-stroke-width] duration-500 ease-out [color:var(--pf-frames-ink)] ${
+        simpleTitle
+          ? 'font-medium leading-[1.08] tracking-[-0.025em] text-[clamp(1.75rem,7vw,2.25rem)] md:text-[clamp(2rem,3.6vw,2.75rem)] lg:text-[clamp(2.25rem,3.4vw,3.25rem)]'
+          : 'font-black leading-[0.92] tracking-[-0.045em] text-[clamp(2.1rem,11vw,3.25rem)] sm:text-[clamp(2.4rem,9vw,3.75rem)] md:text-[clamp(2.75rem,6vw,4.25rem)] lg:text-[clamp(3.25rem,6.5vw,6rem)] group-hover/frame:text-transparent group-hover/frame:[-webkit-text-stroke:1.5px_var(--pf-frames-ink)] group-focus-visible/frame:text-transparent group-focus-visible/frame:[-webkit-text-stroke:1.5px_var(--pf-frames-ink)]'
+      }`}
+      style={{ '--pf-frames-ink': titleColor,
+        fontSize: board.titleSize != null ? `clamp(24px, ${board.titleSize / 14.4}vw, ${board.titleSize}px)` : undefined,
+        overflowWrap: 'anywhere',
+      } as CSSProperties}
     >
       {titleWords.map((word, wordIndex) => (
         // pb/-mb: the reveal mask clipped descenders (the "g" of "booking") at leading 0.92.
@@ -511,9 +424,8 @@ function FramesCard({
     <div
       data-frames-media-frame=""
       data-frames-corner={corner}
-      className="relative w-full overflow-hidden shadow-[0_40px_90px_-40px_rgba(0,0,0,0.55)] max-md:mx-[calc(50%-50vw)] max-md:aspect-auto max-md:h-[48dvh] max-md:w-screen md:aspect-[16/11]"
+      className="relative w-full overflow-hidden max-md:mx-[calc(50%-50vw)] max-md:aspect-auto max-md:h-[48dvh] max-md:w-screen md:aspect-[16/11]"
       style={{
-        backgroundColor: `${muted}22`,
         clipPath: framesClipPath(revealed),
         transform: revealed ? 'scale(1)' : 'scale(1.14)',
         transition: `clip-path ${FRAMES_REVEAL_MS}ms ${FRAMES_ENTRANCE_EASE}, transform ${FRAMES_REVEAL_MS}ms ${FRAMES_ENTRANCE_EASE}`,
@@ -539,8 +451,9 @@ function FramesCard({
     </div>
   );
 
-  const mobileMeta = showMeta ? (
-    <p className="mb-3 flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[10px] font-medium uppercase tracking-[0.24em] md:hidden">
+  // Role · category sit in the copy column, right above the description, with a hairline between them.
+  const metaNode = showMeta ? (
+    <p className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[11px] font-medium uppercase tracking-[0.22em] sm:text-[12px]">
       {showRole ? <span style={{ color: accent }}>{role}</span> : null}
       {showRole && showCategory ? (
         <span style={{ color: muted, opacity: 0.4 }} aria-hidden>
@@ -563,9 +476,12 @@ function FramesCard({
       <div
         /* Overlap kept to the top of the caps (~20px at desktop): at ~35 % of the first line
            a white title vanished into bright photos. */
-        className="relative z-10 -mt-[clamp(0.6rem,3vw,1rem)] md:-mt-[clamp(0.75rem,1.8vw,1.1rem)] lg:-mt-[clamp(0.9rem,1.4vw,1.35rem)]"
+        className={`relative z-10 ${
+          simpleTitle
+            ? 'mt-4 sm:mt-5'
+            : '-mt-[clamp(0.6rem,3vw,1rem)] md:-mt-[clamp(0.75rem,1.8vw,1.1rem)] lg:-mt-[clamp(0.9rem,1.4vw,1.35rem)]'
+        }`}
       >
-        {mobileMeta}
         <div data-frames-title-shift="" className="will-change-transform">
           {titleNode}
         </div>
@@ -595,22 +511,10 @@ function FramesCard({
       className="relative w-full"
       style={motionStyle}
     >
-      {showMeta ? (
-        <p className="mb-3 hidden flex-wrap items-baseline gap-x-2.5 gap-y-1 text-[10px] font-medium uppercase tracking-[0.24em] sm:mb-4 sm:text-[11px] md:flex">
-          {showRole ? <span style={{ color: accent }}>{role}</span> : null}
-          {showRole && showCategory ? (
-            <span style={{ color: muted, opacity: 0.4 }} aria-hidden>
-              ·
-            </span>
-          ) : null}
-          {showCategory ? <span style={{ color: muted }}>{category}</span> : null}
-        </p>
-      ) : null}
-
       <div className="md:grid md:grid-cols-12 md:gap-x-4 lg:gap-x-6">
         <div className={framesImageColumnClass(imageOnRight, board.thumbnailSize)}>{stage}</div>
 
-        {showDescription || showStack ? (
+        {showMeta || showDescription || showStack ? (
           <div
             data-frames-copy=""
             className={`mt-5 will-change-transform sm:mt-6 md:mt-0 md:self-end ${framesCopyColumnClass(
@@ -618,6 +522,14 @@ function FramesCard({
               board.thumbnailSize
             )}`}
           >
+            {metaNode}
+            {showMeta && (showDescription || showStack) ? (
+              <div
+                aria-hidden
+                className="my-4 h-px w-full max-w-sm sm:my-5"
+                style={{ backgroundColor: `color-mix(in srgb, ${muted} 30%, transparent)` }}
+              />
+            ) : null}
             {showDescription ? (
               // Was 12–14px light at 0.85 opacity against a 94px black-weight title: the copy
               // read as an orphan. Regular weight, full color, a size that answers the title.

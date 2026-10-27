@@ -1,4 +1,5 @@
 'use client';
+import {resolveHeroGreeting} from '../portfolio-hero-headline-settings';
 
 import Image from 'next/image';
 import { useEffect, useMemo, useRef, type MouseEvent } from 'react';
@@ -17,6 +18,12 @@ import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/p
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
 import { useT } from '@/lib/i18n/I18nProvider';
+import {
+  PortraitOffsetOutline,
+  hasPortraitShapeOverride,
+  portraitShapeOverlayStyle,
+  portraitShapeRadius,
+} from '@/components/portfolio/hero-variants/portrait-shape';
 
 /** Portrait rond — a dedicated orbital composition. */
 export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData }) {
@@ -31,6 +38,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   const bordure = resolveHeroPaletteColor(palette, 'bordure');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
   const imageBw = data.presentation.heroImageGrayscale === true;
+  const portraitShape = data.presentation.heroPortraitShape;
 
   const displayName = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -112,7 +120,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
       }, 360 + index * 90));
     });
     return () => timers.forEach(clearTimeout);
-  }, [titleBottom, displayName]);
+  }, [titleBottom, displayName, portraitShape]);
 
   useEffect(() => {
     if (!titleBottom || typeof window === 'undefined' || isPortfolioMotionOff()) return;
@@ -159,7 +167,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
   const animatedDetailStyle = titleBottom ? { opacity: 0, transform: 'translateY(18px)' } : undefined;
 
   const availabilityBadge = () => showAvailability ? (
-    <div
+    <div data-hero-availability
       className="inline-flex min-h-10 items-center gap-2.5 rounded-full border px-4 py-2 backdrop-blur-sm"
       style={{
         ...animatedDetailStyle,
@@ -194,20 +202,26 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
         <a
           href={primaryHref}
           onClick={onNavClick(primaryHref)}
-          className={`${compact ? 'min-h-11 px-5 text-[0.82rem]' : 'min-h-12 px-7 text-[0.9rem]'} inline-flex items-center justify-center rounded-full font-sans font-semibold transition duration-300 hover:-translate-y-0.5 hover:brightness-110`}
+          className={`${compact ? 'min-h-11 px-5 text-[0.82rem]' : 'min-h-12 px-7 text-[0.9rem]'} pf-circle-cta inline-flex items-center justify-center font-sans font-semibold`}
+          data-shape={data.presentation.heroCirclePortraitButtonShape ?? 'pill'}
+          data-pf-no-color-transition=""
           style={{ backgroundColor: ink, color: fond }}
         >
-          {t("Let's talk")}
+          <span className="pf-circle-cta-fill" aria-hidden data-pf-no-color-transition="" style={{ backgroundColor: fond }} />
+          <span>{t("Let's talk")}</span>
         </a>
       ) : null}
       {showSecondaryCta ? (
         <a
           href={secondaryHref}
           onClick={onNavClick(secondaryHref)}
-          className={`${compact ? 'min-h-11 px-4 text-[0.82rem]' : 'min-h-12 px-5 text-[0.9rem]'} inline-flex items-center justify-center rounded-full border font-sans font-semibold transition duration-300 hover:-translate-y-0.5`}
+          className={`${compact ? 'min-h-11 px-4 text-[0.82rem]' : 'min-h-12 px-5 text-[0.9rem]'} pf-circle-cta inline-flex items-center justify-center border font-sans font-semibold`}
+          data-shape={data.presentation.heroCirclePortraitButtonShape ?? 'pill'}
+          data-pf-no-color-transition=""
           style={{ borderColor: borderSoft, color: ink }}
         >
-          {t('View project')}
+          <span className="pf-circle-cta-fill" aria-hidden data-pf-no-color-transition="" style={{ backgroundColor: ink }} />
+          <span>{t('View project')}</span>
         </a>
       ) : null}
     </div>
@@ -215,7 +229,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
 
   const bioPanel = (compact = false) => (
     <div className={`flex max-w-[34rem] flex-col items-start ${compact ? 'gap-5' : 'gap-7'}`} data-orbit-copy>
-      <p
+      <p data-hero-bio
         className="m-0 font-sans font-normal tracking-[-0.015em]"
         style={{
           ...animatedDetailStyle,
@@ -231,21 +245,19 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     </div>
   );
 
-  const portrait = (size: string, sizes: string, compact = false) => (
-    <div className="relative isolate flex shrink-0 items-center justify-center" style={{ width: size, height: size }} data-orbit-column>
-      <div aria-hidden className="absolute -inset-[9%] rounded-full" style={{ background: `radial-gradient(circle, color-mix(in srgb, ${principal} 14%, transparent) 0%, transparent 68%)` }} />
-      <div aria-hidden className="absolute -inset-[5%] rounded-full border" style={{ borderColor: borderSoft }} />
-      <div aria-hidden className="absolute -inset-[11%] rounded-full border" style={{ borderColor: `color-mix(in srgb, ${principal} 38%, transparent)`, clipPath: 'inset(0 0 48% 48%)' }} />
-      <span aria-hidden className="absolute -right-[7%] top-[23%] z-20 size-3 rounded-full border-[3px]" style={{ backgroundColor: principal, borderColor: fond }} />
-      <span aria-hidden className="absolute -bottom-[4%] left-[17%] z-20 size-2 rounded-full" style={{ backgroundColor: `color-mix(in srgb, ${principal} 72%, ${ink})` }} />
+  const portrait = (size: string, sizes: string, compact = false) => {
+    const roundShape = !hasPortraitShapeOverride(portraitShape) || portraitShape === 'circle';
+    const overlayStyle = roundShape ? undefined : portraitShapeOverlayStyle(portraitShape, principal, fond);
+    const frameBox = (
       <div
-        className="relative size-full overflow-hidden rounded-full border"
+        className={`relative overflow-hidden border ${roundShape ? 'size-full rounded-full' : 'size-full'}`}
         style={{
           backgroundColor: `color-mix(in srgb, ${neutre} 70%, ${bordure})`,
           borderColor: borderSoft,
           boxShadow: `0 28px 80px color-mix(in srgb, ${ink} 18%, transparent)`,
           opacity: titleBottom ? 0 : 1,
           transform: titleBottom ? 'scale(.84)' : 'scale(1)',
+          borderRadius: roundShape ? undefined : portraitShapeRadius(portraitShape),
         }}
         data-orbit-portrait
       >
@@ -254,14 +266,34 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
         ) : (
           <div className="flex size-full items-center justify-center font-sans text-5xl font-semibold" style={{ color: muted }} aria-hidden>{initials}</div>
         )}
+        {overlayStyle ? <span aria-hidden className="pointer-events-none absolute inset-0" style={overlayStyle} /> : null}
       </div>
+    );
+    return (
+    <div className={`relative isolate flex shrink-0 items-center justify-center ${showAvailability ? 'mb-14' : ''}`} style={{ width: size, height: roundShape ? size : `calc(${size} * 1.25)` }} data-orbit-column>
+      {roundShape ? (
+        <>
+          <div aria-hidden className="absolute -inset-[9%] rounded-full" style={{ background: `radial-gradient(circle, color-mix(in srgb, ${principal} 14%, transparent) 0%, transparent 68%)` }} />
+          <div aria-hidden className="absolute -inset-[5%] rounded-full border" style={{ borderColor: borderSoft }} />
+          <div aria-hidden className="absolute -inset-[11%] rounded-full border" style={{ borderColor: `color-mix(in srgb, ${principal} 38%, transparent)`, clipPath: 'inset(0 0 48% 48%)' }} />
+          <span aria-hidden className="absolute -right-[7%] top-[23%] z-20 size-3 rounded-full border-[3px]" style={{ backgroundColor: principal, borderColor: fond }} />
+          <span aria-hidden className="absolute -bottom-[4%] left-[17%] z-20 size-2 rounded-full" style={{ backgroundColor: `color-mix(in srgb, ${principal} 72%, ${ink})` }} />
+          {frameBox}
+        </>
+      ) : (
+        // Same width as the round portrait (the column), 4:5 tall.
+        <PortraitOffsetOutline enabled={portraitShape === 'offset'} principal={principal} className="size-full">
+          {frameBox}
+        </PortraitOffsetOutline>
+      )}
       {showAvailability ? (
-        <div className={`absolute z-30 ${compact ? '-bottom-8' : '-bottom-7'} left-1/2 -translate-x-1/2 whitespace-nowrap`}>
+        <div className={`absolute top-full z-30 ${compact ? 'mt-5' : 'mt-6'} left-1/2 -translate-x-1/2 whitespace-nowrap`}>
           {availabilityBadge()}
         </div>
       ) : null}
     </div>
-  );
+    );
+  };
 
   const displayTitle = (mode: 'desktop' | 'tablet' | 'mobile') => {
     const fontSize = mode === 'desktop'
@@ -294,7 +326,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     <div className={`flex flex-col items-start ${compact ? 'gap-5' : 'gap-7'}`} data-orbit-copy>
       {showAvailability ? availabilityBadge() : null}
       <h1 className="m-0 max-w-[13ch] font-sans font-semibold tracking-[-0.05em]" style={{ color: ink, fontSize: compact ? 'clamp(2.35rem, 5.3vw, 3.8rem)' : 'clamp(3.4rem, 5.2vw, 6rem)', lineHeight: 0.98 }}>
-        {t("Hello, I'm {displayName}", { displayName })}
+        {resolveHeroGreeting(data.presentation,t("Hello, I'm {displayName}", { displayName }),displayName,data.specialite??'')}
       </h1>
       {specialtyBadge(compact)}
       {bioPanel(compact)}

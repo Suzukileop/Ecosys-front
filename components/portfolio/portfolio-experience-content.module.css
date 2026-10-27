@@ -1,0 +1,30 @@
+.content { min-width:0; width:100%; }
+.unmarkedTasks [data-exp-task] > [aria-hidden] { display: none; }
+.unmarkedTasks ul::before { display: none; }
+.taskMeasure { min-width: 0; }
+.taskMeasure :global(.pf-exp-tasks-lined) {
+  width: max-content;
+  max-width: min(100%, 76ch);
+}
+.taskMeasure [data-exp-task] > span:last-child {
+  overflow-wrap: anywhere;
+}
+.content :where(h2,h3),
+.content :global(.pf-loft-card-title) {
+  font-weight:500;
+  letter-spacing:-.02em;
+  overflow-wrap:anywhere;
+}
+.content :where(p) { letter-spacing:0; }
+.content :where(span,p,div,ul,li,time)[class~='uppercase'] {
+  text-transform:none;
+  letter-spacing:.02em;
+}
+.content :where(span,p,div,ul,li,time)[class~='font-mono'],
+.content :global(.pf-exp-ed-meta),
+.content :global(.pf-exp-ms-meta) {
+  font-family:inherit;
+  font-weight:400;
+  letter-spacing:.02em;
+  line-height:1.5;
+}

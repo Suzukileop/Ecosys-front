@@ -53,6 +53,7 @@ export function GalleryHeaderMastheadHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_GALLERY_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
+  const alignRight = presentation.headerDesignAlignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = galleryHeaderPaletteTokenColor(presentation.headerMastheadHeadlineColor ?? 'principal');
@@ -231,11 +232,11 @@ export function GalleryHeaderMastheadHeader({
       data-gallery-header="masthead"
     >
       {styledLines.length > 0 ? (
-        <div className={`flex flex-col gap-1 sm:gap-2 ${centered ? 'items-center' : 'items-start'}`}>
+        <div className={`flex flex-col gap-1 sm:gap-2 ${centered ? 'items-center' : alignRight ? 'items-end' : 'items-start'}`}>
           {styledLines.map((words, lineIndex) => (
             <div key={lineIndex} className="overflow-hidden" data-gallery-header-line>
               <h2
-                className={`${HEADLINE_SIZE_CLASS[presentation.headerMastheadHeadlineSize ?? 'md']} uppercase leading-[1.08] tracking-[-0.02em] ${centered ? 'text-center' : 'text-left'}`}
+                className={`${HEADLINE_SIZE_CLASS[presentation.headerMastheadHeadlineSize ?? 'md']} uppercase leading-[1.08] tracking-[-0.02em] ${centered ? 'text-center' : alignRight ? 'text-right' : 'text-left'}`}
                 style={{ color: ink }}
               >
                 {words.map((word, wordIndex) => (

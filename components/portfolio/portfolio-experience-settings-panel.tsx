@@ -1,26 +1,37 @@
 'use client';
+import { LayoutControlGroups } from './portfolio-tools-control-groups';
+import {DesignCatalogueCard} from './portfolio-design-catalogue-card';
+import { ExperienceDesignIllustration } from './portfolio-experience-design-illustration';
+import { useThumbnailTheme } from './portfolio-thumbnail-theme';
+import { SectionBackgroundSettingsFields } from './portfolio-section-background-controls';
+import { ColorSwatchRow } from './portfolio-color-swatch-row';
+import { DEFAULT_EXPERIENCE_COLOR_BINDINGS, mergeExperienceColorBindings } from './portfolio-experience-palette-settings';
+import type { HeroPaletteTokenId } from './portfolio-hero-palette-settings';
 
-import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
-import { useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { SectionPaletteFamilyControl } from '@/components/portfolio/portfolio-section-palette-family';
+import { TextSizeSlider } from '@/components/portfolio/portfolio-text-size-slider';
+import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
+import { HeaderDesignPicker } from '@/components/portfolio/portfolio-header-design-picker';
+import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
+import {
+  EXPERIENCE_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
+  EXPERIENCE_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
+  EXPERIENCE_HEADER_PALETTE_TOKEN_OPTIONS,
+  experienceHeaderPaletteTokenColor,
+} from '@/components/portfolio/portfolio-experience-header-settings';
+import { CardsStyleControls } from '@/components/portfolio/portfolio-cards-style-controls';
+import { DEFAULT_CARDS_STYLE } from '@/components/portfolio/portfolio-cards-style';
+import { useId, useState, type ReactNode } from 'react';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { DEFAULT_EXPERIENCE_PRESENTATION } from '@/components/portfolio/portfolio-experience-settings';
-import { PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS, PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS, PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS, PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS, DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY, DEFAULT_ACCENT_YEARS_BADGE_TEXT, DEFAULT_ACCENT_YEARS_LEAD_TEXT, DEFAULT_CENTERED_TITLE_TEXT, DEFAULT_CENTERED_LEAD_TEXT, DEFAULT_SERIF_LEAD_LABEL_TEXT, DEFAULT_SERIF_LEAD_TITLE_TEXT, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS, CENTERED_LEAD_WEIGHT, CENTERED_LEAD_OPACITY, SERIF_LEAD_WEIGHT, SERIF_LEAD_LABEL_OPACITY, MARQUEE_WEIGHT, MARQUEE_FILL_OPACITY, type PortfolioExperienceCardsBorderRadius, type PortfolioExperienceGalleryColumns, type PortfolioExperienceItemGap, type PortfolioExperienceLoftColumns, type PortfolioExperienceLoftHoverEffect, type PortfolioExperienceCenteredAlign, type PortfolioExperienceCenteredDivider, type PortfolioExperienceCenteredLineHeight, type PortfolioExperienceCenteredMaxWidth, type PortfolioExperienceSerifLeadInk, type PortfolioExperienceSerifLeadTracking, type PortfolioExperienceDesign, type PortfolioExperienceHeaderDesign, type PortfolioExperienceAccentYearsBadgeColor, type PortfolioExperienceLinkArrowStyle, type PortfolioExperienceRepoLinkStyle, type PortfolioExperienceSectionSettings, type PortfolioExperienceTasksDisplay, type PortfolioExperienceToolsBadgeStyle, PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS } from '@/components/portfolio/portfolio-experience-settings';
-import {
-  experienceLinkButtonPalette,
-  PortfolioLinkArrowProvider,
-  PortfolioLinkButton,
-} from '@/components/portfolio/portfolio-link-buttons';
+import { PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_KINETIC_TITLE_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_KINETIC_SPACING_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS, DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY, type PortfolioExperienceCardsBorderRadius, type PortfolioExperienceGalleryColumns, type PortfolioExperienceItemGap, type PortfolioExperienceLoftColumns, type PortfolioExperienceLoftHoverEffect, type PortfolioExperienceDesign, type PortfolioExperienceSectionSettings, type PortfolioExperienceTasksDisplay, PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS } from '@/components/portfolio/portfolio-experience-settings';
+import { PortfolioLinkArrowProvider } from '@/components/portfolio/portfolio-link-buttons';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
+import { NpBackRow, NpCollapsibleSection, NpPanelShell, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
-export type ExperienceSubSection = 'general' | 'header' | 'design';
-
-type ExperienceHeaderApplyDesign = Exclude<
-  PortfolioExperienceHeaderDesign,
-  'none' | 'cards' | 'duotone'
->;
+export type ExperienceSubSection = 'general' | 'header' | 'design' | 'background';
 
 function MiniSlide({ children }: { children: ReactNode }) {
   return (
@@ -87,23 +98,6 @@ function ExperiencePickerCard({
         compact ? 'pf-exp-preview-card' : `px-3 pt-2.5 ${showLabel ? 'pb-3' : 'pb-2.5'}`
       }`}
     >
-      {active ? (
-        <span
-          aria-hidden
-          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-        >
-          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-            <path
-              d="M4 10.5l3.5 3.5L16 6"
-              stroke="white"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      ) : null}
       {children}
       {showLabel ? (
         <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
@@ -115,1907 +109,6 @@ function ExperiencePickerCard({
         </span>
       ) : null}
     </button>
-  );
-}
-
-function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDesign }) {
-  const t = useT();
-  switch (design) {
-    case 'editorial':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={28}>
-            {t('EXP.')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="10" y="36" width="64" height="3.2" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="10" y="44" width="42" height="2.8" rx="1.4" />
-          <rect className="pf-exp-mini-ink" x="78" y="36" width="22" height="10" rx="2.5" />
-        </MiniSlide>
-      );
-    case 'milestone':
-      return (
-        <MiniSlide>
-          <MiniType x={60} y={30} size={9} anchor="middle">
-            {t('EXP.')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="28" y="42" width="64" height="3.2" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="38" y="50" width="44" height="2.8" rx="1.3" />
-        </MiniSlide>
-      );
-    case 'table':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={22} size={6.5}>
-            {t('EXP')}
-          </MiniType>
-          <rect className="pf-exp-mini-ink" x="10" y="28" width="82" height="12" rx="2" />
-          <rect className="pf-exp-mini-mute" x="10" y="48" width="54" height="3" rx="1.4" />
-        </MiniSlide>
-      );
-    case 'reel':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={28}>
-            {t('EXP.')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="10" y="36" width="72" height="3.4" rx="1.5" />
-          <rect className="pf-exp-mini-mute" x="10" y="44" width="48" height="2.8" rx="1.4" />
-        </MiniSlide>
-      );
-    case 'gallery':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={30} size={15}>
-            {t('EXP.')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="10" y="40" width="100" height="0.9" rx="0.4" />
-          <MiniType x={10} y={56} size={6}>
-            {t('ROLES')}
-          </MiniType>
-          <MiniType x={110} y={56} size={6} anchor="end">
-            03/
-          </MiniType>
-        </MiniSlide>
-      );
-    case 'spotlight':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={34} size={9}>
-            {t('TITLE')}
-          </MiniType>
-          <circle className="pf-exp-mini-accent" cx="54" cy="30.5" r="1.7" />
-          <MiniType x={60} y={34} size={9}>
-            {t('WORK')}
-          </MiniType>
-        </MiniSlide>
-      );
-    case 'loft':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={32} size={11}>
-            {t('ROLES')}
-          </MiniType>
-          <MiniType x={110} y={30} size={5.5} anchor="end">
-            {t('(EXP)')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="10" y="42" width="100" height="0.9" rx="0.4" />
-        </MiniSlide>
-      );
-    case 'press':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={26} size={11}>
-            {t('ROLES')}
-          </MiniType>
-          <MiniType x={10} y={40} size={11}>
-            {t('TAKEN')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="10" y="50" width="100" height="0.9" rx="0.4" />
-        </MiniSlide>
-      );
-    case 'legacy':
-      return (
-        <MiniSlide>
-          <MiniType x={60} y={28} size={9} anchor="middle">
-            {t('CRAFT')}
-          </MiniType>
-          <rect className="pf-exp-mini-accent" x="48" y="34" width="24" height="2.2" rx="1" />
-          <rect className="pf-exp-mini-mute" x="36" y="44" width="48" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="44" y="52" width="32" height="2.6" rx="1.3" />
-        </MiniSlide>
-      );
-    default: {
-      const _exhaustive: never = design;
-      return _exhaustive;
-    }
-  }
-}
-
-const EXPERIENCE_HEADER_APPLY_CARDS: { id: ExperienceHeaderApplyDesign; label: string }[] = [
-  { id: 'editorial', label: msg('Accent years') },
-  { id: 'milestone', label: msg('Centered') },
-  { id: 'table', label: msg('Serif lead') },
-  { id: 'reel', label: msg('Title stack') },
-  { id: 'gallery', label: msg('Billboard') },
-  { id: 'spotlight', label: msg('Marquee') },
-  { id: 'loft', label: msg('Split heading') },
-  { id: 'press', label: msg('Masthead') },
-  { id: 'legacy', label: msg('Accent title') },
-];
-
-const EXPERIENCE_LINK_BUTTON_PREVIEW_PALETTE = experienceLinkButtonPalette({
-  ink: 'var(--pf-palette-texte-fort, #f5f5f5)',
-  muted: 'var(--pf-palette-texte-muted, #a3a3a3)',
-  accent: 'var(--pf-palette-principal, #f97316)',
-  background: 'var(--pf-palette-fond, #0a0a0a)',
-  border: 'var(--pf-palette-bordure, #262626)',
-});
-
-function ExperienceLinkButtonChoiceGrid({
-  value,
-  onChange,
-}: {
-  value: PortfolioExperienceRepoLinkStyle;
-  onChange: (value: PortfolioExperienceRepoLinkStyle) => void;
-}) {
-  const t = useT();
-  return (
-    <div>
-      <p className="pf-exp-block-label">{t('Link button')}</p>
-      <div className="grid grid-cols-2 gap-2">
-        {PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS.map((option) => {
-          const active = value === option.value;
-          const compact = option.value === 'spotlight' || option.value === 'reel' || option.value === 'legacy';
-          return (
-            <ExperiencePickerCard
-              key={option.value}
-              active={active}
-              label={t(option.label)}
-              showLabel={false}
-              onClick={() => onChange(active ? 'auto' : option.value)}
-            >
-              <div
-                className="flex h-14 items-center justify-center overflow-visible rounded-xl"
-                style={{
-                  backgroundColor:
-                    'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 6%, transparent)',
-                }}
-              >
-                <div className={`pointer-events-none ${compact ? 'scale-[0.72]' : 'scale-90'}`}>
-                  <PortfolioLinkButton
-                    variant={option.value}
-                    href="#link-button"
-                    label={t('Link')}
-                    palette={EXPERIENCE_LINK_BUTTON_PREVIEW_PALETTE}
-                    preview
-                  />
-                </div>
-              </div>
-            </ExperiencePickerCard>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ExperienceLinkArrowChoiceGrid({
-  value,
-  onChange,
-}: {
-  value: PortfolioExperienceLinkArrowStyle;
-  onChange: (value: PortfolioExperienceLinkArrowStyle) => void;
-}) {
-  const t = useT();
-  return (
-    <div>
-      <p className="pf-exp-block-label pf-exp-option-label">{t('Link arrow')}</p>
-      <div
-        role="radiogroup"
-        aria-label={t('Link arrow')}
-        className="pf-exp-segment grid gap-[3px] p-[3px]"
-        data-compact="true"
-        style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}
-      >
-        {PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLE_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              aria-label={t(option.description)}
-              title={t(option.description)}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-exp-segment-btn px-2.5 py-2 text-center text-[1.2rem] font-medium leading-none tracking-tight"
-              style={
-                active
-                  ? undefined
-                  : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }
-              }
-            >
-              {t(option.label)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function ExperienceHeaderPreview({ value }: { value: PortfolioExperienceHeaderDesign }) {
-  const t = useT();
-  if (value === 'none') {
-    return (
-      <MiniSlide>
-        <MiniType x={10} y={30} size={9}>
-          {t('DEFAULT')}
-        </MiniType>
-        <rect className="pf-exp-mini-mute" x="10" y="40" width="72" height="3" rx="1.4" />
-      </MiniSlide>
-    );
-  }
-  return <ExperienceHeaderWireframe design={value as ExperienceHeaderApplyDesign} />;
-}
-
-function ExperienceHeaderChoiceGrid({
-  value,
-  onChange,
-  open: showGrid,
-  onOpenChange: setShowGrid,
-}: {
-  value: PortfolioExperienceHeaderDesign;
-  onChange: (value: PortfolioExperienceHeaderDesign) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selectedLabel = EXPERIENCE_HEADER_APPLY_CARDS.find((card) => card.id === value)?.label ?? t('Default');
-
-  if (showGrid) {
-    return (
-      <div className="np-stack">
-        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
-          {EXPERIENCE_HEADER_APPLY_CARDS.map((card) => {
-            const active = value === card.id;
-            return (
-              <NpOptionCard
-                key={card.id}
-                selected={active}
-                title={t(card.label)}
-                illustration={<ExperienceHeaderWireframe design={card.id} />}
-                onClick={() => {
-                  onChange(active ? 'none' : card.id);
-                  setShowGrid(false);
-                }}
-              />
-            );
-          })}
-        </NpOptionCardGroup>
-      </div>
-    );
-  }
-
-  return (
-    <NpPickerRow label={t('Header design')} value={selectedLabel} thumbnail={<ExperienceHeaderPreview value={value} />} onClick={() => setShowGrid(true)} />
-  );
-}
-
-function ExperienceAccentYearsAdvancedSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  const badgeColor = experience.accentYearsBadgeColor ?? 'accent';
-  const swatchStyle = (id: PortfolioExperienceAccentYearsBadgeColor) => {
-    if (id === 'principal') return { backgroundColor: 'var(--pf-palette-principal)' };
-    if (id === 'secondaire') return { backgroundColor: 'var(--pf-palette-secondaire)' };
-    return { backgroundColor: experience.accentColor || 'var(--pf-palette-principal)' };
-  };
-
-  return (
-    <section className="pf-exp-layout-settings" aria-labelledby="accent-years-advanced-title">
-      <h3 id="accent-years-advanced-title" className="pf-exp-layout-settings-title">
-        {t('Header advanced editing')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-6">
-        <div>
-          <label className="pf-exp-block-label block" htmlFor="accent-years-badge-text">
-            {t('Badge text')}
-          </label>
-          <input
-            id="accent-years-badge-text"
-            type="text"
-            value={experience.accentYearsBadgeText ?? ''}
-            onChange={(event) => onChange({ accentYearsBadgeText: event.target.value })}
-            placeholder={DEFAULT_ACCENT_YEARS_BADGE_TEXT}
-            className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-          />
-          <p className="mt-2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">{t('Use')} {'{years}'} {t('to insert the profile years count.')}</p>
-        </div>
-        <div>
-          <label className="pf-exp-block-label block" htmlFor="accent-years-lead-text">
-            {t('Lead text')}
-          </label>
-          <input
-            id="accent-years-lead-text"
-            type="text"
-            value={experience.accentYearsLeadText ?? ''}
-            onChange={(event) => onChange({ accentYearsLeadText: event.target.value })}
-            placeholder={DEFAULT_ACCENT_YEARS_LEAD_TEXT}
-            className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-          />
-        </div>
-        <ExperienceOptionGrid
-          label={t('Font size')}
-          options={PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS}
-          value={experience.accentYearsFontSize ?? 6}
-          onChange={(accentYearsFontSize) => onChange({ accentYearsFontSize })}
-          columns={4}
-        />
-        <ExperienceOptionGrid
-          label={t('Badge radius')}
-          options={PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS}
-          value={experience.accentYearsBadgeRadius ?? 4}
-          onChange={(accentYearsBadgeRadius) => onChange({ accentYearsBadgeRadius })}
-        />
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Badge color')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Badge color')}
-            className="pf-exp-segment grid gap-[3px] p-[3px]"
-            data-compact="true"
-            style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}
-          >
-            {PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS.map((option) => {
-              const active = option.value === badgeColor;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => onChange({ accentYearsBadgeColor: option.value })}
-                  data-active={active ? 'true' : 'false'}
-                  className="pf-exp-segment-btn flex items-center justify-center gap-1.5 px-2 py-1.5 text-center text-[13px] font-medium tracking-tight"
-                  style={
-                    active
-                      ? undefined
-                      : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }
-                  }
-                >
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={swatchStyle(option.value)}
-                    aria-hidden
-                  />
-                  {t(option.label)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      </div>
-    </section>
-  );
-}
-
-function CenteredAlignGlyph({ align }: { align: PortfolioExperienceCenteredAlign }) {
-  const widths = align === 'left' ? [18, 11, 15] : align === 'right' ? [15, 11, 18] : [13, 18, 13];
-  const xFor = (width: number) =>
-    align === 'left' ? 3 : align === 'right' ? 21 - width : (24 - width) / 2;
-  return (
-    <svg viewBox="0 0 24 16" className="h-3.5 w-6" aria-hidden>
-      {widths.map((width, index) => (
-        <rect
-          key={index}
-          x={xFor(width)}
-          y={2 + index * 5}
-          width={width}
-          height={1.7}
-          rx={0.85}
-          fill="currentColor"
-        />
-      ))}
-    </svg>
-  );
-}
-
-function CenteredLineHeightGlyph({ value }: { value: PortfolioExperienceCenteredLineHeight }) {
-  const gap = value === 'tight' ? 3.4 : value === 'spaced' ? 6.2 : 4.7;
-  return (
-    <svg viewBox="0 0 22 18" className="h-4 w-5" aria-hidden>
-      {[0, 1, 2].map((index) => (
-        <rect
-          key={index}
-          x={2}
-          y={2 + index * gap}
-          width={index === 1 ? 14 : 18}
-          height={1.5}
-          rx={0.75}
-          fill="currentColor"
-        />
-      ))}
-    </svg>
-  );
-}
-
-function CenteredWidthGlyph({ value }: { value: PortfolioExperienceCenteredMaxWidth }) {
-  const width = value === 'narrow' ? 10 : value === 'wide' ? 18 : 14;
-  return (
-    <svg viewBox="0 0 22 10" className="h-2.5 w-6" aria-hidden>
-      <rect x={(22 - width) / 2} y={4} width={width} height={2} rx={1} fill="currentColor" />
-    </svg>
-  );
-}
-
-function CenteredDividerGlyph({ value }: { value: PortfolioExperienceCenteredDivider }) {
-  if (value === 'none') {
-    return <span className="pf-exp-centered-divider-none" aria-hidden />;
-  }
-  if (value === 'dot') {
-    return <span className="pf-exp-centered-divider-dot" aria-hidden />;
-  }
-  if (value === 'full') {
-    return <span className="pf-exp-centered-divider-full" aria-hidden />;
-  }
-  return <span className="pf-exp-centered-divider-track" aria-hidden />;
-}
-
-function CenteredSteppedSlider<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  formatValue,
-}: {
-  label: string;
-  options: { value: T; label: string }[];
-  value: T;
-  onChange: (value: T) => void;
-  formatValue?: (option: { value: T; label: string }) => string;
-}) {
-  const t = useT();
-  const rows = useSettingsRows();
-  const index = Math.max(
-    0,
-    options.findIndex((option) => option.value === value)
-  );
-  const current = options[index];
-  return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<div className="pf-exp-centered-slider-head">
-        <p className="pf-exp-block-label">{label}</p>
-        <span className="pf-exp-centered-slider-value">
-          {current ? (formatValue ? formatValue(current) : current.label) : null}
-        </span>
-      </div>)}
-      <input
-        type="range"
-        min={0}
-        max={Math.max(options.length - 1, 0)}
-        step={1}
-        value={index}
-        aria-label={label}
-        aria-valuetext={current?.label}
-        onChange={(event) => {
-          const next = options[Number(event.target.value)];
-          if (next) onChange(next.value);
-        }}
-        className="pf-exp-centered-slider"
-        style={
-          {
-            '--pf-exp-slider-fill': `${(index / Math.max(options.length - 1, 1)) * 100}%`,
-          } as CSSProperties
-        }
-      />
-      <div className="pf-exp-centered-slider-ticks" style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}>
-        {options.map((option) => (
-          <button
-            key={option.value}
-            type="button"
-            data-active={option.value === value ? 'true' : 'false'}
-            onClick={() => onChange(option.value)}
-          >
-            {t(option.label)}
-          </button>
-        ))}
-      </div>
-    </div>
-    </SettingRow>
-  );
-}
-
-function ExperienceCenteredLayoutSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  const divider = experience.centeredDivider ?? 'none';
-  const align = experience.centeredAlign ?? 'center';
-  const weight = experience.centeredLeadWeight ?? 'light';
-  const maxWidth = experience.centeredMaxWidth ?? 'balanced';
-  const lineHeight = experience.centeredLineHeight ?? 'aery';
-  const dividerOpacity = experience.centeredDividerOpacity ?? 'ghost';
-
-  return (
-    <section
-      className="pf-exp-layout-settings pf-exp-centered-config"
-      aria-labelledby="centered-layout-title"
-    >
-      <h3 id="centered-layout-title" className="pf-exp-layout-settings-title">
-        {t('Centered layout configuration')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-7">
-        <div>
-          <label className="pf-exp-block-label block" htmlFor="centered-title-text">
-            {t('Title')}
-          </label>
-          <input
-            id="centered-title-text"
-            type="text"
-            value={experience.centeredTitleText ?? ''}
-            onChange={(event) => onChange({ centeredTitleText: event.target.value })}
-            placeholder={DEFAULT_CENTERED_TITLE_TEXT}
-            className="pf-exp-centered-field mt-3 w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
-          />
-        </div>
-        <div>
-          <label className="pf-exp-block-label block" htmlFor="centered-lead-text">
-            {t('Sub-title')}
-          </label>
-          <input
-            id="centered-lead-text"
-            type="text"
-            value={experience.centeredLeadText ?? ''}
-            onChange={(event) => onChange({ centeredLeadText: event.target.value })}
-            placeholder={DEFAULT_CENTERED_LEAD_TEXT}
-            className="pf-exp-centered-field mt-3 w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
-          />
-          <p className="mt-2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">{t('Use')} {'{years}'} {t('to insert the profile years count.')}</p>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Alignment')}</p>
-          <div role="radiogroup" aria-label={t('Alignment')} className="pf-exp-centered-align">
-            {PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS.map((option) => {
-              const active = option.value === align;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ centeredAlign: option.value })}
-                  className="pf-exp-centered-align-btn"
-                >
-                  <CenteredAlignGlyph align={option.value} />
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Sub-title weight')}</p>
-          <div role="radiogroup" aria-label={t('Sub-title weight')} className="pf-exp-centered-weight">
-            {PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS.map((option) => {
-              const active = option.value === weight;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ centeredLeadWeight: option.value })}
-                  className="pf-exp-centered-weight-btn"
-                  style={{ fontWeight: CENTERED_LEAD_WEIGHT[option.value] }}
-                >
-                  {t(option.label)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <CenteredSteppedSlider
-          label={t('Sub-title opacity')}
-          options={PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS}
-          value={experience.centeredLeadOpacity ?? 'balanced'}
-          onChange={(centeredLeadOpacity) => onChange({ centeredLeadOpacity })}
-          formatValue={(option) =>
-            `${option.label} ${Math.round(CENTERED_LEAD_OPACITY[option.value] * 100)}%`
-          }
-        />
-
-        <CenteredSteppedSlider
-          label={t('Header scale')}
-          options={PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS}
-          value={experience.centeredScale ?? 'monumental'}
-          onChange={(centeredScale) => onChange({ centeredScale })}
-        />
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Max width')}</p>
-          <div role="radiogroup" aria-label={t('Max width')} className="pf-exp-centered-tiles">
-            {PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS.map((option) => {
-              const active = option.value === maxWidth;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ centeredMaxWidth: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <CenteredWidthGlyph value={option.value} />
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Line height')}</p>
-          <div role="radiogroup" aria-label={t('Line height')} className="pf-exp-centered-tiles">
-            {PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS.map((option) => {
-              const active = option.value === lineHeight;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ centeredLineHeight: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <CenteredLineHeightGlyph value={option.value} />
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Divider')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Divider')}
-            className="pf-exp-centered-tiles pf-exp-centered-tiles-4"
-          >
-            {PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS.map((option) => {
-              const active = option.value === divider;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  title={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ centeredDivider: option.value })}
-                  className="pf-exp-centered-tile pf-exp-centered-tile-glyph"
-                >
-                  <CenteredDividerGlyph value={option.value} />
-                  <span>
-                    {option.value === 'dot'
-                      ? t('Dot')
-                      : option.value === 'full'
-                        ? t('Full')
-                        : option.value === 'track'
-                          ? t('Track')
-                          : t('None')}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {divider !== 'none' ? (
-          <div>
-            <p className="pf-exp-block-label pf-exp-option-label">{t('Divider opacity')}</p>
-            <div role="radiogroup" aria-label={t('Divider opacity')} className="pf-exp-centered-underline">
-              {PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS.map((option) => {
-                const active = option.value === dividerOpacity;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    data-active={active ? 'true' : 'false'}
-                    data-tone={option.value}
-                    onClick={() => onChange({ centeredDividerOpacity: option.value })}
-                    className="pf-exp-centered-underline-btn"
-                  >
-                    {t(option.label)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function SerifTrackingGlyph({ value }: { value: PortfolioExperienceSerifLeadTracking }) {
-  const gap = value === 'tight' ? 3.2 : value === 'open' ? 6.4 : 4.6;
-  return (
-    <svg viewBox="0 0 22 12" className="h-3 w-6" aria-hidden>
-      {[0, 1, 2].map((index) => (
-        <rect
-          key={index}
-          x={2 + index * gap}
-          y={3}
-          width={2.2}
-          height={6}
-          rx={0.6}
-          fill="currentColor"
-        />
-      ))}
-    </svg>
-  );
-}
-
-function ExperienceSerifLeadLayoutSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  const align = experience.serifLeadAlign ?? 'left';
-  const weight = experience.serifLeadWeight ?? 'medium';
-  const maxWidth = experience.serifLeadMaxWidth ?? 'narrow';
-  const lineHeight = experience.serifLeadLineHeight ?? 'tight';
-  const tracking = experience.serifLeadTracking ?? 'editorial';
-  const ink = experience.serifLeadInk ?? 'current';
-  const divider = experience.serifLeadDivider ?? 'none';
-  const dividerOpacity = experience.serifLeadDividerOpacity ?? 'ghost';
-
-  const swatchStyle = (id: PortfolioExperienceSerifLeadInk) => {
-    if (id === 'principal') return { backgroundColor: 'var(--pf-palette-principal)' };
-    if (id === 'secondaire') return { backgroundColor: 'var(--pf-palette-secondaire)' };
-    if (id === 'accent') return { backgroundColor: experience.accentColor || 'var(--pf-palette-principal)' };
-    return { backgroundColor: 'var(--pf-palette-texte-fort, #f5f5f5)' };
-  };
-
-  return (
-    <section
-      className="pf-exp-layout-settings pf-exp-centered-config"
-      aria-labelledby="serif-lead-layout-title"
-    >
-      <h3 id="serif-lead-layout-title" className="pf-exp-layout-settings-title">
-        {t('Serif lead configuration')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-7">
-        <div>
-          <label className="pf-exp-block-label block" htmlFor="serif-lead-label-text">
-            {t('Label')}
-          </label>
-          <input
-            id="serif-lead-label-text"
-            type="text"
-            value={experience.serifLeadLabelText ?? ''}
-            onChange={(event) => onChange({ serifLeadLabelText: event.target.value })}
-            placeholder={DEFAULT_SERIF_LEAD_LABEL_TEXT}
-            className="pf-exp-centered-field mt-3 w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
-          />
-        </div>
-        <div>
-          <label className="pf-exp-block-label block" htmlFor="serif-lead-title-text">
-            {t('Title')}
-          </label>
-          <input
-            id="serif-lead-title-text"
-            type="text"
-            value={experience.serifLeadTitleText ?? ''}
-            onChange={(event) => onChange({ serifLeadTitleText: event.target.value })}
-            placeholder={DEFAULT_SERIF_LEAD_TITLE_TEXT}
-            className="pf-exp-centered-field mt-3 w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
-          />
-          <p className="mt-2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">{t('Use')} {'{years}'} {t('to insert the profile years count.')}</p>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Alignment')}</p>
-          <div role="radiogroup" aria-label={t('Alignment')} className="pf-exp-centered-align">
-            {PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS.map((option) => {
-              const active = option.value === align;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ serifLeadAlign: option.value })}
-                  className="pf-exp-centered-align-btn"
-                >
-                  <CenteredAlignGlyph align={option.value} />
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Title color')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Title color')}
-            className="pf-exp-segment grid gap-[3px] p-[3px]"
-            data-compact="true"
-            style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
-          >
-            {PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS.map((option) => {
-              const active = option.value === ink;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => onChange({ serifLeadInk: option.value })}
-                  data-active={active ? 'true' : 'false'}
-                  className="pf-exp-segment-btn flex items-center justify-center gap-1.5 px-1.5 py-1.5 text-center text-[12px] font-medium tracking-tight"
-                  style={active ? undefined : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }}
-                >
-                  <span
-                    className="h-2.5 w-2.5 shrink-0 rounded-full"
-                    style={swatchStyle(option.value)}
-                    aria-hidden
-                  />
-                  {t(option.label)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Title weight')}</p>
-          <div role="radiogroup" aria-label={t('Title weight')} className="pf-exp-centered-weight">
-            {PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS.map((option) => {
-              const active = option.value === weight;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ serifLeadWeight: option.value })}
-                  className="pf-exp-centered-weight-btn"
-                  style={{ fontWeight: SERIF_LEAD_WEIGHT[option.value] }}
-                >
-                  {t(option.label)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Title style')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Title style')}
-            className="pf-exp-centered-tiles"
-            style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
-          >
-            {(
-              [
-                { value: false, label: t('Roman') },
-                { value: true, label: t('Italic') },
-              ] as const
-            ).map((option) => {
-              const active = (experience.serifLeadItalic === true) === option.value;
-              return (
-                <button
-                  key={String(option.value)}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ serifLeadItalic: option.value })}
-                  className="pf-exp-centered-tile"
-                  style={{ fontStyle: option.value ? 'italic' : 'normal' }}
-                >
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Motion')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Motion')}
-            className="pf-exp-centered-tiles"
-            style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
-          >
-            {(
-              [
-                { value: true, label: t('On') },
-                { value: false, label: t('Off') },
-              ] as const
-            ).map((option) => {
-              const active = (experience.serifLeadMotion !== false) === option.value;
-              return (
-                <button
-                  key={String(option.value)}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ serifLeadMotion: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <CenteredSteppedSlider
-          label={t('Title scale')}
-          options={PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS}
-          value={experience.serifLeadScale ?? 'default'}
-          onChange={(serifLeadScale) => onChange({ serifLeadScale })}
-        />
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Letter spacing')}</p>
-          <div role="radiogroup" aria-label={t('Letter spacing')} className="pf-exp-centered-tiles">
-            {PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS.map((option) => {
-              const active = option.value === tracking;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ serifLeadTracking: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <SerifTrackingGlyph value={option.value} />
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Max width')}</p>
-          <div role="radiogroup" aria-label={t('Max width')} className="pf-exp-centered-tiles">
-            {PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS.map((option) => {
-              const active = option.value === maxWidth;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ serifLeadMaxWidth: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <CenteredWidthGlyph value={option.value} />
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Line height')}</p>
-          <div role="radiogroup" aria-label={t('Line height')} className="pf-exp-centered-tiles">
-            {PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS.map((option) => {
-              const active = option.value === lineHeight;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ serifLeadLineHeight: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <CenteredLineHeightGlyph value={option.value} />
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <CenteredSteppedSlider
-          label={t('Label opacity')}
-          options={PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS}
-          value={experience.serifLeadLabelOpacity ?? 'muted'}
-          onChange={(serifLeadLabelOpacity) => onChange({ serifLeadLabelOpacity })}
-          formatValue={(option) =>
-            `${option.label} ${Math.round(SERIF_LEAD_LABEL_OPACITY[option.value] * 100)}%`
-          }
-        />
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Divider')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Divider')}
-            className="pf-exp-centered-tiles pf-exp-centered-tiles-4"
-          >
-            {PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS.map((option) => {
-              const active = option.value === divider;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  aria-label={t(option.label)}
-                  title={t(option.label)}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ serifLeadDivider: option.value })}
-                  className="pf-exp-centered-tile pf-exp-centered-tile-glyph"
-                >
-                  <CenteredDividerGlyph value={option.value} />
-                  <span>
-                    {option.value === 'dot'
-                      ? t('Dot')
-                      : option.value === 'full'
-                        ? t('Full')
-                        : option.value === 'track'
-                          ? t('Track')
-                          : t('None')}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {divider !== 'none' ? (
-          <div>
-            <p className="pf-exp-block-label pf-exp-option-label">{t('Divider opacity')}</p>
-            <div role="radiogroup" aria-label={t('Divider opacity')} className="pf-exp-centered-underline">
-              {PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS.map((option) => {
-                const active = option.value === dividerOpacity;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    data-active={active ? 'true' : 'false'}
-                    data-tone={option.value}
-                    onClick={() => onChange({ serifLeadDividerOpacity: option.value })}
-                    className="pf-exp-centered-underline-btn"
-                  >
-                    {t(option.label)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function ExperienceMarqueeLayoutSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  const ink = experience.marqueeInk ?? 'current';
-  const style = experience.marqueeStyle ?? 'alternate';
-  const weight = experience.marqueeWeight ?? 'semibold';
-  const tracking = experience.marqueeTracking ?? 'editorial';
-  const direction = experience.marqueeDirection ?? 'ltr';
-  const speed = experience.marqueeSpeed ?? 'cruise';
-  const fade = experience.marqueeEdgeFade ?? 'soft';
-  const separator = experience.marqueeSeparator ?? 'dot';
-  const separatorColor = experience.marqueeSeparatorColor ?? 'accent';
-  const motion = experience.marqueeMotion !== false;
-  const scrollLink = experience.marqueeScrollLink !== false;
-
-  const swatchStyle = (id: PortfolioExperienceSerifLeadInk) => {
-    if (id === 'principal') return { backgroundColor: 'var(--pf-palette-principal)' };
-    if (id === 'secondaire') return { backgroundColor: 'var(--pf-palette-secondaire)' };
-    if (id === 'accent') return { backgroundColor: experience.accentColor || 'var(--pf-palette-principal)' };
-    return { backgroundColor: 'var(--pf-palette-texte-fort, #f5f5f5)' };
-  };
-
-  return (
-    <section
-      className="pf-exp-layout-settings pf-exp-centered-config"
-      aria-labelledby="marquee-layout-title"
-    >
-      <h3 id="marquee-layout-title" className="pf-exp-layout-settings-title">
-        {t('Marquee configuration')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-7">
-        <div>
-          <label className="pf-exp-block-label block" htmlFor="marquee-word-1">
-            {t('Word')}
-          </label>
-          <input
-            id="marquee-word-1"
-            type="text"
-            value={experience.spotlightBigTitleText ?? ''}
-            onChange={(event) => onChange({ spotlightBigTitleText: event.target.value })}
-            placeholder={t('Experience')}
-            className="pf-exp-centered-field mt-3 w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
-          />
-        </div>
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Extra words')}</p>
-          <div className="grid grid-cols-1 gap-2">
-            {(
-              [
-                ['spotlightBigTitleWord2', experience.spotlightBigTitleWord2, 'Word 2'],
-                ['spotlightBigTitleWord3', experience.spotlightBigTitleWord3, 'Word 3'],
-                ['spotlightBigTitleWord4', experience.spotlightBigTitleWord4, 'Word 4'],
-              ] as const
-            ).map(([key, value, label]) => (
-              <input
-                key={key}
-                type="text"
-                value={value ?? ''}
-                onChange={(event) => onChange({ [key]: event.target.value })}
-                placeholder={label}
-                aria-label={label}
-                className="pf-exp-centered-field w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
-              />
-            ))}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Word color')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Word color')}
-            className="pf-exp-segment grid gap-[3px] p-[3px]"
-            data-compact="true"
-            style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
-          >
-            {PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS.map((option) => {
-              const active = option.value === ink;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  onClick={() => onChange({ marqueeInk: option.value })}
-                  data-active={active ? 'true' : 'false'}
-                  className="pf-exp-segment-btn flex items-center justify-center gap-1.5 px-1.5 py-1.5 text-center text-[12px] font-medium tracking-tight"
-                  style={active ? undefined : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }}
-                >
-                  <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={swatchStyle(option.value)} aria-hidden />
-                  {t(option.label)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Letter style')}</p>
-          <div role="radiogroup" aria-label={t('Letter style')} className="pf-exp-centered-tiles">
-            {PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS.map((option) => {
-              const active = option.value === style;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ marqueeStyle: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Weight')}</p>
-          <div role="radiogroup" aria-label={t('Weight')} className="pf-exp-centered-weight">
-            {PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS.map((option) => {
-              const active = option.value === weight;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ marqueeWeight: option.value })}
-                  className="pf-exp-centered-weight-btn"
-                  style={{ fontWeight: MARQUEE_WEIGHT[option.value] }}
-                >
-                  {t(option.label)}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <CenteredSteppedSlider
-          label={t('Scale')}
-          options={PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS}
-          value={experience.marqueeScale ?? 'default'}
-          onChange={(marqueeScale) => onChange({ marqueeScale })}
-        />
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Letter spacing')}</p>
-          <div role="radiogroup" aria-label={t('Letter spacing')} className="pf-exp-centered-tiles">
-            {PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS.map((option) => {
-              const active = option.value === tracking;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ marqueeTracking: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <SerifTrackingGlyph value={option.value} />
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <CenteredSteppedSlider
-          label={t('Fill opacity')}
-          options={PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS}
-          value={experience.marqueeFillOpacity ?? 'muted'}
-          onChange={(marqueeFillOpacity) => onChange({ marqueeFillOpacity })}
-          formatValue={(option) =>
-            `${option.label} ${Math.round(MARQUEE_FILL_OPACITY[option.value] * 100)}%`
-          }
-        />
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Separator')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Separator')}
-            className="pf-exp-centered-tiles"
-            style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
-          >
-            {PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS.map((option) => {
-              const active = option.value === separator;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ marqueeSeparator: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {separator !== 'none' ? (
-          <div>
-            <p className="pf-exp-block-label pf-exp-option-label">{t('Separator color')}</p>
-            <div
-              role="radiogroup"
-              aria-label={t('Separator color')}
-              className="pf-exp-segment grid gap-[3px] p-[3px]"
-              data-compact="true"
-              style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
-            >
-              {PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS.map((option) => {
-                const active = option.value === separatorColor;
-                return (
-                  <button
-                    key={option.value}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    onClick={() => onChange({ marqueeSeparatorColor: option.value })}
-                    data-active={active ? 'true' : 'false'}
-                    className="pf-exp-segment-btn flex items-center justify-center gap-1.5 px-1.5 py-1.5 text-center text-[12px] font-medium tracking-tight"
-                    style={active ? undefined : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }}
-                  >
-                    <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={swatchStyle(option.value)} aria-hidden />
-                    {t(option.label)}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Direction')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Direction')}
-            className="pf-exp-centered-tiles"
-            style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
-          >
-            {PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS.map((option) => {
-              const active = option.value === direction;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ marqueeDirection: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <CenteredSteppedSlider
-          label={t('Speed')}
-          options={PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS}
-          value={speed}
-          onChange={(marqueeSpeed) => onChange({ marqueeSpeed })}
-        />
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Edge fade')}</p>
-          <div role="radiogroup" aria-label={t('Edge fade')} className="pf-exp-centered-tiles">
-            {PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS.map((option) => {
-              const active = option.value === fade;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ marqueeEdgeFade: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div>
-          <p className="pf-exp-block-label pf-exp-option-label">{t('Motion')}</p>
-          <div
-            role="radiogroup"
-            aria-label={t('Motion')}
-            className="pf-exp-centered-tiles"
-            style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
-          >
-            {(
-              [
-                { value: true, label: t('On') },
-                { value: false, label: t('Off') },
-              ] as const
-            ).map((option) => {
-              const active = motion === option.value;
-              return (
-                <button
-                  key={String(option.value)}
-                  type="button"
-                  role="radio"
-                  aria-checked={active}
-                  data-active={active ? 'true' : 'false'}
-                  onClick={() => onChange({ marqueeMotion: option.value })}
-                  className="pf-exp-centered-tile"
-                >
-                  <span>{t(option.label)}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        {motion ? (
-          <div>
-            <p className="pf-exp-block-label pf-exp-option-label">{t('Scroll velocity')}</p>
-            <div
-              role="radiogroup"
-              aria-label={t('Scroll velocity')}
-              className="pf-exp-centered-tiles"
-              style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
-            >
-              {(
-                [
-                  { value: true, label: t('On') },
-                  { value: false, label: t('Off') },
-                ] as const
-              ).map((option) => {
-                const active = scrollLink === option.value;
-                return (
-                  <button
-                    key={`scroll-${String(option.value)}`}
-                    type="button"
-                    role="radio"
-                    aria-checked={active}
-                    data-active={active ? 'true' : 'false'}
-                    onClick={() => onChange({ marqueeScrollLink: option.value })}
-                    className="pf-exp-centered-tile"
-                  >
-                    <span>{t(option.label)}</span>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function ExperienceTitleStackHeaderSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  return (
-    <section className="pf-exp-layout-settings" aria-labelledby="title-stack-header-title">
-      <h3 id="title-stack-header-title" className="pf-exp-layout-settings-title">
-        {t('Title stack')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-6">
-        <ExperienceToggleRow
-          label={t('Chronology kicker')}
-          description={t('Micro-label above the monumental title.')}
-          checked={experience.reelKickerEnabled !== false}
-          onChange={(reelKickerEnabled) => onChange({ reelKickerEnabled })}
-        />
-        {experience.reelKickerEnabled !== false ? (
-          <div>
-            <label className="pf-exp-block-label block">{t('Kicker text')}</label>
-            <input
-              type="text"
-              value={experience.reelKickerText ?? '02 / Chronology'}
-              onChange={(event) => onChange({ reelKickerText: event.target.value })}
-              placeholder={t('02 / Chronology')}
-              className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-            />
-          </div>
-        ) : null}
-        <ExperienceToggleRow
-          label={t('Entrance animation')}
-          description={t('Title rises from a mask, kicker fades, subtitle slides in.')}
-          checked={experience.reelHeaderAnimationEnabled !== false}
-          onChange={(reelHeaderAnimationEnabled) => onChange({ reelHeaderAnimationEnabled })}
-        />
-      </div>
-    </section>
-  );
-}
-
-function ExperienceBillboardHeaderSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  return (
-    <section className="pf-exp-layout-settings" aria-labelledby="billboard-header-title">
-      <h3 id="billboard-header-title" className="pf-exp-layout-settings-title">
-        {t('Billboard')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-6">
-        <ExperienceToggleRow
-          label={t('Big title')}
-          description={t('Full-width word above the section (e.g. EXPERIENCE).')}
-          checked={experience.galleryBigTitleEnabled !== false}
-          onChange={(galleryBigTitleEnabled) => onChange({ galleryBigTitleEnabled })}
-        />
-        {experience.galleryBigTitleEnabled !== false ? (
-          <>
-            <div>
-              <label className="pf-exp-block-label block">{t('Big title word')}</label>
-              <input
-                type="text"
-                value={experience.galleryBigTitleText ?? 'Experience'}
-                onChange={(event) => onChange({ galleryBigTitleText: event.target.value })}
-                placeholder={t('Experience')}
-                className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-              />
-            </div>
-            <ExperienceOptionGrid
-              label={t('Letter style')}
-              options={PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS}
-              value={experience.galleryBigTitleStyle ?? 'outline'}
-              onChange={(galleryBigTitleStyle) => onChange({ galleryBigTitleStyle })}
-              columns={2}
-            />
-            <ExperienceOptionGrid
-              label={t('Title color')}
-              options={PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS}
-              value={experience.galleryBigTitleColor ?? 'current'}
-              onChange={(galleryBigTitleColor) => onChange({ galleryBigTitleColor })}
-              columns={3}
-            />
-          </>
-        ) : null}
-        <div>
-          <label className="pf-exp-block-label block">{t('Secondary title')}</label>
-          <input
-            type="text"
-            value={experience.gallerySecondaryTitleText ?? "Roles I've taken on"}
-            onChange={(event) => onChange({ gallerySecondaryTitleText: event.target.value })}
-            placeholder={t('Roles I\'ve taken on')}
-            className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-          />
-        </div>
-        <ExperienceOptionGrid
-          label={t('Secondary style')}
-          options={PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS}
-          value={experience.gallerySecondaryTitleStyle ?? 'editorial'}
-          onChange={(gallerySecondaryTitleStyle) => onChange({ gallerySecondaryTitleStyle })}
-          columns={2}
-        />
-        <ExperienceOptionGrid
-          label={t('Role count')}
-          options={PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS}
-          value={experience.galleryRoleCountStyle ?? 'micro'}
-          onChange={(galleryRoleCountStyle) => onChange({ galleryRoleCountStyle })}
-          columns={3}
-        />
-        {(experience.galleryRoleCountStyle ?? 'micro') !== 'hidden' ? (
-          <div>
-            <label className="pf-exp-block-label block">{t('Role count text')}</label>
-            <input
-              type="text"
-              value={experience.galleryRoleCountText ?? '{count} roles — click any card for the full story'}
-              onChange={(event) => onChange({ galleryRoleCountText: event.target.value })}
-              placeholder={t('{count} roles — click any card for the full story')}
-              className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-            />
-            <p className="mt-2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">{t('Use')} {'{count}'} {t('for the number of roles.')}</p>
-          </div>
-        ) : null}
-        <ExperienceToggleRow
-          label={t('Entrance animation')}
-          description={t('Billboard reveal on the big title, then the line below.')}
-          checked={experience.galleryHeaderAnimationEnabled !== false}
-          onChange={(galleryHeaderAnimationEnabled) => onChange({ galleryHeaderAnimationEnabled })}
-        />
-        {experience.galleryHeaderAnimationEnabled !== false ? (
-          <ExperienceOptionGrid
-            label={t('Animation intensity')}
-            options={PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS}
-            value={experience.galleryHeaderAnimationStyle ?? 'dramatic'}
-            onChange={(galleryHeaderAnimationStyle) => onChange({ galleryHeaderAnimationStyle })}
-            columns={3}
-          />
-        ) : null}
-        <ExperienceToggleRow
-          label={t('Scroll parallax')}
-          description={t('The big title stays longer while the rest drifts away.')}
-          checked={experience.galleryScrollParallaxEnabled !== false}
-          onChange={(galleryScrollParallaxEnabled) => onChange({ galleryScrollParallaxEnabled })}
-        />
-      </div>
-    </section>
-  );
-}
-
-function ExperienceSplitHeadingHeaderSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  return (
-    <section className="pf-exp-layout-settings" aria-labelledby="split-heading-header-title">
-      <h3 id="split-heading-header-title" className="pf-exp-layout-settings-title">
-        {t('Split heading')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-6">
-        <ExperienceToggleRow
-          label={t('Entrance animation')}
-          description={t('Title rises from a mask, label fades in from the right.')}
-          checked={experience.loftHeaderAnimationEnabled !== false}
-          onChange={(loftHeaderAnimationEnabled) => onChange({ loftHeaderAnimationEnabled })}
-        />
-      </div>
-    </section>
-  );
-}
-
-function ExperienceMastheadHeaderSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  return (
-    <section className="pf-exp-layout-settings" aria-labelledby="masthead-header-title">
-      <h3 id="masthead-header-title" className="pf-exp-layout-settings-title">
-        {t('Masthead')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-6">
-        <ExperienceToggleRow
-          label={t('Headline')}
-          description={t('Monumental uppercase lines.')}
-          checked={experience.pressHeadingEnabled !== false}
-          onChange={(pressHeadingEnabled) => onChange({ pressHeadingEnabled })}
-        />
-        {experience.pressHeadingEnabled !== false ? (
-          <div>
-            <label className="pf-exp-block-label block">{t('Headline text')}</label>
-            <input
-              type="text"
-              value={experience.pressHeadingText ?? 'Roles taken. Skills sharpened. Impact delivered.'}
-              onChange={(event) => onChange({ pressHeadingText: event.target.value })}
-              placeholder={t('Roles taken. Skills sharpened. Impact delivered.')}
-              className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-            />
-          </div>
-        ) : null}
-        <div>
-          <label className="pf-exp-block-label block">{t('Intro line')}</label>
-          <input
-            type="text"
-            value={experience.pressIntroText ?? ''}
-            onChange={(event) => onChange({ pressIntroText: event.target.value })}
-            placeholder={t('Selected roles, projects, and outcomes.')}
-            className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-          />
-        </div>
-        <ExperienceOptionGrid
-          label={t('Weight')}
-          options={PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS}
-          value={experience.pressHeadingWeightStyle ?? 'alternating'}
-          onChange={(pressHeadingWeightStyle) => onChange({ pressHeadingWeightStyle })}
-          columns={2}
-        />
-        <ExperienceOptionGrid
-          label={t('Alignment')}
-          options={PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS}
-          value={experience.pressHeadingAlignment ?? 'left'}
-          onChange={(pressHeadingAlignment) => onChange({ pressHeadingAlignment })}
-          columns={2}
-        />
-        <ExperienceOptionGrid
-          label={t('Intro style')}
-          options={PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS}
-          value={experience.pressSubtitleStyle ?? 'micro'}
-          onChange={(pressSubtitleStyle) => onChange({ pressSubtitleStyle })}
-          columns={3}
-        />
-        <ExperienceToggleRow
-          label={t('Entrance animation')}
-          description={t('Words reveal from a mask, line by line.')}
-          checked={experience.pressHeaderAnimationEnabled !== false}
-          onChange={(pressHeaderAnimationEnabled) => onChange({ pressHeaderAnimationEnabled })}
-        />
-        {experience.pressHeaderAnimationEnabled !== false ? (
-          <ExperienceOptionGrid
-            label={t('Reveal')}
-            options={PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS}
-            value={experience.pressHeaderAnimationStyle ?? 'staggered'}
-            onChange={(pressHeaderAnimationStyle) => onChange({ pressHeaderAnimationStyle })}
-            columns={3}
-          />
-        ) : null}
-        <ExperienceToggleRow
-          label={t('Scroll parallax')}
-          description={t('Each line leaves at a different speed.')}
-          checked={experience.pressScrollParallaxEnabled !== false}
-          onChange={(pressScrollParallaxEnabled) => onChange({ pressScrollParallaxEnabled })}
-        />
-        {experience.pressScrollParallaxEnabled !== false ? (
-          <ExperienceOptionGrid
-            label={t('Parallax intensity')}
-            options={PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS}
-            value={experience.pressScrollParallaxIntensity ?? 'subtle'}
-            onChange={(pressScrollParallaxIntensity) => onChange({ pressScrollParallaxIntensity })}
-            columns={2}
-          />
-        ) : null}
-      </div>
-    </section>
-  );
-}
-
-function ExperienceAccentTitleHeaderSettings({
-  experience,
-  onChange,
-}: {
-  experience: PortfolioExperienceSectionSettings;
-  onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
-}) {
-  const t = useT();
-  return (
-    <section className="pf-exp-layout-settings" aria-labelledby="accent-title-header-title">
-      <h3 id="accent-title-header-title" className="pf-exp-layout-settings-title">
-        {t('Accent title')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-6">
-        <ExperienceToggleRow
-          label={t('Hero title')}
-          description={t('Prefix plus a larger accent word.')}
-          checked={experience.legacyHeadingEnabled !== false}
-          onChange={(legacyHeadingEnabled) => onChange({ legacyHeadingEnabled })}
-        />
-        {experience.legacyHeadingEnabled !== false ? (
-          <>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <label className="pf-exp-block-label block">{t('Prefix')}</label>
-                <input
-                  type="text"
-                  value={experience.legacyHeadingText ?? 'A Career Built on'}
-                  onChange={(event) => onChange({ legacyHeadingText: event.target.value })}
-                  placeholder={t('A Career Built on')}
-                  className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-                />
-              </div>
-              <div>
-                <label className="pf-exp-block-label block">{t('Accent word')}</label>
-                <input
-                  type="text"
-                  value={experience.legacyHeadingAccentText ?? 'Craft'}
-                  onChange={(event) => onChange({ legacyHeadingAccentText: event.target.value })}
-                  placeholder={t('Craft')}
-                  className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-                />
-              </div>
-            </div>
-            <div>
-              <label className="pf-exp-block-label block">{t('Intro sentence')}</label>
-              <input
-                type="text"
-                value={experience.legacyIntroText ?? ''}
-                onChange={(event) => onChange({ legacyIntroText: event.target.value })}
-                placeholder={t('A selection of roles, teams, and problems solved along the way.')}
-                className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
-              />
-            </div>
-            <ExperienceOptionGrid
-              label={t('Prefix weight')}
-              options={PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS}
-              value={experience.legacyPrefixWeight ?? 'light'}
-              onChange={(legacyPrefixWeight) => onChange({ legacyPrefixWeight })}
-              columns={3}
-            />
-            <ExperienceOptionGrid
-              label={t('Accent style')}
-              options={PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS}
-              value={experience.legacyAccentStyle ?? 'italic-bold'}
-              onChange={(legacyAccentStyle) => onChange({ legacyAccentStyle })}
-              columns={3}
-            />
-            <ExperienceOptionGrid
-              label={t('Accent size')}
-              options={PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS}
-              value={experience.legacyAccentSize ?? 'dramatic'}
-              onChange={(legacyAccentSize) => onChange({ legacyAccentSize })}
-              columns={3}
-            />
-            <ExperienceOptionGrid
-              label={t('Intro style')}
-              options={PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS}
-              value={experience.legacySubtitleStyle ?? 'micro'}
-              onChange={(legacySubtitleStyle) => onChange({ legacySubtitleStyle })}
-              columns={3}
-            />
-            <ExperienceToggleRow
-              label={t('Accent underline')}
-              description={t('Hairline under the accent word.')}
-              checked={experience.legacyAccentUnderline !== false}
-              onChange={(legacyAccentUnderline) => onChange({ legacyAccentUnderline })}
-            />
-            {experience.legacyAccentUnderline !== false ? (
-              <ExperienceOptionGrid
-                label={t('Underline')}
-                options={PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS}
-                value={experience.legacyAccentUnderlineStyle ?? 'solid'}
-                onChange={(legacyAccentUnderlineStyle) => onChange({ legacyAccentUnderlineStyle })}
-                columns={2}
-              />
-            ) : null}
-            <ExperienceToggleRow
-              label={t('Entrance animation')}
-              description={t('Prefix fades, accent word blooms, underline draws in.')}
-              checked={experience.legacyHeaderAnimationEnabled !== false}
-              onChange={(legacyHeaderAnimationEnabled) => onChange({ legacyHeaderAnimationEnabled })}
-            />
-            {experience.legacyHeaderAnimationEnabled !== false ? (
-              <ExperienceOptionGrid
-                label={t('Accent motion')}
-                options={PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS}
-                value={experience.legacyHeaderAnimationStyle ?? 'bloom'}
-                onChange={(legacyHeaderAnimationStyle) => onChange({ legacyHeaderAnimationStyle })}
-                columns={3}
-              />
-            ) : null}
-            <ExperienceToggleRow
-              label={t('Scroll parallax')}
-              description={t('The accent word stays while the prefix leaves.')}
-              checked={experience.legacyScrollParallaxEnabled !== false}
-              onChange={(legacyScrollParallaxEnabled) => onChange({ legacyScrollParallaxEnabled })}
-            />
-          </>
-        ) : null}
-      </div>
-    </section>
   );
 }
 
@@ -2035,33 +128,30 @@ const EXPERIENCE_SUB_SECTIONS: { id: ExperienceSubSection; label: string; descri
     label: msg('Header'),
     description: msg('Pick a header design — it applies above every Experience layout.'),
   },
+  { id: 'background', label: msg('Background'), description: msg('Section background and palette.') },
 ];
 
 /** Maps any legacy subsection id (media, palette, etc.) to a known Experience subsection. */
+const EXPERIENCE_HEADER_COPY: HeaderCopy = {
+  editorial: { label: msg('Experience'), title: msg('Experience'), subtitle: msg('Where I have worked and what I built.') },
+  index: { rule: 'Index', title: msg('Experience'), subtitle: msg('Where I have worked and what I built.'), count: 'Roles' },
+  marquee: ['Experience', 'Optional', 'Optional', 'Optional'],
+  accent: { badge: '{count}+ roles', lead: 'Where I have worked and what I built.' },
+  serif: { label: msg('Experience'), title: msg('A career built role by role.'), subtitle: msg('Where I have worked and what I built.') },
+  billboard: { word: 'EXPERIENCE', title: msg('Experience'), count: '{count} roles' },
+  masthead: ['Real work.', 'Real results.', 'Real teams.'],
+  split: { title: msg('Experience'), label: msg('Career') },
+};
+
 export function normalizeExperienceSubSection(value: string | undefined): ExperienceSubSection {
-  if (value === 'general' || value === 'header' || value === 'design') return value;
+  if (value === 'general' || value === 'header' || value === 'design' || value === 'background') return value;
   return 'design';
 }
 
 function ExperienceSwitchTrack({ checked }: { checked: boolean }) {
   return (
-    <span
-      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-      style={{
-        backgroundColor: checked
-          ? 'var(--pf-palette-texte-fort, #171717)'
-          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, var(--pf-palette-fond, #0a0a0a))',
-      }}
-    >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{
-          left: checked ? '1.125rem' : '0.125rem',
-          backgroundColor: checked
-            ? 'var(--pf-palette-fond, #ffffff)'
-            : 'var(--pf-palette-texte-fort, #ffffff)',
-        }}
-      />
+    <span className="np-switch" aria-checked={checked} aria-hidden data-switch-track="">
+      <span className="np-switch-knob" />
     </span>
   );
 }
@@ -2145,221 +235,38 @@ function ExperienceVisibilityBadge({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
-  return (
-    <button
-      type="button"
-      aria-pressed={checked}
-      onClick={() => onChange(!checked)}
-      className="rounded-full px-4 py-1.5 text-[13px] font-medium tracking-tight transition-colors duration-200"
-      style={
-        checked
-          ? {
-              color: 'var(--pf-palette-texte-fort, #ffffff)',
-              backgroundColor: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 8%, transparent)',
-              boxShadow: 'inset 0 0 0 1px color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, transparent)',
-            }
-          : {
-              color: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 30%, transparent)',
-              backgroundColor: 'transparent',
-            }
-      }
+  return <NpToggleRow title={label} checked={checked} onChange={onChange} />;
+}
+
+
+function ExperienceDesignChoiceGrid({value,onChange,open:showGrid,onOpenChange:setShowGrid}:{value:PortfolioExperienceDesign;onChange:(value:PortfolioExperienceDesign)=>void;open:boolean;onOpenChange:(open:boolean)=>void}){
+ const t=useT();
+ const theme=useThumbnailTheme('experience');
+ const selected=PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.find(option=>option.value===value)??PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS[0];
+ if(!showGrid)return <NpBackRow title={t(selected.label)} onBack={()=>setShowGrid(true)}/>;
+ return (
+  <div className="flex flex-col gap-8" aria-label={t('Choose a design')}>
+   {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map(option => (
+    <DesignCatalogueCard
+     key={option.value}
+     label={t(option.label)}
+     selected={value === option.value}
+     previewBackground={theme.background}
+     onSelect={() => onChange(option.value)}
+     onCustomize={() => {
+      if (value !== option.value) onChange(option.value);
+      setShowGrid(false);
+     }}
     >
-      {label}
-    </button>
-  );
+      <span className="relative block aspect-[8/5] w-full" style={{backgroundColor:theme.background}}>
+       <ExperienceDesignIllustration design={option.value}/>
+      </span>
+    </DesignCatalogueCard>
+   ))}
+  </div>
+ );
 }
 
-function ExperienceDesignWireframe({ design }: { design: PortfolioExperienceDesign }) {
-  const t = useT();
-  switch (design) {
-    case 'editorial':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="8" y="10" width="24" height="52" rx="3" />
-          <MiniType x={12} y={24} size={6}>
-            {t('15Y')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="12" y="30" width="16" height="2.4" rx="1.2" />
-          <rect className="pf-exp-mini-mute" x="12" y="36" width="12" height="2.2" rx="1.1" />
-          <MiniType x={38} y={20} size={7}>
-            {t('EXP.')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="38" y="26" width="48" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="38" y="33" width="36" height="2.6" rx="1.3" />
-          <rect className="pf-exp-mini-ink" x="86" y="40" width="26" height="22" rx="2.5" />
-        </MiniSlide>
-      );
-    case 'milestone':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-accent" x="15.2" y="10" width="1.6" height="52" rx="0.8" />
-          <circle className="pf-exp-mini-ink" cx="16" cy="16" r="2.6" />
-          <circle className="pf-exp-mini-ink" cx="16" cy="36" r="2.6" />
-          <circle className="pf-exp-mini-ink" cx="16" cy="56" r="2.6" />
-          <rect className="pf-exp-mini-ink" x="26" y="11" width="78" height="12" rx="2.5" />
-          <rect className="pf-exp-mini-mute" x="26" y="30" width="66" height="10" rx="2.5" />
-          <rect className="pf-exp-mini-mute" x="26" y="48" width="72" height="12" rx="2.5" />
-        </MiniSlide>
-      );
-    case 'table':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="8" y="10" width="104" height="10" rx="2" />
-          <rect className="pf-exp-mini-mute" x="8" y="24" width="104" height="9" rx="1.8" />
-          <rect className="pf-exp-mini-mute" x="8" y="36" width="104" height="9" rx="1.8" />
-          <rect className="pf-exp-mini-mute" x="8" y="48" width="104" height="9" rx="1.8" />
-          <MiniType x={12} y={17.5} size={5.5}>
-            01/
-          </MiniType>
-        </MiniSlide>
-      );
-    case 'cards':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="8" y="10" width="48" height="52" rx="4" />
-          <rect className="pf-exp-mini-mute" x="14" y="18" width="28" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="14" y="25" width="20" height="2.4" rx="1.2" />
-          <rect className="pf-exp-mini-ink" x="64" y="10" width="48" height="52" rx="4" />
-          <rect className="pf-exp-mini-mute" x="70" y="18" width="28" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="70" y="25" width="18" height="2.4" rx="1.2" />
-        </MiniSlide>
-      );
-    case 'reel':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="36" y="6" width="48" height="60" rx="6" />
-          <MiniType x={60} y={24} size={7} anchor="middle">
-            01/
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="44" y="32" width="32" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="44" y="39" width="22" height="2.4" rx="1.2" />
-        </MiniSlide>
-      );
-    case 'duotone':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={24} size={7}>
-            {t('EXP.')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="10" y="30" width="42" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="10" y="37" width="32" height="2.6" rx="1.3" />
-          <rect className="pf-exp-mini-mute" x="10" y="44" width="36" height="2.6" rx="1.3" />
-          <rect className="pf-exp-mini-ink" x="62" y="10" width="50" height="52" rx="4" />
-        </MiniSlide>
-      );
-    case 'gallery':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="8" y="8" width="48" height="26" rx="3" />
-          <MiniType x={14} y={24} size={6}>
-            {t('EXP.')}
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="64" y="8" width="48" height="26" rx="3" />
-          <rect className="pf-exp-mini-mute" x="8" y="38" width="48" height="26" rx="3" />
-          <rect className="pf-exp-mini-ink" x="64" y="38" width="48" height="26" rx="3" />
-        </MiniSlide>
-      );
-    case 'loft':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="8" y="9" width="18" height="14" rx="2.5" />
-          <rect className="pf-exp-mini-mute" x="32" y="12" width="72" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="32" y="18" width="48" height="2.4" rx="1.2" />
-          <rect className="pf-exp-mini-ink" x="8" y="29" width="18" height="14" rx="2.5" />
-          <rect className="pf-exp-mini-mute" x="32" y="32" width="72" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="32" y="38" width="40" height="2.4" rx="1.2" />
-          <rect className="pf-exp-mini-ink" x="8" y="49" width="18" height="14" rx="2.5" />
-          <rect className="pf-exp-mini-mute" x="32" y="52" width="72" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="32" y="58" width="52" height="2.4" rx="1.2" />
-        </MiniSlide>
-      );
-    case 'press':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-accent" x="8" y="10" width="104" height="1.6" rx="0.8" />
-          <MiniType x={8} y={24} size={6.5}>
-            01/
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="8" y="30" width="46" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="8" y="37" width="38" height="2.6" rx="1.3" />
-          <rect className="pf-exp-mini-mute" x="8" y="44" width="42" height="2.6" rx="1.3" />
-          <rect className="pf-exp-mini-ink" x="66" y="28" width="46" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="66" y="35" width="36" height="2.6" rx="1.3" />
-          <rect className="pf-exp-mini-mute" x="66" y="42" width="42" height="2.6" rx="1.3" />
-        </MiniSlide>
-      );
-    case 'legacy':
-      return (
-        <MiniSlide>
-          <MiniType x={10} y={20} size={7}>
-            {t('CRAFT')}
-          </MiniType>
-          <rect className="pf-exp-mini-ink" x="10" y="26" width="38" height="34" rx="3" />
-          <rect className="pf-exp-mini-mute" x="56" y="30" width="54" height="3" rx="1.4" />
-          <rect className="pf-exp-mini-mute" x="56" y="38" width="40" height="2.6" rx="1.3" />
-          <rect className="pf-exp-mini-mute" x="56" y="46" width="48" height="2.6" rx="1.3" />
-        </MiniSlide>
-      );
-    case 'kinetic':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-ink" x="8" y="12" width="104" height="11" rx="1.6" />
-          <rect className="pf-exp-mini-ink" x="8" y="28" width="90" height="11" rx="1.6" />
-          <rect className="pf-exp-mini-ink" x="8" y="44" width="72" height="11" rx="1.6" />
-          <rect className="pf-exp-mini-mute" x="8" y="60" width="20" height="2" rx="1" />
-          <rect className="pf-exp-mini-mute" x="92" y="60" width="20" height="2" rx="1" />
-        </MiniSlide>
-      );
-    default: {
-      const _exhaustive: never = design;
-      return _exhaustive;
-    }
-  }
-}
-
-function ExperienceDesignChoiceGrid({
-  value,
-  onChange,
-  open: showGrid,
-  onOpenChange: setShowGrid,
-}: {
-  value: PortfolioExperienceDesign;
-  onChange: (value: PortfolioExperienceDesign) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selected =
-    PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS[0];
-  if (showGrid) {
-    return (
-      <div className="np-stack">
-        <NpBackRow title={t('Experience design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
-          {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map((option) => {
-            return (
-              <NpOptionCard
-                key={option.value}
-                selected={option.value === value}
-                title={t(option.label)}
-                illustration={<ExperienceDesignWireframe design={option.value} />}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            );
-          })}
-        </NpOptionCardGroup>
-      </div>
-    );
-  }
-
-  return (
-    <NpPickerRow label={t('Item design')} value={t(selected.label)} thumbnail={<ExperienceDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
-  );
-}
 
 function ExperienceTasksDisplayWireframe({
   display,
@@ -2374,18 +281,6 @@ function ExperienceTasksDisplayWireframe({
           <rect className="pf-exp-mini-mute" x="64" y="16" width="44" height="18" rx="2.5" />
           <rect className="pf-exp-mini-mute" x="12" y="40" width="44" height="18" rx="2.5" />
           <rect className="pf-exp-mini-ink" x="64" y="40" width="44" height="18" rx="2.5" />
-        </MiniSlide>
-      );
-    case 'cinematic-timeline':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-accent" x="22" y="12" width="1.6" height="48" rx="0.8" />
-          <circle className="pf-exp-mini-ink" cx="22.8" cy="18" r="2.4" />
-          <circle className="pf-exp-mini-ink" cx="22.8" cy="36" r="2.4" />
-          <circle className="pf-exp-mini-ink" cx="22.8" cy="54" r="2.4" />
-          <rect className="pf-exp-mini-mute" x="34" y="15" width="68" height="6" rx="1.6" />
-          <rect className="pf-exp-mini-mute" x="34" y="33" width="54" height="6" rx="1.6" />
-          <rect className="pf-exp-mini-mute" x="34" y="51" width="62" height="6" rx="1.6" />
         </MiniSlide>
       );
     case 'editorial-dash':
@@ -2471,149 +366,11 @@ function ExperienceTasksDisplayChoiceGrid({
   );
 }
 
-function ExperienceToolsBadgeStyleWireframe({
-  display,
-}: {
-  display: PortfolioExperienceToolsBadgeStyle;
-}) {
-  switch (display) {
-    case 'mineral-pills':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-mute" x="12" y="26" width="26" height="12" rx="6" />
-          <rect className="pf-exp-mini-mute" x="42" y="26" width="34" height="12" rx="6" />
-          <rect className="pf-exp-mini-ink" x="80" y="26" width="26" height="12" rx="6" />
-          <rect className="pf-exp-mini-mute" x="12" y="42" width="30" height="12" rx="6" />
-          <rect className="pf-exp-mini-mute" x="46" y="42" width="24" height="12" rx="6" />
-        </MiniSlide>
-      );
-    case 'editorial-list':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-mute" x="12" y="32" width="22" height="5" rx="1.4" />
-          <circle className="pf-exp-mini-mute" cx="40" cy="34.5" r="1.4" />
-          <rect className="pf-exp-mini-ink" x="46" y="32" width="26" height="5" rx="1.4" />
-          <circle className="pf-exp-mini-mute" cx="78" cy="34.5" r="1.4" />
-          <rect className="pf-exp-mini-mute" x="84" y="32" width="20" height="5" rx="1.4" />
-        </MiniSlide>
-      );
-    case 'kinetic-marquee':
-      return (
-        <MiniSlide>
-          <rect className="pf-exp-mini-mute" x="6" y="18" width="22" height="36" rx="2" opacity="0.32" />
-          <rect className="pf-exp-mini-mute" x="34" y="18" width="22" height="36" rx="2" opacity="0.32" />
-          <rect className="pf-exp-mini-mute" x="62" y="18" width="22" height="36" rx="2" opacity="0.32" />
-          <rect className="pf-exp-mini-mute" x="90" y="18" width="22" height="36" rx="2" opacity="0.32" />
-        </MiniSlide>
-      );
-    case 'numbered-index':
-      return (
-        <MiniSlide>
-          <MiniType x={14} y={24} size={6}>
-            01 /
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="34" y="19" width="28" height="5" rx="1.4" />
-          <MiniType x={70} y={24} size={6}>
-            02 /
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="90" y="19" width="18" height="5" rx="1.4" />
-          <MiniType x={14} y={48} size={6}>
-            03 /
-          </MiniType>
-          <rect className="pf-exp-mini-mute" x="34" y="43" width="24" height="5" rx="1.4" />
-        </MiniSlide>
-      );
-    default: {
-      const _exhaustive: never = display;
-      return _exhaustive;
-    }
-  }
-}
-
-function ExperienceToolsBadgeStyleChoiceGrid({
-  value,
-  onChange,
-}: {
-  value: PortfolioExperienceToolsBadgeStyle;
-  onChange: (value: PortfolioExperienceToolsBadgeStyle) => void;
-}) {
-  const t = useT();
-  return (
-    <div>
-      <p className="pf-exp-block-label pf-exp-option-label">{t('Tools display')}</p>
-      <div
-        role="radiogroup"
-        aria-label={t('Tools display')}
-        className="grid grid-cols-2 gap-2"
-      >
-        {PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <ExperiencePickerCard
-              key={option.value}
-              active={active}
-              label={t(option.label)}
-              onClick={() => onChange(option.value)}
-            >
-              <ExperienceToolsBadgeStyleWireframe display={option.value} />
-            </ExperiencePickerCard>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
 /**
  * Compact alternative to a slider for an ordered axis with few options (e.g. small → large)
  * in space-constrained settings panels: each option's label is rendered at a progressively
  * larger size so the scale reads at a glance, without needing a live-preview slider.
  */
-function ExperienceScalePill<T extends string>({
-  label,
-  options,
-  sizes,
-  value,
-  onChange,
-}: {
-  label: string;
-  options: { value: T; label: string; description?: string }[];
-  /** Font size (px) for each option, in the same order as `options`. */
-  sizes: number[];
-  value: T;
-  onChange: (value: T) => void;
-}) {
-  const t = useT();
-  const rows = useSettingsRows();
-  return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<p className="pf-exp-block-label pf-exp-option-label">{label}</p>)}
-      <div role="radiogroup" aria-label={label} className="pf-exp-scale-pill">
-        {options.map((option, index) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={t(option.description)}
-              data-active={active ? 'true' : 'false'}
-              onClick={() => onChange(option.value)}
-              className="pf-exp-scale-pill-btn"
-              style={{ fontSize: `${sizes[index] ?? sizes[sizes.length - 1]}px` }}
-            >
-              {t(option.label)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    </SettingRow>
-  );
-}
-
 function ExperienceOptionGrid<T extends string | number>({
   label,
   options,
@@ -3038,12 +795,21 @@ export function ExperienceSettingsPanel({
   chrome?: NpPanelChrome;
 }) {
   const t = useT();
-  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
-  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
+  const backgroundTheme = useThumbnailTheme('experience');
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(true);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(true);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ExperienceSubSection>('design');
   const subSection = normalizeExperienceSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const [previousSubSection, setPreviousSubSection] = useState(subSection);
+  if(previousSubSection !== subSection){
+    setPreviousSubSection(subSection);
+    if(subSection === 'design')setDesignCatalogOpen(true);
+    if(subSection === 'header')setHeaderCatalogOpen(true);
+  }
   const setSubSection = (value: ExperienceSubSection) => {
     const next = normalizeExperienceSubSection(value);
+    if(next === 'design')setDesignCatalogOpen(true);
+    if(next === 'header')setHeaderCatalogOpen(true);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
@@ -3057,7 +823,7 @@ export function ExperienceSettingsPanel({
   const isLoft = design === 'loft';
   const isPress = design === 'press';
   const isLegacy = design === 'legacy';
-  const showStackLabel = isEditorial || design === 'milestone';
+  const showStackLabel = isEditorial || design === 'milestone' || design === 'kinetic' || isCards || isReel || isDuotone || isGallery;
   const defaults: PortfolioExperienceSectionSettings = { enabled: true, title: 'Experience', subtitle: 'Roles, milestones, and the path that shaped my craft.', ...DEFAULT_EXPERIENCE_PRESENTATION };
 
   return (
@@ -3065,9 +831,14 @@ export function ExperienceSettingsPanel({
     <NpPanelShell title={t('Experience')} modified={JSON.stringify(experience) !== JSON.stringify(defaults)} tabs={EXPERIENCE_SUB_SECTIONS.map((item) => ({ id: item.id, label: t(item.label) }))} activeTab={subSection} onTabChange={setSubSection} onReset={() => onChange(defaults)} chrome={chrome}>
 
       {subSection === 'general' ? (
-        <div className="np-stack"><NpToggleRow card title={t('Show Experience section')} description={experience.enabled ? undefined : t('Visitors go straight to the next section.')} checked={experience.enabled} onChange={(enabled) => onChange({ enabled })} /><div className="np-dimmable" data-disabled={experience.enabled ? 'false' : 'true'} inert={!experience.enabled}>
+        <div className="np-stack"><NpToggleRow card title={t('Show Experience section')} description={experience.enabled ? undefined : t('Visitors go straight to the next section.')} checked={experience.enabled} onChange={(enabled) => onChange({ enabled })} />
+          <div className="pb-6"><SectionColorModeControl hideLabel
+            label={t('Color mode')}
+            value={experience.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          /></div><div className="np-dimmable" data-disabled={experience.enabled ? 'false' : 'true'} inert={!experience.enabled}>
           <NpCollapsibleSection title={t('Content shown')}>
-            <div className="flex flex-wrap gap-3">
+            <div className="flex flex-col gap-2.5">
               <ExperienceVisibilityBadge
                 label={t('Title')}
                 checked={experience.showTitle !== false}
@@ -3117,53 +888,64 @@ export function ExperienceSettingsPanel({
               ) : null}
             </div>
           </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Style')}>
+          
+          <TextSizeSlider label={t('Text size')} options={PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS} value={experience.premiumFontSize ?? 'medium'} onChange={(premiumFontSize) => onChange({ premiumFontSize })} />
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title="Libellés des statuts">
+            <div className="space-y-4">
+              <label className="block text-sm">
+                <span>{t('Ongoing')}</span>
+                <input type="text" maxLength={80} value={experience.ongoingStatusLabel ?? ''} placeholder={t('Ongoing')} onChange={(event) => onChange({ ongoingStatusLabel: event.target.value })} className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm" />
+              </label>
+              <label className="block text-sm">
+                <span>{t('Done')}</span>
+                <input type="text" maxLength={80} value={experience.finishedStatusLabel ?? ''} placeholder={t('Done')} onChange={(event) => onChange({ finishedStatusLabel: event.target.value })} className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm" />
+              </label>
+              <p className="text-xs opacity-60">Laissez vide pour utiliser le libellé traduit par défaut.</p>
+            </div>
+          </NpCollapsibleSection>
         </div></div>
       ) : !experience.enabled ? (
         <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div>
+      ) : subSection === 'background' ? (
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Palette')}>
+            <SectionPaletteFamilyControl value={experience.paletteFamily ?? 'global'} onChange={paletteFamily => onChange({ paletteFamily })} mode={backgroundTheme.mode} />
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Background')}>
+            <SectionBackgroundSettingsFields settings={experience} onChange={onChange} renderColorField={({ label }) => <ColorSwatchRow label={label}
+              options={([['fond', 'Background'], ['neutre', 'Surface'], ['principal', 'Primary'], ['secondaire', 'Secondary'], ['texteFort', 'Strong text']] as const).map(([token, text]) => ({ value: token, label: t(text), color: backgroundTheme.palette[token] }))}
+              value={mergeExperienceColorBindings(DEFAULT_EXPERIENCE_COLOR_BINDINGS, experience.experienceColorBindings).sectionBackground}
+              onChange={token => onChange({ useHeroPalette: true, experiencePalette: backgroundTheme.palette, sectionBackgroundColor: backgroundTheme.palette[token as HeroPaletteTokenId], experienceColorBindings: { ...mergeExperienceColorBindings(DEFAULT_EXPERIENCE_COLOR_BINDINGS, experience.experienceColorBindings), sectionBackground: token as HeroPaletteTokenId } })} />}
+            />
+          </NpCollapsibleSection>
+        </div>
       ) : subSection === 'header' ? (
         <div className="np-stack">
-          <ExperienceHeaderChoiceGrid
-            value={experience.headerDesign ?? 'none'}
-            onChange={(headerDesign) => onChange({ headerDesign })}
-            open={headerCatalogOpen}
-            onOpenChange={setHeaderCatalogOpen}
-          />
-          {headerCatalogOpen ? null : <>
-          <div className="mt-6">
-            <HeaderElementToggles
-              design={`experience-${experience.headerDesign ?? 'none'}`}
-              settings={experience}
-              onPatch={(patch) => onChange(patch as Partial<PortfolioExperienceSectionSettings>)}
+            <HeaderDesignPicker
+              catalogueMode
+              previewSection="experienceHeader"
+              value={experience.headerDesign ?? 'none'}
+              onChange={(headerDesign) => onChange({ headerDesign })}
+              open={headerCatalogOpen}
+              onOpenChange={setHeaderCatalogOpen}
+              word={t('EXPERIENCE')}
+              allowNone
             />
-          </div>
-          {(experience.headerDesign ?? 'none') === 'editorial' ? (
-            <ExperienceAccentYearsAdvancedSettings experience={experience} onChange={onChange} />
-          ) : null}
-          {(experience.headerDesign ?? 'none') === 'milestone' ? (
-            <ExperienceCenteredLayoutSettings experience={experience} onChange={onChange} />
-          ) : null}
-          {(experience.headerDesign ?? 'none') === 'table' ? (
-            <ExperienceSerifLeadLayoutSettings experience={experience} onChange={onChange} />
-          ) : null}
-          {(experience.headerDesign ?? 'none') === 'spotlight' ? (
-            <ExperienceMarqueeLayoutSettings experience={experience} onChange={onChange} />
-          ) : null}
-          {(experience.headerDesign ?? 'none') === 'reel' ? (
-            <ExperienceTitleStackHeaderSettings experience={experience} onChange={onChange} />
-          ) : null}
-          {(experience.headerDesign ?? 'none') === 'gallery' ? (
-            <ExperienceBillboardHeaderSettings experience={experience} onChange={onChange} />
-          ) : null}
-          {(experience.headerDesign ?? 'none') === 'loft' ? (
-            <ExperienceSplitHeadingHeaderSettings experience={experience} onChange={onChange} />
-          ) : null}
-          {(experience.headerDesign ?? 'none') === 'press' ? (
-            <ExperienceMastheadHeaderSettings experience={experience} onChange={onChange} />
-          ) : null}
-          {(experience.headerDesign ?? 'none') === 'legacy' ? (
-            <ExperienceAccentTitleHeaderSettings experience={experience} onChange={onChange} />
-          ) : null}
-          </>}
+          {headerCatalogOpen || (experience.headerDesign ?? 'none') === 'none' ? null : (
+            <NpCollapsibleSection title={t('Header settings')}>
+              <HeaderDesignFields
+                settings={experience}
+                onPatch={(patch: HeaderPatch) => onChange(patch as Partial<PortfolioExperienceSectionSettings>)}
+                copy={EXPERIENCE_HEADER_COPY}
+                colorOptions={EXPERIENCE_HEADER_PALETTE_TOKEN_OPTIONS}
+                resolveColor={experienceHeaderPaletteTokenColor}
+                accentAlignmentOptions={EXPERIENCE_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
+                billboardStyleOptions={EXPERIENCE_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
+              />
+            </NpCollapsibleSection>
+          )}
         </div>
       ) : (
         <div className="np-stack">
@@ -3174,90 +956,165 @@ export function ExperienceSettingsPanel({
             onOpenChange={setDesignCatalogOpen}
           />
           {designCatalogOpen ? null : <>
-          <NpCollapsibleSection title={t('Layout options')}>
           <SettingsRowsScope title={t('Layout options')}>
+          <LayoutControlGroups>
+          {isCards ? <>
+            <ExperienceOptionGrid label="Présentation du stack" options={[{ value: 'text' as const, label: 'Texte' }, { value: 'pill' as const, label: 'Pilules' }, { value: 'rectangle' as const, label: 'Rectangles' }]} value={experience.cardsStackStyle ?? 'text'} onChange={(cardsStackStyle) => onChange({ cardsStackStyle })} columns={3} />
+            <ExperienceOptionGrid label="Forme du bouton" options={[{ value: 'link' as const, label: 'Lien discret' }, { value: 'rectangle' as const, label: 'Rectangle' }, { value: 'pill' as const, label: 'Pilule' }]} value={experience.cardsButtonShape ?? 'link'} onChange={(cardsButtonShape) => onChange({ cardsButtonShape })} columns={3} />
+            {experience.cardsButtonShape && experience.cardsButtonShape !== 'link' ? <ExperienceOptionGrid label="Survol du bouton" options={[{ value: 'wipe' as const, label: 'Remplissage glissant' }, { value: 'roll' as const, label: 'Texte déroulant' }]} value={experience.cardsButtonHover ?? 'roll'} onChange={(cardsButtonHover) => onChange({ cardsButtonHover })} columns={2} /> : null}
+            <ColorSwatchRow label="Fond des cartes" options={([['fond','Background'],['neutre','Surface'],['principal','Primary'],['secondaire','Secondary']] as const).map(([value,label])=>({value,label:t(label),color:backgroundTheme.palette[value]}))} value={experience.cardsFrameColor ?? 'neutre'} onChange={(value)=>onChange({cardsFrameColor:value as 'fond'|'neutre'|'principal'|'secondaire'})} />
+            <label className="block text-sm">Opacité du fond : {experience.cardsFrameOpacity ?? 100}%<input aria-label="Opacité du fond des cartes" type="range" min={0} max={100} step={1} value={experience.cardsFrameOpacity ?? 100} onChange={(event)=>onChange({cardsFrameOpacity:Number(event.target.value)})} className="mt-3 w-full" /></label>
+          </> : null}
+          {isTable ? <>
+            <div className="space-y-3">
+              <p className="text-sm font-medium">En-têtes des colonnes</p>
+              {([
+                ['tablePeriodLabel', 'Period'],
+                ['tableRoleLabel', 'Role'],
+                ['tableOrganizationLabel', 'Organization'],
+                ['tableStatusLabel', 'Status'],
+              ] as const).map(([key, label]) => (
+                <label key={key} className="block text-xs">
+                  {t(label)}
+                  <input type="text" maxLength={60} value={experience[key] ?? ''} placeholder={t(label)} onChange={(event) => onChange({ [key]: event.target.value })} className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm" />
+                </label>
+              ))}
+              <p className="text-xs opacity-60">Un champ vide conserve le libellé traduit par défaut.</p>
+            </div>
+            <ExperienceOptionGrid label="Présentation du stack" options={[{ value: 'text' as const, label: 'Texte' }, { value: 'pill' as const, label: 'Pilules' }, { value: 'rectangle' as const, label: 'Rectangles' }]} value={experience.tableStackStyle ?? 'text'} onChange={(tableStackStyle) => onChange({ tableStackStyle })} columns={3} />
+            <ExperienceOptionGrid label="Forme du bouton" options={[{ value: 'link' as const, label: 'Lien discret' }, { value: 'rectangle' as const, label: 'Rectangle' }, { value: 'pill' as const, label: 'Pilule' }]} value={experience.tableButtonShape ?? 'link'} onChange={(tableButtonShape) => onChange({ tableButtonShape })} columns={3} />
+            {experience.tableButtonShape && experience.tableButtonShape !== 'link' ? <ExperienceOptionGrid label="Survol du bouton" options={[{ value: 'wipe' as const, label: 'Remplissage glissant' }, { value: 'roll' as const, label: 'Texte déroulant' }]} value={experience.tableButtonHover ?? 'wipe'} onChange={(tableButtonHover) => onChange({ tableButtonHover })} columns={2} /> : null}
+          </> : null}
+          {design === 'milestone' ? <>
+            <ExperienceOptionGrid label="Forme du bouton" options={[{ value: 'link' as const, label: 'Lien discret' }, { value: 'rectangle' as const, label: 'Rectangle' }, { value: 'pill' as const, label: 'Pilule' }]} value={experience.milestoneButtonShape ?? 'link'} onChange={(milestoneButtonShape) => onChange({ milestoneButtonShape })} columns={3} />
+            {experience.milestoneButtonShape && experience.milestoneButtonShape !== 'link' ? <ExperienceOptionGrid label="Survol du bouton" options={[{ value: 'wipe' as const, label: 'Remplissage glissant' }, { value: 'roll' as const, label: 'Texte déroulant' }]} value={experience.milestoneButtonHover ?? 'wipe'} onChange={(milestoneButtonHover) => onChange({ milestoneButtonHover })} columns={2} /> : null}
+          </> : null}
+          {isEditorial ? <>
+            <ExperienceOptionGrid label="Forme du bouton" options={[{ value: 'link' as const, label: 'Lien discret' }, { value: 'rectangle' as const, label: 'Rectangle' }, { value: 'pill' as const, label: 'Pilule' }]} value={experience.editorialButtonShape ?? 'link'} onChange={(editorialButtonShape) => onChange({ editorialButtonShape })} columns={3} />
+            {experience.editorialButtonShape && experience.editorialButtonShape !== 'link' ? <ExperienceOptionGrid label="Survol du bouton" options={[{ value: 'wipe' as const, label: 'Remplissage glissant' }, { value: 'roll' as const, label: 'Texte déroulant' }]} value={experience.editorialButtonHover ?? 'wipe'} onChange={(editorialButtonHover) => onChange({ editorialButtonHover })} columns={2} /> : null}
+            <ExperienceOptionGrid label="Présentation du statut" options={[{ value: 'watermark' as const, label: 'Filigrane' }, { value: 'signature' as const, label: 'Signature' }, { value: 'vertical' as const, label: 'Vertical' }]} value={experience.editorialStatusStyle ?? 'watermark'} onChange={(editorialStatusStyle) => onChange({ editorialStatusStyle })} columns={3} />
+            <ExperienceToggleRow label="Focus au survol" description="Atténuer les autres expériences pour mettre en valeur celle survolée." checked={experience.editorialFocusMode !== false} onChange={(editorialFocusMode) => onChange({ editorialFocusMode })} />
+            {experience.editorialFocusMode !== false ? <ExperienceToggleRow label="Flou des autres expériences" description="Ajouter un flou léger à l’atténuation." checked={experience.editorialFocusBlur !== false} onChange={(editorialFocusBlur) => onChange({ editorialFocusBlur })} /> : null}
+          </> : null}
+          {isEditorial || design === 'kinetic' || design === 'milestone' ? (
+            <ExperienceOptionGrid
+              label="Présentation du stack"
+              options={[
+                { value: 'text' as const, label: 'Texte' },
+                { value: 'pill' as const, label: 'Pilules' },
+                { value: 'rectangle' as const, label: 'Rectangles' },
+              ]}
+              value={design === 'milestone' ? (experience.milestoneStackStyle ?? 'rectangle') : design === 'kinetic' ? (experience.kineticStackStyle ?? 'rectangle') : (experience.editorialStackStyle ?? 'text')}
+              onChange={(stackStyle) => onChange(design === 'milestone' ? { milestoneStackStyle: stackStyle } : design === 'kinetic' ? { kineticStackStyle: stackStyle } : { editorialStackStyle: stackStyle })}
+              columns={3}
+            />
+          ) : null}
+          {design === 'kinetic' ? (
+            <>
+              <ExperienceOptionGrid
+                label={t('Title weight')}
+                options={PORTFOLIO_EXPERIENCE_KINETIC_TITLE_WEIGHT_OPTIONS}
+                value={experience.kineticTitleWeight ?? 'semibold'}
+                onChange={(kineticTitleWeight) => onChange({ kineticTitleWeight })}
+                columns={4}
+              />
+              <ExperienceOptionGrid
+                label={t('Vertical spacing')}
+                options={PORTFOLIO_EXPERIENCE_KINETIC_SPACING_OPTIONS}
+                value={experience.kineticSpacing ?? 'standard'}
+                onChange={(kineticSpacing) => onChange({ kineticSpacing })}
+                columns={4}
+              />
+              <ExperienceToggleRow label="Animation des blocs au scroll" description="Apparition et disparition progressives de chaque expérience selon le défilement." checked={experience.kineticScrollMotion !== false} onChange={(kineticScrollMotion) => onChange({ kineticScrollMotion })} />
+              <ExperienceOptionGrid
+                label="Présentation du statut"
+                options={[
+                  { value: 'watermark' as const, label: 'Filigrane' },
+                  { value: 'signature' as const, label: 'Signature' },
+                  { value: 'vertical' as const, label: 'Vertical' },
+                ]}
+                value={experience.kineticStatusStyle ?? 'watermark'}
+                onChange={(kineticStatusStyle) => onChange({ kineticStatusStyle })}
+                columns={3}
+              />
+              <ExperienceOptionGrid label="Forme du bouton" options={[{ value: 'link' as const, label: 'Lien discret' }, { value: 'rectangle' as const, label: 'Rectangle' }, { value: 'pill' as const, label: 'Pilule' }]} value={experience.kineticButtonShape ?? 'rectangle'} onChange={(kineticButtonShape) => onChange({ kineticButtonShape })} columns={3} />
+              <ExperienceOptionGrid label="Survol du bouton" options={[{ value: 'wipe' as const, label: 'Remplissage glissant' }, { value: 'roll' as const, label: 'Texte déroulant' }]} value={experience.kineticButtonHover ?? 'wipe'} onChange={(kineticButtonHover) => onChange({ kineticButtonHover })} columns={2} />
+            </>
+          ) : null}
           {isTable ? (
+            <>
+            <ExperienceToggleRow
+              label={t('Focus mode')}
+              description={t('Soften other experiences when hovering or focusing a row.')}
+              checked={experience.tableFocusMode !== false}
+              onChange={(tableFocusMode) => onChange({ tableFocusMode })}
+            />
+            {experience.tableFocusMode !== false ? <ExperienceToggleRow label="Flou des autres expériences" checked={experience.tableFocusBlur !== false} onChange={(tableFocusBlur) => onChange({ tableFocusBlur })} /> : null}
             <ExperienceToggleRow
               label={t('Striped rows')}
               description={t('Alternate subtle row backgrounds for easier scanning.')}
               checked={experience.tableStripedRows === true}
               onChange={(tableStripedRows) => onChange({ tableStripedRows })}
             />
+            </>
           ) : null}
           {isReel ? (
             <>
-              <ExperienceOptionGrid
-                label={t('Status presentation')}
-                options={PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS}
-                value={experience.reelStatusStyle ?? 'badge'}
-                onChange={(reelStatusStyle) => onChange({ reelStatusStyle })}
-                columns={2}
-              />
-              <ExperienceOptionGrid
-                label={t('Scroll motion')}
-                options={PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS}
-                value={experience.reelScrollMotion ?? 'fade-reveal'}
-                onChange={(reelScrollMotion) => onChange({ reelScrollMotion })}
-                columns={3}
-              />
+              <ExperienceOptionGrid label="Présentation du stack" options={[{value:'text' as const,label:'Texte'},{value:'pill' as const,label:'Pilules'},{value:'rectangle' as const,label:'Rectangles'}]} value={experience.reelStackStyle ?? 'text'} onChange={(reelStackStyle)=>onChange({reelStackStyle})} columns={3} />
+              <ExperienceOptionGrid label="Forme du bouton" options={[{value:'link' as const,label:'Lien discret'},{value:'rectangle' as const,label:'Rectangle'},{value:'pill' as const,label:'Pilule'}]} value={experience.reelButtonShape ?? 'link'} onChange={(reelButtonShape)=>onChange({reelButtonShape})} columns={3} />
+              {experience.reelButtonShape && experience.reelButtonShape !== 'link' ? <ExperienceOptionGrid label="Survol du bouton" options={[{value:'wipe' as const,label:'Remplissage glissant'},{value:'roll' as const,label:'Texte déroulant'}]} value={experience.reelButtonHover ?? 'wipe'} onChange={(reelButtonHover)=>onChange({reelButtonHover})} columns={2} /> : null}
+              <p className="text-xs opacity-60">Défilement : Index distort.</p>
             </>
           ) : null}
           {isCards ? (
             <>
-              <ExperienceScalePill
+              <ExperienceOptionGrid
                 label={t('Card width')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS}
-                sizes={[17, 14, 11]}
+                columns={3}
                 value={experience.cardsCardWidth ?? 'medium'}
                 onChange={(cardsCardWidth) => onChange({ cardsCardWidth })}
               />
-              <ExperienceScalePill
+              <ExperienceOptionGrid
                 label={t('Title size')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS}
-                sizes={[12, 14, 16, 18]}
+                columns={4}
                 value={experience.cardsTitleSize ?? 'md'}
                 onChange={(cardsTitleSize) => onChange({ cardsTitleSize })}
               />
-              <ExperienceScalePill
+              <ExperienceOptionGrid
                 label={t('Element spacing')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS}
-                sizes={[11, 14, 17]}
+                columns={3}
                 value={experience.cardsElementSpacing ?? 'md'}
                 onChange={(cardsElementSpacing) => onChange({ cardsElementSpacing })}
               />
-              <ExperienceScalePill
+              <ExperienceOptionGrid
                 label={t('Vertical gap')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS}
-                sizes={[11, 14, 17]}
+                columns={3}
                 value={experience.cardsVerticalGap ?? 'md'}
                 onChange={(cardsVerticalGap) => onChange({ cardsVerticalGap })}
               />
-              <ExperienceThumbnailRadiusChoiceGrid
-                label={t('Card border radius')}
-                value={experience.cardsBorderRadius ?? 'none'}
-                onChange={(cardsBorderRadius) => onChange({ cardsBorderRadius })}
-              />
-              <ExperienceScalePill
-                label={t('Tasks gap')}
-                options={PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS}
-                sizes={[11, 14, 17]}
-                value={experience.cardsTasksGap ?? 'md'}
-                onChange={(cardsTasksGap) => onChange({ cardsTasksGap })}
+              <ExperienceToggleRow label="Ombre diffuse autour des cartes" description="Afficher une ombre douce autour du cadre." checked={experience.cardsFrameShadow === true} onChange={(cardsFrameShadow) => onChange({ cardsFrameShadow })} />
+              <CardsStyleControls
+ collapsible={false}
+                value={experience.cardsStyle ?? DEFAULT_CARDS_STYLE}
+                onChange={(cardsStyle) => onChange({ cardsStyle })}
+                palette={experience.experiencePalette}
               />
               <ExperienceToggleRow
                 label={t('Scroll cascade effect')}
-                description={t('Desktop only: each card locks in place and the next rises to fully cover it, scaling down and fading as it recedes. Turn off for a plain static stack on every screen size.')}
                 checked={(experience.cardsStackEffect ?? 'cascade') === 'cascade'}
                 onChange={(checked) =>
                   onChange({ cardsStackEffect: checked ? 'cascade' : 'static' })
                 }
               />
-              <ExperienceToggleRow
+              {(experience.cardsStackEffect ?? 'cascade') === 'static' ? <ExperienceToggleRow
                 label={t('Equal card height')}
-                description={t('Every card matches the height of the tallest one, so a shorter card never leaves the one behind it peeking out during the cascade.')}
                 checked={experience.cardsEqualHeight === true}
                 onChange={(cardsEqualHeight) => onChange({ cardsEqualHeight })}
-              />
+              /> : <p className="text-xs opacity-60">Les cartes empilées adoptent automatiquement la même hauteur sur ordinateur.</p>}
             </>
           ) : null}
           {isEditorial ? (
@@ -3283,6 +1140,15 @@ export function ExperienceSettingsPanel({
                 onChange={(periodDesign) => onChange({ periodDesign })}
                 columns={2}
               />
+            </>
+          ) : null}
+          {isDuotone ? (
+            <>
+              <ExperienceOptionGrid label="Alignement des tâches" options={[{value:'offset' as const,label:'Décalé'},{value:'aligned' as const,label:'Aligné'}]} value={experience.duotoneTaskAlignment ?? 'offset'} onChange={(duotoneTaskAlignment)=>onChange({duotoneTaskAlignment})} columns={2} />
+              <ExperienceOptionGrid label="Présentation du stack" options={[{value:'text' as const,label:'Texte'},{value:'pill' as const,label:'Pilules'},{value:'rectangle' as const,label:'Rectangles'}]} value={experience.duotoneStackStyle ?? 'text'} onChange={(duotoneStackStyle)=>onChange({duotoneStackStyle})} columns={3} />
+              <label className="block text-sm">Libellé du curseur de la miniature
+                <input type="text" maxLength={120} value={experience.duotoneButtonLabel ?? ''} placeholder={t('Consult')} onChange={(event)=>onChange({duotoneButtonLabel:event.target.value})} className="mt-2 h-10 w-full rounded border border-[color:var(--pf-palette-bordure)] bg-transparent px-3" />
+              </label>
             </>
           ) : null}
           {isDuotone ? (
@@ -3346,13 +1212,6 @@ export function ExperienceSettingsPanel({
                 onChange={(duotoneThumbnailHeight) => onChange({ duotoneThumbnailHeight })}
                 columns={3}
               />
-              <ExperienceOptionGrid
-                label={t('Repository CTA')}
-                options={PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS}
-                value={experience.duotoneRepoCtaMode ?? 'footer'}
-                onChange={(duotoneRepoCtaMode) => onChange({ duotoneRepoCtaMode })}
-                columns={2}
-              />
             </>
           ) : null}
           {isDuotone &&
@@ -3390,6 +1249,18 @@ export function ExperienceSettingsPanel({
                   />
                 </>
               ) : null}
+            </>
+          ) : null}
+          {isGallery ? (
+            <>
+              <ExperienceToggleRow label="Fenêtre de détails" description="Ouvrir les détails au clic sur une carte. Désactivez pour une galerie sans fenêtre flottante." checked={experience.galleryDetailsEnabled !== false} onChange={(galleryDetailsEnabled)=>onChange({galleryDetailsEnabled})} />
+              <ExperienceToggleRow label="Composition décalée" description="Décaler légèrement les cartes sur grand écran." checked={experience.galleryStaggered !== false} onChange={(galleryStaggered)=>onChange({galleryStaggered})} />
+              <ExperienceOptionGrid label="Présentation du stack" options={[{value:'text' as const,label:'Texte'},{value:'pill' as const,label:'Pilules'},{value:'rectangle' as const,label:'Rectangles'}]} value={experience.galleryStackStyle ?? 'text'} onChange={(galleryStackStyle)=>onChange({galleryStackStyle})} columns={3} />
+              {experience.galleryDetailsEnabled !== false ? <>
+                <ExperienceOptionGrid label="Forme du bouton" options={[{value:'link' as const,label:'Lien discret'},{value:'rectangle' as const,label:'Rectangle'},{value:'pill' as const,label:'Pilule'}]} value={experience.galleryButtonShape ?? 'link'} onChange={(galleryButtonShape)=>onChange({galleryButtonShape})} columns={3} />
+                <label className="block text-sm">Libellé du bouton<input type="text" maxLength={120} value={experience.galleryButtonLabel ?? ''} placeholder={t('View project')} onChange={(event)=>onChange({galleryButtonLabel:event.target.value})} className="mt-2 h-10 w-full rounded border border-[color:var(--pf-palette-bordure)] bg-transparent px-3" /></label>
+                {experience.galleryButtonShape && experience.galleryButtonShape !== 'link' ? <ExperienceOptionGrid label="Survol du bouton" options={[{value:'wipe' as const,label:'Remplissage glissant'},{value:'roll' as const,label:'Texte déroulant'}]} value={experience.galleryButtonHover ?? 'wipe'} onChange={(galleryButtonHover)=>onChange({galleryButtonHover})} columns={2} /> : null}
+              </> : null}
             </>
           ) : null}
           {isGallery ? (
@@ -3698,40 +1569,39 @@ export function ExperienceSettingsPanel({
                 }
                 onValueChange={(tasksLabel) => onChange({ tasksLabel })}
               />
+              {(design === 'kinetic' || design === 'milestone' || isCards || isDuotone || isGallery) && experience.showBlockLabels !== false && (experience.blockLabelVisibility?.tasks !== false || experience.blockLabelVisibility?.tools !== false) ? (
+                <div className="grid grid-cols-2 gap-3">
+                  <ColorSwatchRow
+                    label="Couleur des libellés"
+                    options={([
+                      ['primary', 'Primary', 'principal'],
+                      ['secondary', 'Secondary', 'secondaire'],
+                      ['strong', 'Strong text', 'texteFort'],
+                      ['muted', 'Muted text', 'texteMuted'],
+                    ] as const).map(([value, label, token]) => ({ value, label: t(label), color: backgroundTheme.palette[token] }))}
+                    value={isCards ? (experience.cardsLabelColor ?? 'muted') : design === 'milestone' ? (experience.milestoneLabelColor ?? 'muted') : (experience.kineticTasksLabelColor || 'muted')}
+                    onChange={(labelColor) => onChange(isCards ? { cardsLabelColor: labelColor as 'primary' | 'secondary' | 'strong' | 'muted' } : design === 'milestone' ? { milestoneLabelColor: labelColor as 'primary' | 'secondary' | 'strong' | 'muted' } : { kineticTasksLabelColor: labelColor })}
+                  />
+                  <label className="block text-xs">
+                    Taille des libellés (px)
+                    <input aria-label="Taille des libellés Stack et Responsibilities" type="number" min={8} max={40} step={1} value={isCards ? (experience.cardsLabelSize ?? 12) : design === 'milestone' ? (experience.milestoneLabelSize ?? 12) : (experience.kineticTasksLabelSize ?? 12)} onChange={(event) => { const size = event.target.valueAsNumber; if (Number.isFinite(size)) onChange(isCards ? { cardsLabelSize: Math.max(8, Math.min(40, size)) } : design === 'milestone' ? { milestoneLabelSize: Math.max(8, Math.min(40, size)) } : { kineticTasksLabelSize: Math.max(8, Math.min(40, size)) }); }} className="mt-2 h-10 w-full rounded border border-[color:var(--pf-palette-bordure)] bg-transparent px-3" />
+                  </label>
+                </div>
+              ) : null}
             </>
           ) : null}
+          </LayoutControlGroups>
           </SettingsRowsScope>
-          </NpCollapsibleSection>
-          <NpCollapsibleSection title={t('Style')}>
-          <SectionColorModeControl
-            label={t('Color mode')}
-            value={experience.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-          <ExperienceOptionGrid
-            label={t('Text size')}
-            options={PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS}
-            value={experience.premiumFontSize ?? 'medium'}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
-          </NpCollapsibleSection>
           <NpCollapsibleSection title={t('Details')}>
           <ExperienceTasksDisplayChoiceGrid
             value={experience.tasksDisplay ?? 'editorial-dash'}
             onChange={(tasksDisplay) => onChange({ tasksDisplay })}
           />
-          <ExperienceToolsBadgeStyleChoiceGrid
-            value={experience.toolsBadgeStyle ?? 'mineral-pills'}
-            onChange={(toolsBadgeStyle) => onChange({ toolsBadgeStyle })}
-          />
-          <ExperienceLinkButtonChoiceGrid
-            value={experience.repoLinkButtonStyle ?? 'auto'}
-            onChange={(repoLinkButtonStyle) => onChange({ repoLinkButtonStyle })}
-          />
-          <ExperienceLinkArrowChoiceGrid
-            value={experience.linkArrowStyle ?? 'northeast'}
-            onChange={(linkArrowStyle) => onChange({ linkArrowStyle })}
+          <ExperienceToggleRow
+            label="Afficher les numéros et puces"
+            description="Masquer les marqueurs et réaligner le texte des tâches."
+            checked={experience.showTaskMarkers !== false}
+            onChange={(showTaskMarkers) => onChange({ showTaskMarkers })}
           />
           </NpCollapsibleSection>
           </>}

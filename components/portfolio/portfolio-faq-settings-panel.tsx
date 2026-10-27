@@ -1,5 +1,17 @@
 'use client';
+import { PortfolioDesignLivePreview, usePortfolioDesignPreviewSource } from './PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
+import {DesignCatalogueCard} from './portfolio-design-catalogue-card';
+import {StackPreviewSkeleton} from './portfolio-stack-preview-skeleton';
+import {FaqHeaderSkeleton} from './portfolio-faq-header-skeleton';
+import {useThumbnailTheme} from './portfolio-thumbnail-theme';
+import {FaqDesignThumbnail} from '@/components/portfolio/portfolio-faq-design-thumbnail';
 
+import { SectionPaletteFamilyControl } from '@/components/portfolio/portfolio-section-palette-family';
+import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
+import { HeaderSteppedSlider, type HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
+import { TextSizeSlider } from '@/components/portfolio/portfolio-text-size-slider';
+import { ColorSwatchRow } from '@/components/portfolio/portfolio-color-swatch-row';
 import { useId, useState, type ReactNode } from 'react';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
@@ -15,15 +27,25 @@ import { resolveHeroPaletteColor, type HeroPaletteTokenId } from '@/components/p
 import {
   DEFAULT_FAQ_PRESENTATION,
   PORTFOLIO_FAQ_DESIGN_OPTIONS,
-  PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_OPTIONS,
-  PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS,
-  PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS,
   PORTFOLIO_FAQ_PREMIUM_FONT_SIZE_OPTIONS,
   FAQ_TEXT_COLOR_TOKENS,
+  FAQ_FONT_WEIGHT_CHOICES,
+  FAQ_DESIGNS_WITH_LAYOUT_SETTINGS,
+  FAQ_GAPS,
+  FAQ_HEADER_INKS,
+  FAQ_HEADER_SUBTITLE_SIZES,
+  type PortfolioFaqHeaderInk,
+  type PortfolioFaqHeaderSubtitleSize,
+  resolveFaqHeaderPosition,
+  type PortfolioFaqHeaderPosition,
+  type PortfolioFaqMarker,
+  FAQ_GAP_FACTOR,
+  type PortfolioFaqGap,
+  FAQ_FONT_WEIGHT_NUMBER,
+  type PortfolioFaqFontWeight,
   defaultsForFaqDesign,
   type PortfolioFaqSectionSettings,
   type PortfolioFaqDesign,
-  type PortfolioFaqBentoDualCardColorToken,
   type PortfolioFaqTextColorToken,
 } from '@/components/portfolio/portfolio-faq-settings';
 import {
@@ -31,9 +53,9 @@ import {
   PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS,
   type PortfolioFaqHeaderDesign,
   type PortfolioFaqHeaderDesignSelectable,
+  faqHeaderPaletteTokenColor,
 } from '@/components/portfolio/portfolio-faq-header-settings';
 import {
-  FAQ_HEADER_LAYOUT_GROUP_TITLES,
   FAQ_HEADER_LAYOUT_SPECS,
   faqHeaderLayoutOverride,
   patchFaqHeaderLayoutElement,
@@ -44,6 +66,7 @@ import {
 } from '@/components/portfolio/portfolio-faq-header-layout';
 import {
   DEFAULT_FAQ_FRAME,
+  faqDesignAllowsFrame,
   FAQ_FRAME_BORDER_COLORS,
   FAQ_FRAME_BORDER_PX,
   FAQ_FRAME_BORDER_WIDTHS,
@@ -61,14 +84,15 @@ import {
   type PortfolioFaqFrameSettings,
   type PortfolioFaqFrameShadow,
 } from '@/components/portfolio/portfolio-faq-frame';
-import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { SettingRow, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
+import { NpBackRow, NpCollapsibleSection, NpPanelShell, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 export type FaqSubSection = 'general' | 'design' | 'background' | 'header';
 
 const FAQ_SUB_SECTIONS: { id: FaqSubSection; label: string; description: string }[] = [
+  { id: 'general', label: msg('General'), description: msg('Visibility, color mode and text size.') },
   { id: 'design', label: msg('Design'), description: msg('Layout and visual style.') },
   { id: 'header', label: msg('Header'), description: msg('The title block above the FAQ list.') },
   { id: 'background', label: msg('Background'), description: msg('Fill behind this section.') },
@@ -76,9 +100,8 @@ const FAQ_SUB_SECTIONS: { id: FaqSubSection; label: string; description: string 
 
 /** Map legacy subsection ids (saved UI state / search) onto the current FAQ menu. */
 export function normalizeFaqSubSection(value: string | undefined): FaqSubSection {
-  // 'general' (legacy / search) held the switch and style controls, now at the top of Design.
-  if (value === 'design' || value === 'background' || value === 'header') return value;
-  return 'design';
+  if (value === 'general' || value === 'design' || value === 'background' || value === 'header') return value;
+  return 'general';
 }
 
 /* ---------------------------------------------------------------------- */
@@ -101,7 +124,7 @@ function FaqToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   const rows = useSettingsRows();
-  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
+    if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <button
       type="button"
@@ -123,23 +146,8 @@ function FaqToggleRow({
 
 function FaqSwitchTrack({ checked }: { checked: boolean }) {
   return (
-    <span
-      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-      style={{
-        backgroundColor: checked
-          ? 'var(--pf-palette-texte-fort, #171717)'
-          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, var(--pf-palette-fond, #0a0a0a))',
-      }}
-    >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{
-          left: checked ? '1.125rem' : '0.125rem',
-          backgroundColor: checked
-            ? 'var(--pf-palette-fond, #ffffff)'
-            : 'var(--pf-palette-texte-fort, #ffffff)',
-        }}
-      />
+    <span className="np-switch" aria-checked={checked} aria-hidden data-switch-track="">
+      <span className="np-switch-knob" />
     </span>
   );
 }
@@ -148,7 +156,7 @@ function FaqSwitchTrack({ checked }: { checked: boolean }) {
  *  instead of a permanent line of text under a toggle. */
 function FaqInfoTooltip({ text }: { text: string }) {
   const t = useT();
-  const [open, setOpen] = useState(false);
+    const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
     <span className="relative inline-flex shrink-0">
@@ -183,15 +191,6 @@ function FaqInfoTooltip({ text }: { text: string }) {
   );
 }
 
-function FaqMiniSlide({ children }: { children: ReactNode }) {
-  return (
-    <svg viewBox="0 0 120 72" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
-      <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
-      {children}
-    </svg>
-  );
-}
-
 function _FaqPickerCard({
   active,
   label,
@@ -215,17 +214,6 @@ function _FaqPickerCard({
       onClick={onClick}
       className={`pf-stack-design-card rounded-2xl text-left ${compact ? 'pf-stack-preview-card' : 'px-3 pb-3 pt-2.5'}`}
     >
-      {active ? (
-        <span
-          aria-hidden
-          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-        >
-          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-            <path d="M4 10.5l3.5 3.5L16 6" stroke="white" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </span>
-      ) : null}
       {children}
       <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
         <span className={`pf-stack-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}>
@@ -268,109 +256,7 @@ function _FaqDesignSummaryRow({
   );
 }
 
-/** Bento Dual's own "Layout" controls — real palette tokens only, no ad-hoc hex field
- *  (matching the Footer Header mechanism's own palette-token convention). Fallbacks
- *  mirror the `@property --pf-palette-*` `initial-value`s in globals.css. */
-function faqBentoDualPaletteTokenColor(token: PortfolioFaqBentoDualCardColorToken): string {
-  if (token === 'secondaire') return 'var(--pf-palette-secondaire, #3b82f6)';
-  if (token === 'neutre') return 'var(--pf-palette-neutre, #171717)';
-  if (token === 'texteMuted') return 'var(--pf-palette-texte-muted, #a3a3a3)';
-  return 'var(--pf-palette-principal, #ea580c)';
-}
-
-function FaqBentoDualColorSwatches({
-  value,
-  onChange,
-}: {
-  value: PortfolioFaqBentoDualCardColorToken;
-  onChange: (value: PortfolioFaqBentoDualCardColorToken) => void;
-}) {
-  const t = useT();
-  return (
-    <div>
-      <span className="pf-stack-block-label">{t('Card color')}</span>
-      <div role="radiogroup" aria-label={t('Card color')} className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
-        {PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={t(option.description)}
-              onClick={() => onChange(option.value)}
-              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                active ? 'pf-choice pf-choice--active' : 'pf-choice'
-              }`}
-            >
-              <span
-                aria-hidden
-                className="h-3 w-3 shrink-0 rounded-full border border-black/10"
-                style={{ backgroundColor: faqBentoDualPaletteTokenColor(option.value) }}
-              />
-              {t(option.label)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/** Generic radiogroup pill picker — used by Bento Dual's own card options and the
- *  General tab's "Font size" scale control. */
-function FaqOptionGrid<T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  columns,
-}: {
-  label: string;
-  options: { value: T; label: string; description: string }[];
-  value: T;
-  onChange: (value: T) => void;
-  columns?: number;
-}) {
-  const t = useT();
-  const rows = useSettingsRows();
-  return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<span className="pf-stack-block-label">{label}</span>)}
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="mt-2 grid gap-1.5"
-        style={{ gridTemplateColumns: `repeat(${columns ?? options.length}, minmax(0, 1fr))` }}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={t(option.description)}
-              onClick={() => onChange(option.value)}
-              className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
-                active ? 'pf-choice pf-choice--active' : 'pf-choice'
-              }`}
-            >
-              {t(option.label)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    </SettingRow>
-  );
-}
-
-/** 0–100% slider with the live value beside its label (standard rule 1a) — Bento Dual's
- *  card opacity and General → Frame's border/fill opacity. */
+/** 0–100% slider with the live value beside its label (standard rule 1a). */
 function FaqPercentSlider({
   label,
   value,
@@ -381,7 +267,7 @@ function FaqPercentSlider({
   onChange: (value: number) => void;
 }) {
   const rows = useSettingsRows();
-  return (
+    return (
     <SettingRow label={label} value={String(value ?? '')}>
     <div>
       {rows ? null : (<div className="flex items-center justify-between gap-4">
@@ -396,7 +282,7 @@ function FaqPercentSlider({
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         aria-label={label}
-        className="mt-2 w-full accent-neutral-900"
+        className="np-range mt-2" style={{ ['--np-fill' as string]: `${Math.min(100, Math.max(0, value))}%` }}
       />
     </div>
     </SettingRow>
@@ -414,7 +300,7 @@ function FaqLayoutSettingsBand({
 }) {
   return (
     <section className="pf-stack-layout-settings" aria-labelledby="faq-layout-settings-title">
-      <h3 id="faq-layout-settings-title" className="pf-stack-layout-settings-title">
+      <h3 id="faq-layout-settings-title" className="sr-only">
         {title}
       </h3>
       <div key={motionKey} className="pf-stack-layout-settings-body space-y-6">
@@ -430,282 +316,100 @@ function FaqLayoutSettingsBand({
 /* per-design settings band below it.                                     */
 /* ---------------------------------------------------------------------- */
 
-function FaqDesignWireframe({ design }: { design: PortfolioFaqDesign }) {
-  switch (design) {
-    case 'kinetic-split':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-accent" x="8" y="14" width="16" height="2" rx="1" />
-          <rect className="pf-stack-mini-ink" x="8" y="22" width="40" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="8" y="36" width="30" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="64" y="12" width="48" height="6" rx="2" />
-          <rect className="pf-stack-mini-mute" x="64" y="26" width="40" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="64" y="38" width="44" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="64" y="50" width="36" height="3" rx="1.5" />
-        </FaqMiniSlide>
-      );
-    case 'floating-gallery':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-mute" x="8" y="10" width="104" height="1" />
-          <rect className="pf-stack-mini-mute" x="8" y="26" width="104" height="1" />
-          <rect className="pf-stack-mini-mute" x="8" y="42" width="104" height="1" />
-          <rect className="pf-stack-mini-mute" x="8" y="58" width="104" height="1" />
-          <rect className="pf-stack-mini-mute" x="10" y="14" width="60" height="4" rx="2" />
-          <rect className="pf-stack-mini-mute" x="10" y="46" width="60" height="4" rx="2" />
-          <rect className="pf-stack-mini-ink" x="24" y="24" width="72" height="20" rx="6" opacity={0.9} />
-        </FaqMiniSlide>
-      );
-    case 'editorial-masonry':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-mute" x="8" y="8" width="18" height="2" rx="1" />
-          <rect className="pf-stack-mini-ink" x="8" y="20" width="46" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="8" y="27" width="46" height="1" />
-          <rect className="pf-stack-mini-mute" x="8" y="35" width="46" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="8" y="42" width="46" height="1" />
-          <rect className="pf-stack-mini-mute" x="8" y="50" width="46" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="8" y="57" width="46" height="1" />
-          <rect className="pf-stack-mini-mute" x="66" y="30" width="46" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="66" y="37" width="46" height="1" />
-          <rect className="pf-stack-mini-mute" x="66" y="45" width="46" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="66" y="52" width="46" height="1" />
-          <rect className="pf-stack-mini-mute" x="66" y="60" width="46" height="3" rx="1.5" />
-        </FaqMiniSlide>
-      );
-    case 'prism-cards':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-mute" x="8" y="6" width="104" height="12" rx="5" opacity={0.45} />
-          <rect className="pf-stack-mini-ink" x="14" y="10.5" width="48" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-accent" x="8" y="22" width="104" height="34" rx="7" />
-          <rect className="pf-stack-mini-stage" x="14" y="28.5" width="58" height="4" rx="2" opacity={0.95} />
-          <circle className="pf-stack-mini-stage" cx="104" cy="30.5" r="5" opacity={0.95} />
-          <rect className="pf-stack-mini-stage" x="14" y="39" width="80" height="2" rx="1" opacity={0.55} />
-          <rect className="pf-stack-mini-stage" x="14" y="45" width="64" height="2" rx="1" opacity={0.55} />
-          <rect className="pf-stack-mini-mute" x="8" y="60" width="104" height="8" rx="4" opacity={0.3} />
-        </FaqMiniSlide>
-      );
-    case 'star-scroll':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-ink" x="8" y="8" width="46" height="9" rx="2" />
-          <text x="106" y="21" textAnchor="middle" fontSize="17" className="pf-stack-mini-ink">
-            ✳
-          </text>
-          <rect className="pf-stack-mini-mute" x="8" y="32" width="104" height="10" rx="5" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="8" y="46" width="104" height="10" rx="5" opacity={0.32} />
-          <rect className="pf-stack-mini-mute" x="8" y="60" width="104" height="10" rx="5" opacity={0.32} />
-        </FaqMiniSlide>
-      );
-    case 'tri-grid':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-ink" x="8" y="18" width="30" height="8" rx="2" opacity={0.9} />
-          <rect className="pf-stack-mini-mute" x="8" y="30" width="30" height="16" rx="1" opacity={0.5} />
-          <rect className="pf-stack-mini-ink" x="45" y="28" width="30" height="8" rx="2" opacity={0.9} />
-          <rect className="pf-stack-mini-mute" x="45" y="40" width="30" height="16" rx="1" opacity={0.5} />
-          <rect className="pf-stack-mini-ink" x="82" y="18" width="30" height="8" rx="2" opacity={0.9} />
-          <rect className="pf-stack-mini-mute" x="82" y="30" width="30" height="16" rx="1" opacity={0.5} />
-        </FaqMiniSlide>
-      );
-    case 'split-index':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-ink" x="8" y="8" width="40" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="8" y="30" width="20" height="3" rx="1.5" opacity={0.6} />
-          <rect className="pf-stack-mini-ink" x="38" y="26" width="10" height="10" rx="2" />
-          <rect className="pf-stack-mini-mute" x="52" y="28" width="60" height="4" rx="2" />
-          <rect className="pf-stack-mini-mute" x="38" y="42" width="10" height="10" rx="2" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="52" y="44" width="60" height="4" rx="2" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="38" y="58" width="10" height="10" rx="2" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="52" y="60" width="60" height="4" rx="2" opacity={0.7} />
-        </FaqMiniSlide>
-      );
-    case 'centered-focus':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-ink" x="30" y="10" width="60" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="20" y="30" width="80" height="4" rx="2" opacity={0.35} />
-          <rect className="pf-stack-mini-ink" x="28" y="42" width="64" height="5" rx="2" opacity={0.95} />
-          <rect className="pf-stack-mini-mute" x="24" y="54" width="72" height="4" rx="2" opacity={0.3} />
-        </FaqMiniSlide>
-      );
-    case 'bento-dual':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-accent" x="8" y="8" width="50" height="26" rx="6" />
-          <rect className="pf-stack-mini-accent" x="62" y="8" width="50" height="26" rx="6" opacity={0.75} />
-          <rect className="pf-stack-mini-accent" x="8" y="38" width="50" height="26" rx="6" opacity={0.75} />
-          <rect className="pf-stack-mini-accent" x="62" y="38" width="50" height="26" rx="6" />
-        </FaqMiniSlide>
-      );
-    default: {
-      const _exhaustive: never = design;
-      return _exhaustive;
-    }
-  }
-}
 
 /** Same collapsed-preview / expand-to-grid mechanism as every other
  *  section's own Design tab (Stack, Info, …). */
-function FaqDesignChoiceGrid({
-  value,
-  onChange,
-  open: showGrid,
-  onOpenChange: setShowGrid,
-}: {
-  value: PortfolioFaqDesign;
-  onChange: (value: PortfolioFaqDesign) => void;
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selected = PORTFOLIO_FAQ_DESIGN_OPTIONS.find((option) => option.value === value) ?? PORTFOLIO_FAQ_DESIGN_OPTIONS[0];
-
-  if (showGrid) {
-    return (
-      <div className="np-stack">
-        <NpBackRow title={t('FAQ design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
-          {PORTFOLIO_FAQ_DESIGN_OPTIONS.map((option) => {
-            return (
-              <NpOptionCard
-                key={option.value}
-                selected={option.value === value}
-                title={t(option.label)}
-                illustration={<FaqDesignWireframe design={option.value} />}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            );
-          })}
-        </NpOptionCardGroup>
-      </div>
-    );
-  }
-
+function FaqKineticPreviewSkeleton({ dark }: { dark: boolean }) {
   return (
-    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<FaqDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
+    <svg viewBox="0 0 640 320" className="h-full w-full" aria-hidden="true" style={{ backgroundColor: dark ? '#171717' : '#f5f5f5', color: dark ? '#f5f5f5' : '#171717' }}>
+      <g fill="currentColor">
+        <rect x="44" y="86" width="22" height="4" rx="2" opacity="0.18" />
+        <rect x="44" y="105" width="106" height="16" rx="3" opacity="0.2" />
+        <rect x="44" y="129" width="75" height="16" rx="3" opacity="0.2" />
+        <rect x="44" y="166" width="132" height="4" rx="2" opacity="0.1" />
+        <rect x="44" y="178" width="96" height="4" rx="2" opacity="0.1" />
+        {[108, 158, 208].map((y, index) => (
+          <g key={y}>
+            <rect x="326" y={y} width="8" height="4" rx="2" opacity="0.12" />
+            <rect x="351" y={y - 2} width={[204, 168, 188][index]} height="7" rx="3" opacity="0.18" />
+          </g>
+        ))}
+      </g>
+    </svg>
   );
 }
 
-/* ---------------------------------------------------------------------- */
-/* HEADER tab — 3 purpose-built title-block designs for FAQ specifically.  */
-/* The original 8-design shared header mechanism is frozen (still renders  */
-/* for any account with one already saved) but no longer selectable here — */
-/* see faq-settings-header-removed-pill-tabs memory.                       */
-/* ---------------------------------------------------------------------- */
+function FaqDesignPreviewSkeleton({ design, dark }: { design: PortfolioFaqDesign; dark: boolean }) {
+  if (design === 'kinetic-split') return <FaqKineticPreviewSkeleton dark={dark} />;
+  const centered = design === 'centered-focus' || design === 'floating-gallery';
+  const grid = design === 'tri-grid' || design === 'editorial-masonry' || design === 'bento-dual';
+  const titleX = centered ? 228 : 44;
+  return (
+    <svg viewBox="0 0 640 320" className="h-full w-full" aria-hidden="true" style={{ backgroundColor: dark ? '#171717' : '#f5f5f5', color: dark ? '#f5f5f5' : '#171717' }}>
+      <g fill="currentColor">
+        <rect x={titleX} y="48" width="24" height="4" rx="2" opacity="0.12" />
+        <rect x={titleX} y="65" width="184" height="14" rx="3" opacity="0.22" />
+        <rect x={titleX} y="90" width="132" height="4" rx="2" opacity="0.1" />
+        {design === 'floating-gallery' ? <>
+          <rect x="108" y="125" width="424" height="134" rx="12" opacity="0.06" />
+          <circle cx="510" cy="143" r="5" opacity="0.15" />
+          <rect x="136" y="157" width="246" height="9" rx="3" opacity="0.2" />
+          <rect x="136" y="183" width="344" height="4" rx="2" opacity="0.1" />
+          <rect x="136" y="197" width="286" height="4" rx="2" opacity="0.1" />
+        </> : grid ? Array.from({ length: design === 'tri-grid' ? 3 : 4 }, (_, index) => {
+          const columns = design === 'tri-grid' ? 3 : 2;
+          const width = columns === 3 ? 164 : 260;
+          const x = 44 + (index % columns) * (width + 16);
+          const y = 126 + Math.floor(index / columns) * 82 + (design === 'editorial-masonry' && index % 2 ? 12 : 0);
+          return <g key={index}>
+            {design === 'bento-dual' ? <rect x={x} y={y} width={width} height="70" rx="8" opacity="0.06" /> : null}
+            <rect x={x + 12} y={y + 12} width={width * 0.72} height="7" rx="3" opacity="0.2" />
+            <rect x={x + 12} y={y + 32} width={width * 0.84} height="4" rx="2" opacity="0.1" />
+            <rect x={x + 12} y={y + 44} width={width * 0.6} height="4" rx="2" opacity="0.1" />
+          </g>;
+        }) : [132, 182, 232].map((y, index) => <g key={y}>
+          {design === 'prism-cards' ? <rect x="44" y={y - 14} width="552" height="40" rx="7" opacity="0.05" /> : null}
+          {design === 'split-index' ? <rect x="44" y={y} width="15" height="7" rx="2" opacity="0.2" /> : null}
+          <rect x={design === 'split-index' ? 146 : centered ? 132 : 64} y={y} width={[288, 242, 266][index]} height="7" rx="3" opacity="0.18" />
+          <rect x="558" y={y} width="8" height="7" rx="2" opacity="0.12" />
+        </g>)}
+      </g>
+    </svg>
+  );
+}
 
-function FaqHeaderDesignWireframe({ design }: { design: PortfolioFaqHeaderDesignSelectable }) {
-  switch (design) {
-    case 'editorial':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-mute" x="8" y="9" width="20" height="3" rx="1.5" opacity={0.55} />
-          <rect className="pf-stack-mini-ink" x="8" y="20" width="64" height="9" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="32" width="46" height="9" rx="2" />
-          <rect className="pf-stack-mini-mute" x="8" y="50" width="80" height="3" rx="1.5" opacity={0.5} />
-        </FaqMiniSlide>
-      );
-    case 'signal':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-mute" x="8" y="8" width="30" height="9" rx="4.5" opacity={0.6} />
-          <circle className="pf-stack-mini-accent" cx="14" cy="12.5" r="1.6" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="60" height="9" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="38" width="40" height="9" rx="2" />
-          <rect className="pf-stack-mini-mute" x="82" y="42" width="30" height="3" rx="1.5" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="82" y="48" width="24" height="3" rx="1.5" opacity={0.5} />
-        </FaqMiniSlide>
-      );
-    case 'query':
-      return (
-        <FaqMiniSlide>
-          <text x="98" y="52" textAnchor="middle" fontSize="52" fontWeight={900} className="pf-stack-mini-mute" opacity={0.35}>
-            ?
-          </text>
-          <rect className="pf-stack-mini-mute" x="10" y="14" width="3" height="34" opacity={0.5} />
-          <rect className="pf-stack-mini-ink" x="20" y="16" width="52" height="9" rx="2" />
-          <rect className="pf-stack-mini-ink" x="20" y="28" width="38" height="9" rx="2" />
-          <rect className="pf-stack-mini-mute" x="20" y="44" width="44" height="3" rx="1.5" opacity={0.5} />
-        </FaqMiniSlide>
-      );
-    case 'dialogue':
-      return (
-        <FaqMiniSlide>
-          <rect className="pf-stack-mini-ink" x="8" y="14" width="34" height="9" rx="2" />
-          <rect className="pf-stack-mini-mute" x="46" y="14" width="26" height="9" rx="2" opacity={0.45} />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="24" height="9" rx="2" />
-          <circle className="pf-stack-mini-accent" cx="100" cy="18" r="10" />
-          <rect className="pf-stack-mini-mute" x="8" y="42" width="60" height="3" rx="1.5" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="8" y="52" width="104" height="1" opacity={0.4} />
-        </FaqMiniSlide>
-      );
-    default: {
-      const _exhaustive: never = design;
-      return _exhaustive;
-    }
-  }
+function FaqDesignChoiceGrid({value,onChange,open:showGrid,onOpenChange:setShowGrid}:{value:PortfolioFaqDesign;onChange:(value:PortfolioFaqDesign)=>void;open:boolean;onOpenChange:(open:boolean)=>void}){
+ const t=useT();
+ const previewSource=usePortfolioDesignPreviewSource();
+ const selected=PORTFOLIO_FAQ_DESIGN_OPTIONS.find(option=>option.value===value)??PORTFOLIO_FAQ_DESIGN_OPTIONS[0];
+ if(!showGrid)return <NpBackRow title={t(selected.label)} onBack={()=>setShowGrid(true)}/>;
+ return <div className="flex flex-col gap-8" aria-label={t('Choose a design')}>{PORTFOLIO_FAQ_DESIGN_OPTIONS.map(option=><DesignCatalogueCard key={option.value} label={t(option.label)} selected={option.value===value} onSelect={()=>onChange(option.value)} onCustomize={FAQ_DESIGNS_WITH_LAYOUT_SETTINGS.has(option.value)?()=>{if(value!==option.value)onChange(option.value);setShowGrid(false);}:undefined}>{previewSource?<span className="relative block aspect-[2/1] w-full overflow-hidden rounded-lg"><PortfolioDesignLivePreview src={withDesignPreview(previewSource.portfolioPath,{section:'faq',design:option.value})} settings={previewSource.settings} fill loadMargin="48px 0px" skeleton={<FaqDesignPreviewSkeleton design={option.value} dark={(previewSource.settings.faq.colorModeOverride === 'auto' ? previewSource.settings.global.colorMode : previewSource.settings.faq.colorModeOverride) !== 'light'} />}/></span>:<FaqDesignThumbnail design={option.value}/>}</DesignCatalogueCard>)}</div>;
+}
+
+
+
+function FaqHeaderDesignWireframe({design}:{design:PortfolioFaqHeaderDesignSelectable}){
+ return <StackPreviewSkeleton section="faq"><FaqHeaderSkeleton design={design} compact/></StackPreviewSkeleton>;
 }
 
 /** Same collapsed-preview / expand-to-grid mechanism as the Design tab's own picker. Falls
  *  back to the first selectable design for display when the saved `headerDesign` is one of
  *  the frozen legacy 8 (or unset) — purely a display fallback, doesn't write anything until
  *  the creator actually picks a card, same convention as `FaqDesignChoiceGrid`. */
-function FaqHeaderChoiceGrid({
-  value,
-  onChange,
-  showGrid,
-  setShowGrid,
-}: {
-  value: PortfolioFaqHeaderDesign;
-  onChange: (value: PortfolioFaqHeaderDesignSelectable) => void;
-  /** Owned by the panel so the header's Layout settings can hide while the catalogue is open. */
-  showGrid: boolean;
-  setShowGrid: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selected =
-    PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS[0];
-
-  if (showGrid) {
-    return (
-      <div className="np-stack">
-        <NpBackRow title={t('FAQ header')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
-          {PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <NpOptionCard
-                key={option.value}
-                selected={active}
-                title={t(option.label)}
-                illustration={<FaqHeaderDesignWireframe design={option.value} />}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            );
-          })}
-        </NpOptionCardGroup>
-      </div>
-    );
-  }
-
-  return (
-    <NpPickerRow label={t('Header')} value={t(selected.label)} thumbnail={<FaqHeaderDesignWireframe design={selected.value} />} onClick={() => setShowGrid(true)} />
-  );
+function FaqHeaderChoiceGrid({value,onChange,showGrid,setShowGrid}:{value:PortfolioFaqHeaderDesign;onChange:(value:PortfolioFaqHeaderDesignSelectable)=>void;showGrid:boolean;setShowGrid:(open:boolean)=>void}){
+ const t=useT();
+ const previewSource=usePortfolioDesignPreviewSource();
+ const theme=useThumbnailTheme('faq');
+ const selected=PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS.find(option=>option.value===value)??PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS[0];
+ if(!showGrid)return <NpBackRow title={t(selected.label)} onBack={()=>setShowGrid(true)}/>;
+ return <div className="flex flex-col gap-8" aria-label={t('Choose a header')}>{PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS.map(option=>{
+  if(option.value==='none')return <button key={option.value} type="button" aria-pressed={value===option.value} onClick={()=>onChange(option.value)} className="flex min-h-12 w-full items-center rounded-xl border px-4 text-left text-sm font-medium transition-colors hover:bg-neutral-500/5 focus-visible:outline-2 focus-visible:outline-offset-2" style={{borderColor:value===option.value?'var(--pf-palette-principal,#f97316)':'color-mix(in srgb,currentColor 18%,transparent)'}}>{t(option.label)}</button>;
+  const skeleton=<FaqHeaderDesignWireframe design={option.value}/>;
+  return <DesignCatalogueCard key={option.value} label={t(option.label)} selected={value===option.value} previewBackground={theme.background} onSelect={()=>onChange(option.value)} onCustomize={()=>{if(value!==option.value)onChange(option.value);setShowGrid(false);}}><span className="relative block aspect-[3/1] w-full" style={{backgroundColor:theme.background}}>{previewSource?<PortfolioDesignLivePreview src={withDesignPreview(previewSource.portfolioPath,{section:'faqHeader',design:option.value})+'&previewRevision=faq-header-compact-v3'} settings={previewSource.settings} fill loadMargin="48px 0px" skeleton={skeleton} animateSkeleton={false} backgroundColor={theme.background}/>:skeleton}</span></DesignCatalogueCard>;
+ })}</div>;
 }
 
-/* ---------------------------------------------------------------------- */
-/* HEADER tab → Layout settings — generated from FAQ_HEADER_LAYOUT_SPECS:  */
-/* "This header" (owned by the selected design) + "All headers" (shared).  */
-/* ---------------------------------------------------------------------- */
+
 
 type FaqPatch = (patch: Partial<PortfolioFaqSectionSettings>) => void;
 
@@ -737,6 +441,21 @@ function FaqLayoutPills({
   const t = useT();
   // One row up to 5 steps (e.g. the 5-step weight scale) — a 4+1 wrap would break the axis.
   const columns = columnsProp ?? Math.min(options.length, 5);
+  if (options.some((option) => option.swatch) && options.every((option) => option.swatch || option.value === 'auto' || option.value === 'none')) {
+    return (
+      <ColorSwatchRow
+        label={label}
+        options={options.map((option) => ({
+          value: option.value,
+          label: option.label,
+          color: option.swatch ?? 'transparent',
+          auto: !option.swatch,
+        }))}
+        value={value}
+        onChange={onChange}
+      />
+    );
+  }
   return (
     <div>
       <span className="pf-stack-block-label">{label}</span>
@@ -826,12 +545,196 @@ const FAQ_FRAME_SHADOW_PREVIEW: Record<PortfolioFaqFrameShadow, string> = {
 /* ---------------------------------------------------------------------- */
 
 /** Same short names as the Frame's color pills, so one panel speaks one vocabulary. */
+const FAQ_FONT_WEIGHT_LABELS: Record<PortfolioFaqFontWeight, string> = {
+  auto: 'Auto',
+  light: 'Light',
+  regular: 'Regular',
+  medium: 'Medium',
+  semibold: 'Semibold',
+  bold: 'Bold',
+};
+
+const FAQ_GAP_LABELS: Record<PortfolioFaqGap, string> = {
+  tight: 'Tight',
+  normal: 'Normal',
+  airy: 'Airy',
+  wide: 'Wide',
+};
+
 const FAQ_TEXT_COLOR_LABELS: Record<PortfolioFaqTextColorToken, string> = {
   auto: 'Auto',
-  principal: 'Principal',
-  secondaire: 'Secondary',
   texteFort: 'Text',
+  secondaire: 'Secondary',
+  texteFaint: 'Faint',
+  // Legacy choices: no longer offered, kept so the type stays total.
+  texteMuted: 'Muted',
+  principal: 'Principal',
 };
+
+/**
+ * Font-weight picker in the manner of a video editor's style panel: four tiles, each a live "Aa" drawn at its
+ * own weight with the name beneath, so the choice is made by eye. Choosing the active tile again returns to Auto
+ * (the design's own weight); the current state is always written on the right of the label.
+ */
+function FaqWeightTiles({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: PortfolioFaqFontWeight;
+  onChange: (value: PortfolioFaqFontWeight) => void;
+}) {
+  const t = useT();
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="pf-stack-block-label">{label}</span>
+        <span className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">{t(FAQ_FONT_WEIGHT_LABELS[value])}</span>
+      </div>
+      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-4 gap-1.5">
+        {FAQ_FONT_WEIGHT_CHOICES.map((weight) => {
+          const active = value === weight;
+          return (
+            <button
+              key={weight}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={t(FAQ_FONT_WEIGHT_LABELS[weight])}
+              onClick={() => onChange(active ? 'auto' : weight)}
+              className={`flex flex-col items-center justify-center gap-1 rounded-lg px-1 py-2.5 transition ${
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
+              }`}
+            >
+              <span aria-hidden className="text-[1.35rem] leading-none" style={{ fontWeight: FAQ_FONT_WEIGHT_NUMBER[weight] }}>
+                Aa
+              </span>
+              <span className="text-[0.66rem] font-medium leading-none opacity-70">{t(FAQ_FONT_WEIGHT_LABELS[weight])}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+const FAQ_MARKER_CHOICES = ['dot', 'dash', 'number', 'none'] as const;
+const FAQ_MARKER_LABELS: Record<PortfolioFaqMarker, string> = {
+  auto: 'Auto',
+  dot: 'Dot',
+  dash: 'Dash',
+  number: 'Number',
+  none: 'None',
+};
+
+/** List-marker picker: four tiles drawn with the real marker (a dot, a short dash, "01", nothing); the active tile
+ *  chosen again returns to Auto, i.e. whatever each design draws by default. */
+function FaqMarkerTiles({ value, onChange }: { value: PortfolioFaqMarker; onChange: (value: PortfolioFaqMarker) => void }) {
+  const t = useT();
+  const glyph = (kind: (typeof FAQ_MARKER_CHOICES)[number]) =>
+    kind === 'dot' ? (
+      <span aria-hidden className="block h-2 w-2 rounded-full bg-current" />
+    ) : kind === 'dash' ? (
+      <span aria-hidden className="block h-[2px] w-4 rounded-full bg-current" />
+    ) : kind === 'number' ? (
+      <span aria-hidden className="font-mono text-[0.8rem] leading-none tabular-nums">01</span>
+    ) : (
+      <span aria-hidden className="block text-[0.9rem] leading-none opacity-60">–</span>
+    );
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="pf-stack-block-label">{t('List marker')}</span>
+        <span className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">{t(FAQ_MARKER_LABELS[value])}</span>
+      </div>
+      <div role="radiogroup" aria-label={t('List marker')} className="mt-2 grid grid-cols-4 gap-1.5">
+        {FAQ_MARKER_CHOICES.map((kind) => {
+          const active = value === kind;
+          return (
+            <button
+              key={kind}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={t(FAQ_MARKER_LABELS[kind])}
+              onClick={() => onChange(active ? 'auto' : kind)}
+              className={`flex flex-col items-center justify-center gap-2 rounded-lg px-1 py-2.5 transition ${
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
+              }`}
+            >
+              <span className="flex h-4 items-center justify-center">{glyph(kind)}</span>
+              <span className="text-[0.66rem] font-medium leading-none opacity-70">{t(FAQ_MARKER_LABELS[kind])}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Title position: where the header sits relative to the questions, for every header design and every FAQ design.
+ * Three tiles drawn as the layout itself (title block + list). The native placement of the current design is the
+ * highlighted one until the creator picks; side positions stack on top on tablet and phone.
+ */
+function FaqHeaderPositionTiles({ faq, onChange }: { faq: PortfolioFaqSectionSettings; onChange: FaqPatch }) {
+  const t = useT();
+  const effective = resolveFaqHeaderPosition(faq.headerPosition, faq.design);
+  const choices: { value: 'left' | 'top'; label: string }[] = [
+    { value: 'left', label: 'Left' },
+    { value: 'top', label: 'Top' },
+  ];
+  const diagram = (position: 'left' | 'top') => {
+    const title = <span className="block h-[5px] w-[14px] rounded-[2px] bg-current" />;
+    const lines = (
+      <span className="flex flex-col gap-[3px]">
+        <span className="block h-[3px] w-[22px] rounded-[2px] bg-current opacity-50" />
+        <span className="block h-[3px] w-[22px] rounded-[2px] bg-current opacity-50" />
+        <span className="block h-[3px] w-[22px] rounded-[2px] bg-current opacity-50" />
+      </span>
+    );
+    return position === 'top' ? (
+      <span aria-hidden className="flex flex-col items-start gap-[5px]">{title}{lines}</span>
+    ) : (
+      <span aria-hidden className="flex items-start gap-[6px]">{title}{lines}</span>
+    );
+  };
+  return (
+    <div>
+      <div className="flex items-center justify-between gap-4">
+        <span className="pf-stack-block-label">{t('Title position')}</span>
+        <span className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">
+          {faq.headerPosition === 'auto' || !faq.headerPosition ? `${t('Auto')} · ${t(effective === 'top' ? 'Top' : 'Left')}` : t(effective === 'top' ? 'Top' : 'Left')}
+        </span>
+      </div>
+      <div role="radiogroup" aria-label={t('Title position')} className="mt-2 grid grid-cols-2 gap-1.5">
+        {choices.map((choice) => {
+          const active = effective === choice.value;
+          return (
+            <button
+              key={choice.value}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              aria-label={t(choice.label)}
+              onClick={() => onChange({ headerPosition: choice.value as PortfolioFaqHeaderPosition })}
+              className={`flex flex-col items-center justify-center gap-2 rounded-lg px-1 py-3 transition ${
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
+              }`}
+            >
+              <span className="flex h-8 items-center justify-center">{diagram(choice.value)}</span>
+              <span className="text-[0.66rem] font-medium leading-none opacity-70">{t(choice.label)}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="mt-2 text-[0.72rem] leading-snug text-[color:var(--pf-palette-texte-muted)]">
+        {t('Beside the questions on desktop; on tablet and phone the title always sits on top.')}
+      </p>
+    </div>
+  );
+}
 
 function FaqTextColorsGroup({
   faq,
@@ -847,24 +750,73 @@ function FaqTextColorsGroup({
     value: token,
     label: FAQ_TEXT_COLOR_LABELS[token],
     // "Auto" has no swatch of its own: it is whatever the active design already draws.
-    swatch: token === 'auto' ? undefined : resolveHeroPaletteColor(palette, token),
+    swatch: token === 'auto' ? undefined : resolveHeroPaletteColor(palette, token as HeroPaletteTokenId),
   }));
   return (
     <div className="space-y-5 pt-4">
-      <FaqLayoutPills
+      <ColorSwatchRow
         label={t('Question color')}
-        columns={2}
         value={faq.questionColorToken ?? 'auto'}
         onChange={(value) => onChange({ questionColorToken: value as PortfolioFaqTextColorToken })}
-        options={options}
+        options={options.map((option) => ({
+          value: option.value,
+          label: option.label,
+          color: option.swatch ?? 'transparent',
+          auto: !option.swatch,
+        }))}
       />
-      <FaqLayoutPills
+      {(faq.questionColorToken ?? 'auto') !== 'auto' ? (
+        <FaqPercentSlider
+          label={t('Question color opacity')}
+          value={faq.questionColorOpacity ?? 100}
+          onChange={(questionColorOpacity) => onChange({ questionColorOpacity })}
+        />
+      ) : null}
+      <ColorSwatchRow
         label={t('Answer color')}
-        columns={2}
         value={faq.answerColorToken ?? 'auto'}
         onChange={(value) => onChange({ answerColorToken: value as PortfolioFaqTextColorToken })}
-        options={options}
+        options={options.map((option) => ({
+          value: option.value,
+          label: option.label,
+          color: option.swatch ?? 'transparent',
+          auto: !option.swatch,
+        }))}
       />
+      {(faq.answerColorToken ?? 'auto') !== 'auto' ? (
+        <FaqPercentSlider
+          label={t('Answer color opacity')}
+          value={faq.answerColorOpacity ?? 100}
+          onChange={(answerColorOpacity) => onChange({ answerColorOpacity })}
+        />
+      ) : null}
+      <FaqWeightTiles
+        label={t('Question weight')}
+        value={faq.questionFontWeight ?? 'auto'}
+        onChange={(questionFontWeight) => onChange({ questionFontWeight })}
+      />
+      <FaqWeightTiles
+        label={t('Answer weight')}
+        value={faq.answerFontWeight ?? 'auto'}
+        onChange={(answerFontWeight) => onChange({ answerFontWeight })}
+      />
+      <FaqLayoutPills
+        label={t('Vertical gap')}
+        value={faq.verticalGap ?? 'normal'}
+        onChange={(value) => onChange({ verticalGap: value as PortfolioFaqGap })}
+        options={FAQ_GAPS.map((gap) => ({
+          value: gap,
+          label: FAQ_GAP_LABELS[gap],
+          // Two mini cards with the real proportion of space between them.
+          preview: (
+            <span aria-hidden className="flex flex-col items-stretch" style={{ gap: Math.max(1, Math.round(FAQ_GAP_FACTOR[gap] * 3)) }}>
+              <span className="block h-[5px] w-5 rounded-[2px] bg-current opacity-80" />
+              <span className="block h-[5px] w-5 rounded-[2px] bg-current opacity-80" />
+            </span>
+          ),
+        }))}
+      />
+      <FaqMarkerTiles value={faq.questionMarker ?? 'auto'} onChange={(questionMarker) => onChange({ questionMarker })} />
     </div>
   );
 }
@@ -987,6 +939,37 @@ function FaqFrameGroup({
   );
 }
 
+/** Ordered scales (weight, size, spacing: four steps or more) read as a stepped bar; short
+ *  choices (alignment, left / center) stay as pills. */
+function FaqStepOrPills({
+  label,
+  options,
+  value,
+  onChange,
+  forcePills = false,
+}: {
+  label: string;
+  options: { value: string; label: string; fontWeight?: number }[];
+  value: string;
+  onChange: (value: string) => void;
+  /** Keeps the button group even for a long scale (spacing below the header). */
+  forcePills?: boolean;
+}) {
+  const t = useT();
+  if (forcePills || options.length < 4) return <FaqLayoutPills label={label} options={options} value={value} onChange={onChange} />;
+  const current = options.find((option) => option.value === value) ?? options[0]!;
+  return (
+    <HeaderSteppedSlider
+      label={label}
+      steps={options.map((option) => ({ value: option.value, tick: t(option.label) }))}
+      value={current.value}
+      currentName={t(current.label)}
+      onChange={onChange}
+      stepStyle={(step) => ({ fontWeight: options.find((option) => option.value === step.value)?.fontWeight })}
+    />
+  );
+}
+
 function FaqHeaderLayoutControl({
   faq,
   design,
@@ -1013,7 +996,7 @@ function FaqHeaderLayoutControl({
       );
     case 'option':
       return (
-        <FaqLayoutPills
+        <FaqStepOrPills
           label={t(spec.label)}
           options={spec.options}
           value={resolveFaqHeaderLayoutOption(faq, design, spec.key)}
@@ -1022,11 +1005,12 @@ function FaqHeaderLayoutControl({
       );
     case 'fieldOption':
       return (
-        <FaqLayoutPills
+        <FaqStepOrPills
           label={t(spec.label)}
           options={spec.options}
           value={String(faq[spec.field] ?? spec.options[0].value)}
           onChange={(value) => onChange({ [spec.field]: value } as Partial<PortfolioFaqSectionSettings>)}
+          forcePills={spec.field === 'headerMarginBottom'}
         />
       );
     case 'text': {
@@ -1057,23 +1041,178 @@ function FaqHeaderLayoutControl({
 
 const FAQ_HEADER_LAYOUT_GROUP_ORDER: FaqHeaderLayoutGroup[] = ['this', 'all'];
 
+/** FAQ stores the editorial title's size / weight under the older shared `headerTitleSize` /
+ *  `headerTitleWeight` keys; everything else uses the shared `headerEditorial*` keys. */
+const FAQ_EDITORIAL_KEY_MAP: Record<string, string> = {
+  headerEditorialTitleSize: 'headerTitleSize',
+  headerEditorialTitleWeight: 'headerTitleWeight',
+};
+
+const FAQ_HEADER_COPY: HeaderCopy = {
+  editorial: { label: msg('FAQ'), title: msg('Frequently asked questions'), subtitle: msg('Everything you need to know before getting in touch.') },
+  index: { rule: 'Index', title: '', subtitle: '', count: '' },
+  marquee: ['FAQ', 'Optional', 'Optional', 'Optional'],
+  accent: { badge: '', lead: '' },
+  serif: { label: 'FAQ', title: '', subtitle: '' },
+  billboard: { word: 'FAQ', title: '', count: '' },
+  masthead: ['', '', ''],
+  split: { title: '', label: 'FAQ' },
+};
+
+const FAQ_HEADER_COLOR_OPTIONS = [
+  { value: 'principal' as const, label: msg('Principal') },
+  { value: 'secondaire' as const, label: msg('Secondary') },
+  { value: 'texteFort' as const, label: msg('Strong text') },
+];
+
+function FaqEditorialHeaderFields({ faq, onChange }: { faq: PortfolioFaqSectionSettings; onChange: FaqPatch }) {
+  const view = new Proxy(faq as object, {
+    get: (target, prop) =>
+      typeof prop === 'string' ? (target as Record<string, unknown>)[FAQ_EDITORIAL_KEY_MAP[prop] ?? prop] : undefined,
+  });
+  return (
+    <HeaderDesignFields
+      settings={view}
+      onPatch={(patch: HeaderPatch) => {
+        const mapped: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(patch)) mapped[FAQ_EDITORIAL_KEY_MAP[key] ?? key] = value;
+        onChange(mapped as Partial<PortfolioFaqSectionSettings>);
+      }}
+      copy={FAQ_HEADER_COPY}
+      colorOptions={FAQ_HEADER_COLOR_OPTIONS}
+      resolveColor={faqHeaderPaletteTokenColor}
+      accentAlignmentOptions={[{ value: 'left' as const, label: msg('Left') }]}
+      billboardStyleOptions={[{ value: 'outline' as const, label: msg('Outline') }]}
+    />
+  );
+}
+
+const FAQ_HEADER_INK_LABELS: Record<PortfolioFaqHeaderInk, string> = {
+  auto: 'Auto',
+  principal: 'Principal',
+  secondaire: 'Secondary',
+  texteFort: 'Strong text',
+};
+const FAQ_HEADER_SUBTITLE_SIZE_LABELS: Record<PortfolioFaqHeaderSubtitleSize, string> = {
+  auto: 'Auto',
+  sm: 'S',
+  md: 'M',
+  lg: 'L',
+  xl: 'XL',
+};
+
+/**
+ * Text settings of the Signal, Query and Dialogue headers, organised as a title block and a subtitle block:
+ * wording, colour (palette swatches), size and weight in the same order as the other sections' header tab.
+ * Everything defaults to Auto, the header's own look.
+ */
+function FaqHeaderTextSettings({ faq, onChange }: { faq: PortfolioFaqSectionSettings; onChange: FaqPatch }) {
+  const t = useT();
+  const inkOptions = FAQ_HEADER_INKS.map((ink) => ({
+    value: ink,
+    label: FAQ_HEADER_INK_LABELS[ink],
+    color: ink === 'auto' ? 'transparent' : faqHeaderPaletteTokenColor(ink),
+    auto: ink === 'auto',
+  }));
+  const hasTitle = resolveFaqHeaderLayoutVisible(faq, faq.headerDesign as PortfolioFaqHeaderDesignSelectable, 'title');
+  const hasSubtitle = resolveFaqHeaderLayoutVisible(faq, faq.headerDesign as PortfolioFaqHeaderDesignSelectable, 'subtitle');
+  return (
+    <div className="space-y-6">
+      {hasTitle ? (
+        <div className="space-y-4">
+          <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t('Title')}</p>
+          <input
+            type="text"
+            value={faq.headerTextTitle ?? ''}
+            placeholder={faq.title || t('Frequently asked questions')}
+            aria-label={t('Title text')}
+            maxLength={160}
+            onChange={(event) => onChange({ headerTextTitle: event.target.value })}
+            className={FAQ_LAYOUT_INPUT_CLASS}
+          />
+          <ColorSwatchRow
+            label={t('Title color')}
+            options={inkOptions}
+            value={faq.headerTitleInk ?? 'auto'}
+            onChange={(value) => onChange({ headerTitleInk: value as PortfolioFaqHeaderInk })}
+          />
+          <FaqLayoutPills
+            label={t('Title size')}
+            options={[
+              { value: 'sm', label: 'S', fontPx: 12 },
+              { value: 'md', label: 'M', fontPx: 15 },
+              { value: 'lg', label: 'L', fontPx: 18 },
+              { value: 'xl', label: 'XL', fontPx: 22 },
+            ]}
+            value={faq.headerTitleSize ?? 'md'}
+            onChange={(value) => onChange({ headerTitleSize: value as PortfolioFaqSectionSettings['headerTitleSize'] })}
+          />
+          <FaqWeightTiles
+            label={t('Title weight')}
+            value={faq.headerTitleFontWeight ?? 'auto'}
+            onChange={(headerTitleFontWeight) => onChange({ headerTitleFontWeight })}
+          />
+        </div>
+      ) : null}
+      {hasSubtitle ? (
+        <div className={`space-y-4 ${hasTitle ? 'border-t border-[color:var(--pf-palette-bordure)] pt-6' : ''}`}>
+          <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t('Subtitle')}</p>
+          <textarea
+            rows={3}
+            value={faq.headerTextSubtitle ?? ''}
+            placeholder={faq.subtitle || t('Quick answers to common questions before we start working together.')}
+            aria-label={t('Subtitle text')}
+            maxLength={400}
+            onChange={(event) => onChange({ headerTextSubtitle: event.target.value })}
+            className={`${FAQ_LAYOUT_INPUT_CLASS} resize-none`}
+          />
+          <ColorSwatchRow
+            label={t('Subtitle color')}
+            options={inkOptions}
+            value={faq.headerSubtitleInk ?? 'auto'}
+            onChange={(value) => onChange({ headerSubtitleInk: value as PortfolioFaqHeaderInk })}
+          />
+          <FaqLayoutPills
+            label={t('Subtitle size')}
+            value={faq.headerSubtitleSizeStep ?? 'auto'}
+            onChange={(value) => onChange({ headerSubtitleSizeStep: value as PortfolioFaqHeaderSubtitleSize })}
+            options={FAQ_HEADER_SUBTITLE_SIZES.map((size) => ({ value: size, label: FAQ_HEADER_SUBTITLE_SIZE_LABELS[size] }))}
+          />
+          <FaqWeightTiles
+            label={t('Subtitle weight')}
+            value={faq.headerSubtitleFontWeight ?? 'auto'}
+            onChange={(headerSubtitleFontWeight) => onChange({ headerSubtitleFontWeight })}
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function FaqHeaderLayoutSettingsBand({ faq, onChange }: { faq: PortfolioFaqSectionSettings; onChange: FaqPatch }) {
   const t = useT();
   // A saved legacy (frozen) header has no Layout settings of its own — nothing to show.
   if (!(FAQ_HEADER_DESIGNS_SELECTABLE as string[]).includes(faq.headerDesign)) return null;
   const design = faq.headerDesign as PortfolioFaqHeaderDesignSelectable;
-  const specs = FAQ_HEADER_LAYOUT_SPECS[design].filter((spec) => !spec.showWhen || spec.showWhen(faq));
+  // Editorial is the shared header: same fields as every other section's Header tab.
+  if (design === 'editorial') return <FaqEditorialHeaderFields faq={faq} onChange={onChange} />;
+  const specs = FAQ_HEADER_LAYOUT_SPECS[design].filter(
+    (spec) => (!spec.showWhen || spec.showWhen(faq)) && spec.key !== 'titleSize'
+  );
 
   return (
     <FaqLayoutSettingsBand motionKey={design} title={t('Layout settings')}>
-      {FAQ_HEADER_LAYOUT_GROUP_ORDER.map((group) => {
+      <div className="space-y-6 border-b border-[color:var(--pf-palette-bordure)] pb-6">
+        <FaqHeaderTextSettings faq={faq} onChange={onChange} />
+      </div>
+      {FAQ_HEADER_LAYOUT_GROUP_ORDER.map((group, groupIndex) => {
         const groupSpecs = specs.filter((spec) => spec.group === group);
         if (groupSpecs.length === 0) return null;
         return (
-          <div key={group} className="space-y-4">
-            <p className="text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">
-              {FAQ_HEADER_LAYOUT_GROUP_TITLES[group]}
-            </p>
+          <div
+            key={group}
+            className={`space-y-4 ${groupIndex > 0 ? 'border-t border-[color:var(--pf-palette-bordure)] pt-6' : ''}`}
+          >
             {groupSpecs.map((spec) => (
               <FaqHeaderLayoutControl key={spec.key} faq={faq} design={design} spec={spec} onChange={onChange} />
             ))}
@@ -1092,7 +1231,8 @@ const FAQ_BACKGROUND_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string 
   { value: 'fond', label: msg('Background') },
   { value: 'neutre', label: msg('Neutral') },
   { value: 'principal', label: msg('Primary') },
-  { value: 'texteMuted', label: msg('Muted text') },
+  { value: 'secondaire', label: msg('Secondary') },
+  { value: 'texteFort', label: msg('Strong text') },
 ];
 
 const FAQ_BACKGROUND_LABEL_SLOTS: Record<string, { slot: FaqColorSlot; field: keyof PortfolioFaqSectionSettings }> = {
@@ -1118,50 +1258,31 @@ function FaqBackgroundColorField({
   label: string;
   value: string;
 }) {
-  const t = useT();
-  const rows = useSettingsRows();
-  const mapping = FAQ_BACKGROUND_LABEL_SLOTS[label] ?? FAQ_BACKGROUND_LABEL_SLOTS.Color;
+    const mapping = FAQ_BACKGROUND_LABEL_SLOTS[label] ?? FAQ_BACKGROUND_LABEL_SLOTS.Color;
   const usingPalette = faq.useHeroPalette !== false;
   const activeHex = value.trim().toLowerCase();
+  const options = FAQ_BACKGROUND_PALETTE_TOKENS.map((token) => ({
+    value: token.value as string,
+    label: token.label,
+    color: resolveHeroPaletteColor(palette, token.value),
+  }));
+  const current = usingPalette
+    ? (bindings[mapping.slot] as string)
+    : (options.find((option) => option.color.toLowerCase() === activeHex)?.value ?? '');
   return (
-    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
-    <div>
-      {rows ? null : (<span className="pf-stack-block-label">{label}</span>)}
-      <div className="mt-2 flex items-center gap-3">
-        {FAQ_BACKGROUND_PALETTE_TOKENS.map((token) => {
-          const hex = resolveHeroPaletteColor(palette, token.value);
-          const active = usingPalette ? bindings[mapping.slot] === token.value : hex.toLowerCase() === activeHex;
-          return (
-            <button
-              key={token.value}
-              type="button"
-              title={t(token.label)}
-              aria-label={t(token.label)}
-              aria-pressed={active}
-              onClick={() =>
-                onChange(
-                  usingPalette
-                    ? (patchFaqColorBinding(faq, mapping.slot, token.value) as Partial<PortfolioFaqSectionSettings>)
-                    : { [mapping.field]: hex }
-                )
-              }
-              className="flex flex-col items-center gap-1.5"
-            >
-              <span
-                className="h-8 w-8 rounded-full border-2 transition"
-                style={{
-                  backgroundColor: hex,
-                  borderColor: active ? '#171717' : '#e5e5e5',
-                  boxShadow: active ? '0 0 0 2px rgba(23,23,23,0.15)' : 'none',
-                }}
-              />
-              <span className={`text-[11px] font-medium ${active ? 'text-[color:var(--pf-palette-texte-fort)]' : 'text-[color:var(--pf-palette-texte-muted)]'}`}>{t(token.label)}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    </SettingRow>
+    <ColorSwatchRow
+      label={label}
+      options={options}
+      value={current}
+      onChange={(next) => {
+        const token = next as HeroPaletteTokenId;
+        onChange(
+          usingPalette
+            ? (patchFaqColorBinding(faq, mapping.slot, token) as Partial<PortfolioFaqSectionSettings>)
+            : { [mapping.field]: resolveHeroPaletteColor(palette, token) }
+        );
+      }}
+    />
   );
 }
 
@@ -1179,12 +1300,21 @@ export function FaqSettingsPanel({
   chrome?: NpPanelChrome;
 }) {
   const t = useT();
-  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
-  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
-  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FaqSubSection>('design');
+  const backgroundTheme = useThumbnailTheme('faq');
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(true);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(true);
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FaqSubSection>('general');
   const subSection = normalizeFaqSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const [previousSubSection, setPreviousSubSection] = useState(subSection);
+  if(previousSubSection !== subSection){
+    setPreviousSubSection(subSection);
+    if(subSection === 'design')setDesignCatalogOpen(true);
+    if(subSection === 'header')setHeaderCatalogOpen(true);
+  }
   const setSubSection = (value: FaqSubSection) => {
     const next = normalizeFaqSubSection(value);
+    if(next === 'design')setDesignCatalogOpen(true);
+    if(next === 'header')setHeaderCatalogOpen(true);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
@@ -1196,7 +1326,7 @@ export function FaqSettingsPanel({
   return (
     <NpPanelShell title={t('FAQ')} modified={JSON.stringify(faq) !== JSON.stringify(defaults)} tabs={FAQ_SUB_SECTIONS.map((item) => ({ id: item.id, label: t(item.label) }))} activeTab={subSection} onTabChange={setSubSection} onReset={() => onChange(defaults)} chrome={chrome}>
 
-      {subSection === 'design' ? (
+      {subSection === 'general' ? (
         <div className="np-stack">
           <NpToggleRow card
             title={t('Show FAQ section')}
@@ -1204,99 +1334,68 @@ export function FaqSettingsPanel({
             checked={faq.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
+          <div className="pb-6"><SectionColorModeControl hideLabel label={t('Color mode')} value={faq.colorModeOverride} onChange={(colorModeOverride) => onChange({ colorModeOverride })} /></div>
           {faq.enabled ? (
-          <>
-          <FaqDesignChoiceGrid value={faq.design} onChange={(design) => onChange(defaultsForFaqDesign(design))} open={designCatalogOpen} onOpenChange={setDesignCatalogOpen} />
-
-          {designCatalogOpen ? null : <>
-          <NpCollapsibleSection title={t('Layout options')}>
-<SettingsRowsScope title={t('Layout options')}>
-            {faq.design === 'bento-dual' ? (
-              <div className="space-y-6">
-                <FaqBentoDualColorSwatches
-                  value={faq.bentoDualCardColorToken ?? 'secondaire'}
-                  onChange={(bentoDualCardColorToken) => onChange({ bentoDualCardColorToken })}
-                />
-                <FaqOptionGrid
-                  label={t('Card radius')}
-                  options={PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS}
-                  value={faq.bentoDualCardRadius ?? 'md'}
-                  onChange={(bentoDualCardRadius) => onChange({ bentoDualCardRadius })}
-                />
-                <FaqOptionGrid
-                  label={t('Card border')}
-                  options={PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS}
-                  value={faq.bentoDualCardBorder ?? 'soft'}
-                  onChange={(bentoDualCardBorder) => onChange({ bentoDualCardBorder })}
-                />
-                <FaqPercentSlider
-                  label={t('Card opacity')}
-                  value={faq.bentoDualCardOpacity ?? 100}
-                  onChange={(bentoDualCardOpacity) => onChange({ bentoDualCardOpacity })}
-                />
-              </div>
-            ) : (
-              <p className="text-sm leading-relaxed text-[color:var(--pf-palette-texte-muted)]">
-                {t('This design ships with its own fixed visual identity — hover focus, spring-open answers, and')}{' '}
-                {faq.design === 'floating-gallery'
-                  ? t('a frosted glass panel are')
-                  : faq.design === 'editorial-masonry'
-                    ? t('an asymmetric offset grid are')
-                    : faq.design === 'prism-cards'
-                      ? t('a subtle prism surface are')
-                      : faq.design === 'star-scroll'
-                        ? t('a scroll-driven spinning star are')
-                        : faq.design === 'tri-grid'
-                          ? t('an airy responsive question-and-answer grid are')
-                          : faq.design === 'split-index'
-                            ? t('a lightweight index marker on every row are')
-                            : faq.design === 'centered-focus'
-                              ? t('a gentle centered hover emphasis are')
-                              : t('a line-by-line reveal are')}{' '}
-                {t('all built in. It doesn’t expose extra styling controls.')}
-              </p>
-            )}
-          </SettingsRowsScope>
-</NpCollapsibleSection>
-          <NpCollapsibleSection title={t('Style')}>
-            <SectionColorModeControl label={t('Color mode')} value={faq.colorModeOverride} onChange={(colorModeOverride) => onChange({ colorModeOverride })} />
-            <FaqOptionGrid
-              label={t('Text size')}
-              options={PORTFOLIO_FAQ_PREMIUM_FONT_SIZE_OPTIONS}
-              value={faq.premiumFontSize ?? 'medium'}
-              onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-              columns={3}
-            />
-            <FaqTextColorsGroup faq={faq} onChange={onChange} palette={faqPalette} />
-            <FaqFrameGroup faq={faq} onChange={onChange} palette={faqPalette} />
-          </NpCollapsibleSection>
-          </>}
-          </>
+            <NpCollapsibleSection title={t('Style')}>
+              <TextSizeSlider label={t('Text size')} options={PORTFOLIO_FAQ_PREMIUM_FONT_SIZE_OPTIONS} value={faq.premiumFontSize ?? 'medium'} onChange={(premiumFontSize) => onChange({ premiumFontSize })} />
+            </NpCollapsibleSection>
+          ) : null}
+          {/* Shared by every design: colour, weight and the vertical gap between questions. */}
+          {faq.enabled ? (
+            <NpCollapsibleSection title={t('Questions & answers')}>
+              <FaqTextColorsGroup faq={faq} onChange={onChange} palette={faqPalette} />
+            </NpCollapsibleSection>
+          ) : null}
+          {faq.enabled && faqDesignAllowsFrame(faq.design) ? (
+            <NpCollapsibleSection title={t('Frame')}>
+              <FaqFrameGroup faq={faq} onChange={onChange} palette={faqPalette} />
+            </NpCollapsibleSection>
           ) : null}
         </div>
       ) : null}
 
-      {subSection !== 'design' && !faq.enabled ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div> : null}
+      {subSection === 'design' && faq.enabled ? (
+        <div className="np-stack">
+          <FaqDesignChoiceGrid value={faq.design} onChange={(design) => onChange(defaultsForFaqDesign(design))} open={designCatalogOpen} onOpenChange={setDesignCatalogOpen} />
+
+          {designCatalogOpen ? null : <>
+          </>}
+        </div>
+      ) : null}
+
+      {subSection !== 'general' && !faq.enabled ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div> : null}
 
       {subSection === 'header' && faq.enabled ? (
         <div className="np-stack">
-          <FaqHeaderChoiceGrid
-            value={faq.headerDesign}
-            onChange={(headerDesign) => onChange({ headerDesign })}
-            showGrid={headerCatalogOpen}
-            setShowGrid={setHeaderCatalogOpen}
-          />
-          {headerCatalogOpen ? null : <NpCollapsibleSection title={t('Header settings')}><FaqHeaderLayoutSettingsBand faq={faq} onChange={onChange} /></NpCollapsibleSection>}
+            <FaqHeaderChoiceGrid
+              value={faq.headerDesign}
+              onChange={(headerDesign) => onChange({ headerDesign })}
+              showGrid={headerCatalogOpen}
+              setShowGrid={setHeaderCatalogOpen}
+            />
+          {faq.headerDesign === 'none' ? null : (
+            <NpCollapsibleSection title={t('Placement')}>
+              <FaqHeaderPositionTiles faq={faq} onChange={onChange} />
+            </NpCollapsibleSection>
+          )}
+          {headerCatalogOpen || faq.headerDesign === 'none' ? null : <NpCollapsibleSection title={t('Header settings')}><FaqHeaderLayoutSettingsBand faq={faq} onChange={onChange} /></NpCollapsibleSection>}
         </div>
       ) : null}
 
       {subSection === 'background' && faq.enabled ? (
-        <div className="np-stack"><NpCollapsibleSection title={t('Background')}>
+        <div className="np-stack"><NpCollapsibleSection title={t('Palette')}>
+            <SectionPaletteFamilyControl
+              value={faq.paletteFamily ?? 'global'}
+              onChange={(paletteFamily) => onChange({ paletteFamily })}
+              mode={backgroundTheme.mode}
+            />
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={faq}
             onChange={onChange}
             renderColorField={({ label, value }) => (
-              <FaqBackgroundColorField faq={faq} onChange={onChange} palette={faqPalette} bindings={faqBindings} label={label} value={value} />
+              <FaqBackgroundColorField faq={{ ...faq, faqPalette: backgroundTheme.palette }} onChange={onChange} palette={backgroundTheme.palette} bindings={faqBindings} label={label} value={value} />
             )}
           />
         </NpCollapsibleSection></div>

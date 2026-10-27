@@ -8,6 +8,8 @@ import {
   pricingBorderWidthPx,
   pricingCardRadiusPx,
   pricingFeaturedColor,
+  pricingGlowAlpha,
+  pricingGlowColor,
   pricingListBulletColor,
   pricingCtaRadius,
   readServicesPricingStyle,
@@ -34,6 +36,10 @@ export type ServicesPricingStyle = {
   featuredColor: string | null;
   /** General → List bullet color (palette token resolved to hex); `null` keeps the design's own. */
   bulletColor: string | null;
+  /** Glow hover color (palette token resolved to hex); `null` keeps the design's own ink. */
+  glowColor: string | null;
+  /** Glow hover opacity as a CSS percentage. */
+  glowAlpha: string;
   /** Order-button border-radius; `null` keeps the design's own shape. */
   ctaRadius: string | null;
   /** Spread onto every order-button `<a>`: href, click handling and new-tab behaviour. */
@@ -79,6 +85,8 @@ export function useServicesPricingStyle(
       borderWidthPx: pricingBorderWidthPx(style),
       borderColor: pricingBorderColor(style, palette),
       featuredColor: pricingFeaturedColor(style, palette),
+      glowColor: pricingGlowColor(style, palette),
+      glowAlpha: pricingGlowAlpha(style),
       bulletColor: pricingListBulletColor(style, palette),
       ctaRadius: pricingCtaRadius(style),
       anchorProps: {

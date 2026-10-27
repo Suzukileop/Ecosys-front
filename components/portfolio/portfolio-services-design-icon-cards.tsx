@@ -3,6 +3,7 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { fluidColumns, useFluidTrack } from '@/components/portfolio/portfolio-services-fluid-columns';
 import type { ProfileServiceItem } from '@/types/profile';
 import { featuredFill, pickContrastInk, readableInk, withAlpha } from '@/components/portfolio/portfolio-services-pricing-shared';
 import { resolveHeroPaletteColor, type HeroPaletteTokenId } from '@/components/portfolio/portfolio-hero-palette-settings';
@@ -18,7 +19,7 @@ import {
   resolveServicesCtaLabel,
 } from '@/components/portfolio/portfolio-services-card-elements';
 import { formatServiceDelivery, getServicePriceParts } from '@/lib/profile-services';
-import { ServiceIcon, resolveServiceIconKey } from '@/components/portfolio/portfolio-services-icon-cards-icons';
+import { ServiceIcon, parseImageIcon, resolveServiceIconKey } from '@/components/portfolio/portfolio-services-icon-cards-icons';
 import {
   DEFAULT_SERVICES_ICON_CARDS_SETTINGS,
   type PortfolioServicesIconCardsIconSize,
@@ -51,26 +52,29 @@ function getScrollParent(el: HTMLElement | null): HTMLElement | null {
   return null;
 }
 
+/** Narrowest an icon card may get (its padding included) before the text wraps word by word. */
+const MIN_CARD_WIDTH = 280;
+
 const RADIUS: Record<PortfolioServicesMediaColumnsRadius, string> = {
   none: '0px',
-  small: '8px',
-  medium: '14px',
-  large: '22px',
-  round: '36px',
+  small: '12px',
+  medium: '20px',
+  large: '32px',
+  round: '56px',
 };
 
 const GAP_PX: Record<PortfolioServicesMediaColumnsGap, number> = {
-  tight: 12,
-  normal: 24,
-  wide: 36,
-  roomy: 52,
+  tight: 8,
+  normal: 28,
+  wide: 56,
+  roomy: 96,
 };
 
 /** Badge diameter and glyph size in px. */
 const ICON_SIZE: Record<PortfolioServicesIconCardsIconSize, { badge: number; glyph: number }> = {
-  small: { badge: 32, glyph: 16 },
-  medium: { badge: 40, glyph: 20 },
-  large: { badge: 56, glyph: 26 },
+  small: { badge: 44, glyph: 22 },
+  medium: { badge: 64, glyph: 32 },
+  large: { badge: 92, glyph: 46 },
 };
 
 /** Multicolor rotation — the four colours of the reference first (teal, crimson, navy, yellow). */
@@ -80,20 +84,8 @@ const FONT = (rem: number) => `calc(${rem}rem * var(--pf-services-font-scale, 1)
 
 function cardSurface(style: PortfolioServicesIconCardsStyle, isLight: boolean): CSSProperties {
   switch (style) {
-    case 'elevated':
-      return isLight
-        ? {
-            backgroundColor: '#ffffff',
-            boxShadow: '0 1px 2px rgba(15,23,42,0.04), 0 12px 40px -14px rgba(15,23,42,0.14)',
-          }
-        : {
-            backgroundColor: '#161616',
-            boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.06), 0 18px 44px -18px rgba(0,0,0,0.7)',
-          };
     case 'outlined':
       return { boxShadow: `inset 0 0 0 1px ${isLight ? 'rgba(10,10,10,0.12)' : 'rgba(255,255,255,0.14)'}` };
-    case 'tinted':
-      return { backgroundColor: 'color-mix(in srgb, var(--ic-accent) 7%, transparent)' };
     default:
       return {};
   }
@@ -141,14 +133,14 @@ function IconCardTasks({
     return (
       <p
         className={`mt-4 max-w-[34rem] leading-[1.7] text-[color:var(--ic-muted)] ${centered ? 'mx-auto' : ''}`}
-        style={{ fontSize: FONT(0.8) }}
+        style={{ fontSize: FONT(0.9) }}
         aria-label={label}
       >
         {tasks.map((task, taskIndex) => (
           <span key={`${task}-${taskIndex}`}>
             {taskIndex > 0 ? (
               <span aria-hidden className="mx-2" style={{ color: markColor }}>
-                {'&bull;'}
+                {'\u2022'}
               </span>
             ) : null}
             {task}
@@ -159,14 +151,14 @@ function IconCardTasks({
   }
   if (layout === 'list') {
     return (
-      <ul className="mt-5 w-full max-w-[22rem] text-left" aria-label={label}>
+      <ul className={`mt-5 w-full max-w-[22rem] ${centered ? 'text-center' : 'text-left'}`} aria-label={label}>
         {tasks.map((task, taskIndex) => (
           <li
             key={`${task}-${taskIndex}`}
-            className="flex items-baseline gap-3 border-t py-2.5 last:border-b"
-            style={{ fontSize: FONT(0.82), borderColor: `color-mix(in srgb, ${ink} ${isLight ? 10 : 16}%, transparent)` }}
+            className={`flex items-baseline gap-3 border-t py-2.5 last:border-b ${centered ? 'justify-center' : ''}`}
+            style={{ fontSize: FONT(0.9), borderColor: `color-mix(in srgb, ${ink} ${isLight ? 10 : 16}%, transparent)` }}
           >
-            <span className="w-5 shrink-0 font-mono tabular-nums text-[color:var(--ic-muted)]" style={{ fontSize: FONT(0.68) }}>
+            <span className="w-5 shrink-0 font-mono tabular-nums text-[color:var(--ic-muted)]" style={{ fontSize: FONT(0.78) }}>
               {String(taskIndex + 1).padStart(2, '0')}
             </span>
             <span>{task}</span>
@@ -177,9 +169,16 @@ function IconCardTasks({
   }
   // Checklist — a small tinted check in the card's own icon colour before each task.
   return (
-    <ul className="mt-5 flex w-full max-w-[22rem] flex-col gap-2.5 text-left" aria-label={label}>
+    <ul
+      className={`mt-5 flex w-full max-w-[22rem] flex-col gap-2.5 ${centered ? 'text-center' : 'text-left'}`}
+      aria-label={label}
+    >
       {tasks.map((task, taskIndex) => (
-        <li key={`${task}-${taskIndex}`} className="flex items-start gap-2.5" style={{ fontSize: FONT(0.85) }}>
+        <li
+          key={`${task}-${taskIndex}`}
+          className={`flex items-start gap-2.5 ${centered ? 'justify-center' : ''}`}
+          style={{ fontSize: FONT(0.92) }}
+        >
           <span
             aria-hidden
             className="mt-[0.15em] inline-flex h-[1.15em] w-[1.15em] shrink-0 items-center justify-center rounded-full"
@@ -226,19 +225,23 @@ export function ServicesIconCardsSection({
   const ctaLabel = resolveServicesCtaLabel(presentation);
 
   const gapPx = GAP_PX[settings.gap];
+  const listRef = useRef<HTMLDivElement>(null);
+  // Columns follow the block's real width (see portfolio-services-fluid-columns): the asked-for
+  // count is a ceiling, never forced when a card would get squeezed.
+  const track = useFluidTrack(listRef, count > 0, (width) => (width < 640 ? Math.min(gapPx, 24) : gapPx), MIN_CARD_WIDTH, `${gapPx}`);
+  const fluidCols = track ? fluidColumns(count, settings.columns, track.fit) : null;
   const vars = {
-    '--ic-gap': `${gapPx}px`,
-    // Phones always stack one card per row.
-    '--ic-c-base': 1,
-    '--ic-c-md': 2,
-    '--ic-c-lg': settings.columns,
+    '--ic-gap': `${track ? track.gap : gapPx}px`,
+    // Phones always stack one card per row until the block measures itself.
+    '--ic-c-base': fluidCols ?? 1,
+    '--ic-c-md': fluidCols ?? 2,
+    '--ic-c-lg': fluidCols ?? settings.columns,
     '--ic-ink': ink,
     '--ic-muted': isLight ? 'rgba(17,17,17,0.62)' : 'rgba(250,250,250,0.62)',
     '--ic-accent': accent,
     color: 'var(--ic-ink)',
   } as CSSProperties;
 
-  const listRef = useRef<HTMLDivElement>(null);
   const entranceKey = `${count}|${settings.columns}|${show.title}|${show.description}|${show.price}|${show.delivery}|${show.tasks}|${show.cta}`;
 
   useLayoutEffect(() => {
@@ -359,7 +362,16 @@ export function ServicesIconCardsSection({
         const glyphOnBadge =
           badgeColor && contrast === '#0a0a0a' ? `color-mix(in srgb, ${badgeColor} 30%, #000)` : '#ffffff';
         const bare = settings.iconShape === 'bare';
-        const badgeStyle: CSSProperties = bare
+        // The creator's own picture keeps its colours: it fills the badge instead of sitting on a tint.
+        const customPicture = parseImageIcon(iconKey) !== null;
+        const badgeStyle: CSSProperties = customPicture
+          ? {
+              width: size.badge,
+              height: size.badge,
+              overflow: 'hidden',
+              borderRadius: settings.iconShape === 'circle' ? '9999px' : bare ? 0 : `${Math.round(size.badge * 0.3)}px`,
+            }
+          : bare
           ? { color: badgeColor ?? cardInk }
           : {
               width: size.badge,
@@ -378,10 +390,6 @@ export function ServicesIconCardsSection({
               centered ? 'items-center text-center' : 'items-start text-left'
             } ${plain ? 'px-2 py-4' : 'px-6 py-9 sm:px-9 sm:py-11'} transition-[transform,translate,scale,rotate,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               settings.hoverEffect === 'lift' ? 'md:hover:-translate-y-1.5' : ''
-            } ${
-              settings.hoverEffect === 'glow'
-                ? 'md:hover:!shadow-[0_0_0_1.5px_var(--ic-accent),0_24px_48px_-24px_var(--ic-accent)]'
-                : ''
             }`}
             style={{
               borderRadius: RADIUS[settings.cardRadius],
@@ -392,15 +400,16 @@ export function ServicesIconCardsSection({
               data-ic-badge=""
               data-pf-no-color-transition=""
               className={`inline-flex shrink-0 items-center justify-center transition-transform duration-500 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-                settings.hoverEffect === 'icon' ? 'md:group-hover:-rotate-6 md:group-hover:scale-[1.14]' : ''
+                settings.hoverEffect === 'icon' ? 'md:group-hover:-rotate-[14deg] md:group-hover:scale-[1.35]' : ''
               }`}
               style={badgeStyle}
             >
               <ServiceIcon
                 name={iconKey}
                 strokeWidth={bare ? 1.7 : 2.1}
+                variant={settings.iconStyle}
                 className="block"
-                size={bare ? Math.round(size.badge * 0.8) : size.glyph}
+                size={customPicture ? size.badge : bare ? Math.round(size.badge * 0.8) : size.glyph}
               />
             </span>
             {show.title ? (
@@ -426,14 +435,14 @@ export function ServicesIconCardsSection({
               </p>
             ) : null}
             {delivery ? (
-              <p className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[color:var(--ic-muted)]">
+              <p className="mt-2 text-[0.8rem] font-medium uppercase tracking-[0.14em] text-[color:var(--ic-muted)]">
                 {delivery}
               </p>
             ) : null}
             {description ? (
               <p
                 className={`mt-3 max-w-[34rem] leading-[1.7] text-[color:var(--ic-muted)] ${centered ? 'mx-auto' : ''}`}
-                style={{ fontSize: FONT(0.9) }}
+                style={{ fontSize: FONT(0.95) }}
               >
                 {description}
               </p>
@@ -450,22 +459,25 @@ export function ServicesIconCardsSection({
               />
             ) : null}
             {show.cta ? (
+              // mt-auto pins the button to the card's bottom edge so the buttons line up across a row.
+              <div className="mt-auto pt-6">
               <ServicesOrderButton
                 pricingStyle={pricingStyle}
                 label={ctaLabel}
                 ink={cardInk}
                 surface={cardFill ? cardFill.blended : isLight ? '#ffffff' : '#0a0a0a'}
-                className="group/cta mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[0.85rem] font-semibold transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
+                className="group/cta inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[0.95rem] font-semibold transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                 style={{ backgroundColor: cardInk, color: cardFill ? cardFill.blended : isLight ? '#ffffff' : '#0a0a0a' }}
                 autoContent={
                   <>
                     {ctaLabel}
-                    <span aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-0.5">
+                    <span data-pf-no-color-transition="" aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-0.5">
                       &rarr;
                     </span>
                   </>
                 }
               />
+              </div>
             ) : null}
           </article>
         );

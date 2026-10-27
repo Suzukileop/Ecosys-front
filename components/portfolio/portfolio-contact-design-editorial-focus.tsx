@@ -1,4 +1,5 @@
 'use client';
+import { portfolioEditorialGutterNegativeX } from '@/components/portfolio/portfolio-editorial-layout';
 
 import gsap from 'gsap';
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
@@ -94,22 +95,22 @@ export function ContactDesignEditorialFocus({
     );
   }, []);
 
-  const itemClass = 'block text-2xl font-light tracking-tight transition-colors hover:![color:var(--pf-hover-ink)] sm:text-3xl';
+  const itemClass = 'block text-[calc(1.5rem*var(--pf-contact-font-scale,1))] font-light tracking-tight transition-colors hover:![color:var(--pf-hover-ink)] sm:text-[calc(1.875rem*var(--pf-contact-font-scale,1))]';
   const itemStyle = { color: tokens.muted, '--pf-hover-ink': tokens.ink } as CSSProperties;
   const labelClass = 'text-[10px] font-bold uppercase tracking-[0.32em]';
 
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
+      className={`relative overflow-hidden ${portfolioEditorialGutterNegativeX(contentGutter)}`}
       data-pf-no-color-transition=""
     >
       <div
-        className={`relative mx-auto flex w-full max-w-[90rem] flex-col gap-16 py-24 sm:py-32 lg:min-h-[85vh] lg:flex-row lg:items-center lg:gap-8 ${portfolioEditorialGutterX(contentGutter)}`}
+        className={`relative flex w-full flex-col gap-16 py-24 sm:py-32 lg:min-h-[85vh] lg:flex-row lg:items-center lg:gap-8 ${portfolioEditorialGutterX(contentGutter)}`}
       >
         <div className="min-w-0 lg:w-[52%]">
           <p
-            className="font-serif text-[clamp(2.75rem,9vw,7rem)] font-medium uppercase leading-[0.9] tracking-[-0.02em]"
+            className="font-serif text-[calc(clamp(2.75rem,9vw,7rem)*var(--pf-contact-font-scale,1))] font-medium uppercase leading-[0.9] tracking-[-0.02em]"
             style={{ color: tokens.ink }}
             data-pf-no-color-transition=""
           >
@@ -161,7 +162,7 @@ export function ContactDesignEditorialFocus({
                     {addressHeading}
                   </p>
                 ) : null}
-                <span className="mt-2 block text-2xl font-light tracking-tight sm:text-3xl" style={{ color: tokens.muted }} data-pf-no-color-transition="">
+                <span className="mt-2 block text-[calc(1.5rem*var(--pf-contact-font-scale,1))] font-light tracking-tight sm:text-[calc(1.875rem*var(--pf-contact-font-scale,1))]" style={{ color: tokens.muted }} data-pf-no-color-transition="">
                   {locationLabel}
                 </span>
               </div>

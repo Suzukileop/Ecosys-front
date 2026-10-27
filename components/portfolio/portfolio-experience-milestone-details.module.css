@@ -1,0 +1,43 @@
+.card {
+  position: relative;
+}
+.rollWord { display: inline-block; white-space: nowrap; }
+.rollCharacter { display: inline-block; overflow: hidden; vertical-align: top; height: 1.2em; line-height: 1.2; padding: 0; margin: 0; }
+.rollTrack { position: relative; display: block; transition: transform 500ms cubic-bezier(.22,1,.36,1); }
+.rollCopy { position: absolute; top: 100%; left: 0; }
+.statusDot { box-shadow: 0 0 6px color-mix(in srgb, currentColor 35%, transparent); }
+.tags { display: flex; flex-wrap: wrap; gap: .5rem; padding: 0; margin: 0; list-style: none; }
+.tags[data-shape='pill'] li { border-radius: 999px; }
+.tags li {
+  padding: .5rem .8rem;
+  font-size: calc(.8125rem * var(--pf-experience-font-scale, 1));
+  font-weight: 400;
+  line-height: 1.4;
+  border: 1px solid color-mix(in srgb, var(--milestone-ink) 15%, transparent);
+  border-radius: .25rem;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--milestone-ink) 4%, transparent), transparent);
+  overflow-wrap: anywhere;
+  transition: transform 180ms ease, border-color 180ms ease, background-color 180ms ease;
+}
+@media (hover: hover) and (pointer: fine) {
+  .card:hover .rollTrack { transform: translateY(-100%); transition-delay: var(--roll-delay, 0ms); }
+  .tags li:hover {
+    transform: translateY(-2px);
+    border-color: color-mix(in srgb, var(--milestone-accent) 45%, transparent);
+    background-color: color-mix(in srgb, var(--milestone-ink) 4%, transparent);
+  }
+}
+.entry[data-milestone-reveal='pending'] :is(.year,.card) { opacity: 0; }
+.entry[data-milestone-reveal='visible'] .year { animation: arrive 500ms both cubic-bezier(.22,1,.36,1); }
+.entry[data-milestone-reveal='visible'] .card { animation: arrive 550ms 80ms both cubic-bezier(.22,1,.36,1); }
+.entry:focus-within :is(.year,.card) { opacity: 1; animation: none; }
+@keyframes arrive { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }
+@media (max-width: 639px) {
+  @keyframes arrive { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tags li,.rollTrack { transition: none; }
+  .card:hover .rollTrack { transform: none; }
+  .entry[data-milestone-reveal] :is(.year,.card) { opacity: 1; animation: none; }
+  .tags li:hover { transform: none; }
+}

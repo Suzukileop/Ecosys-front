@@ -1,0 +1,24 @@
+.team-avatar-card { min-width: 0; transition: transform 420ms cubic-bezier(.22, 1, .36, 1), border-color 300ms ease; }
+.team-avatar-card .team-avatar-name { margin: 0; font-weight: 500; line-height: 1.25; letter-spacing: -.025em; overflow-wrap: anywhere; text-wrap: pretty; }
+.team-avatar-card .team-avatar-role { margin: 8px 0 0; font-size: calc(.875rem * var(--pf-team-font-scale, 1)); font-weight: 400; line-height: 1.55; text-transform: none; letter-spacing: 0; overflow-wrap: anywhere; }
+.team-avatar-accent { display: block; width: 22px; height: 2px; flex: none; margin-bottom: 12px; background: var(--pf-palette-principal, currentColor); }
+.team-avatar-accent[data-with-image='true'] { margin-top: 20px; }
+.team-avatar-mask { transition: border-radius 550ms cubic-bezier(.22, 1, .36, 1); }
+.team-avatar-photo { transition: transform 500ms cubic-bezier(.22, 1, .36, 1); }
+.team-avatar-glow { opacity: .1; transition: opacity 400ms ease; }
+.team-avatar-gallery a { min-width: 44px; min-height: 44px; }
+.team-avatar-gallery [role='group'] button { font-size: 14px; font-weight: 500; line-height: 1.5; text-transform: none; letter-spacing: 0; min-height: 44px; }
+.team-avatar-gallery [role='region'] { scroll-padding-inline: 4px; }
+.team-avatar-gallery a:focus-visible, .team-avatar-gallery button:focus-visible, .team-avatar-gallery [role='region']:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+@media (hover: hover) and (pointer: fine) {
+  .team-avatar-card:hover { transform: translateY(-3px); }
+  .team-avatar-card:hover .team-avatar-photo { transform: scale(1.025); }
+  .team-avatar-card:hover .team-avatar-glow { opacity: .18; }
+}
+.team-avatar-card:focus-within .team-avatar-mask[data-shape='arch'] { border-radius: 50% 50% 18% 18%; }
+.team-avatar-card:focus-within .team-avatar-mask[data-shape='squircle'] { border-radius: 34%; }
+@media (prefers-reduced-motion: reduce) {
+  .team-avatar-gallery [data-pf-no-color-transition] { transition: none !important; }
+  .team-avatar-card:hover, .team-avatar-card:hover .team-avatar-photo { transform: none; }
+  .team-avatar-card .team-avatar-mask, .team-avatar-card:hover .team-avatar-mask, .team-avatar-card:focus-within .team-avatar-mask { border-radius: 50%; }
+}

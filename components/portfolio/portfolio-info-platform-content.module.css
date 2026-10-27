@@ -1,0 +1,63 @@
+.content :global(.pf-about-platform-headline),
+.content :global(.pf-about-platform-headline-line) {
+  font-family:var(--platform-headline-font);
+  font-style:var(--platform-headline-style);
+  font-weight:var(--platform-headline-weight);
+  line-height:inherit;
+  overflow-wrap:anywhere;
+}
+.content.content[data-platform-headline-font='default'] :global(.pf-about-platform-headline),
+.content.content[data-platform-headline-font='default'] :global(.pf-about-platform-headline-line) {
+  font-family:var(--info-default-font-family, inherit) !important;
+}
+.content :global(.pf-about-platform-skills-grid) { gap:1rem; }
+.content :global(.pf-about-platform-card) {
+  border-radius:12px;
+  padding:clamp(1.25rem,2.5vw,2rem);
+  border-color:var(--pf-about-platform-line);
+}
+.content :global(.pf-about-platform-skill-slot:first-child) :global(.pf-about-platform-card) {
+  background:color-mix(in srgb,var(--pf-about-platform-ink) 4%,transparent);
+}
+.content[data-platform-filled-cards='true'] :global(.pf-about-platform-skill-slot) :global(.pf-about-platform-card) {
+  background:color-mix(in srgb,var(--pf-about-platform-ink) 4%,transparent);
+  border-color:transparent;
+}
+.content :global(.pf-about-platform-card-mark) {
+  width:2rem;
+  height:2rem;
+  color:var(--pf-about-platform-accent);
+}
+.content :global(.pf-about-platform-card-title) { line-height:1.4; }
+.content :global(.pf-about-platform-split) {
+  margin-top:clamp(3rem,6vw,5rem);
+  padding-top:1.75rem;
+  border-top:1px solid var(--pf-about-platform-line);
+}
+.content :global(.pf-about-platform-words) {
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:1rem 2rem;
+}
+.content :global(.pf-about-platform-word) { line-height:1.65; }
+.content :global(.pf-about-platform-edu-list) { margin-top:0; }
+.content :global(.pf-about-platform-edu-row) {
+  padding-block:1.5rem;
+  grid-template-columns:minmax(0,1fr);
+  gap:.5rem 1.5rem;
+}
+.content :global(.pf-about-platform-edu-row:first-child) { padding-top:0; }
+.content :global(.pf-about-platform-edu-row + .pf-about-platform-edu-row) { border-top:1px solid var(--pf-about-platform-line); }
+.content :global(.pf-about-platform-edu-meta-slash) { display:none; }
+.content :global(.pf-about-platform-edu-degree) { line-height:1.5; }
+@container (min-width:640px) {
+  .content :global(.pf-about-platform-skills-grid:not([data-count='1'])) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .content :global(.pf-about-platform-edu-row) { grid-template-columns:8rem minmax(0,1fr); }
+}
+@container (min-width:1280px) {
+  .content :global(.pf-about-platform-skills-grid:not([data-count='1']):not([data-count='2']):not([data-count='3'])) { grid-template-columns:repeat(2,minmax(0,1fr)); }
+  .content :global(.pf-about-platform-skills-grid[data-count='3']) { grid-template-columns:repeat(3,minmax(0,1fr)); }
+}
+@media (max-width:479px) {
+  .content :global(.pf-about-platform-words) { grid-template-columns:minmax(0,1fr); }
+}

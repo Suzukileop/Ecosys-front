@@ -7,6 +7,7 @@ import { msg } from '@/lib/i18n/config';
  * layouts). Independent of Design's `sectionDesign` (which layout the tools render in).
  */
 export type PortfolioToolsHeaderDesign =
+  | 'none'
   | 'editorial'
   | 'marquee'
   | 'index'
@@ -42,6 +43,7 @@ export type PortfolioToolsHeaderAccentCountAlignment = 'left' | 'center' | 'righ
 export type PortfolioToolsHeaderBillboardWordStyle = 'outline' | 'fill' | 'simple';
 
 export const TOOLS_HEADER_DESIGNS: PortfolioToolsHeaderDesign[] = [
+  'none',
   'editorial',
   'marquee',
   'index',
@@ -87,6 +89,7 @@ export const PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  { value: 'none', label: msg('None'), description: '' },
   {
     value: 'editorial',
     label: msg('Editorial'),

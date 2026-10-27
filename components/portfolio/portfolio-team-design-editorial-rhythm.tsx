@@ -26,6 +26,7 @@
  * globals.css replaces its `transition-property` and the motion silently disappears.
  */
 
+import { cardsRadiusClass } from '@/components/portfolio/portfolio-cards-style';
 import {
   teamListAlignClass,
   teamSpotlightMaxWidthClass,
@@ -40,6 +41,9 @@ import {
 } from '@/components/portfolio/portfolio-team-design-primitives';
 import type { ProfileTeamMember } from '@/types/profile';
 import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
+import type { ReactNode } from 'react';
+
+type PortraitRenderer = (member: ProfileTeamMember, index: number) => ReactNode;
 
 /**
  * One member's whole geometry. Kept in a table rather than derived from the index so the rhythm can
@@ -243,25 +247,27 @@ function RhythmPortrait({
   presentation,
   slot,
   radius,
+  portrait,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   slot: RhythmSlot;
   radius: string;
+  portrait?: ReactNode;
 }) {
   return (
     <div className={`team-rhythm-portrait relative w-full overflow-hidden ${radius} ${slot.ratio}`}>
       {/* The zoom sits above the entrance's own node, never on it: the entrance clears the
           transform it wrote by name when it finishes, which would take this one with it. */}
       <div className={ZOOM_CLS} data-pf-no-color-transition="">
-        <TeamMemberImage
+        {portrait ?? <TeamMemberImage
           member={member}
           presentation={presentation}
           className={TONE_CLS}
           fill
           reveal
           sizes="(max-width: 1023px) 100vw, 50vw"
-        />
+        />}
       </div>
     </div>
   );
@@ -275,14 +281,16 @@ function RhythmHeroCard({
   presentation,
   slot,
   radius,
+  portrait,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   slot: RhythmSlot;
   radius: string;
+  portrait?: ReactNode;
 }) {
   return <RhythmStandardCard member={member} presentation={presentation} slot={slot}
-    radius={radius} withImage featured />;
+    radius={radius} portrait={portrait} withImage featured />;
 }
 
 /**
@@ -296,6 +304,7 @@ function RhythmStandardCard({
   radius,
   withImage,
   featured = false,
+  portrait,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
@@ -303,6 +312,7 @@ function RhythmStandardCard({
   radius: string;
   withImage: boolean;
   featured?: boolean;
+  portrait?: ReactNode;
 }) {
   const surface = presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#fff');
   const readable = {
@@ -366,7 +376,7 @@ function RhythmStandardCard({
       </div>
       {withImage ? (
         <div className="mt-5 sm:mt-6">
-          <RhythmPortrait member={member} presentation={presentation} slot={slot} radius={radius} />
+          <RhythmPortrait member={member} presentation={presentation} slot={slot} radius={radius} portrait={portrait} />
         </div>
       ) : null}
     </article>
@@ -376,13 +386,15 @@ function RhythmStandardCard({
 export function TeamEditorialRhythm({
   members,
   presentation,
+  renderPortrait,
 }: {
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
+  renderPortrait?: PortraitRenderer;
 }) {
   if (members.length === 0) return null;
   const table = rhythmTable(members.length);
-  const radius = rhythmRadiusClass(presentation.cardRadius);
+  const radius = cardsRadiusClass(presentation.cardsStyle) ?? rhythmRadiusClass(presentation.cardRadius);
   const withImage = presentation.showImage !== false;
   return (
     <div
@@ -403,6 +415,7 @@ export function TeamEditorialRhythm({
             presentation={presentation}
             slot={slot}
             radius={radius}
+            portrait={renderPortrait?.(member, index)}
           />
         ) : (
           <RhythmStandardCard
@@ -412,6 +425,7 @@ export function TeamEditorialRhythm({
             slot={slot}
             radius={radius}
             withImage={withImage}
+            portrait={renderPortrait?.(member, index)}
           />
         );
       })}

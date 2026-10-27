@@ -117,6 +117,7 @@ export const CONTACT_DESIGN_LAYOUT_SPECS: Record<PortfolioContactPremiumDesign, 
     heading('socialLabel', 'Social heading', 'Social'),
   ],
   'split-grid': [
+    { kind: 'toggle', key: 'portrait', label: msg('Centered portrait'), group: 'image', defaultVisible: false },
     {
       kind: 'text',
       key: 'marquee',
@@ -212,17 +213,6 @@ export const CONTACT_DESIGN_LAYOUT_SPECS: Record<PortfolioContactPremiumDesign, 
     toggle('arrow', 'Arrow'),
     heading('enquiriesLabel', 'Contact heading', '/ General enquiries'),
     heading('addressLabel', 'Address heading', '/ Address'),
-  ],
-  'borderless-grid': [
-    titleSpec,
-    {
-      kind: 'text',
-      key: 'subline',
-      label: msg('Second headline'),
-      group: 'text',
-      defaultText: fromField((p) => p.borderlessGridSubline, 'Start a conversation.'),
-    },
-    toggle('spotlight', 'Hover spotlight', 'effects'),
   ],
   'broken-grid': [
     titleSpec,

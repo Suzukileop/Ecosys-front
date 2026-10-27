@@ -1,0 +1,53 @@
+.titleSlot.titleSlot {
+  height: auto;
+  min-height: clamp(3.2rem, 7.2vw, 5.4rem);
+  overflow: visible;
+}
+.section { isolation: isolate; }
+.topRow { display: flex; align-items: flex-end; justify-content: space-between; flex-wrap: wrap; gap: 1.5rem 2rem; margin-bottom: 1.5rem; }
+.indexGroup { margin-left: auto; flex-shrink: 0; }
+.indexType { display: flex; align-items: baseline; gap: 1.25rem; pointer-events: none; user-select: none; line-height: 1; font-size: calc(clamp(3.75rem,5vw,5.5rem) * var(--pf-experience-font-scale,1)); }
+.indexStatus { font-size: calc(clamp(1.25rem,1.8vw,2rem) * var(--pf-experience-font-scale,1)); font-weight: 400; letter-spacing: -.03em; }
+.tasks [data-exp-task] > span:last-child { font-size: calc(1rem * var(--pf-experience-font-scale,1)); font-weight: 400; line-height: 1.6; }
+.tools li, .tools li span { font-size: calc(.875rem * var(--pf-experience-font-scale,1)); font-weight: 400; }
+.section :global(.pf-reel-detail-footer) a { font-size: calc(.875rem * var(--pf-experience-font-scale,1)); font-weight: 500; }
+.topMeta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: .75rem 1.5rem;
+  flex: 1 1 12rem;
+  overflow-wrap: anywhere;
+}
+.section :global(.pf-reel-bento-lead) { gap: 1.75rem; }
+.section :global(.pf-reel-bento-card) { border-radius: .75rem; }
+.section :global(.pf-reel-detail-footer) { gap: 1.5rem; align-items: center; }
+.section h3 { font-size: calc(clamp(2rem,3.5vw,3.5rem) * var(--pf-experience-font-scale,1)); }
+.watermarkStatus,.verticalStatus {
+  position: absolute;
+  pointer-events: none;
+  user-select: none;
+  z-index: -1;
+  margin: 0;
+  font-weight: 400;
+  letter-spacing: -.05em;
+  line-height: 1;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+  max-width: 75%;
+}
+.watermarkStatus { right: 6vw; bottom: 3rem; font-size: calc(clamp(4rem,12vw,11rem) * var(--pf-experience-font-scale,1)); text-align: right; }
+.verticalStatus { right: 1vw; top: 25%; bottom: 3rem; writing-mode: vertical-rl; font-size: calc(clamp(3rem,6vw,5rem) * var(--pf-experience-font-scale,1)); }
+.section[data-status-mode='vertical'] { padding-right: 9vw; }
+@media (max-width: 639px) {
+  .section { min-height: auto !important; padding-top: 4rem; padding-bottom: 3rem; }
+  .watermarkStatus,.verticalStatus { position: static; order: 2; writing-mode: horizontal-tb; max-width: 100%; margin-top: 1.5rem; font-size: calc(clamp(2rem,10vw,3rem) * var(--pf-experience-font-scale,1)); text-align: right; }
+  .section[data-status-mode='vertical'] { padding-right: 6vw; }
+}
+
+.titleSlot.titleSlot h3 {
+  width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}

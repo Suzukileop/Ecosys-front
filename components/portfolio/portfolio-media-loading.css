@@ -1,0 +1,33 @@
+/* Quiet loading state shared by Team/Gallery. Paint only, never changes the frame geometry. */
+.pf-media-loading {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: color-mix(in srgb, currentColor 5%, transparent);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 180ms ease-out, visibility 0s 180ms;
+}
+.pf-media-loading[data-loading='true'] {
+  opacity: 1;
+  visibility: visible;
+  transition-delay: 0s;
+}
+.pf-media-loading::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(105deg, transparent 20%, color-mix(in srgb, currentColor 8%, transparent) 50%, transparent 80%);
+  transform: translateX(-100%);
+  animation: pf-media-loading-sweep 1.8s ease-in-out infinite;
+  animation-play-state: paused;
+}
+.pf-media-loading[data-loading='true']::after { animation-play-state: running; }
+@keyframes pf-media-loading-sweep {
+  to { transform: translateX(100%); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-media-loading { transition: none; }
+  .pf-media-loading::after { animation: none; }
+}

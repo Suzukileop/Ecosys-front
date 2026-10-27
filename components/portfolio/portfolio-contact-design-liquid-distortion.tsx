@@ -1,4 +1,5 @@
 'use client';
+import { portfolioEditorialGutterNegativeX } from '@/components/portfolio/portfolio-editorial-layout';
 
 import gsap from 'gsap';
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
@@ -7,6 +8,8 @@ import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfol
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterX,
+  portfolioEditorialGutterInsetLeft,
+  portfolioEditorialGutterInsetRight,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import { contactLightDarkTokens } from '@/components/portfolio/portfolio-contact-design-motion';
@@ -57,6 +60,8 @@ export function ContactDesignLiquidDistortion({
   const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const watermarkRef = useRef<HTMLDivElement>(null);
+  const watermarkBoxRef = useRef<HTMLDivElement>(null);
+  const watermarkTextRef = useRef<HTMLSpanElement>(null);
   const tokens = contactLightDarkTokens(colorMode);
 
   const watermark = layout.text('watermark');
@@ -70,6 +75,27 @@ export function ContactDesignLiquidDistortion({
   const hasPhone = Boolean(phone?.trim());
   const hasLocation = Boolean(locationLabel?.trim());
   const hasLinks = links.length > 0;
+
+  useLayoutEffect(() => {
+    const box = watermarkBoxRef.current;
+    const text = watermarkTextRef.current;
+    if (!box || !text) return;
+    let disposed = false;
+    const fit = () => {
+      if (disposed || box.clientWidth === 0) return;
+      text.style.fontSize = '100px';
+      const measured = text.offsetWidth;
+      if (!measured) return;
+      // Reserve a little room for the liquid motion, not an arbitrary character count.
+      const limit = 100 * box.clientWidth * 0.88 / measured;
+      text.style.fontSize = `min(calc(26vw * var(--pf-contact-font-scale, 1)), ${limit}px)`;
+    };
+    fit();
+    const observer = new ResizeObserver(fit);
+    observer.observe(box);
+    void document.fonts.ready.then(fit);
+    return () => { disposed = true; observer.disconnect(); };
+  }, [watermark, contentGutter]);
 
   useLayoutEffect(() => {
     const root = rootRef.current;
@@ -100,8 +126,8 @@ export function ContactDesignLiquidDistortion({
     const tick = () => {
       smoothVX += (rawVX - smoothVX) * 0.08;
       if (watermarkEl) {
-        const skew = Math.max(-16, Math.min(16, smoothVX * 0.9));
-        const drift = Math.max(-40, Math.min(40, smoothVX * 2.2));
+        const skew = Math.max(-8, Math.min(8, smoothVX * 0.9));
+        const drift = Math.max(-24, Math.min(24, smoothVX * 2.2));
         gsap.set(watermarkEl, { skewX: skew, x: drift });
       }
       rafId = window.requestAnimationFrame(tick);
@@ -133,14 +159,14 @@ export function ContactDesignLiquidDistortion({
     };
   }, [hasWatermark]);
 
-  const itemClass = 'block text-xl font-light transition-colors hover:![color:var(--pf-hover-ink)] sm:text-2xl';
+  const itemClass = 'block text-xl font-light transition-colors hover:![color:var(--pf-hover-ink)] sm:text-[calc(1.5rem*var(--pf-contact-font-scale,1))]';
   const itemStyle = { color: tokens.muted, '--pf-hover-ink': tokens.ink } as CSSProperties;
   const labelClass = 'text-[10px] font-bold uppercase tracking-[0.32em]';
 
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
+      className={`relative overflow-hidden ${portfolioEditorialGutterNegativeX(contentGutter)}`}
       data-pf-no-color-transition=""
     >
       {/* Two nested wrappers, not one — `overflow: hidden` clips at an element's own
@@ -157,10 +183,12 @@ export function ContactDesignLiquidDistortion({
           aria-hidden
           className={`pointer-events-none absolute inset-y-0 left-0 right-0 select-none ${portfolioEditorialGutterX(contentGutter)}`}
         >
-          <div className="relative flex h-full w-full items-center justify-center overflow-hidden">
-            <div ref={watermarkRef}>
+          <div ref={watermarkBoxRef} className="relative flex h-full w-full items-center justify-center overflow-hidden">
+            <div ref={watermarkRef} className="shrink-0">
               <span
-                className="text-[26vw] font-black uppercase leading-none tracking-tight sm:text-[20vw]"
+                ref={watermarkTextRef}
+                data-liquid-watermark=""
+                className="inline-block whitespace-nowrap text-[calc(26vw*var(--pf-contact-font-scale,1))] font-black uppercase leading-none tracking-tight"
                 style={{ opacity: watermarkOpacity, color: tokens.ink }}
               >
                 {watermark}
@@ -170,9 +198,9 @@ export function ContactDesignLiquidDistortion({
         </div>
       ) : null}
 
-      <div className="relative mx-auto grid min-h-[85vh] w-full max-w-[90rem] grid-cols-1 gap-14 px-6 py-24 sm:px-10 lg:min-h-[90vh] lg:grid-cols-2 lg:gap-0 lg:px-0">
+      <div className={`relative grid min-h-[85vh] w-full grid-cols-1 gap-14 py-24 lg:min-h-[90vh] lg:grid-cols-2 lg:gap-0 ${portfolioEditorialGutterX(contentGutter)}`}>
         {hasEmail ? (
-          <div className="flex justify-center text-center lg:absolute lg:left-[6vw] lg:top-[10vh] lg:block lg:text-left">
+          <div className={`flex justify-center text-center lg:absolute lg:top-[10vh] lg:block lg:text-left ${portfolioEditorialGutterInsetLeft(contentGutter)}`}>
             <div>
               {emailHeading ? (
                 <p className={labelClass} style={{ color: tokens.faint }} data-pf-no-color-transition="">
@@ -193,7 +221,7 @@ export function ContactDesignLiquidDistortion({
         ) : null}
 
         {hasPhone ? (
-          <div className="flex justify-center text-center lg:absolute lg:right-[7vw] lg:top-[16vh] lg:block lg:text-right">
+          <div className={`flex justify-center text-center lg:absolute lg:top-[16vh] lg:block lg:text-right ${portfolioEditorialGutterInsetRight(contentGutter)}`}>
             <div>
               {phoneHeading ? (
                 <p className={labelClass} style={{ color: tokens.faint }} data-pf-no-color-transition="">
@@ -214,7 +242,7 @@ export function ContactDesignLiquidDistortion({
         ) : null}
 
         {hasLocation ? (
-          <div className="flex justify-center text-center lg:absolute lg:bottom-[14vh] lg:left-[8vw] lg:block lg:text-left">
+          <div className={`flex justify-center text-center lg:absolute lg:bottom-[14vh] lg:block lg:text-left ${portfolioEditorialGutterInsetLeft(contentGutter)}`}>
             <div>
               {addressHeading ? (
                 <p className={labelClass} style={{ color: tokens.faint }} data-pf-no-color-transition="">
@@ -234,7 +262,7 @@ export function ContactDesignLiquidDistortion({
         ) : null}
 
         {hasLinks ? (
-          <div className="flex justify-center text-center lg:absolute lg:bottom-[10vh] lg:right-[6vw] lg:block lg:text-right">
+          <div className={`flex justify-center text-center lg:absolute lg:bottom-[10vh] lg:block lg:text-right ${portfolioEditorialGutterInsetRight(contentGutter)}`}>
             <div>
               {socialHeading ? (
                 <p className={labelClass} style={{ color: tokens.faint }} data-pf-no-color-transition="">

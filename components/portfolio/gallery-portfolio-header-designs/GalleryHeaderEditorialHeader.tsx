@@ -104,6 +104,7 @@ export function GalleryHeaderEditorialHeader({
   const t = useT();
   const presentation = presentationProp ?? DEFAULT_GALLERY_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
+  const alignRight = presentation.headerDesignAlignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   /* Each text is the design's own setting; empty falls back to the section-level value. */
@@ -142,7 +143,8 @@ export function GalleryHeaderEditorialHeader({
     }, 90);
 
     let ctx: gsap.Context | undefined;
-    try {
+    let retryId = 0;
+    const build = () => {
       ctx = gsap.context(() => {
         const pick = (selector: string) =>
           [...header.querySelectorAll<HTMLElement>(selector)].filter(isLaidOut);
@@ -196,7 +198,8 @@ export function GalleryHeaderEditorialHeader({
           );
         }
       }, header);
-    } catch (error) {
+    };
+    const failSafe = (error: unknown) => {
       // Observed intermittently on page load/reload: GSAP ScrollTrigger throws
       // "Cannot read properties of undefined (reading 'end')" from inside its own init-time
       // self.refresh() for this header's scroll-scrubbed stage effect. Uncaught, that crash
@@ -214,10 +217,27 @@ export function GalleryHeaderEditorialHeader({
         ),
         { clearProps: 'all' }
       );
+    };
+    try {
+      build();
+    } catch {
+      // The crash comes from another section's `once` ScrollTrigger killing itself while this one refreshes the
+      // list (GSAP then reads a removed entry). It is a timing race, so a second attempt on the next frame,
+      // once that refresh is over, normally succeeds; only a second failure falls back to the static header.
+      ctx?.revert();
+      ctx = undefined;
+      retryId = window.requestAnimationFrame(() => {
+        try {
+          build();
+        } catch (error) {
+          failSafe(error);
+        }
+      });
     }
 
     return () => {
       window.clearTimeout(refreshId);
+      window.cancelAnimationFrame(retryId);
       ctx?.revert();
     };
   }, [animationEnabled, labelText, titleText, subtitleText, showLabel, showTitle, showSubtitle]);
@@ -225,10 +245,10 @@ export function GalleryHeaderEditorialHeader({
   return (
     <header
       ref={headerRef}
-      className={`pf-gallery-header-editorial-header relative w-full ${centered ? 'text-center' : 'text-left'}`}
+      className={`pf-gallery-header-editorial-header relative w-full ${centered ? 'text-center' : alignRight ? 'text-right' : 'text-left'}`}
       style={{ marginBottom: `${GALLERY_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
     >
-      <div className={`pf-gallery-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
+      <div className={`pf-gallery-header-editorial-stage flex flex-col gap-6 ${centered ? 'items-center' : alignRight ? 'items-end' : 'sm:flex-row sm:items-end sm:justify-between'}`}>
         <div className="min-w-0 max-w-3xl">
           {showLabel ? (
             <p
@@ -254,7 +274,7 @@ export function GalleryHeaderEditorialHeader({
           ) : null}
           {showSubtitle && subtitleText ? (
             <p
-              className={`pf-gallery-header-editorial-sub mb-0 mt-6 max-w-xl ${galleryHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
+              className={`pf-gallery-header-editorial-sub mb-0 mt-6 max-w-xl ${centered ? 'mx-auto' : alignRight ? 'ml-auto' : ''} ${galleryHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
               style={{
                 color: subtitleInk,
                 fontSize: SUBTITLE_SIZE[presentation.headerEditorialSubtitleSize ?? 'md'],

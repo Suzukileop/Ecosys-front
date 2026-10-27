@@ -19,7 +19,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 
 const SPLIT_ENTRANCE_MS = 920;
 const SPLIT_ENTRANCE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-const SPLIT_IMAGE_PARALLAX = 0.75;
+
 const SPLIT_TEXT_PARALLAX = 1.2;
 const SPLIT_PARALLAX_TRAVEL = 64;
 const SPLIT_DESKTOP_MQ = '(min-width: 768px)';
@@ -30,22 +30,9 @@ function splitThumbRadiusClass(radius: PortfolioWorkProjectsSplitRadius): string
   return 'rounded-[1.75rem] sm:rounded-[2rem]';
 }
 
-function splitThumbSizeClass(
-  size: PortfolioWorkProjectsSplitThumbnailSize,
-  centered: boolean
-): string {
+function splitThumbSizeClass(size: PortfolioWorkProjectsSplitThumbnailSize): string {
   const base =
     'relative aspect-[4/5] shrink-0 overflow-hidden sm:aspect-[5/4] lg:aspect-[5/4]';
-  if (centered) {
-    switch (size) {
-      case 'lg':
-        return `${base} w-[min(100%,22rem)] sm:w-[26rem] lg:w-[30rem]`;
-      case 'half':
-        return `${base} w-[min(100%,36rem)] sm:w-[min(50vw,34rem)] lg:w-[min(48vw,38rem)]`;
-      default:
-        return `${base} w-[min(100%,28rem)] sm:w-[34rem] lg:w-[40rem] xl:w-[44rem]`;
-    }
-  }
   switch (size) {
     case 'lg':
       return `${base} w-full sm:w-[min(40%,20rem)] md:w-[min(38%,24rem)] lg:w-[min(36%,28rem)] xl:w-[min(34%,30rem)]`;
@@ -56,11 +43,7 @@ function splitThumbSizeClass(
   }
 }
 
-function splitCopyMaxClass(
-  size: PortfolioWorkProjectsSplitThumbnailSize,
-  centered: boolean
-): string {
-  if (centered) return 'w-full max-w-md';
+function splitCopyMaxClass(size: PortfolioWorkProjectsSplitThumbnailSize): string {
   if (size === 'half') return 'min-w-0 flex-1';
   if (size === 'lg') {
     return 'min-w-0 flex-1 sm:max-w-[min(100%,28rem)] lg:max-w-[32rem]';
@@ -110,7 +93,7 @@ function EditorialTitleText({ text }: { text: string }) {
   return (
     <>
       {parts.lead}{' '}
-      <span className="font-medium italic tracking-[-0.03em]">{parts.italic}</span>
+      <span className="font-medium tracking-[-0.03em]">{parts.italic}</span>
     </>
   );
 }
@@ -181,9 +164,7 @@ function useSplitGalleryMotion(itemsKey: string): {
 
     const resetParallax = () => {
       for (const row of rows) {
-        const media = row.querySelector<HTMLElement>('[data-split-media-shift]');
         const copies = row.querySelectorAll<HTMLElement>('[data-split-copy]');
-        if (media) media.style.transform = '';
         copies.forEach((copy) => {
           copy.style.transform = '';
           copy.style.opacity = '';
@@ -226,17 +207,14 @@ function useSplitGalleryMotion(itemsKey: string): {
       for (const row of rows) {
         const id = row.dataset.splitId;
         if (!id || !revealedRef.current.has(id)) continue;
-        const media = row.querySelector<HTMLElement>('[data-split-media-shift]');
         const copies = row.querySelectorAll<HTMLElement>('[data-split-copy]');
-        if (!media && copies.length === 0) continue;
+        if (copies.length === 0) continue;
 
         const rect = row.getBoundingClientRect();
         const centered = (rect.top + rect.height * 0.5 - vh * 0.5) / vh;
         const clamped = Math.max(-1.15, Math.min(1.15, centered));
 
-        if (media) {
-          media.style.transform = `translate3d(0, ${(clamped * SPLIT_PARALLAX_TRAVEL * SPLIT_IMAGE_PARALLAX).toFixed(2)}px, 0)`;
-        }
+        // The photo stays put inside its frame (no overhang, so no zoom); only the copy drifts.
         // Depth only: the old scroll fade (down to 0.48) dimmed readable copy away from center.
         const textY = (clamped * SPLIT_PARALLAX_TRAVEL * SPLIT_TEXT_PARALLAX).toFixed(2);
         copies.forEach((copy) => {
@@ -345,25 +323,11 @@ function SplitRow({
   const radiusClass = splitThumbRadiusClass(settings.thumbnailRadius ?? 'none');
   const thumbSize = settings.thumbnailSize ?? 'xl';
 
-  const centered = settings.imageSide === 'center';
-  const titleOnLeft = centered
-    ? (settings.titleSide ?? 'left') !== 'right'
-    : settings.imageSide === 'right';
-  const titleAtBottom = centered && (settings.titleVerticalAlign ?? 'top') === 'bottom';
-  const descriptionOpposite =
-    centered && settings.descriptionPlacement === 'opposite' && showDescription && Boolean(description);
-  const descriptionOnLeft = descriptionOpposite ? !titleOnLeft : titleOnLeft;
-  const descriptionAtBottom = descriptionOpposite
-    ? (settings.descriptionVerticalAlign ?? 'bottom') === 'bottom'
-    : titleAtBottom;
   const baseRight = settings.imageSide === 'right';
-  const imageOnRight =
-    !centered &&
-    (settings.alternateSides ? (index % 2 === 1 ? !baseRight : baseRight) : baseRight);
-  const thumbClass = splitThumbSizeClass(thumbSize, centered);
-  const copyMaxClass = splitCopyMaxClass(thumbSize, centered);
+  const imageOnRight = settings.alternateSides ? (index % 2 === 1 ? !baseRight : baseRight) : baseRight;
+  const thumbClass = splitThumbSizeClass(thumbSize);
+  const copyMaxClass = splitCopyMaxClass(thumbSize);
   const indexLabel = formatSplitIndex(index);
-  const alignTitleRight = centered && !titleOnLeft;
 
   const motionStyle: CSSProperties = {
     opacity: revealed ? 1 : 0,
@@ -375,31 +339,30 @@ function SplitRow({
   const titleOnly = (
     <div className="min-w-0">
       <div
-        className={`flex items-baseline gap-x-3 sm:gap-x-4 ${alignTitleRight ? 'justify-end' : ''}`}
+        className={`flex items-baseline gap-x-3 sm:gap-x-4 `}
       >
-        <span
-          className="shrink-0 font-mono text-[10px] font-medium tabular-nums tracking-[0.16em] sm:text-[11px]"
-          style={{ color: muted, opacity: 0.7 }}
+        {settings.showNumber!==false?<span
+          data-split-number=""
+          className="shrink-0 font-mono text-[11px] font-medium tabular-nums tracking-[0.16em] sm:text-[12px]"
+          style={{ color: muted, opacity: 0.88 }}
           aria-hidden
         >
           {indexLabel}
-        </span>
+        </span>:null}
         <div className="min-w-0">
           <SplitProjectTitle title={item.title} href={href} color={titleColor} />
         </div>
       </div>
-      {!descriptionOpposite && showDescription && description ? (
+      {showDescription && description ? (
         <>
           {/* The section's one touch of the creator's main color. */}
           <span
-            className={`mt-5 block h-px w-8 sm:mt-6 ${alignTitleRight ? 'ml-auto' : ''}`}
+            className="mt-5 block h-px w-8 sm:mt-6"
             style={{ backgroundColor: accent || muted }}
             aria-hidden
           />
           <p
-            className={`mt-5 max-w-xl text-[15px] leading-[1.8] sm:mt-6 sm:text-base sm:leading-[1.85] ${
-              alignTitleRight ? 'ml-auto' : ''
-            }`}
+            className="mt-5 max-w-xl text-[15px] leading-[1.8] sm:mt-6 sm:text-base sm:leading-[1.85]"
             style={{ color: muted }}
           >
             {description}
@@ -409,25 +372,10 @@ function SplitRow({
     </div>
   );
 
-  const descriptionOnly =
-    descriptionOpposite && description ? (
-      <div className="min-w-0 w-full max-w-md">
-        <p
-          className="m-0 max-w-xl text-[15px] leading-[1.8] sm:text-base sm:leading-[1.85]"
-          style={{ color: muted }}
-        >
-          {description}
-        </p>
-      </div>
-    ) : null;
-
   const mediaBlock = (
     <div className={`${thumbClass} ${radiusClass}`} style={{ backgroundColor: `${borderColor}44` }}>
       {mediaUrl ? (
-        <div
-          data-split-media-shift=""
-          className="absolute -top-[20%] left-0 h-[140%] w-full will-change-transform"
-        >
+        <div className="absolute inset-0">
           <Image
             src={mediaUrl}
             alt={item.title}
@@ -455,85 +403,13 @@ function SplitRow({
     </div>
   );
 
-  if (centered) {
-    const renderSide = (side: 'left' | 'right') => {
-      const isLeft = side === 'left';
-      const hasTitle = titleOnLeft === isLeft;
-      const hasDesc = Boolean(descriptionOpposite && descriptionOnLeft === isLeft);
-      const isRight = !isLeft;
-      const sideClass = isRight ? 'justify-self-end' : 'justify-self-start';
-      const titleAlignClass = isRight ? `${sideClass} text-right` : sideClass;
-
-      if (!hasTitle && !hasDesc) {
-        return <div className="min-w-0" aria-hidden />;
-      }
-
-      if (hasTitle && !hasDesc) {
-        return (
-          <div
-            data-split-copy=""
-            className={`min-w-0 ${copyMaxClass} will-change-transform ${titleAtBottom ? 'self-end' : 'self-start'} ${titleAlignClass}`}
-          >
-            {titleOnly}
-          </div>
-        );
-      }
-
-      if (!hasTitle && hasDesc) {
-        return (
-          <div
-            data-split-copy=""
-            className={`min-w-0 text-left will-change-transform ${descriptionAtBottom ? 'self-end' : 'self-start'} ${sideClass}`}
-          >
-            {descriptionOnly}
-          </div>
-        );
-      }
-
-      return (
-        <div
-          data-split-copy=""
-          className={`flex min-w-0 flex-col ${copyMaxClass} will-change-transform ${titleAtBottom ? 'self-end' : 'self-start'} ${titleAlignClass}`}
-        >
-          {titleOnly}
-        </div>
-      );
-    };
-
-    return (
-      <article
-        data-split-row=""
-        data-split-id={item.id}
-        className="group/split w-full"
-        style={motionStyle}
-      >
-        <div className="flex flex-col gap-6 sm:hidden">
-          <div data-split-copy="" className="will-change-transform">
-            {titleOnly}
-          </div>
-          <div className="flex w-full justify-center">{mediaBlock}</div>
-          {descriptionOpposite ? (
-            <div data-split-copy="" className="will-change-transform">
-              {descriptionOnly}
-            </div>
-          ) : null}
-        </div>
-        <div className="hidden sm:grid sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] sm:items-stretch sm:gap-x-10 lg:gap-x-14 xl:gap-x-16">
-          {renderSide('left')}
-          <div className="w-max max-w-full justify-self-center self-start">{mediaBlock}</div>
-          {renderSide('right')}
-        </div>
-      </article>
-    );
-  }
-
   return (
     <article
       data-split-row=""
       data-split-id={item.id}
-      className={`group/split flex flex-col gap-6 sm:items-start sm:gap-10 lg:gap-14 xl:gap-16 ${
+      className={`group/split flex flex-col gap-6 sm:items-start sm:gap-6 lg:gap-8 xl:gap-10 ${
         imageOnRight ? 'sm:flex-row-reverse' : 'sm:flex-row'
-      } ${thumbSize === 'half' ? '' : 'sm:justify-between'}`}
+      }`}
       style={motionStyle}
     >
       {mediaBlock}

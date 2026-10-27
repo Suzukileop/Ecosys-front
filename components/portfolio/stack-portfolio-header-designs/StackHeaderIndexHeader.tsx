@@ -1,5 +1,7 @@
 'use client';
 
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { DEFAULT_STACK_PRESENTATION, type PortfolioStackPresentationSettings } from '@/components/portfolio/portfolio-stack-settings';
 import {
@@ -56,6 +58,19 @@ const SUBTITLE_WEIGHT: Record<PortfolioStackHeaderTitleWeight, number> = {
   bold: 600,
 };
 
+/** Nearest scrollable ancestor — the Studio preview scrolls inside a nested container, not `window`. */
+function scrollParent(el: HTMLElement | null): HTMLElement | undefined {
+  let node = el?.parentElement ?? null;
+  while (node && node !== document.body) {
+    const { overflowY } = getComputedStyle(node);
+    if ((overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') && node.scrollHeight > node.clientHeight + 1) {
+      return node;
+    }
+    node = node.parentElement;
+  }
+  return undefined;
+}
+
 function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
 }
@@ -67,6 +82,11 @@ function easeOutCubic(t: number): number {
  * left to CSS/GSAP timing to get out of sync with re-renders): first the
  * counter runs on its own, and only once it fully finishes does the
  * title/subtitle on the right fade in — never before, never partially.
+ *
+ * It plays on every pass and leaves the way the scroll goes. Entering (top crosses 85% of the viewport):
+ * rules draw, the numeral counts up from zero, then the title and subtitle rise in. Leaving (bottom crosses
+ * 25%): the reverse order, faster — title and subtitle go first, then the numeral fades and the rules retract.
+ * The text exits upward when scrolled past and downward when scrolled back, and re-enters from that side.
  */
 export function StackHeaderIndexHeader({
   presentation: presentationProp,
@@ -114,6 +134,10 @@ export function StackHeaderIndexHeader({
   const [leftVisible, setLeftVisible] = useState(!animationEnabled);
   const [revealed, setRevealed] = useState(!animationEnabled);
   const [displayCount, setDisplayCount] = useState(animationEnabled ? 0 : count);
+  /** Leaving: the transitions switch to the faster, reversed exit timing. */
+  const [exiting, setExiting] = useState(false);
+  /** Where the hidden title sits: +1 below (enters rising), -1 above (enters dropping). */
+  const [side, setSide] = useState<1 | -1>(1);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -134,57 +158,94 @@ export function StackHeaderIndexHeader({
     const header = headerRef.current;
     if (!header) return;
 
-    let cancelled = false;
     let rafId = 0;
+    const stopCount = () => {
+      if (rafId) cancelAnimationFrame(rafId);
+      rafId = 0;
+    };
 
-    const runCountUp = () => {
+    const enter = () => {
+      stopCount();
+      setExiting(false);
+      setRevealed(false);
+      setDisplayCount(0);
       setLeftVisible(true);
       const start = performance.now();
       const tick = (now: number) => {
-        if (cancelled) return;
         const progress = Math.min(1, (now - start) / COUNT_DURATION_MS);
         setDisplayCount(Math.round(easeOutCubic(progress) * count));
         if (progress < 1) {
           rafId = requestAnimationFrame(tick);
         } else {
+          rafId = 0;
           setRevealed(true);
         }
       };
       rafId = requestAnimationFrame(tick);
     };
+    // dir 1: out through the top (scrolled past); -1: out through the bottom (scrolled back up).
+    const leave = (dir: 1 | -1) => {
+      stopCount();
+      setExiting(true);
+      setSide(dir === 1 ? -1 : 1);
+      setRevealed(false);
+      setLeftVisible(false);
+    };
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            runCountUp();
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.15, rootMargin: '50px' }
-    );
-    observer.observe(header);
+    gsap.registerPlugin(ScrollTrigger);
+    let trigger: ScrollTrigger | undefined;
+    try {
+      trigger = ScrollTrigger.create({
+        trigger: header,
+        scroller: scrollParent(header),
+        start: 'top 85%',
+        end: 'bottom 25%',
+        onEnter: enter,
+        onEnterBack: enter,
+        onLeave: () => leave(1),
+        onLeaveBack: () => leave(-1),
+      });
+    } catch (error) {
+      // Never leave the header invisible because the trigger failed to initialise.
+      console.error('[StackHeaderIndexHeader] ScrollTrigger setup failed', error);
+      queueMicrotask(() => {
+        setLeftVisible(true);
+        setRevealed(true);
+        setDisplayCount(count);
+      });
+    }
+
+    // Positions are measured at creation; the page settles a moment later (fonts, other sections).
+    const refreshId = window.setTimeout(() => {
+      try {
+        ScrollTrigger.refresh();
+      } catch (error) {
+        console.error('[StackHeaderIndexHeader] deferred refresh() failed', error);
+      }
+    }, 90);
 
     return () => {
-      cancelled = true;
-      if (rafId) cancelAnimationFrame(rafId);
-      observer.disconnect();
+      window.clearTimeout(refreshId);
+      stopCount();
+      trigger?.kill();
     };
   }, [animationEnabled, count]);
 
+  // Entering: left side first (rules draw, numeral counts), right side once the count is done.
+  // Exiting: everything ~35% faster, right side first, then the left side.
+  const dur = exiting ? 0.45 : 0.7;
   const leftStyle = (delayMs: number): CSSProperties => ({
     opacity: leftVisible ? 1 : 0,
-    transition: `opacity 0.5s ${EASE} ${delayMs}ms`,
+    transition: `opacity ${exiting ? 0.4 : 0.5}s ${EASE} ${exiting ? 120 + delayMs / 2 : delayMs}ms`,
   });
   const scaleStyle = (axis: 'X' | 'Y', delayMs: number): CSSProperties => ({
     transform: leftVisible ? `scale${axis}(1)` : `scale${axis}(0)`,
-    transition: `transform 0.6s ${EASE} ${delayMs}ms`,
+    transition: `transform ${exiting ? 0.45 : 0.6}s ${EASE} ${exiting ? 160 + delayMs / 2 : delayMs}ms`,
   });
   const revealStyle = (delayMs: number): CSSProperties => ({
     opacity: revealed ? 1 : 0,
-    transform: revealed ? 'translateY(0) scale(1)' : 'translateY(18px) scale(0.98)',
-    transition: `opacity 0.7s ${EASE} ${delayMs}ms, transform 0.7s ${EASE} ${delayMs}ms`,
+    transform: revealed ? 'translateY(0) scale(1)' : `translateY(${18 * side}px) scale(0.98)`,
+    transition: `opacity ${dur}s ${EASE} ${exiting ? 0 : delayMs}ms, transform ${dur}s ${EASE} ${exiting ? 0 : delayMs}ms`,
   });
 
   return (
@@ -215,7 +276,7 @@ export function StackHeaderIndexHeader({
             {show('number') ? (
               <span
                 className="text-6xl font-light leading-none tracking-[-0.03em] sm:text-7xl lg:text-8xl"
-                style={{ color: numberTone }}
+                style={{ color: numberTone, ...leftStyle(0) }}
               >
                 {String(displayCount).padStart(2, '0')}
               </span>

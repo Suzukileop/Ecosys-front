@@ -69,7 +69,7 @@ function StyleOptionGrid<T extends string>({
               onClick={() => onChange(option.value)}
               className={`rounded-2xl border px-4 py-3 text-left transition ${
                 active
-                  ? 'border-[color:var(--np-accent)] bg-[color:var(--np-card)] ring-2 ring-[color:var(--np-accent-soft)]'
+                  ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
                   : 'border-[color:var(--np-card-border)] bg-[color:var(--np-card)] hover:border-[color:var(--np-illus-strong)]'
               }`}
             >
@@ -197,7 +197,7 @@ export function PortfolioElementStyleFields({
                   onClick={() => onTargetChange(target.value)}
                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                     active
-                      ? 'border-[color:var(--np-accent)] bg-[color:var(--np-card)] ring-2 ring-[color:var(--np-accent-soft)]'
+                      ? 'border-transparent bg-[color:var(--np-active-bg)] text-[color:var(--np-active-ink)]'
                       : 'border-[color:var(--np-card-border)] bg-[color:var(--np-card)] hover:border-[color:var(--np-illus-strong)]'
                   }`}
                 >
@@ -273,7 +273,8 @@ export function PortfolioElementStyleFields({
             const px = clampElementTextSizePx(Number(event.target.value), sizePresets.md);
             onStyleChange({ size: 'custom', sizePx: px });
           }}
-          className="mt-3 h-2 w-full cursor-pointer accent-[color:var(--np-accent)]"
+          className="np-range mt-3"
+          style={{ ['--np-fill' as string]: `${((resolvedSizePx - ELEMENT_TEXT_SIZE_PX_MIN) / (ELEMENT_TEXT_SIZE_PX_MAX - ELEMENT_TEXT_SIZE_PX_MIN)) * 100}%` }}
           aria-label={t('Manual text size in pixels')}
         />
         <div className="mt-1 flex justify-between text-[11px] text-[color:var(--np-muted)]">
@@ -323,7 +324,8 @@ export function PortfolioElementStyleFields({
               bold: amount >= 600,
             });
           }}
-          className="mt-3 h-2 w-full cursor-pointer accent-[color:var(--np-accent)]"
+          className="np-range mt-3"
+          style={{ ['--np-fill' as string]: `${((resolvedWeightAmount - ELEMENT_TEXT_WEIGHT_AMOUNT_MIN) / (ELEMENT_TEXT_WEIGHT_AMOUNT_MAX - ELEMENT_TEXT_WEIGHT_AMOUNT_MIN)) * 100}%` }}
           aria-label={t('Manual text weight')}
         />
         <div className="mt-1 flex justify-between text-[11px] text-[color:var(--np-muted)]">

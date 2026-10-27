@@ -1,0 +1,10 @@
+.root { container-type: inline-size; min-width: 0; overflow-wrap: anywhere; }
+.layout { display: grid; align-items: start; gap: 36px; }
+.visual { order: 2; }
+.copy { order: 1; }
+@container (min-width: 900px) {
+  .layout[data-split='true'] { grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 48px; }
+  .layout[data-split='true'][data-media-left='false'] { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+  .layout[data-media-left='true'] > .visual { order: 1; }
+  .layout[data-media-left='true'] > .copy { order: 2; }
+}

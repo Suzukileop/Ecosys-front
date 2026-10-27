@@ -37,7 +37,7 @@ export function FaqEditorialMasonryDesign({
                   <button id={questionId} type="button" className="pf-faq-masonry-trigger"
                     aria-expanded={open} aria-controls={answerId}
                     onClick={() => setOpenId((current) => current === item.id ? null : item.id)}>
-                    <span className="pf-faq-masonry-index" aria-hidden="true" data-pf-no-color-transition>
+                    <span className="pf-faq-masonry-index pf-faq-marker" aria-hidden="true" data-pf-no-color-transition>
                       {String(index + 1).padStart(2, '0')}
                     </span>
                     <span className="pf-faq-masonry-q" data-pf-no-color-transition>{item.question}</span>

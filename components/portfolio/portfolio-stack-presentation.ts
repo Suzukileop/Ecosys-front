@@ -1,3 +1,5 @@
+import type { SectionPaletteFamily } from '@/components/portfolio/portfolio-section-palette-family';
+import type { PortfolioCardsStyle } from '@/components/portfolio/portfolio-cards-style';
 import type { PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
 import type {
   PortfolioToolsBrandCardsIconPlacement,
@@ -87,6 +89,8 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   descriptionColor: string;
   cardBackgroundColor: string;
   cardBorderColor: string;
+  /** Shared Design → Cards block; `auto` keeps each design's own radius / border. */
+  cardsStyle: PortfolioCardsStyle;
   chipBackgroundColor: string;
   chipTextColor: string;
   levelAccentColor: string;
@@ -106,6 +110,8 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   workflowRailContentAlignment: PortfolioToolsContentAlignment;
   /** `workflow-rail` only — vivid keeps brand colours crisp; soft lowers their visual weight. */
   workflowRailLogoTreatment?: 'vivid' | 'soft';
+  workflowRailLayout?: 'wrap' | 'carousel';
+  workflowRailAutoCenter?: boolean;
   /** `brand-cards` only — columns on `lg+`. Default 1. */
   brandCardsColumnsPerRow: PortfolioToolsBrandGridColumnsPerRow;
   /** `brand-cards` only. Default center. */
@@ -164,6 +170,9 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   activeColorMode?: 'light' | 'dark';
   /** User override — 'auto' (default) follows Global → Theme's site-wide mode. */
   colorModeOverride: PortfolioSectionColorMode;
+  textSize?: 'small' | 'medium' | 'large' | 'xlarge';
+  /** `global` follows the site palette; otherwise one of the site's palette families, for this section only. */
+  paletteFamily: SectionPaletteFamily;
   /**
    * `aside-left` / `aside-right` — title in one half (centered), list in the other.
    * When aside, level-progress-rows always shows 1 column.
@@ -181,6 +190,8 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   asideTitlePlacement?: PortfolioStackAsideTitlePlacement;
   /** `stack-tags` only — chip scale. */
   stackTagsSize?: PortfolioStackTagsSize;
+  stackTagsAutoCenter?: boolean;
+  stackTagsFill?: boolean;
   /** Title size — applies to sticky header and embedded stack-tags kicker. */
   titleSize?: PortfolioStackTitleSize;
   /** Subtitle size — applies to sticky header and embedded stack-tags subtitle. */

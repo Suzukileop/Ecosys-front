@@ -1,9 +1,10 @@
 'use client';
 
-import type { AnchorHTMLAttributes, CSSProperties, ReactNode } from 'react';
+import type { AnchorHTMLAttributes, CSSProperties, PointerEvent, ReactNode } from 'react';
 import { ctaLookOverride } from '@/components/portfolio/portfolio-services-pricing-shared';
 import { readServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-style';
 import type { ServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
+import type { PortfolioServicesPricingCtaHover } from '@/components/portfolio/portfolio-services-pricing-style';
 import type { PortfolioServicesPresentationSettings } from '@/components/portfolio/portfolio-services-settings';
 
 /**
@@ -109,6 +110,7 @@ export function ServicesBackgroundFrame({
   presentation: PortfolioServicesPresentationSettings;
   children: ReactNode;
 }) {
+  // Retired: the Background frame option no longer exists, so this renders the children untouched.
   const show =
     !servicesDesignHasOwnFrame(presentation.sectionDesign) && readServicesPricingStyle(presentation).showFrame;
   if (!show) return <>{children}</>;
@@ -157,25 +159,129 @@ export function ServicesOrderButton({
   surface,
   style,
   autoContent,
+  className,
   children,
   ...rest
 }: ServicesOrderButtonProps) {
   const look = pricingStyle.style.ctaStyle;
+  const hover = pricingStyle.style.ctaHover ?? 'auto';
   const override = ctaLookOverride(look, ink, surface, pricingStyle.ctaRadius);
+  const motion = servicesCtaHoverMotion(hover, label);
   return (
     <a
       {...rest}
       {...pricingStyle.anchorProps}
+      {...motion?.handlers}
+      className={motion ? `${className ?? ''} ${motion.className}` : className}
       data-svc-cta=""
       data-pf-no-color-transition=""
       style={{
         ...style,
         ...(pricingStyle.ctaRadius != null ? { borderRadius: pricingStyle.ctaRadius } : null),
         ...override,
+        ...motion?.style,
       }}
     >
-      {look === 'auto' ? (autoContent ?? label) : label}
+      {motion ? motion.content : look === 'auto' ? (autoContent ?? label) : label}
       {children}
     </a>
   );
+}
+
+type ServicesHoverAnchorProps = Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href' | 'onClick' | 'style'> & {
+  pricingStyle: ServicesPricingStyle;
+  label: string;
+  style?: CSSProperties;
+};
+
+/**
+ * The order button of the Pricing designs, which colour and shape their own button (via
+ * `ctaLookOverride`) but still obey General → Order button → Button hover. `children` is the
+ * design's own content; with a hover motion picked, the motion's content replaces it.
+ */
+export function ServicesHoverAnchor({ pricingStyle, label, className, style, children, ...rest }: ServicesHoverAnchorProps) {
+  const motion = servicesCtaHoverMotion(pricingStyle.style.ctaHover, label);
+  return (
+    <a
+      {...rest}
+      {...pricingStyle.anchorProps}
+      {...motion?.handlers}
+      className={motion ? `${className ?? ''} ${motion.className}` : className}
+      data-svc-cta=""
+      data-pf-no-color-transition=""
+      style={{ ...style, ...motion?.style }}
+    >
+      {motion ? motion.content : children}
+    </a>
+  );
+}
+
+const CTA_EASE = 'ease-[cubic-bezier(0.76,0,0.24,1)]';
+
+/**
+ * The three General → Order button hover motions, shared by every design that draws its button
+ * through `ServicesOrderButton`: the label rolls out and a copy rolls in, the arrow is replaced by
+ * a second one sliding in behind it, or the button leans toward the cursor.
+ */
+export function servicesCtaHoverMotion(hover: PortfolioServicesPricingCtaHover | undefined, label: string) {
+  if (hover !== 'roll' && hover !== 'arrow' && hover !== 'magnet') return null;
+  // Never add `motion-*` utility classes below: globals.css sets `transition: none` on any class containing "motion".
+  if (hover === 'roll') {
+    return {
+      className: 'group/ctah relative overflow-hidden',
+      content: (
+        <span className="relative inline-block overflow-hidden align-bottom">
+          <span
+            data-pf-no-color-transition=""
+            className={`block transition-transform duration-[550ms] ${CTA_EASE} group-hover/ctah:-translate-y-full group-focus-visible/ctah:-translate-y-full`}
+          >
+            {label}
+          </span>
+          <span
+            aria-hidden
+            data-pf-no-color-transition=""
+            className={`absolute inset-x-0 top-0 block translate-y-full transition-transform duration-[550ms] ${CTA_EASE} group-hover/ctah:translate-y-0 group-focus-visible/ctah:translate-y-0`}
+          >
+            {label}
+          </span>
+        </span>
+      ),
+    };
+  }
+  if (hover === 'arrow') {
+    const arrow = `absolute inset-0 flex items-center justify-center transition-transform duration-500 ${CTA_EASE}`;
+    return {
+      className: 'group/ctah relative overflow-hidden',
+      content: (
+        <>
+          <span>{label}</span>
+          <span aria-hidden className="relative inline-flex h-[1.1em] w-[1.1em] shrink-0 overflow-hidden">
+            <span data-pf-no-color-transition="" className={`${arrow} group-hover/ctah:translate-x-full group-focus-visible/ctah:translate-x-full`}>
+              &rarr;
+            </span>
+            <span data-pf-no-color-transition="" className={`${arrow} -translate-x-full group-hover/ctah:translate-x-0 group-focus-visible/ctah:translate-x-0`}>
+              &rarr;
+            </span>
+          </span>
+        </>
+      ),
+    };
+  }
+  return {
+    className: 'will-change-transform',
+    content: label,
+    style: { transition: 'transform 320ms cubic-bezier(0.22, 1, 0.36, 1), background-color 400ms, color 400ms, border-color 400ms' } as CSSProperties,
+    handlers: {
+      onPointerMove: (event: PointerEvent<HTMLAnchorElement>) => {
+        if (event.pointerType !== 'mouse' || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+        const box = event.currentTarget.getBoundingClientRect();
+        const dx = (event.clientX - (box.left + box.width / 2)) / (box.width / 2);
+        const dy = (event.clientY - (box.top + box.height / 2)) / (box.height / 2);
+        event.currentTarget.style.transform = `translate3d(${(dx * 8).toFixed(1)}px, ${(dy * 6).toFixed(1)}px, 0)`;
+      },
+      onPointerLeave: (event: PointerEvent<HTMLAnchorElement>) => {
+        event.currentTarget.style.transform = '';
+      },
+    },
+  };
 }

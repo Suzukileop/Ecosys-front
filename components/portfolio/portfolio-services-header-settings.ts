@@ -7,6 +7,7 @@ import { msg } from '@/lib/i18n/config';
  * layouts). Independent of the section's own `layout` (which layout the members render in).
  */
 export type PortfolioServicesHeaderDesign =
+  | 'none'
   | 'editorial'
   | 'marquee'
   | 'index'
@@ -42,6 +43,7 @@ export type PortfolioServicesHeaderAccentCountAlignment = 'left' | 'center' | 'r
 export type PortfolioServicesHeaderBillboardWordStyle = 'outline' | 'fill' | 'simple';
 
 export const SERVICES_HEADER_DESIGNS: PortfolioServicesHeaderDesign[] = [
+  'none',
   'editorial',
   'marquee',
   'index',
@@ -87,6 +89,7 @@ export const PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
+  { value: 'none', label: msg('None'), description: '' },
   {
     value: 'editorial',
     label: msg('Editorial'),

@@ -620,8 +620,8 @@ const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
 
   // FAQ
-  entry('faq', 'General', ['visibility', 'design', 'defaults', 'frame', 'border', 'cadre', 'padding', 'shadow', 'corners', 'radius', 'question color', 'answer color', 'text color', 'couleur'], 'general'),
-  entry('faq', 'Design', ['layout', 'style', 'design'], 'design'),
+  entry('faq', 'General', ['visibility', 'show section', 'color mode', 'light', 'dark', 'text size', 'font size', 'defaults'], 'general'),
+  entry('faq', 'Design', ['layout', 'style', 'design', 'frame', 'border', 'cadre', 'padding', 'shadow', 'corners', 'radius', 'question color', 'answer color', 'text color', 'couleur'], 'design'),
   entry('faq', 'Header', ['title', 'subtitle', 'signal', 'query', 'dialogue'], 'header'),
   entry('faq', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 

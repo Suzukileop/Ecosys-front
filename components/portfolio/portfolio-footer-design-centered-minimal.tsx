@@ -153,7 +153,7 @@ export function FooterDesignCenteredMinimal({
       // eslint-disable-next-line @next/next/no-img-element
       <img src={customLogoUrl} alt={customText} className="max-h-16 max-w-[15rem] object-contain" />
     ) : (
-      <p className="text-2xl font-semibold tracking-tight sm:text-[1.75rem]" style={{ color: ink }}>
+      <p className="max-w-full text-2xl font-medium leading-snug tracking-tight [overflow-wrap:anywhere] sm:text-[1.75rem]" style={{ color: ink }}>
         {centeredIdentity === 'custom' ? customText : creatorName}
       </p>
     );
@@ -166,29 +166,35 @@ export function FooterDesignCenteredMinimal({
       style={{ ...backgroundStyle, color: ink, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
       data-pf-no-color-transition=""
     >
-      <div className={`relative z-[1] mx-auto flex w-full max-w-4xl flex-col items-center gap-10 py-20 text-center sm:gap-9 sm:py-24 lg:py-28 ${portfolioEditorialGutterX(contentGutter)}`}>
-        {identity ? <div className="flex justify-center">{identity}</div> : null}
+      <div className={`relative z-[1] mx-auto flex w-full max-w-4xl flex-col items-center gap-8 py-16 text-center sm:py-20 lg:py-24 ${portfolioEditorialGutterX(contentGutter)}`}>
+        {identity ? <div className="flex min-w-0 max-w-full justify-center">{identity}</div> : null}
 
-        <div className="flex w-full flex-col items-center gap-10 sm:gap-9">
+        <div className="flex w-full flex-col items-center gap-6">
           {navLinks.length > 0 ? (
             <nav
-              className="flex max-w-3xl flex-wrap items-center justify-center gap-x-8 gap-y-5 sm:gap-x-10"
+              className="flex w-full max-w-3xl flex-wrap items-center justify-center gap-x-6 gap-y-1 sm:gap-x-8"
               aria-label={t('Portfolio sections')}
             >
               {navLinks.map((item) => {
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.url}
-                    aria-label={t('Go to {label}', { label: item.label })}
-                    data-pf-no-color-transition=""
-                    className="inline-block font-semibold uppercase transition-opacity duration-300 hover:opacity-70"
-                    style={{
-                      color: ink,
-                      letterSpacing: '0.14em',
-                      fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
-                    }}
-                  >
+                const linkProps = {
+                  href: item.url,
+                  'aria-label': t('Go to {label}', { label: item.label }),
+                  'data-pf-no-color-transition': '',
+                  className:
+                    'inline-flex min-h-11 max-w-full items-center justify-center py-2 font-medium [overflow-wrap:anywhere] transition-opacity duration-200 hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-4',
+                  style: {
+                    color: ink,
+                    letterSpacing: '0.01em',
+                    fontSize: 'calc(var(--pf-footer-body-size, 1rem) * var(--pf-footer-font-scale, 1))',
+                  },
+                };
+                // Links typed in by hand lead off the portfolio: open them in a new tab so a mistyped address never replaces the page.
+                return /^(https?:)?\/\//i.test(item.url) ? (
+                  <a key={item.id} {...linkProps} target="_blank" rel="noopener noreferrer">
+                    {item.label}
+                  </a>
+                ) : (
+                  <Link key={item.id} {...linkProps}>
                     {item.label}
                   </Link>
                 );
@@ -198,7 +204,7 @@ export function FooterDesignCenteredMinimal({
 
           {visibleLinks.length > 0 || contactItems.length > 0 ? (
             <nav
-              className="flex flex-wrap items-center justify-center gap-x-8 gap-y-6 sm:gap-x-9"
+              className="flex max-w-full flex-wrap items-center justify-center gap-x-3 gap-y-2 sm:gap-x-4"
               aria-label={t('Social and contact links')}
             >
               {visibleLinks.map((link) => (
@@ -210,7 +216,7 @@ export function FooterDesignCenteredMinimal({
                   aria-label={link.label}
                   title={link.label}
                   data-pf-no-color-transition=""
-                  className="inline-flex items-center justify-center transition-opacity duration-300 hover:opacity-70"
+                  className="inline-flex h-11 w-11 items-center justify-center transition-opacity duration-200 hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-4"
                   style={{ color: ink }}
                 >
                   <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
@@ -226,7 +232,7 @@ export function FooterDesignCenteredMinimal({
                       aria-label={item.label}
                       title={item.label}
                       data-pf-no-color-transition=""
-                      className="inline-flex items-center justify-center transition-opacity duration-300 hover:opacity-70"
+                      className="inline-flex h-11 w-11 items-center justify-center transition-opacity duration-200 hover:opacity-75 focus-visible:outline-2 focus-visible:outline-offset-4"
                       style={{ color: ink }}
                     >
                       {glyph}
@@ -238,10 +244,11 @@ export function FooterDesignCenteredMinimal({
                     key={item.id}
                     aria-label={item.label}
                     title={item.label}
-                    className="inline-flex items-center justify-center"
-                    style={{ color: ink }}
+                    className="inline-flex min-h-11 max-w-full items-center justify-center gap-2 px-2 [overflow-wrap:anywhere]"
+                    style={{ color: ink, fontSize: 'calc(0.875rem * var(--pf-footer-font-scale, 1))' }}
                   >
                     {glyph}
+                    <span className="min-w-0">{item.label}</span>
                   </span>
                 );
               })}

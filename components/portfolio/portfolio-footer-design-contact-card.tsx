@@ -27,7 +27,7 @@ function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-const MAX_TILT_DEG = 4;
+const MAX_TILT_DEG = 2;
 
 // `-mode` only ever touches background-color/color (the Light/Dark toggle). Every node that
 // carries this class also carries data-pf-no-color-transition so the sitewide 620ms color-mode
@@ -35,6 +35,11 @@ const MAX_TILT_DEG = 4;
 const CONTACT_CARD_CSS = `
 .pf-contactcard-mode {
   transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease;
+}
+footer#footer a:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 4px;
+  border-radius: 4px;
 }
 @media (prefers-reduced-motion: reduce) {
   .pf-contactcard-mode {
@@ -109,11 +114,11 @@ export function FooterDesignContactCard({
 
   const isLight = colorMode === 'light';
   const ink = isLight ? '#0a0a0a' : '#fafafa';
-  const dividerClass = isLight ? 'border-black/10' : 'border-white/10';
+  const dividerClass = isLight ? 'border-black/15' : 'border-white/15';
 
   const contactCardPalette = mergeFooterPalette(DEFAULT_FOOTER_PALETTE, presentation.footerPalette);
   const accent = resolveHeroPaletteColor(contactCardPalette, presentation.contactCardColorToken ?? 'principal');
-  const cardIsLight = footerColorLuminance(accent) > 0.55;
+  const cardIsLight = footerColorLuminance(accent) > 0.45;
   const cardInk = cardIsLight ? '#0a0a0a' : '#fafafa';
 
   const phoneTrimmed = presentation.showPhone ? phone?.trim() || null : null;
@@ -195,7 +200,7 @@ export function FooterDesignContactCard({
     return () => ctx?.revert();
   }, []);
 
-  const navLinkClass = 'block w-fit font-light leading-snug tracking-wide transition-opacity duration-300 hover:opacity-70';
+  const navLinkClass = 'flex min-h-11 w-fit items-center font-normal leading-snug tracking-wide transition-opacity duration-300 hover:opacity-70';
   const navLinkStyle: CSSProperties = {
     fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
   };
@@ -211,18 +216,18 @@ export function FooterDesignContactCard({
       <ContactCardStyles />
 
       <div className={`relative z-[1] w-full pb-12 pt-20 sm:pt-24 lg:pb-16 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
-        <div className="flex w-full flex-col items-stretch gap-12 lg:flex-row lg:items-start lg:justify-between lg:gap-20 xl:gap-28">
+        <div className="flex w-full flex-col items-stretch gap-12 md:flex-row md:items-start md:justify-between md:gap-12 lg:gap-20 xl:gap-28">
           {/* Left — accent card (icon-free) + free-floating Connect row. */}
-          <div className="w-full max-w-md lg:max-w-xl">
+          <div className="w-full max-w-md md:max-w-sm lg:max-w-xl">
             <div
               ref={cardRef}
               data-pf-no-color-transition=""
-              className="pf-contactcard-mode rounded-[1.75rem] px-10 py-12 will-change-transform sm:px-14 sm:py-16"
+              className="pf-contactcard-mode rounded-[1.75rem] px-6 py-10 sm:px-14 sm:py-16"
               style={{ backgroundColor: accent, color: cardInk }}
             >
               <div className="flex flex-col">
                 {layout.isVisible('name') ? (
-                  <p className="text-3xl font-semibold tracking-tight sm:text-[2rem]" style={{ color: cardInk }}>
+                  <p className="font-semibold leading-tight tracking-tight" style={{ color: cardInk, fontSize: 'clamp(1.75rem, 1.4rem + 1.2vw, 2.25rem)' }}>
                     {creatorName}
                   </p>
                 ) : null}
@@ -239,7 +244,7 @@ export function FooterDesignContactCard({
                     {phoneDisplay ? (
                       <a
                         href={`tel:${phoneTrimmed!.replace(/\s+/g, '')}`}
-                        className="w-fit font-semibold leading-snug"
+                        className="inline-flex min-h-11 w-fit items-center font-medium leading-snug"
                         style={{ color: cardInk, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                       >
                         {phoneDisplay}
@@ -248,7 +253,7 @@ export function FooterDesignContactCard({
                     {emailTrimmed ? (
                       <a
                         href={`mailto:${emailTrimmed}`}
-                        className="w-fit break-all font-semibold leading-snug"
+                        className="inline-flex min-h-11 w-fit items-center font-medium leading-snug [overflow-wrap:anywhere]"
                         style={{ color: cardInk, fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                       >
                         {emailTrimmed}
@@ -269,7 +274,7 @@ export function FooterDesignContactCard({
                     {connectHeading}
                   </span>
                 ) : null}
-                <nav className="flex flex-wrap items-center gap-6 sm:gap-8" aria-label={t('Social')}>
+                <nav className="flex flex-wrap items-center gap-1 sm:gap-2" aria-label={t('Social')}>
                   {visibleLinks.map((link) => (
                     <a
                       key={link.id}
@@ -279,7 +284,7 @@ export function FooterDesignContactCard({
                       aria-label={link.label}
                       title={link.label}
                       data-pf-no-color-transition=""
-                      className="inline-flex items-center justify-center transition-opacity duration-300 hover:opacity-70"
+                      className="inline-flex h-11 w-11 items-center justify-center transition-opacity duration-300 hover:opacity-70"
                     >
                       <FooterSocialLinkIcon link={link} bare iconClassName="h-6 w-6" />
                     </a>
@@ -291,7 +296,7 @@ export function FooterDesignContactCard({
 
           {/* Right — Links label + nav, copyright. */}
           {navLinks.length > 0 || copyrightText ? (
-            <div className="min-w-0 w-full max-w-xs shrink-0 lg:pt-2">
+            <div className="min-w-0 w-full shrink-0 md:max-w-[15rem] lg:max-w-xs lg:pt-4">
               {navLinks.length > 0 ? (
                 <>
                   {linksHeading ? (
@@ -302,7 +307,7 @@ export function FooterDesignContactCard({
                       {linksHeading}
                     </p>
                   ) : null}
-                  <ul className="space-y-4 sm:space-y-5">
+                  <ul className="space-y-0">
                     {navLinks.map((link) => {
                       const href = link.url;
                       const external = href.startsWith('http') || href.startsWith('mailto:');
@@ -332,7 +337,7 @@ export function FooterDesignContactCard({
 
               {copyrightText ? (
                 <p
-                  className={`font-medium uppercase tracking-[0.14em] ${
+                  className={`font-medium tracking-[0.04em] ${
                     navLinks.length > 0 ? `mt-10 border-t pt-5 ${dividerClass}` : ''
                   }`}
                   style={{ fontSize: 'calc(var(--pf-footer-label-size) * var(--pf-footer-font-scale, 1))' }}

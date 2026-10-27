@@ -1,4 +1,5 @@
 'use client';
+import { portfolioEditorialGutterNegativeX } from '@/components/portfolio/portfolio-editorial-layout';
 
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -12,6 +13,7 @@ import { sendCreatorContactMessage } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import type { PortfolioContactPresentationSettings } from '@/components/portfolio/portfolio-contact-settings';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
+import { cardsStyleCss } from '@/components/portfolio/portfolio-cards-style';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterX,
@@ -183,6 +185,7 @@ function FloatingField({
  * contactLightDarkTokens() recipe in portfolio-contact-design-motion.ts.
  */
 export function ContactDesignSequentialReveal({
+  staticLayout = false,
   creatorId,
   email,
   phone = null,
@@ -195,6 +198,7 @@ export function ContactDesignSequentialReveal({
   contentGutter = DEFAULT_CONTENT_GUTTER,
   colorMode,
 }: {
+  staticLayout?: boolean;
   creatorId?: string;
   email: string | null;
   /** Shown in the optional "Contact details" block — already gated by General → Visibility. */
@@ -307,7 +311,7 @@ export function ContactDesignSequentialReveal({
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root) return undefined;
-    if (prefersReducedMotion()) return undefined;
+    if (staticLayout || prefersReducedMotion()) return undefined;
 
     const observers: IntersectionObserver[] = [];
     /**
@@ -459,12 +463,12 @@ export function ContactDesignSequentialReveal({
       observers.forEach((io) => io.disconnect());
       ctx?.revert();
     };
-  }, [titleWord, showPortrait, showForm, detailCount, detailsBelowForm]);
+  }, [titleWord, showPortrait, showForm, detailCount, detailsBelowForm, staticLayout]);
 
   useLayoutEffect(() => {
     const btn = submitRef.current;
     if (!btn) return undefined;
-    if (prefersReducedMotion()) return undefined;
+    if (staticLayout || prefersReducedMotion()) return undefined;
     const enabled = window.matchMedia('(hover: hover) and (pointer: fine) and (min-width: 768px)').matches;
     if (!enabled) return undefined;
 
@@ -494,12 +498,13 @@ export function ContactDesignSequentialReveal({
       btn.removeEventListener('pointermove', onMove);
       btn.removeEventListener('pointerleave', onLeave);
     };
-  }, [showForm]);
+  }, [showForm, staticLayout]);
 
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 overflow-hidden"
+      className={staticLayout ? 'relative w-full overflow-hidden' : `relative overflow-hidden ${portfolioEditorialGutterNegativeX(contentGutter)}`}
+      data-contact-static={staticLayout ? 'true' : undefined}
       data-pf-no-color-transition=""
     >
       {/* 1 — Monumental hero entrance — uses the SAME site-wide editorial gutter
@@ -510,12 +515,12 @@ export function ContactDesignSequentialReveal({
           mx-auto/max-w-[90rem] centering bug fixed earlier. No centering (no mx-auto/max-w) so
           the inset stays a constant, correct number at any viewport width. */}
       <div
-        className={`flex w-full flex-col gap-10 pb-24 pt-24 sm:pb-28 sm:pt-32 lg:pb-32 ${portfolioEditorialGutterX(contentGutter)}`}
+        className={staticLayout ? 'flex w-full flex-col gap-6 pb-10 pt-4 sm:pb-12' : `flex w-full flex-col gap-10 pb-24 pt-24 sm:pb-28 sm:pt-32 lg:pb-32 ${portfolioEditorialGutterX(contentGutter)}`}
       >
         <h2
           data-reveal-title
           aria-label={titleWord}
-          className="m-0 select-none font-sans text-[clamp(3.25rem,13vw,10rem)] font-black uppercase leading-[0.86] tracking-[-0.04em]"
+          className={`m-0 select-none font-sans font-black uppercase tracking-[-0.04em] ${staticLayout ? 'text-[calc(clamp(2.75rem,7vw,6rem)*var(--pf-contact-font-scale,1))] leading-[0.95]' : 'text-[calc(clamp(3.25rem,13vw,10rem)*var(--pf-contact-font-scale,1))] leading-[0.86]'}`}
           style={{ color: tokens.ink }}
           data-pf-no-color-transition=""
         >
@@ -545,10 +550,11 @@ export function ContactDesignSequentialReveal({
           below (sm:px-10, lg:px-0 inside the same 46rem column) so both blocks line up as one
           narrow reading column; stays edge-to-edge below sm per the mobile spec. */}
       {showPortrait ? (
-      <div className="relative w-full sm:mx-auto sm:max-w-[46rem] sm:px-10 lg:px-0">
+      <div className={staticLayout ? 'relative mx-auto w-full max-w-[46rem]' : 'relative w-full sm:mx-auto sm:max-w-[46rem] sm:px-10 lg:px-0'}>
         <div
           ref={imageMaskRef}
           className="relative aspect-[4/3] w-full overflow-hidden sm:aspect-[3/2]"
+          style={cardsStyleCss(presentation.cardsStyle)}
           data-pf-no-color-transition=""
         >
           <div ref={imageInnerRef} className="relative h-full w-full" data-pf-no-color-transition="">
@@ -557,7 +563,7 @@ export function ContactDesignSequentialReveal({
                 src={heroImageUrl}
                 alt={displayName ? t('Portrait of {displayName}', { displayName }) : t('Portrait')}
                 fill
-                sizes="100vw"
+                sizes="(max-width: 768px) 100vw, 736px"
                 className="object-cover object-center"
               />
             ) : (
@@ -566,7 +572,7 @@ export function ContactDesignSequentialReveal({
                 style={{ backgroundColor: tokens.placeholderBg }}
               >
                 <span
-                  className="font-sans text-6xl font-semibold"
+                  className="font-sans text-[calc(3.75rem*var(--pf-contact-font-scale,1))] font-semibold"
                   style={{ color: tokens.muted }}
                   data-pf-no-color-transition=""
                   aria-hidden
@@ -584,7 +590,7 @@ export function ContactDesignSequentialReveal({
           when the form is off, the details become the closing block (email set large as the
           single call to action, phone/address beneath). */}
       {showForm || detailCount > 0 ? (
-      <div className="mx-auto w-full max-w-[46rem] px-6 py-24 sm:px-10 sm:py-32 lg:px-0">
+      <div className={staticLayout ? 'mx-auto w-full max-w-[46rem] py-10 sm:py-12' : 'mx-auto w-full max-w-[46rem] px-6 py-24 sm:px-10 sm:py-32 lg:px-0'}>
         {!showForm ? (
           <SequentialDetailsFinale items={detailItems} tokens={tokens} />
         ) : (
@@ -783,7 +789,7 @@ function SequentialDetailsFinale({ items, tokens }: { items: SequentialDetailIte
           ) : null}
           <SequentialDetailValue
             item={emailItem}
-            className="text-[clamp(1.9rem,5.5vw,3.5rem)] font-semibold leading-[1.05] tracking-[-0.02em]"
+            className="text-[calc(clamp(1.9rem,5.5vw,3.5rem)*var(--pf-contact-font-scale,1))] font-semibold leading-[1.05] tracking-[-0.02em]"
             tokens={tokens}
           />
         </div>
@@ -797,7 +803,7 @@ function SequentialDetailsFinale({ items, tokens }: { items: SequentialDetailIte
                   {item.heading}
                 </p>
               ) : null}
-              <SequentialDetailValue item={item} className="text-xl font-light leading-snug sm:text-2xl" tokens={tokens} />
+              <SequentialDetailValue item={item} className="text-xl font-light leading-snug sm:text-[calc(1.5rem*var(--pf-contact-font-scale,1))]" tokens={tokens} />
             </div>
           ))}
         </div>

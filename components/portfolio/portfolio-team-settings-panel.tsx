@@ -1,6 +1,22 @@
 'use client';
+import {DesignCatalogueCard} from './portfolio-design-catalogue-card';
+import {StackPreviewSkeleton} from './portfolio-stack-preview-skeleton';
+import {StackHeaderSkeleton} from './portfolio-stack-header-skeleton';
+import {useThumbnailTheme} from './portfolio-thumbnail-theme';
+import {TeamPortraitThumbnailFrame} from '@/components/portfolio/portfolio-team-portrait-thumbnail-frame';
+import {TeamSpotlightThumbnailFrame} from '@/components/portfolio/portfolio-team-spotlight-thumbnail-frame';
+import {TeamSplitScreenThumbnailFrame} from '@/components/portfolio/portfolio-team-split-screen-thumbnail-frame';
+import {TeamEditorialRhythmThumbnailFrame} from '@/components/portfolio/portfolio-team-editorial-rhythm-thumbnail-frame';
+import {TeamDirectoryThumbnailFrame} from '@/components/portfolio/portfolio-team-directory-thumbnail-frame';
+import {LayoutOptionSchematic} from '@/components/portfolio/layout-option-schematic';
 
+import { SectionPaletteFamilyControl } from '@/components/portfolio/portfolio-section-palette-family';
+import { TextSizeSlider } from '@/components/portfolio/portfolio-text-size-slider';
+import { ColorSwatchRow } from '@/components/portfolio/portfolio-color-swatch-row';
+import { CardsStyleControls } from '@/components/portfolio/portfolio-cards-style-controls';
+import { DEFAULT_CARDS_STYLE } from '@/components/portfolio/portfolio-cards-style';
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
+import { PortfolioDesignLivePreview, usePortfolioDesignPreviewSource } from '@/components/portfolio/PortfolioDesignLivePreview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -27,6 +43,7 @@ import {
   PORTFOLIO_TEAM_LAYOUT_OPTIONS,
   PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS,
   PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS,
+  TEAM_PROFILE_GUTTER_PX,
   PORTFOLIO_TEAM_PROFILE_PANEL_OPTIONS,
   PORTFOLIO_TEAM_PROFILE_RATIO_OPTIONS,
   PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS,
@@ -81,8 +98,10 @@ import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/port
 import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
 import { SettingRow, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { teamHoverVeilPresentation, teamProfilePatchToHoverVeil } from '@/components/portfolio/portfolio-team-hover-veil-settings';
 import { msg } from '@/lib/i18n/config';
-import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
+import { NpBackRow, NpCollapsibleSection, NpPanelShell, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /* ---------------------------------------------------------------------- */
 /* Sub-sections — the same four tabs, in the same order, with the same     */
@@ -134,23 +153,8 @@ function TeamGroupLabel({ children }: { children: string }) {
 /** Same animated switch as the Footer/Gallery/Contact panels — shared settings-UI chrome. */
 function TeamSwitchTrack({ checked }: { checked: boolean }) {
   return (
-    <span
-      className="relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-      style={{
-        backgroundColor: checked
-          ? 'var(--pf-palette-texte-fort, #171717)'
-          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 22%, var(--pf-palette-fond, #ffffff))',
-      }}
-    >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{
-          left: checked ? '1.125rem' : '0.125rem',
-          backgroundColor: checked
-            ? 'var(--pf-palette-fond, #ffffff)'
-            : 'var(--pf-palette-texte-fort, #171717)',
-        }}
-      />
+    <span className="np-switch" aria-checked={checked} aria-hidden data-switch-track="">
+      <span className="np-switch-knob" />
     </span>
   );
 }
@@ -206,7 +210,7 @@ function TeamOptionGrid<T extends string>({
   hideLabel?: boolean;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
+    const rows = useSettingsRows();
   return (
     <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
@@ -336,38 +340,20 @@ function TeamColorField({
   slot: TeamColorSlot;
   label: string;
 }) {
-  const t = useT();
-  const palette = mergeTeamPalette(DEFAULT_TEAM_PALETTE, team.teamPalette);
+    const palette = mergeTeamPalette(DEFAULT_TEAM_PALETTE, team.teamPalette);
   const bindings = mergeTeamColorBindings(DEFAULT_TEAM_COLOR_BINDINGS, team.teamColorBindings);
   const token = bindings[slot];
-  const resolved = resolveHeroPaletteColor(palette, token);
-
-  return (
-    <div className="space-y-2">
-      <div className="flex items-start justify-between gap-3">
-        <TeamSectionLabel>{label}</TeamSectionLabel>
-        <span
-          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-[color:var(--pf-palette-bordure)]"
-          style={{ backgroundColor: resolved }}
-          title={resolved}
-          aria-hidden
-        />
-      </div>
-      <select
-        value={token}
-        onChange={(event) =>
-          onChange(asTeamPatch(patchTeamColorBinding(team, slot, event.target.value as HeroPaletteTokenId)))
-        }
-        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-hidden"
-        aria-label={t('{label} palette token', { label })}
-      >
-        {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {t(option.label)}
-          </option>
-        ))}
-      </select>
-    </div>
+    return (
+    <ColorSwatchRow
+      label={label}
+      options={PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+        color: resolveHeroPaletteColor(palette, option.value),
+      }))}
+      value={token}
+      onChange={(next) => onChange(asTeamPatch(patchTeamColorBinding(team, slot, next as HeroPaletteTokenId)))}
+    />
   );
 }
 
@@ -459,153 +445,15 @@ function TeamMiniStage({ children }: { children: ReactNode }) {
 
 /** One abstract mini-wireframe per team layout — every option gets one, no exceptions
  *  (the thumbnail convention the Footer/Gallery/Work pickers already follow). */
-function TeamLayoutWireframe({ layout }: { layout: PortfolioTeamLayout }) {
-  switch (layout) {
-    case 'portrait-rail':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="10" width="30" height="46" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="44" y="10" width="30" height="46" rx="3" opacity={0.55} />
-          <rect className="pf-stack-mini-ink" x="80" y="10" width="30" height="46" rx="3" opacity={0.35} />
-          <rect className="pf-stack-mini-mute" x="8" y="62" width="40" height="2.5" rx="1.25" />
-        </TeamMiniStage>
-      );
-    case 'spotlight':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="10" width="46" height="52" rx="3" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="62" y="14" width="38" height="7" rx="2" />
-          <rect className="pf-stack-mini-mute" x="62" y="26" width="28" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="62" y="44" width="16" height="18" rx="2.5" opacity={0.45} />
-          <rect className="pf-stack-mini-ink" x="82" y="44" width="16" height="18" rx="2.5" opacity={0.3} />
-          <rect className="pf-stack-mini-ink" x="102" y="44" width="10" height="18" rx="2.5" opacity={0.2} />
-        </TeamMiniStage>
-      );
-    case 'split-screen':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="12" width="44" height="7" rx="2" opacity={0.9} />
-          <rect className="pf-stack-mini-ink" x="8" y="23" width="36" height="7" rx="2" opacity={0.22} />
-          <rect className="pf-stack-mini-ink" x="8" y="34" width="40" height="7" rx="2" opacity={0.22} />
-          <rect className="pf-stack-mini-mute" x="8" y="52" width="30" height="1" opacity={0.6} />
-          <rect className="pf-stack-mini-mute" x="8" y="58" width="20" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="66" y="8" width="46" height="56" rx="2" opacity={0.75} />
-        </TeamMiniStage>
-      );
-    case 'editorial-rhythm':
-      return (
-        <TeamMiniStage>
-          {/* Unequal plates on a broken baseline; the first one carries its own name. */}
-          <rect className="pf-stack-mini-ink" x="8" y="8" width="42" height="52" rx="2" opacity={0.75} />
-          <rect className="pf-stack-mini-mute" x="13" y="13" width="30" height="5" rx="1" opacity={0.95} />
-          <rect className="pf-stack-mini-mute" x="13" y="21" width="20" height="5" rx="1" opacity={0.95} />
-          <rect className="pf-stack-mini-mute" x="58" y="22" width="22" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="58" y="29" width="26" height="26" rx="2" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="90" y="10" width="18" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="90" y="17" width="22" height="32" rx="2" opacity={0.32} />
-        </TeamMiniStage>
-      );
-    case 'directory':
-      return (
-        <TeamMiniStage>
-          <circle className="pf-stack-mini-ink" cx="17" cy="19" r="7" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="30" y="16" width="44" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="94" y="17" width="18" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-mute" x="8" y="30" width="104" height="1" opacity={0.5} />
-          <circle className="pf-stack-mini-ink" cx="17" cy="42" r="7" opacity={0.55} />
-          <rect className="pf-stack-mini-mute" x="30" y="39" width="44" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="94" y="40" width="18" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-mute" x="8" y="53" width="104" height="1" opacity={0.5} />
-          <circle className="pf-stack-mini-ink" cx="17" cy="63" r="6" opacity={0.4} />
-          <rect className="pf-stack-mini-mute" x="30" y="61" width="44" height="3" rx="1.5" />
-        </TeamMiniStage>
-      );
-    case 'polaroid':
-      return (
-        <TeamMiniStage>
-          <g transform="rotate(-7 20 36)">
-            <rect className="pf-stack-mini-ink" x="6" y="16" width="28" height="34" rx="1.5" opacity={0.75} />
-            <rect className="pf-stack-mini-mute" x="9" y="52" width="16" height="2.5" rx="1.25" />
-          </g>
-          <g transform="rotate(3 62 30)">
-            <rect className="pf-stack-mini-ink" x="48" y="10" width="28" height="34" rx="1.5" opacity={0.6} />
-            <rect className="pf-stack-mini-mute" x="51" y="46" width="16" height="2.5" rx="1.25" />
-          </g>
-          <g transform="rotate(-3 100 40)">
-            <rect className="pf-stack-mini-ink" x="86" y="20" width="28" height="34" rx="1.5" opacity={0.4} />
-            <rect className="pf-stack-mini-mute" x="89" y="56" width="16" height="2.5" rx="1.25" />
-          </g>
-        </TeamMiniStage>
-      );
-    // `meet-cards` and `hover-cards` are retired values that can still arrive from storage; they
-    // never appear in the picker, and the merge remaps them, so any wireframe here will do.
-    case 'profile-cards':
-    case 'meet-cards':
-    case 'hover-cards':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="10" y="10" width="46" height="30" rx="3" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="22" y="46" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="26" y="54" width="14" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="64" y="10" width="46" height="30" rx="3" opacity={0.45} />
-          <rect className="pf-stack-mini-mute" x="76" y="46" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="80" y="54" width="14" height="2.5" rx="1.25" />
-        </TeamMiniStage>
-      );
-    case 'cover-cards':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="10" y="10" width="46" height="52" rx="3" opacity={0.7} />
-          <rect className="pf-stack-mini-ink" x="10" y="42" width="46" height="20" rx="0" opacity={0.95} />
-          <rect className="pf-stack-mini-mute" x="16" y="48" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="16" y="55" width="14" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="64" y="10" width="46" height="52" rx="3" opacity={0.45} />
-        </TeamMiniStage>
-      );
-    case 'avatar-cards':
-      return (
-        <TeamMiniStage>
-          <circle className="pf-stack-mini-ink" cx="33" cy="26" r="13" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="22" y="46" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="26" y="54" width="14" height="2.5" rx="1.25" />
-          <circle className="pf-stack-mini-ink" cx="87" cy="26" r="13" opacity={0.45} />
-          <rect className="pf-stack-mini-mute" x="76" y="46" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="80" y="54" width="14" height="2.5" rx="1.25" />
-        </TeamMiniStage>
-      );
-    case 'float-cards':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="10" y="24" width="46" height="38" rx="4" opacity={0.35} />
-          <circle className="pf-stack-mini-ink" cx="33" cy="24" r="11" opacity={0.8} />
-          <rect className="pf-stack-mini-mute" x="22" y="42" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="26" y="50" width="14" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="64" y="24" width="46" height="38" rx="4" opacity={0.22} />
-          <circle className="pf-stack-mini-ink" cx="87" cy="24" r="11" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="76" y="42" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="80" y="50" width="14" height="2.5" rx="1.25" />
-        </TeamMiniStage>
-      );
-    case 'floating-canvas':
-      return (
-        <TeamMiniStage>
-          {/* Three plates at three different heights, captions flipped above/below, a text-only
-              slot standing in for a face in the middle — the irregular canvas at a glance. */}
-          <rect className="pf-stack-mini-mute" x="8" y="8" width="22" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="8" y="15" width="22" height="24" rx="1.5" opacity={0.75} />
-          <rect className="pf-stack-mini-ink" x="44" y="24" width="22" height="24" rx="1.5" opacity={0.4} />
-          <rect className="pf-stack-mini-mute" x="44" y="50" width="18" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-mute" x="80" y="14" width="26" height="2.5" rx="1.25" opacity={0.9} />
-          <rect className="pf-stack-mini-mute" x="80" y="20" width="30" height="2.5" rx="1.25" opacity={0.6} />
-          <rect className="pf-stack-mini-mute" x="80" y="26" width="20" height="2.5" rx="1.25" opacity={0.6} />
-          <rect className="pf-stack-mini-ink" x="80" y="38" width="30" height="20" rx="1.5" opacity={0.3} />
-        </TeamMiniStage>
-      );
-    default: {
-      const exhaustive: never = layout;
-      return exhaustive;
-    }
-  }
+
+function TeamCatalogueThumbnail({layout}:{layout:PortfolioTeamLayout}){
+  if(layout==='portrait-rail')return <TeamPortraitThumbnailFrame/>;
+  if(layout==='polaroid'||layout==='profile-cards'||layout==='cover-cards'||layout==='avatar-cards'||layout==='float-cards'||layout==='floating-canvas')return <TeamPortraitThumbnailFrame design={layout}/>;
+  if(layout==='spotlight')return <TeamSpotlightThumbnailFrame/>;
+  if(layout==='split-screen')return <TeamSplitScreenThumbnailFrame/>;
+  if(layout==='editorial-rhythm')return <TeamEditorialRhythmThumbnailFrame/>;
+  if(layout==='directory')return <TeamDirectoryThumbnailFrame/>;
+  return <LayoutOptionSchematic design={layout} section="team"/>;
 }
 
 function TeamLayoutChoiceGrid({
@@ -626,27 +474,31 @@ function TeamLayoutChoiceGrid({
   if (showGrid) {
     return (
       <div className="np-stack">
-        <NpBackRow title={t('Team design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
+        <div className="flex flex-col gap-7" aria-label={t('Choose a design')}>
           {PORTFOLIO_TEAM_LAYOUT_OPTIONS.map((option) => (
-            <NpOptionCard
-              key={option.value}
-              selected={option.value === value}
-              title={t(option.label)}
-              illustration={<TeamLayoutWireframe layout={option.value} />}
-              onClick={() => {
-                onChange(option.value);
-                setShowGrid(false);
-              }}
-            />
+            <div key={option.value} className="group relative">
+              <button type="button" aria-pressed={value === option.value}
+                onClick={() => onChange(option.value)}
+                className="w-full overflow-hidden rounded-xl border p-1.5 text-left transition-colors hover:bg-neutral-500/5 focus-visible:outline-2 focus-visible:outline-offset-2"
+                style={{borderColor:value === option.value ? 'var(--pf-palette-principal,#f97316)' : 'color-mix(in srgb,currentColor 18%,transparent)'}}>
+                <TeamCatalogueThumbnail layout={option.value}/>
+                <span className="block py-3 pl-2 pr-36 text-sm font-medium">{t(option.label)}</span>
+              </button>
+              <button type="button" aria-label={`${t('Settings')} — ${t(option.label)}`} title={t('Settings')}
+                onClick={() => { onChange(option.value); setShowGrid(false); }}
+                className="absolute bottom-1.5 right-3 flex min-h-11 items-center gap-2 rounded-sm px-1 text-xs font-medium text-[var(--np-muted,#a1a1aa)] opacity-0 transition-opacity hover:text-[var(--np-text,#fafafa)] group-hover:opacity-100 group-focus-within:opacity-100 focus-visible:opacity-100 focus-visible:outline-2 focus-visible:outline-offset-2 [@media(hover:none)]:opacity-100">
+                <span>{t('Customize')}</span>
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12h14m-5-5 5 5-5 5"/></svg>
+              </button>
+            </div>
           ))}
-        </NpOptionCardGroup>
+        </div>
       </div>
     );
   }
 
   return (
-    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<TeamLayoutWireframe layout={value} />} onClick={() => setShowGrid(true)} />
+    <NpBackRow title={t(selected.label)} onBack={() => setShowGrid(true)} />
   );
 }
 
@@ -790,8 +642,8 @@ function TeamPolaroidLayoutFields({
 }) {
   const t = useT();
   return (
-    <>
-      <div>
+<>
+<NpCollapsibleSection title={t("Appearance")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Print color')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Print color')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS.map((option) => (
@@ -805,8 +657,8 @@ function TeamPolaroidLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-      <div>
+      </div></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Layout")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Prints per row')}</TeamSectionLabel>
         <p className="mt-2 text-xs text-[color:var(--pf-palette-texte-muted)]">
           {t('Only applies to the “View all” grid — visitors toggle it from the button above the rail.')}
@@ -823,8 +675,8 @@ function TeamPolaroidLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-    </>
+      </div></div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -838,13 +690,13 @@ function TeamRailLayoutFields({
   const t = useT();
   const navigation = team.railNavigation ?? 'drag';
   return (
-    <>
-      <TeamVisibilityRow
+<>
+<NpCollapsibleSection title={t("Details")}><div className="space-y-5"><TeamVisibilityRow
         label={t('Show portrait numbers')}
         checked={team.railShowNumbers !== false}
         onChange={(railShowNumbers) => onChange({ railShowNumbers })}
-      />
-      <div>
+      /></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Layout")}><div className="space-y-5"><div>
           <TeamSectionLabel>{t('Navigation')}</TeamSectionLabel>
           <div role="radiogroup" aria-label={t('Navigation')} className="mt-3 grid grid-cols-3 gap-3">
             {PORTFOLIO_TEAM_RAIL_NAVIGATION_OPTIONS.map((option) => (
@@ -859,7 +711,7 @@ function TeamRailLayoutFields({
             ))}
           </div>
         </div>
-        <div>
+<div>
           <TeamSectionLabel>{t('Image height')}</TeamSectionLabel>
           <div role="radiogroup" aria-label={t('Image height')} className="mt-3 grid grid-cols-3 gap-3">
             {PORTFOLIO_TEAM_IMAGE_HEIGHT_OPTIONS.map((option) => (
@@ -874,7 +726,7 @@ function TeamRailLayoutFields({
             ))}
           </div>
         </div>
-        <div>
+<div>
           <TeamSectionLabel>{t('Image corners')}</TeamSectionLabel>
           <div role="radiogroup" aria-label={t('Image corners')} className="mt-3 grid grid-cols-4 gap-2">
             {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
@@ -889,7 +741,7 @@ function TeamRailLayoutFields({
             ))}
           </div>
         </div>
-        {navigation === 'show-all' ? (
+{navigation === 'show-all' ? (
           <div>
             <TeamSectionLabel>{t('Portraits per row')}</TeamSectionLabel>
             <div role="radiogroup" aria-label={t('Portraits per row')} className="mt-3 grid grid-cols-3 gap-3">
@@ -905,8 +757,8 @@ function TeamRailLayoutFields({
               ))}
             </div>
           </div>
-        ) : null}
-    </>
+        ) : null}</div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -1030,8 +882,8 @@ function TeamFloatCardsLayoutFields({
   const t = useT();
   const view = team.floatCardsView ?? 'grid';
   return (
-    <>
-      <div>
+<>
+<NpCollapsibleSection title={t("Layout")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Opening view')}</TeamSectionLabel>
         <p className="mt-2 text-xs text-[color:var(--pf-palette-texte-muted)]">
           {t('Visitors can switch between both from the toolbar under the cards.')}
@@ -1049,7 +901,7 @@ function TeamFloatCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Card alignment')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Card alignment')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS.map((option) => (
@@ -1064,7 +916,7 @@ function TeamFloatCardsLayoutFields({
           ))}
         </div>
       </div>
-      <TeamPxSlider
+<TeamPxSlider
         label={t('Horizontal spacing')}
         value={team.floatCardsColumnGap ?? teamFloatDefaultColumnGap(team.gap)}
         min={TEAM_FLOAT_COLUMN_GAP.min}
@@ -1072,7 +924,7 @@ function TeamFloatCardsLayoutFields({
         step={TEAM_FLOAT_COLUMN_GAP.step}
         onChange={(floatCardsColumnGap) => onChange({ floatCardsColumnGap })}
       />
-      <div>
+<div>
         <TeamSectionLabel>{t('Cards per row')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Cards per row')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
@@ -1087,7 +939,7 @@ function TeamFloatCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Grid baseline')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Grid baseline')} className="mt-3 grid grid-cols-2 gap-3">
           {[
@@ -1104,8 +956,8 @@ function TeamFloatCardsLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-      <div>
+      </div></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Animation")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Card motion')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Card motion')} className="mt-3 grid grid-cols-2 gap-3">
           {[
@@ -1122,8 +974,8 @@ function TeamFloatCardsLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-    </>
+      </div></div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -1169,8 +1021,8 @@ function TeamSpotlightLayoutFields({
 }) {
   const t = useT();
   return (
-    <>
-      <div>
+<>
+<NpCollapsibleSection title={t("Layout")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Navigation')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Navigation')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATION_OPTIONS.map((option) => (
@@ -1185,7 +1037,7 @@ function TeamSpotlightLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Portrait side')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Portrait side')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS.map((option) => (
@@ -1200,7 +1052,7 @@ function TeamSpotlightLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Panel corners')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Panel corners')} className="mt-3 grid grid-cols-4 gap-2">
           {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
@@ -1214,8 +1066,8 @@ function TeamSpotlightLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-    </>
+      </div></div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -1313,8 +1165,8 @@ function TeamDirectoryLayoutFields({
 }) {
   const t = useT();
   return (
-    <>
-      <div>
+<>
+<NpCollapsibleSection title={t("Portrait")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Portrait')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Portrait')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_DIRECTORY_PORTRAIT_OPTIONS.map((option) => (
@@ -1329,7 +1181,7 @@ function TeamDirectoryLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Portrait corners')}</TeamSectionLabel>
         {/* Three per row like the Portrait group above: five across would squeeze the labels below
             the 13px minimum, and matching widths keep the band on one grid. */}
@@ -1345,16 +1197,16 @@ function TeamDirectoryLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-      <TeamPxSlider
+      </div></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Layout")}><div className="space-y-5"><TeamPxSlider
         label={t('Card spacing')}
         value={team.directoryCardGap ?? teamDirectoryDefaultCardGap(team.gap)}
         min={TEAM_DIRECTORY_CARD_GAP.min}
         max={TEAM_DIRECTORY_CARD_GAP.max}
         step={TEAM_DIRECTORY_CARD_GAP.step}
         onChange={(directoryCardGap) => onChange({ directoryCardGap })}
-      />
-    </>
+      /></div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -1396,10 +1248,8 @@ function TeamPxSlider({
         aria-label={label}
         aria-valuetext={`${value}px`}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="pf-stack-slider-input mt-4"
-        style={{
-          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
-        }}
+        className="np-range mt-2"
+        style={{ ['--np-fill' as string]: `${percent}%` }}
       />
     </div>
     </SettingRow>
@@ -1480,12 +1330,14 @@ function TeamOptionSlider<T extends string>({
   options,
   value,
   onChange,
+  getDetail,
 }: {
   label: string;
   hint?: string;
   options: readonly { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
+  getDetail?: (value: T) => string;
 }) {
   const t = useT();
   const rows = useSettingsRows();
@@ -1494,15 +1346,16 @@ function TeamOptionSlider<T extends string>({
     options.findIndex((option) => option.value === value)
   );
   const current = options[index];
+  const currentLabel = `${t(current?.label)}${current && getDetail ? ` · ${getDetail(current.value)}` : ''}`;
   return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
+    <SettingRow label={label} value={currentLabel}>
     <div>
       <div className="pf-exp-centered-slider-head">
         {rows ? null : (<span className="inline-flex items-center gap-1.5">
           <TeamSectionLabel>{label}</TeamSectionLabel>
           {hint ? <TeamInfoTooltip text={hint} /> : null}
         </span>)}
-        <span className="pf-exp-centered-slider-value">{t(current?.label)}</span>
+        <span className="pf-exp-centered-slider-value">{currentLabel}</span>
       </div>
       <input
         type="range"
@@ -1511,7 +1364,7 @@ function TeamOptionSlider<T extends string>({
         step={1}
         value={index}
         aria-label={label}
-        aria-valuetext={current?.label}
+        aria-valuetext={currentLabel}
         onChange={(event) => {
           const next = options[Number(event.target.value)];
           if (next) onChange(next.value);
@@ -1535,6 +1388,7 @@ function TeamOptionSlider<T extends string>({
             onClick={() => onChange(option.value)}
           >
             {t(option.label)}
+            {getDetail && <span className="mt-1 block font-normal">{getDetail(option.value)}</span>}
           </button>
         ))}
       </div>
@@ -1621,8 +1475,8 @@ function TeamProfileCardsLayoutFields({
 }) {
   const t = useT();
   return (
-    <>
-      <div>
+<>
+<NpCollapsibleSection title={t("Layout")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Opens on')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Opens on')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS.map((option) => (
@@ -1637,7 +1491,7 @@ function TeamProfileCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Cards per row')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Cards per row')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
@@ -1652,7 +1506,7 @@ function TeamProfileCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Card ratio')}</TeamSectionLabel>
         {/* Five steps, widest → tallest: three per row keeps every card the same size (rule 3). */}
         <div role="radiogroup" aria-label={t('Card ratio')} className="mt-3 grid grid-cols-3 gap-3">
@@ -1668,16 +1522,17 @@ function TeamProfileCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamOptionSlider
           label={t('Column spacing')}
-          hint={t('Applies on desktop only — phones and tablets keep one comfortable gap.')}
+          hint={t('Controls the visible horizontal gap between cards in both grid and rail views.')}
           options={PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS}
+          getDetail={(value) => `${TEAM_PROFILE_GUTTER_PX[value]} px`}
           value={(team.profileCardsGutter ?? 'md') as PortfolioTeamProfileGutter}
           onChange={(profileCardsGutter) => onChange({ profileCardsGutter })}
         />
-      </div>
-      <div>
+      </div></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Details")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Info panel')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Info panel')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_PROFILE_PANEL_OPTIONS.map((option) => (
@@ -1692,7 +1547,7 @@ function TeamProfileCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Visible at first')}</TeamSectionLabel>
         <div className="mt-3">
           <TeamOptionGrid
@@ -1705,14 +1560,21 @@ function TeamProfileCardsLayoutFields({
           />
         </div>
       </div>
-      <div>
+<div>
         <TeamVisibilityRow
           label={t('Staggered columns')}
           checked={team.profileCardsStagger !== false}
           onChange={(profileCardsStagger) => onChange({ profileCardsStagger })}
         />
       </div>
-    </>
+<div>
+        <TeamVisibilityRow
+          label={t('Show numbering')}
+          checked={team.profileCardsShowNumbers !== false}
+          onChange={(profileCardsShowNumbers) => onChange({ profileCardsShowNumbers })}
+        />
+      </div></div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -1845,8 +1707,8 @@ function TeamAvatarCardsLayoutFields({
 }) {
   const t = useT();
   return (
-    <>
-      <div>
+<>
+<NpCollapsibleSection title={t("Layout")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Opens on')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Opens on')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS.map((option) => (
@@ -1861,7 +1723,7 @@ function TeamAvatarCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Members per row')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Members per row')} className="mt-3 grid grid-cols-4 gap-2">
           {PORTFOLIO_TEAM_AVATAR_COLUMN_OPTIONS.map((option) => (
@@ -1876,14 +1738,14 @@ function TeamAvatarCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Horizontal spacing')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Horizontal spacing')} className="mt-3 grid grid-cols-4 gap-2">
           {PORTFOLIO_TEAM_AVATAR_COLUMN_GAP_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.avatarCardsColumnGap ?? 'md')}
-              label={t(option.label)}
+              label={`${t(option.label)} · ${TEAM_PROFILE_GUTTER_PX[option.value]} px`}
               onClick={() => onChange({ avatarCardsColumnGap: option.value })}
             >
               <TeamAvatarColumnGapWireframe value={option.value} />
@@ -1891,7 +1753,7 @@ function TeamAvatarCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Grid width')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Grid width')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_AVATAR_GRID_WIDTH_OPTIONS.map((option) => (
@@ -1905,8 +1767,8 @@ function TeamAvatarCardsLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-      <div>
+      </div></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Appearance")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Hover shape')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Hover shape')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_AVATAR_SHAPE_OPTIONS.map((option) => (
@@ -1921,7 +1783,7 @@ function TeamAvatarCardsLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamVisibilityRow
           label={t('Staggered rows')}
           checked={team.avatarCardsStagger !== false}
@@ -1932,8 +1794,8 @@ function TeamAvatarCardsLayoutFields({
           checked={team.avatarCardsGlow !== false}
           onChange={(avatarCardsGlow) => onChange({ avatarCardsGlow })}
         />
-      </div>
-    </>
+      </div></div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -1998,8 +1860,8 @@ function TeamSplitScreenLayoutFields({
 }) {
   const t = useT();
   return (
-    <>
-      <div>
+<>
+<NpCollapsibleSection title={t("Portrait")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Portrait side')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Portrait side')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS.map((option) => (
@@ -2014,7 +1876,7 @@ function TeamSplitScreenLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Portrait tone')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Portrait tone')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS.map((option) => (
@@ -2029,7 +1891,7 @@ function TeamSplitScreenLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Portrait corners')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Portrait corners')} className="mt-3 grid grid-cols-4 gap-2">
           {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
@@ -2043,22 +1905,22 @@ function TeamSplitScreenLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-      <div>
+      </div></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Details")}><div className="space-y-5"><div>
         <TeamVisibilityRow
           label={t('Show numbering')}
           checked={team.splitShowNumbers !== false}
           onChange={(splitShowNumbers) => onChange({ splitShowNumbers })}
         />
       </div>
-      <div>
+<div>
         <TeamVisibilityRow
           label={t('Social links behind a button')}
           checked={team.splitSocialsReveal !== false}
           onChange={(splitSocialsReveal) => onChange({ splitSocialsReveal })}
         />
-      </div>
-    </>
+      </div></div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -2084,8 +1946,8 @@ function TeamFloatingCanvasLayoutFields({
 }) {
   const t = useT();
   return (
-    <>
-      <div>
+<>
+<NpCollapsibleSection title={t("Layout")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Cards per row')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Cards per row')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
@@ -2100,7 +1962,7 @@ function TeamFloatingCanvasLayoutFields({
           ))}
         </div>
       </div>
-      <div>
+<div>
         <TeamSectionLabel>{t('Composition width')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Composition width')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS.map((option) => (
@@ -2114,8 +1976,8 @@ function TeamFloatingCanvasLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-      <div>
+      </div></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Animation")}><div className="space-y-5"><div>
         <TeamSectionLabel>{t('Scroll parallax')}</TeamSectionLabel>
         <div role="radiogroup" aria-label={t('Scroll parallax')} className="mt-3 grid grid-cols-2 gap-3">
           {[
@@ -2132,21 +1994,21 @@ function TeamFloatingCanvasLayoutFields({
             </TeamPickerCard>
           ))}
         </div>
-      </div>
-      <TeamTextField
+      </div></div></NpCollapsibleSection>
+<NpCollapsibleSection title={t("Text")}><div className="space-y-5"><TeamTextField
         label={t('Editorial label')}
         value={team.canvasEditorialLabel}
         placeholder={t('Studio note')}
         onChange={(canvasEditorialLabel) => onChange({ canvasEditorialLabel })}
       />
-      <TeamTextField
+<TeamTextField
         label={t('Editorial text')}
         value={team.canvasEditorialText}
         placeholder={t('A small collective of specialists who each choose their own tools…')}
         onChange={(canvasEditorialText) => onChange({ canvasEditorialText })}
         multiline
-      />
-    </>
+      /></div></NpCollapsibleSection>
+</>
   );
 }
 
@@ -2161,7 +2023,6 @@ function TeamLayoutSettingsBand({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
-  const t = useT();
   const fields =
     team.layout === 'portrait-rail' ? (
       <TeamRailLayoutFields team={team} onChange={onChange} />
@@ -2177,6 +2038,8 @@ function TeamLayoutSettingsBand({
       <TeamDirectoryLayoutFields team={team} onChange={onChange} />
     ) : team.layout === 'profile-cards' ? (
       <TeamProfileCardsLayoutFields team={team} onChange={onChange} />
+    ) : team.layout === 'cover-cards' ? (
+      <TeamProfileCardsLayoutFields team={teamHoverVeilPresentation(team)} onChange={patch => onChange(teamProfilePatchToHoverVeil(patch))} />
     ) : team.layout === 'avatar-cards' ? (
       <TeamAvatarCardsLayoutFields team={team} onChange={onChange} />
     ) : team.layout === 'floating-canvas' ? (
@@ -2184,156 +2047,38 @@ function TeamLayoutSettingsBand({
     ) : null;
   if (!fields) return null;
   return (
-    <section className="pf-exp-layout-settings" aria-labelledby="team-layout-settings-title">
-      <h3 id="team-layout-settings-title" className="pf-exp-layout-settings-title">
-        {t('Layout settings')}
-      </h3>
-      <div className="pf-exp-layout-settings-body space-y-7">{fields}</div>
-    </section>
+    <div className="pf-team-design-settings">{fields}</div>
   );
 }
 
 /** One wireframe per Header design — the shared 8-design GSAP header mounted above the
  *  Team section, independent of the section's own member `layout`. */
-function TeamHeaderWireframe({ design }: { design: PortfolioTeamHeaderDesign }) {
-  const t = useT();
-  switch (design) {
-    case 'editorial':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-accent" x="8" y="14" width="18" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="8" y="24" width="86" height="12" rx="2" />
-          <rect className="pf-stack-mini-mute" x="8" y="44" width="50" height="3" rx="1.5" />
-        </TeamMiniStage>
-      );
-    case 'marquee':
-      return (
-        <TeamMiniStage>
-          <text
-            x="60"
-            y="42"
-            fontSize={22}
-            fontWeight={800}
-            textAnchor="middle"
-            opacity={0.14}
-            className="pf-stack-mini-ink"
-          >
-            {t('TEAM')}
-          </text>
-          <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="11" rx="2" />
-        </TeamMiniStage>
-      );
-    case 'index':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-mute" x="8" y="14" width="104" height="1.5" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="22" height="18" rx="2" opacity={0.7} />
-          <rect className="pf-stack-mini-mute" x="40" y="26" width="1.5" height="18" />
-          <rect className="pf-stack-mini-ink" x="50" y="28" width="60" height="8" rx="2" />
-          <rect className="pf-stack-mini-mute" x="50" y="40" width="36" height="2.5" rx="1.25" />
-        </TeamMiniStage>
-      );
-    case 'accent-count':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-accent" x="8" y="14" width="30" height="9" rx="4.5" />
-          <rect className="pf-stack-mini-mute" x="8" y="30" width="46" height="3" rx="1.5" />
-          <rect className="pf-stack-mini-ink" x="8" y="39" width="70" height="9" rx="2" />
-        </TeamMiniStage>
-      );
-    case 'serif-lead':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-mute" x="8" y="14" width="24" height="2.5" rx="1.25" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="100" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="40" width="70" height="10" rx="2" opacity={0.5} />
-        </TeamMiniStage>
-      );
-    case 'billboard':
-      return (
-        <TeamMiniStage>
-          <text
-            x="60"
-            y="38"
-            fontSize={25}
-            fontWeight={900}
-            textAnchor="middle"
-            opacity={0.1}
-            className="pf-stack-mini-ink"
-          >
-            {t('TEAM')}
-          </text>
-          <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="9" rx="2" />
-          <rect className="pf-stack-mini-mute" x="18" y="44" width="40" height="3" rx="1.5" />
-        </TeamMiniStage>
-      );
-    case 'masthead':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="12" width="90" height="10" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="70" height="10" rx="2" opacity={0.6} />
-          <rect className="pf-stack-mini-ink" x="8" y="40" width="80" height="10" rx="2" opacity={0.3} />
-        </TeamMiniStage>
-      );
-    case 'split-heading':
-      return (
-        <TeamMiniStage>
-          <rect className="pf-stack-mini-ink" x="8" y="26" width="58" height="11" rx="2" />
-          <rect className="pf-stack-mini-ink" x="8" y="41" width="36" height="11" rx="2" opacity={0.5} />
-          <rect className="pf-stack-mini-mute" x="86" y="16" width="26" height="3" rx="1.5" />
-        </TeamMiniStage>
-      );
-    default: {
-      const exhaustive: never = design;
-      return exhaustive;
-    }
-  }
+function TeamHeaderWireframe({design}:{design:PortfolioTeamHeaderDesign}){
+ return <StackPreviewSkeleton section="team"><StackHeaderSkeleton design={design} compact word="TEAM" title="Notre équipe" lead="Notre" count="04"/></StackPreviewSkeleton>;
 }
 
-function TeamHeaderDesignGrid({
-  value,
-  onChange,
-  open: showGrid,
-  onOpenChange: setShowGrid,
-}: {
-  value: PortfolioTeamHeaderDesign;
-  onChange: (value: PortfolioTeamHeaderDesign) => void;
-  /** Whether the catalog of designs is open (owned by the panel so it can hide the settings below). */
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
-}) {
-  const t = useT();
-  const selected =
-    PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
-    PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS[0];
-
-  if (showGrid) {
-    return (
-      <div className="np-stack">
-        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
-        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
-          {PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS.map((option) => (
-            <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-              <NpOptionCard
-                selected={option.value === value}
-                title={t(option.label)}
-                illustration={<TeamHeaderWireframe design={option.value} />}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            </PortfolioHeaderDesignOption>
-          ))}
-        </NpOptionCardGroup>
-      </div>
-    );
-  }
-
-  return (
-    <NpPickerRow label={t('Header design')} value={t(selected.label)} thumbnail={<TeamHeaderWireframe design={value} />} onClick={() => setShowGrid(true)} />
-  );
+function TeamHeaderDesignGrid({value,onChange,open:showGrid,onOpenChange:setShowGrid}:{value:PortfolioTeamHeaderDesign;onChange:(value:PortfolioTeamHeaderDesign)=>void;open:boolean;onOpenChange:(open:boolean)=>void}){
+ const t=useT();
+ const previewSource=usePortfolioDesignPreviewSource();
+ const theme=useThumbnailTheme('team');
+ const selected=PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS.find(option=>option.value===value)??PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS[0];
+ if(!showGrid)return <NpBackRow title={t(selected.label)} onBack={()=>setShowGrid(true)}/>;
+ return <div className="flex flex-col gap-8" aria-label={t('Choose a header')}>
+  {PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS.map(option=>{
+   if(option.value==='none')return <button
+    key={option.value}
+    type="button"
+    aria-pressed={value===option.value}
+    onClick={()=>onChange(option.value)}
+    className="flex min-h-12 w-full items-center rounded-xl border px-4 text-left text-sm font-medium transition-colors hover:bg-neutral-500/5 focus-visible:outline-2 focus-visible:outline-offset-2"
+    style={{borderColor:value===option.value?'var(--pf-palette-principal,#f97316)':'color-mix(in srgb,currentColor 18%,transparent)'}}
+   >{t(option.label)}</button>;
+   const skeleton=<TeamHeaderWireframe design={option.value}/>;
+   return <PortfolioHeaderDesignOption key={option.value} design={option.value}><DesignCatalogueCard label={t(option.label)} selected={value===option.value} previewBackground={theme.background} onSelect={()=>onChange(option.value)} onCustomize={()=>{if(value!==option.value)onChange(option.value);setShowGrid(false);}}><span className="relative block aspect-[3/1] w-full" style={{backgroundColor:theme.background}}>{previewSource?<PortfolioDesignLivePreview src={withDesignPreview(previewSource.portfolioPath,{section:'teamHeader',design:option.value})+'&previewRevision=team-header-compact-v3'} settings={previewSource.settings} fill loadMargin="48px 0px" skeleton={skeleton} animateSkeleton={false} backgroundColor={theme.background}/>:skeleton}</span></DesignCatalogueCard></PortfolioHeaderDesignOption>;
+  })}
+ </div>;
 }
+
 
 /** The Footer's settings band — one titled card under a design picker. */
 function _TeamSettingsBand({
@@ -2352,7 +2097,7 @@ function _TeamSettingsBand({
 }) {
   return (
     <section className={`pf-exp-layout-settings${flush ? ' pf-exp-layout-settings--flush' : ''}`} aria-labelledby={id}>
-      <h3 id={id} className="pf-exp-layout-settings-title">
+      <h3 id={id} className="sr-only">
         {title}
       </h3>
       <div key={motionKey} className="pf-exp-layout-settings-body space-y-7">
@@ -2417,12 +2162,21 @@ export function TeamSettingsPanel({
   chrome?: NpPanelChrome;
 }) {
   const t = useT();
-  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
-  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
+  const backgroundTheme = useThumbnailTheme('team');
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(true);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(true);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<TeamSubSection>('general');
   const subSection = normalizeTeamSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const [previousSubSection, setPreviousSubSection] = useState(subSection);
+  if (previousSubSection !== subSection) {
+    setPreviousSubSection(subSection);
+    if (subSection === 'design') setDesignCatalogOpen(true);
+    if (subSection === 'header') setHeaderCatalogOpen(true);
+  }
   const setSubSection = (value: TeamSubSection) => {
     const next = normalizeTeamSubSection(value);
+    if (next === 'design') setDesignCatalogOpen(true);
+    if (next === 'header') setHeaderCatalogOpen(true);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
@@ -2434,6 +2188,11 @@ export function TeamSettingsPanel({
       {subSection === 'general' ? (
         <div className="np-stack">
           <NpToggleRow card title={t('Show Team section')} description={team.enabled !== false ? undefined : t('Visitors go straight to the next section.')} checked={team.enabled !== false} onChange={(enabled) => onChange({ enabled })} />
+          <div className="pb-6"><SectionColorModeControl hideLabel
+              label={t('Color mode')}
+              value={team.colorModeOverride}
+              onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+            /></div>
           <div className="np-dimmable" data-disabled={team.enabled !== false ? 'false' : 'true'} inert={team.enabled === false}>
           <NpCollapsibleSection title={t('Content shown')}>
               {/* Split screen is built around the portrait — it always shows it. */}
@@ -2460,6 +2219,7 @@ export function TeamSettingsPanel({
                 onChange={(showSocials) => onChange({ showSocials })}
               />
           </NpCollapsibleSection>
+          
           </div>
         </div>
       ) : null}
@@ -2476,46 +2236,45 @@ export function TeamSettingsPanel({
           />
           {designCatalogOpen ? null : (
             <>
-              <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
-                {t('Each design renders straight from your members — what shows on a card is set in General → Content shown.')}
-              </p>
-              <NpCollapsibleSection title={t('Layout options')}><TeamLayoutSettingsBand team={team} onChange={onChange} /></NpCollapsibleSection>
+              <TeamLayoutSettingsBand team={team} onChange={onChange} />
             </>
+          )}
+          {designCatalogOpen ? null : (
+            <CardsStyleControls
+              value={team.cardsStyle ?? DEFAULT_CARDS_STYLE}
+              onChange={(cardsStyle) => onChange({ cardsStyle })}
+              palette={team.teamPalette}
+            />
           )}
           {designCatalogOpen ? null : (
           <NpCollapsibleSection title={t('Style')}>
 
-          <SectionColorModeControl
-            label={t('Color mode')}
-            value={team.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-
-          <TeamOptionGrid
-            label={t('Text size')}
-            options={PORTFOLIO_TEAM_PREMIUM_FONT_SIZE_OPTIONS}
-            value={team.premiumFontSize ?? 'medium'}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
+          <TextSizeSlider label={t('Text size')} options={PORTFOLIO_TEAM_PREMIUM_FONT_SIZE_OPTIONS} value={team.premiumFontSize ?? 'medium'} onChange={(premiumFontSize) => onChange({ premiumFontSize })} />
           </NpCollapsibleSection>
           )}
         </div>
       ) : null}
 
       {subSection === 'background' && team.enabled !== false ? (
-        <div className="np-stack"><NpCollapsibleSection title={t('Background')}>
+        <div className="np-stack"><NpCollapsibleSection title={t('Palette')}>
+            <SectionPaletteFamilyControl
+              value={team.paletteFamily ?? 'global'}
+              onChange={(paletteFamily) => onChange({ paletteFamily })}
+              mode={backgroundTheme.mode}
+            />
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={team}
             onChange={onChange}
             renderColorField={({ label, value, onChange: onColorChange }) => {
-              const slot = TEAM_BACKGROUND_LABEL_SLOTS[label];
-              // Every background fill color has a Team palette slot; anything else (and the
-              // palette turned off) falls back to a manual hex picker.
-              if (!slot || team.useHeroPalette === false) {
-                return <TeamManualColorField label={label} value={value} onChange={onColorChange} />;
-              }
-              return <TeamColorField team={team} onChange={onChange} slot={slot} label={label} />;
+              const slot = Object.entries(TEAM_BACKGROUND_LABEL_SLOTS).find(([key]) => t(key) === label)?.[1];
+              const options = ([['fond', 'Background'], ['neutre', 'Surface'], ['principal', 'Primary'], ['secondaire', 'Secondary'], ['texteFort', 'Strong text']] as const).map(([token, text]) => ({ value: token, label: t(text), color: backgroundTheme.palette[token] }));
+              const bindings = mergeTeamColorBindings(DEFAULT_TEAM_COLOR_BINDINGS, team.teamColorBindings);
+              return <ColorSwatchRow label={label} options={options} value={slot ? bindings[slot] : options.find(option => option.color.toLowerCase() === value.toLowerCase())?.value ?? ''} onChange={token => {
+                if (slot) onChange({ useHeroPalette: true, teamPalette: backgroundTheme.palette, ...asTeamPatch(patchTeamColorBinding({ ...team, teamPalette: backgroundTheme.palette }, slot, token as HeroPaletteTokenId)) });
+                else { const option = options.find(option => option.value === token); if (option) onColorChange(option.color); }
+              }} />;
             }}
           />
         </NpCollapsibleSection></div>
@@ -2531,7 +2290,7 @@ export function TeamSettingsPanel({
           />
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
-          {headerCatalogOpen ? null : (
+          {headerCatalogOpen || team.headerDesign === 'none' ? null : (
             <NpCollapsibleSection title={t('Header settings')}>
               <TeamHeaderDesignFields team={team} onChange={onChange} />
             </NpCollapsibleSection>

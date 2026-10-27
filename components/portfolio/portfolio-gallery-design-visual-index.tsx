@@ -1,17 +1,18 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, type CSSProperties } from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
 import { MediaImage } from '@/components/ui/MediaImage';
 import { galleryAspectStyle, galleryItemDisplayTitle, type PortfolioGalleryPresentationSettings } from '@/components/portfolio/portfolio-gallery-settings';
 import type { ProfileGalleryItem } from '@/types/profile';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-export function GalleryVisualIndex({ items, presentation, showTitle, onOpen }: {
+export function GalleryVisualIndex({ items, presentation, showTitle, onOpen, renderMedia }: {
   items: ProfileGalleryItem[];
   presentation: PortfolioGalleryPresentationSettings;
   showTitle: boolean;
   onOpen?: (item: ProfileGalleryItem) => void;
+  renderMedia?: (item: ProfileGalleryItem, index: number) => ReactNode;
 }) {
   const t = useT();
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -51,7 +52,7 @@ export function GalleryVisualIndex({ items, presentation, showTitle, onOpen }: {
       else if (inner.bottom > outer.bottom) list.scrollTop += inner.bottom - outer.bottom;
     }
   };
-  const preview = <PortfolioDeferredMedia key={selected.id} src={selected.mediaUrl} alt={title}
+  const preview = renderMedia ? renderMedia(selected,selectedIndex) : <PortfolioDeferredMedia key={selected.id} src={selected.mediaUrl} alt={title}
     kind={selected.mediaType === 'VIDEO' ? 'video' : 'image'}
     className="h-full w-full" objectFit={presentation.objectFit} objectPosition={presentation.objectPosition}
     fillParent eager highPriority controls={selected.mediaType === 'VIDEO'} autoPlayVideo={false}
@@ -99,7 +100,7 @@ export function GalleryVisualIndex({ items, presentation, showTitle, onOpen }: {
                     (listRef.current?.children[next] as HTMLElement)?.querySelector('button')?.focus({ preventScroll: true });
                   }}>
                   <span className="pf-gallery-index-thumb">
-                    {item.mediaType === 'VIDEO' ? <video src={item.mediaUrl} preload="metadata" muted playsInline aria-hidden="true" /> : <MediaImage src={item.mediaUrl} width={160} alt="" className="h-full w-full object-cover" />}
+                    {renderMedia ? renderMedia(item,index) : item.mediaType === 'VIDEO' ? <video src={item.mediaUrl} preload="metadata" muted playsInline aria-hidden="true" /> : <MediaImage src={item.mediaUrl} width={160} alt="" className="h-full w-full object-cover" />}
                     {item.mediaType === 'VIDEO' ? <span className="pf-gallery-index-play" aria-hidden="true">▶</span> : null}
                   </span>
                   <span className="pf-gallery-index-choice-copy">

@@ -2,7 +2,7 @@ import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken, hasSessionHint, setAccessToken } from './accessToken';
 import { refreshAccessToken, invalidateSessionCache } from './sessionRefresh';
 import { reportNetworkFailure } from '@/stores/serverStatusStore';
-import { normalizeStorageUrlsDeep } from './storage-media-url';
+import { normalizeStorageUrlsDeep, restoreStorageUrlsDeep } from './storage-media-url';
 
 export {
   setAccessToken,
@@ -27,6 +27,9 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   // FormData must set Content-Type with boundary automatically (not application/json)
   if (config.data instanceof FormData) {
     delete config.headers['Content-Type'];
+  } else if (config.data && typeof config.data === 'object') {
+    // Responses are rewritten to same-origin storage paths in dev; send them back as absolute URLs.
+    config.data = restoreStorageUrlsDeep(config.data);
   }
   return config;
 });

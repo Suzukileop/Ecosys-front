@@ -1,0 +1,5 @@
+Generated with the built-in image_gen tool for the Projects board catalogue thumbnail.
+
+Prompt: Use case: product-mockup. Asset type: realistic imagery for the two project images in a premium portfolio 'Projects board' thumbnail. Generate a wide landscape diptych, two equally sized panels edge to edge, no gutter. Left panel: photorealistic refined brand identity presentation, unprinted warm ivory stationery and an embossed abstract geometric mark on textured terracotta paper, arranged with sophisticated natural shadows. Right panel: photorealistic architectural interior, sculptural warm limestone doorway, brushed metal detail and soft daylight, coherent warm neutral art direction. Clean commercial editorial photography, tactile real materials, restrained premium aesthetic. Both panels must read clearly at thumbnail size. No text, no lettering, no logos, no UI, no dashboard, no browser frame, no devices, no watermark. Landscape 16:7 composition, evenly split at center.
+
+Optimized to WebP, 1200 × 527. Background and typography remain code-rendered with the active portfolio palette. This is fictional demonstration imagery, not client project photography.

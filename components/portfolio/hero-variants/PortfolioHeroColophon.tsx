@@ -32,7 +32,7 @@ import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/p
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const MAX_INDEX_ROWS = 5;
+const MAX_INDEX_ROWS = 4;
 const MAX_SOCIAL_LINKS = 3;
 /** Cursor preview frame size (px) — 4:5, like a print. */
 const PREVIEW_W = 232;
@@ -170,7 +170,8 @@ export function PortfolioHeroColophon({ data }: { data: PortfolioHeroData }) {
   const imageBw = data.presentation.heroImageGrayscale === true;
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
 
-  const fullName = (data.fullName || data.nameLead || '').trim() || t('Your Name');
+  const displayName = data.presentation.heroColophonName?.trim() || (data.fullName || data.nameLead || '').trim() || t('Your Name');
+  const fullName = data.presentation.heroColophonUppercase ? displayName.toLocaleUpperCase() : displayName;
   const specialty = resolveHeroSpecialtyValue(data.specialite);
   const location = data.locationLabel?.trim() || '';
   const showAvailability = data.presentation.showAvailabilityBadge !== false;
@@ -202,11 +203,11 @@ export function PortfolioHeroColophon({ data }: { data: PortfolioHeroData }) {
         href: work.href?.trim() || workHref,
         imageUrl: work.imageUrl?.trim() || null,
       }));
-    if (works.length > 0) return works;
+    if (works.length > 0 || data.presentation.heroColophonSelectedWorkIds !== null) return works;
     return resolveHeroBannerTools(data.tools, data.presentation.heroEditorialRailSelectedTools, MAX_INDEX_ROWS).map(
       (tool) => ({ id: `tool-${tool}`, title: tool, href: null, imageUrl: null })
     );
-  }, [data.featuredWorks, data.tools, data.presentation.heroEditorialRailSelectedTools, workHref]);
+  }, [data.featuredWorks, data.tools, data.presentation.heroEditorialRailSelectedTools, data.presentation.heroColophonSelectedWorkIds, workHref]);
   const hasPreviews = rows.some((row) => row.imageUrl);
 
   const heroRef = useRef<HTMLDivElement>(null);
@@ -410,7 +411,7 @@ export function PortfolioHeroColophon({ data }: { data: PortfolioHeroData }) {
               ) : null}
             </div>
             <div className="lg:col-span-4">
-              {showAvailability ? <p className={credit}>{availability}</p> : null}
+              {showAvailability ? <p data-hero-availability className={credit}>{availability}</p> : null}
               {years ? (
                 <p className={credit} style={{ color: muted }}>
                   {t.plural(years, '{count} year of practice', '{count} years of practice')}
@@ -443,7 +444,7 @@ export function PortfolioHeroColophon({ data }: { data: PortfolioHeroData }) {
           </div>
 
           <div className="mt-8 grid flex-1 grid-cols-1 content-start gap-y-7 pb-4 sm:mt-14 sm:gap-y-10 sm:pb-8 lg:mt-[clamp(3rem,7vh,5.5rem)] lg:grid-cols-12 lg:grid-rows-[auto_1fr] lg:content-start lg:gap-x-8 lg:pb-[clamp(2rem,4vh,3.5rem)]">
-            <p
+            <p data-hero-bio
               className="pf-colophon-bio m-0 max-w-[31ch] font-medium tracking-[-0.035em] [text-indent:1.9em] [text-wrap:balance] lg:col-span-6 lg:self-start"
               style={{ fontSize: 'clamp(1.4rem, 2.45vw, 2.75rem)', lineHeight: 1.08 }}
             >

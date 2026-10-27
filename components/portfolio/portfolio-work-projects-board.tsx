@@ -1,8 +1,19 @@
 'use client';
+import { workButtonColor } from './portfolio-work-button-color';
+import { workPaletteTokenColor } from './portfolio-work-settings';
 
 import Image from 'next/image';
+import mediaStyles from './portfolio-work-board-media.module.css';
+import ctaStyles from './portfolio-work-board-cta.module.css';
+import buttonStyles from './portfolio-work-grid-cta.module.css';
+import { GridButtonContent, gridButtonVars } from './portfolio-work-grid-button';
+import { FramesViewCursor } from './portfolio-project-view-cursor';
+import { DEFAULT_HERO_PALETTE, mergeHeroPalette, resolveHeroPaletteColor } from './portfolio-hero-palette-settings';
+import { resolveSectionVisibleSurface } from './portfolio-section-color-mode';
+import { readableMix } from './stack-designs/readable-ink';
+import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import Link from 'next/link';
-import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
@@ -102,36 +113,31 @@ function CaseStudyLink({
   ink,
   hoverInk,
   accent,
+  variant = 'underline',
+  display = 'always',
+  surface,
 }: {
   href: string;
   label: string;
   ink: string;
   hoverInk: string;
   accent: string;
+  variant?: 'underline' | 'outline' | 'solid' | 'pill';
+  display?: 'always' | 'hover';
+  surface: string;
 }) {
   const external = /^https?:\/\//i.test(href);
   const className =
-    "group/cta inline-flex items-center gap-1.5 self-start rounded-sm text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--board-cta-ink)] transition-colors duration-300 after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:text-[var(--board-cta-hover)] focus-visible:text-[var(--board-cta-hover)] focus-visible:outline-none";
+    ctaStyles.cta + ' ' + buttonStyles.cta + ' self-start';
   const style = {
+    ...gridButtonVars(ink),
     '--board-cta-ink': ink,
     '--board-cta-hover': hoverInk,
     '--board-cta-accent': accent,
+    '--board-cta-surface': surface,
   } as CSSProperties;
 
-  const content = (
-    <>
-      <span className="relative pb-0.5">
-        {label}
-        <span
-          aria-hidden
-          className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-[var(--board-cta-accent)] transition-transform duration-500 ease-out group-hover/board-card:scale-x-100 group-focus-visible/cta:scale-x-100"
-        />
-      </span>
-      <span aria-hidden className="translate-y-[-1px]">
-        ↗
-      </span>
-    </>
-  );
+  const content = <GridButtonContent label={label}/>;
 
   if (external) {
     return (
@@ -142,13 +148,14 @@ function CaseStudyLink({
         className={className}
         style={style}
         data-pf-no-color-transition=""
+        data-variant={variant} data-display={display}
       >
         {content}
       </a>
     );
   }
   return (
-    <Link href={href} className={className} style={style} data-pf-no-color-transition="">
+    <Link href={href} className={className} style={style} data-pf-no-color-transition="" data-variant={variant} data-display={display}>
       {content}
     </Link>
   );
@@ -169,6 +176,8 @@ function ProjectsBoardThumbnail({
   surface,
   size,
   interactive,
+  singleColumn,
+  imageFit,
 }: {
   url: string | null;
   alt: string;
@@ -176,30 +185,33 @@ function ProjectsBoardThumbnail({
   size: PortfolioWorkProjectsBoardThumbnailSize;
   /** Zoom on hover only when the card links somewhere: otherwise it promises a click. */
   interactive: boolean;
+  singleColumn: boolean;
+  imageFit: 'cover' | 'contain';
 }) {
   return (
     <div
-      className={`relative w-full shrink-0 overflow-hidden ${boardThumbnailAspectClass(size)}`}
-      style={{ backgroundColor: surface }}
+      className={`relative w-full shrink-0 overflow-hidden ${boardThumbnailAspectClass(size)} ${singleColumn ? mediaStyles.singleColumn : ''}`}
+      data-size={size}
+      style={{ backgroundColor: singleColumn && imageFit === 'contain' ? 'transparent' : surface }}
     >
       {url ? (
         <Image
-          src={url}
+          src={resolveStorageMediaUrl(url)}
           alt={alt}
           fill
-          sizes="(max-width: 1024px) 100vw, 50vw"
-          className={`object-cover object-center ${
-            interactive
+          sizes={singleColumn ? '100vw' : '(max-width: 1024px) 100vw, 50vw'}
+          className={`${singleColumn && imageFit === 'contain' ? 'object-contain' : 'object-cover'} object-center ${
+            interactive && !(singleColumn && imageFit === 'contain')
               ? 'transition-transform duration-700 ease-out will-change-transform group-hover/board-card:scale-[1.04]'
               : ''
           }`}
           data-pf-no-color-transition=""
         />
       ) : null}
-      <div
-        className="pf-projects-board-overlay pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(15,15,15,var(--board-overlay-alpha)),rgba(15,15,15,0),transparent)] [--board-overlay-alpha:0.5] transition-opacity duration-500 ease-out group-hover/board-card:[--board-overlay-alpha:0.6]"
+      {!(singleColumn && imageFit === 'contain') ? <div
+        className="pf-projects-board-overlay pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(15,15,15,0.5),rgba(15,15,15,0),transparent)]"
         aria-hidden
-      />
+      /> : null}
     </div>
   );
 }
@@ -219,6 +231,9 @@ function ProjectsBoardCard({
 }) {
   const t = useT();
   const board = presentation.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS;
+  const cardRef=useRef<HTMLElement>(null);
+  const [cursorAnchor,setCursorAnchor]=useState<{x:number;y:number}|null>(null);
+  const dismissCursor=useCallback(()=>setCursorAnchor(null),[]);
   const role = workRoleLabel(item);
   const category = workCategoryLabel(item);
   const tools = workToolLabels(item, presentation.maxToolsShown ?? 12);
@@ -242,11 +257,20 @@ function ProjectsBoardCard({
   const showMetaLine = metaItems.length > 0;
   const showBottomBlock = showMetaLine || showCaseStudyLink;
 
-  const accent = presentation.ctaColor || presentation.categoryActiveColor;
-  const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
+  const unframed = (board.columnsPerRow ?? 2) === 1 && board.singleColumnImageFit === 'contain' && showThumb;
+  const infoTone = board.infoBackground ?? 'neutre';
+  const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, presentation.workPalette);
+  const infoOpacity=board.infoBackgroundOpacity??100;
+  const infoBase=resolveHeroPaletteColor(palette,infoTone);
+  const infoSurface=unframed?undefined:resolveSectionVisibleSurface({sectionBackgroundEnabled:true,sectionBackgroundFill:'solid',sectionBackgroundColor:infoBase,sectionBackgroundOpacity:infoOpacity},presentation.sectionBackgroundColor||palette.fond);
+  const infoPaint=unframed?undefined:`color-mix(in srgb, ${infoBase} ${infoOpacity}%, transparent)`;
+  const infoInk = infoSurface ? readableMix(presentation.titleColor, 100, infoSurface) : undefined;
+  const infoMuted = infoSurface ? readableMix(presentation.subtitleColor, 100, infoSurface) : undefined;
+  const accent = infoSurface ? readableMix(presentation.ctaColor || presentation.categoryActiveColor, 100, infoSurface) : presentation.ctaColor || presentation.categoryActiveColor;
+  const titleColor = infoInk || presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const descriptionColor =
-    presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
-  const tagInk = presentation.elementStyles?.toolsList?.color || presentation.subtitleColor;
+    infoMuted || presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
+  const tagInk = infoMuted || presentation.elementStyles?.toolsList?.color || presentation.subtitleColor;
   const tagSurface = presentation.cardBorderColor;
 
   const caseStudyLabel = board.consultLabel?.trim() || t('View project');
@@ -261,6 +285,7 @@ function ProjectsBoardCard({
   // column below tablet, 2 from tablet (md), 3 from desktop (lg), 4 only from
   // large desktop (xl) — see the container's gridClass.
   const columnsPerRow = board.columnsPerRow ?? DEFAULT_PROJECTS_BOARD_SETTINGS.columnsPerRow;
+  const bareImage = unframed;
   const isAsymmetric = columnsPerRow === 2;
   const isWide = isAsymmetric && index % 2 === 0;
   const spanClass =
@@ -282,12 +307,19 @@ function ProjectsBoardCard({
   // .pf-projects-board-card (globals.css) always applies instead.
   const cardVars: CSSProperties = {
     ...boardEnterStyle(entered, ENTER_CARD, enterDelay, instant),
+    borderStyle:'solid',
+    borderWidth:board.borderWidth??1,
+    borderColor:resolveHeroPaletteColor(palette,board.borderColorToken??'bordure'),
   };
 
   return (
-    <article
+    <><article
+      ref={cardRef}
+      data-hover-cursor={board.consultDisplay==='hover'&&showCaseStudyLink?'true':undefined}
+      onMouseEnter={event=>{if(board.consultDisplay==='hover'&&showCaseStudyLink&&window.matchMedia('(hover:hover) and (pointer:fine)').matches)setCursorAnchor({x:event.clientX,y:event.clientY});}}
+      onMouseLeave={dismissCursor}
       data-board-card=""
-      className={`group/board-card pf-projects-board-card relative flex min-h-0 flex-col overflow-hidden rounded-xl ${spanClass}`}
+      className={`group/board-card pf-projects-board-card relative flex min-h-0 flex-col ${bareImage ? mediaStyles.bareCard : 'overflow-hidden rounded-xl'} ${spanClass}`}
       style={cardVars}
       data-pf-no-color-transition=""
     >
@@ -298,17 +330,21 @@ function ProjectsBoardCard({
           surface={tagSurface || 'transparent'}
           size={thumbnailSize}
           interactive={showCaseStudyLink}
+          singleColumn={columnsPerRow === 1}
+          imageFit={board.singleColumnImageFit ?? 'cover'}
         />
       ) : null}
 
       <div
+        data-board-info-tone={infoTone}
+        style={{ backgroundColor: infoPaint }}
         className={`flex min-h-0 flex-1 flex-col ${
-          showThumb ? 'px-6 pb-7 pt-8 sm:px-8 sm:pb-8 sm:pt-10' : 'p-6 sm:p-8'
+          bareImage ? 'pt-6 sm:pt-8' : showThumb ? 'px-6 pb-7 pt-8 sm:px-8 sm:pb-8 sm:pt-10' : 'p-6 sm:p-8'
         }`}
       >
         {presentation.showCardTitle !== false ? (
           <h3
-            className="text-2xl font-bold leading-[1.05] tracking-tight md:text-3xl lg:text-4xl"
+            className="text-2xl font-bold leading-[1.15] tracking-tight [text-wrap:balance] md:text-3xl lg:text-4xl"
             style={{ color: titleColor }}
           >
             {item.title}
@@ -317,7 +353,7 @@ function ProjectsBoardCard({
 
         {presentation.showCardDescription !== false && description ? (
           <p
-            className={`max-w-md text-[1.02rem] leading-relaxed sm:text-[1.0625rem] ${
+            className={`max-w-[60ch] text-[1.02rem] leading-[1.7] sm:text-[1.0625rem] ${
               presentation.showCardTitle !== false ? 'mt-4 sm:mt-5' : ''
             }`}
             style={{ color: descriptionColor }}
@@ -338,13 +374,13 @@ function ProjectsBoardCard({
                 {metaItems.map((meta, metaIndex) => (
                   <li
                     key={`${meta.text}-${metaIndex}`}
-                    className={`text-[0.6875rem] uppercase leading-none tracking-[0.14em] ${
+                    className={`text-xs uppercase leading-[1.5] tracking-[0.08em] ${
                       meta.accent ? 'font-semibold' : 'font-medium'
                     }`}
                     style={{
                       color: meta.accent
-                        ? accent
-                        : `color-mix(in srgb, ${tagInk} 82%, transparent)`,
+                        ? `color-mix(in srgb, ${accent} 80%, ${tagInk})`
+                        : tagInk,
                     }}
                   >
                     {meta.text}
@@ -356,15 +392,20 @@ function ProjectsBoardCard({
               <CaseStudyLink
                 href={href!.trim()}
                 label={caseStudyLabel}
-                ink={tagInk}
-                hoverInk={titleColor}
+                ink={workButtonColor(board.buttonColor ? workPaletteTokenColor(board.buttonColor) : tagInk, board.buttonColorOpacity)}
+                hoverInk={workButtonColor(board.buttonColor ? workPaletteTokenColor(board.buttonColor) : titleColor, board.buttonColorOpacity)}
                 accent={accent}
+                variant={board.consultStyle??'underline'}
+                display={board.consultDisplay??'always'}
+                surface={infoSurface||palette.fond}
               />
             ) : null}
           </div>
         ) : null}
       </div>
     </article>
+    {board.consultDisplay==='hover'&&showCaseStudyLink?<FramesViewCursor anchor={cursorAnchor} containerRef={cardRef} onDismiss={dismissCursor} label={caseStudyLabel}/>:null}
+    </>
   );
 }
 

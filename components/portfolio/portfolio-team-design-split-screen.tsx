@@ -1,7 +1,7 @@
 'use client';
 
 /** Split screen: a readable editorial roster beside one continuous portrait surface. */
-import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from 'react';
 import type { PortfolioTeamPresentationSettings } from '@/components/portfolio/portfolio-team-settings';
 import type { PortfolioContentGutter } from '@/components/portfolio/portfolio-editorial-layout';
 import { teamIndexLabel, useTeamSwipe } from '@/components/portfolio/portfolio-team-design-motion';
@@ -10,10 +10,11 @@ import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
 import type { ProfileTeamMember } from '@/types/profile';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-export function TeamSplitScreen({ members, presentation }: {
+export function TeamSplitScreen({ members, presentation, renderPortrait }: {
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
   contentGutter?: PortfolioContentGutter;
+  renderPortrait?: (member: ProfileTeamMember, index: number) => ReactNode;
 }) {
   const t = useT();
   const baseId = useId();
@@ -111,10 +112,10 @@ export function TeamSplitScreen({ members, presentation }: {
       </div>
       {presentation.showImage && (
         <div ref={portraitRef} className={`team-split-portrait ${radius} ${shadow}`} data-tone={presentation.splitPhotoTone ?? 'monochrome'}>
-          {members.map(member => (
+          {members.map((member, index) => (
             <div key={member.id} className="team-split-layer" data-active={member.id === active.id}
               aria-hidden={member.id !== active.id} data-pf-no-color-transition="">
-              <TeamMemberImage member={member} presentation={presentation} fill sizes="(max-width: 1023px) 100vw, 50vw" />
+              {renderPortrait ? renderPortrait(member, index) : <TeamMemberImage member={member} presentation={presentation} fill sizes="(max-width: 1023px) 100vw, 50vw" />}
             </div>
           ))}
           {presentation.showName && <div className="team-split-photo-caption" aria-hidden="true"><span>{active.name}</span></div>}

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { startTransition, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 
 const TRANSITION_MS = 420;
 
@@ -29,8 +29,12 @@ export function PortfolioPagesSlideViewport({
 
   useEffect(() => {
     if (pageId === current.id) return;
-    setOutgoing({ id: current.id, node: current.node, direction });
-    setCurrent({ id: pageId, node: children });
+    // A newly visited section can suspend while its dynamic chunk loads. Keep the
+    // existing page (and persistent navigation) visible instead of the route fallback.
+    startTransition(() => {
+      setOutgoing({ id: current.id, node: current.node, direction });
+      setCurrent({ id: pageId, node: children });
+    });
     if (timeoutRef.current) clearTimeout(timeoutRef.current);
     timeoutRef.current = setTimeout(() => setOutgoing(null), TRANSITION_MS);
     return () => {
@@ -42,7 +46,9 @@ export function PortfolioPagesSlideViewport({
 
   // Keep the mounted page's own content fresh (settings can still change while parked on it).
   useEffect(() => {
-    setCurrent((prev) => (prev.id === pageId ? { ...prev, node: children } : prev));
+    startTransition(() => {
+      setCurrent((prev) => (prev.id === pageId ? { ...prev, node: children } : prev));
+    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [children]);
 
@@ -61,6 +67,7 @@ export function PortfolioPagesSlideViewport({
       <div
         key={`in-${current.id}`}
         className={`pf-pages-slide h-full w-full overflow-y-auto ${outgoing ? 'pf-pages-slide-in' : ''}`}
+        data-pf-pages-scroll="active"
         style={{ '--pf-pages-slide-dir': direction } as CSSProperties}
       >
         {current.node}

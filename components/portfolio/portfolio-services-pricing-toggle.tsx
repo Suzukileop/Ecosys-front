@@ -1,26 +1,28 @@
 'use client';
 
-import { useLayoutEffect, useEffect, useMemo, useRef, type CSSProperties } from 'react';
+import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { ProfileServiceItem } from '@/types/profile';
 import {
   buildPricingCards,
   ctaLookOverride,
-  featuredFill,
   getScrollParent,
+  legibleFeaturedFill,
+  softInk,
   prefersReducedMotion,
   useServicesCardHover,
   useServicesFinePointer,
   withAlpha,
 } from '@/components/portfolio/portfolio-services-pricing-shared';
-import { resolveServicesCardElements, resolveServicesCtaLabel } from '@/components/portfolio/portfolio-services-card-elements';
+import { resolveServicesCardElements, resolveServicesCtaLabel, ServicesHoverAnchor } from '@/components/portfolio/portfolio-services-card-elements';
 import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
 import {
   moveFeatured,
   priceWordLabel,
   resolveBillingSuffix,
   resolveFeaturedIndex,
+  resolveIncludedLabel,
   SERVICES_FEATURED_DEFAULT_OPACITY,
 } from '@/components/portfolio/portfolio-services-pricing-style';
 import { ServicesBulletItem } from '@/components/portfolio/portfolio-services-list-marker';
@@ -97,7 +99,7 @@ export function ServicesPricingToggleSection({
   const tokens = pricingTokens(presentation.activeColorMode === 'light');
   const accentRaw = pricingStyle.featuredColor ?? (presentation.ctaColor || presentation.cardAccentColor);
   const accent = isValidHex(accentRaw) ? accentRaw : '#f97316';
-  const fill = featuredFill(
+  const fill = legibleFeaturedFill(
     accent,
     style.featuredOpacity ?? SERVICES_FEATURED_DEFAULT_OPACITY.toggle,
     tokens.isLight ? '#ffffff' : '#0a0a0a'
@@ -110,7 +112,11 @@ export function ServicesPricingToggleSection({
   // Rows are one column, so "center" is the middle of the whole list.
   const items = moveFeatured(listed, listedFeatured, settings.featuredPosition, listed.length);
   const featuredId = listedFeatured >= 0 ? listed[listedFeatured]?.id : undefined;
-  const includedLabel = settings.showIncludedLabel ? settings.includedLabel.trim() || t('What\'s included') : null;
+  const includedLabel = resolveIncludedLabel(
+    style,
+    { show: settings.showIncludedLabel, label: settings.includedLabel },
+    t('What\'s included')
+  );
 
   const finePointer = useServicesFinePointer();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -161,31 +167,6 @@ export function ServicesPricingToggleSection({
 
   useServicesCardHover(rowsRef, style.hoverEffect, finePointer, itemsKey);
 
-  // Magnetic button (fine pointer only).
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root || !finePointer || prefersReducedMotion()) return undefined;
-    const cleanups: Array<() => void> = [];
-    Array.from(root.querySelectorAll<HTMLElement>('[data-svc-cta]')).forEach((el) => {
-      const moveX = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3' });
-      const moveY = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3' });
-      const onMove = (event: PointerEvent) => {
-        const rect = el.getBoundingClientRect();
-        moveX((event.clientX - (rect.left + rect.width / 2)) * 0.4);
-        moveY((event.clientY - (rect.top + rect.height / 2)) * 0.4);
-      };
-      const onLeave = () => gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
-      el.addEventListener('pointermove', onMove);
-      el.addEventListener('pointerleave', onLeave);
-      cleanups.push(() => {
-        el.removeEventListener('pointermove', onMove);
-        el.removeEventListener('pointerleave', onLeave);
-        gsap.killTweensOf(el);
-        gsap.set(el, { clearProps: 'x,y' });
-      });
-    });
-    return () => cleanups.forEach((off) => off());
-  }, [finePointer, itemsKey]);
 
   if (items.length === 0) return null;
 
@@ -207,8 +188,8 @@ export function ServicesPricingToggleSection({
             const { price } = item;
             const period = price.kind === 'amount' ? resolveBillingSuffix(style, price.period) : null;
             const ink = isFeatured ? fill.ink : tokens.ink;
-            const muted = isFeatured ? withAlpha(fill.ink, 0.72) : tokens.muted;
-            const featureOpacity = isFeatured ? 0.92 : 0.72;
+            const muted = isFeatured ? softInk(fill.ink, fill.blended, 0.8) : tokens.muted;
+            const featureOpacity = isFeatured ? 1 : 0.92;
             const figure =
               price.kind === 'amount'
                 ? price.amount
@@ -224,7 +205,8 @@ export function ServicesPricingToggleSection({
                 data-rest-y={0}
                 className="relative rounded-[1.5rem] px-5 py-7 sm:px-8 sm:py-8 md:rounded-[2rem] md:px-10 md:py-9"
                 style={{
-                  '--svc-glow': ink,
+                  '--svc-glow': pricingStyle.glowColor ?? ink,
+                  '--svc-glow-a': pricingStyle.glowAlpha,
                   '--svc-shadow': tokens.isLight ? 'rgba(10,10,10,0.22)' : 'rgba(0,0,0,0.65)',
                   backgroundColor: isFeatured ? fill.fill : tokens.cardBg,
                   ...(pricingStyle.borderWidthPx != null || pricingStyle.borderColor != null
@@ -243,19 +225,19 @@ export function ServicesPricingToggleSection({
                   <div>
                     {isFeatured && badge ? (
                       <span
-                        className="mb-3 inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]"
-                        style={{ backgroundColor: withAlpha(ink, 0.14), color: ink }}
+                        className="mb-3 inline-block rounded-full px-3 py-1 text-[length:calc(0.6875rem*var(--pf-services-font-scale,1))] font-bold uppercase tracking-[0.16em]"
+                        style={{ backgroundColor: fill.ink === '#0a0a0a' ? 'rgba(255,255,255,0.4)' : 'rgba(0,0,0,0.22)', color: ink }}
                       >
                         {badge}
                       </span>
                     ) : null}
                     {show.title ? (
-                      <h3 className="font-sans text-[0.95rem] font-bold tracking-tight" style={{ color: ink }}>
+                      <h3 className="font-sans text-[length:calc(1.25rem*var(--pf-services-font-scale,1))] font-semibold leading-snug tracking-[-0.01em]" style={{ color: ink }}>
                         {item.title}
                       </h3>
                     ) : null}
                     {item.description ? (
-                      <p className="mt-1.5 max-w-xs text-[0.86rem] leading-relaxed" style={{ color: muted }}>
+                      <p className="mt-2 max-w-xs text-[0.95rem] leading-relaxed" style={{ color: muted }}>
                         {item.description}
                       </p>
                     ) : null}
@@ -263,7 +245,7 @@ export function ServicesPricingToggleSection({
                     <div className="mt-4">
                       {price.isFrom && price.kind === 'amount' ? (
                         <span
-                          className="mb-1 block text-[0.68rem] font-semibold uppercase tracking-[0.18em]"
+                          className="mb-1 block text-[length:calc(0.75rem*var(--pf-services-font-scale,1))] font-semibold uppercase tracking-[0.16em]"
                           style={{ color: muted }}
                         >
                           {t('From')}
@@ -274,13 +256,13 @@ export function ServicesPricingToggleSection({
                         style={{ fontSize: `calc(${priceSize} * var(--pf-services-font-scale, 1))`, color: ink }}
                       >
                         {price.kind === 'amount' && price.symbolFirst ? (
-                          <span className="text-[0.4em] font-semibold" style={{ opacity: 0.6 }}>
+                          <span className="text-[0.4em] font-semibold" style={{ opacity: 0.92 }}>
                             {price.symbol}
                           </span>
                         ) : null}
                         <span>{figure}</span>
                         {price.kind === 'amount' && !price.symbolFirst ? (
-                          <span className="text-[0.4em] font-semibold" style={{ opacity: 0.6 }}>
+                          <span className="text-[0.4em] font-semibold" style={{ opacity: 0.92 }}>
                             {price.symbol}
                           </span>
                         ) : null}
@@ -296,7 +278,7 @@ export function ServicesPricingToggleSection({
                     </div>
                     ) : null}
                     {item.delivery ? (
-                      <p className="mt-2 text-[0.78rem] font-medium" style={{ color: muted }}>
+                      <p className="mt-2 text-[length:calc(0.8125rem*var(--pf-services-font-scale,1))] font-medium" style={{ color: muted }}>
                         {item.delivery}
                       </p>
                     ) : null}
@@ -306,7 +288,7 @@ export function ServicesPricingToggleSection({
                     <div>
                       {includedLabel ? (
                         <p
-                          className="mb-3 text-[0.68rem] font-semibold uppercase"
+                          className="mb-3 text-[length:calc(0.75rem*var(--pf-services-font-scale,1))] font-semibold uppercase"
                           style={{ letterSpacing: '0.2em', color: muted }}
                         >
                           {includedLabel}
@@ -320,7 +302,7 @@ export function ServicesPricingToggleSection({
                               bullet={style.listBullet}
                               index={featureIndex}
                               markerColor={pricingStyle.bulletColor ?? ink}
-                              className="text-[0.86rem] font-medium leading-[1.6]"
+                              className="text-[0.95rem] font-normal leading-[1.6]"
                               textStyle={{ color: ink, opacity: featureOpacity }}
                             >
                               {feature}
@@ -328,7 +310,7 @@ export function ServicesPricingToggleSection({
                           ) : (
                           <li
                             key={`${item.id}-feature-${featureIndex}`}
-                            className="text-[0.86rem] font-medium leading-[1.6]"
+                            className="text-[0.95rem] font-normal leading-[1.6]"
                             style={{ color: ink, opacity: featureOpacity }}
                           >
                             {feature}
@@ -343,9 +325,9 @@ export function ServicesPricingToggleSection({
 
                   {show.cta ? (
                   <div className="flex md:justify-end">
-                    <a
-                      {...pricingStyle.anchorProps}
-                      data-svc-cta=""
+                    <ServicesHoverAnchor
+                      pricingStyle={pricingStyle}
+                      label={resolveServicesCtaLabel(presentation)}
                       className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full px-6 text-[0.9rem] font-semibold md:w-auto"
                       style={{
                         borderStyle: 'solid',
@@ -360,10 +342,9 @@ export function ServicesPricingToggleSection({
                           pricingStyle.ctaRadius
                         ),
                       }}
-                      data-pf-no-color-transition=""
                     >
                       {resolveServicesCtaLabel(presentation)}
-                    </a>
+                    </ServicesHoverAnchor>
                   </div>
                   ) : null}
                 </div>

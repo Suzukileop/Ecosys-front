@@ -3,6 +3,14 @@
 import { useEffect, useState, type CSSProperties } from 'react';
 import type { PortfolioContentGutter } from '@/components/portfolio/portfolio-editorial-layout';
 
+/** Page navigation scrolls its panel, not window. Keep every mini-bar's action consistent. */
+export function scrollPortfolioPageToTop(): void {
+  const panel = document.querySelector<HTMLElement>('[data-pf-pages-scroll="active"]');
+  const options: ScrollToOptions = { top: 0, behavior: prefersReducedMotion() ? 'auto' : 'smooth' };
+  if (panel) panel.scrollTo(options);
+  else window.scrollTo(options);
+}
+
 /** Shared prop shape for all 3 "Mini bottom bar" variant components. */
 export interface FooterMiniBarVariantProps {
   creatorName: string;
